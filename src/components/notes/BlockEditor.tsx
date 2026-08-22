@@ -106,6 +106,38 @@ export function extractHashtagsFromText(text: string): string[] {
   return out;
 }
 
+/**
+ * Tag chips no longer keep a visible `#`, so tags are recovered from the chip
+ * links themselves (`/tags/<name>`) in both HTML and markdown bodies.
+ */
+const TAG_LINK_RE = /\/tags\/([^)"'\s>]+)/g;
+export function extractTagLinks(source: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const m of source.matchAll(TAG_LINK_RE)) {
+    let n = m[1];
+    try { n = decodeURIComponent(n); } catch { /* raw */ }
+    n = n.replace(/^#+/, "").trim();
+    const k = n.toLowerCase();
+    if (!n || seen.has(k)) continue;
+    seen.add(k);
+    out.push(n);
+  }
+  return out;
+}
+
+/** All tags in a body: legacy `#hashtags` plus modern chip links. */
+export function extractAllTags(source: string): string[] {
+  const merged = [...extractHashtagsFromText(source), ...extractTagLinks(source)];
+  const seen = new Set<string>();
+  return merged.filter(n => {
+    const k = n.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Markdown <-> HTML helpers (storage compat with existing notes)    */
 /* ------------------------------------------------------------------ */
@@ -1258,7 +1290,7 @@ export function BlockEditor({
     if (!noteIdRef.current) return;
     if (tagSyncTimer.current) window.clearTimeout(tagSyncTimer.current);
     tagSyncTimer.current = window.setTimeout(async () => {
-      const found = extractHashtagsFromText(markdown);
+      const found = extractAllTags(markdown);
       if (!found.length) return;
       const sig = found.map(s => s.toLowerCase()).sort().join(",");
       if (sig === lastTagSetRef.current) return;
@@ -1714,8 +1746,8 @@ export function BlockEditor({
             .run();
           // Persist on the note record so it appears on the tag hub immediately.
           if (noteIdRef.current) {
-            const text = (editor.getText?.() ?? "") + ` #${name}`;
-            const all = extractHashtagsFromText(text);
+            const html = (editor.getHTML?.() ?? "");
+            const all = Array.from(new Set([...extractAllTags(html), name]));
             updateNote(noteIdRef.current, { tags: all }).catch(() => {});
           }
         },
@@ -2388,8 +2420,9 @@ export function BlockEditor({
       .unsetMark("link")
       .run();
     if (noteIdRef.current) {
-      const text = (editor.getText?.() ?? "") + ` #${cleaned}`;
-      updateNote(noteIdRef.current, { tags: extractHashtagsFromText(text) }).catch(() => {});
+      const html = (editor.getHTML?.() ?? "");
+      const all = Array.from(new Set([...extractAllTags(html), cleaned]));
+      updateNote(noteIdRef.current, { tags: all }).catch(() => {});
     }
   }, [editor]);
 
