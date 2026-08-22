@@ -523,7 +523,7 @@ export default function Planner() {
               onKeyDown={onResizeKey}
               onDoubleClick={() => setTaskPanelWidth(280)}
               title="Drag to resize · double-click to reset"
-              className="group relative z-20 -mx-1.5 w-[18px] cursor-col-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="group relative z-20 -mx-1.5 mt-10 w-[18px] cursor-col-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <div className={`absolute inset-y-2 left-1/2 w-[3px] -translate-x-1/2 rounded-full transition-colors ${resizingPanel ? "bg-primary" : "bg-border group-hover:bg-primary/70"}`} />
               <div
