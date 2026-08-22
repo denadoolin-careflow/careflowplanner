@@ -1,10 +1,13 @@
 /** "Linked from" — every note or task that mentions this item, one click away. */
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, CheckSquare, Link2, ArrowUpRight } from "lucide-react";
 import { useBacklinks, type Backlink } from "@/lib/backlinks";
 import { useStore } from "@/lib/store";
-import { TaskEditor } from "@/components/tasks/TaskEditor";
+// Lazy: TaskEditor renders this section itself, so a static import would be
+// a circular module reference.
+const TaskEditor = lazy(() =>
+  import("@/components/tasks/TaskEditor").then(m => ({ default: m.TaskEditor })));
 import type { EntityType } from "@/lib/note-links";
 import { cn } from "@/lib/utils";
 
@@ -73,11 +76,13 @@ export function BacklinksSection({ entityType, entityId, className, compact }: {
         ))}
       </ul>
       {openTask && (
-        <TaskEditor
-          task={openTask}
-          open={!!openTask}
-          onOpenChange={(o: boolean) => { if (!o) setOpenTaskId(null); }}
-        />
+        <Suspense fallback={null}>
+          <TaskEditor
+            task={openTask}
+            open={!!openTask}
+            onOpenChange={(o: boolean) => { if (!o) setOpenTaskId(null); }}
+          />
+        </Suspense>
       )}
     </section>
   );
