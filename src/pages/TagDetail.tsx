@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, FileText, Folder, Pin, Plus, ShoppingCart } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, FileText, Folder, Pin, Plus, Save, Settings2, ShoppingCart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -9,11 +9,16 @@ import { useStore } from "@/lib/store";
 import { listNotes, createNote, type Note } from "@/lib/notes";
 import { TagChip } from "@/components/tags/TagChip";
 import { TagNotesPanel } from "@/components/tags/TagNotesPanel";
+import { SupertagEditor } from "@/components/tags/SupertagEditor";
+import { ColorSwatchPicker, IconGroupPicker } from "@/components/tags/TagPicker";
+import { useAtmosphere } from "@/lib/atmospheres";
 import { useTags } from "@/hooks/use-tags";
-import { fallbackColorFor } from "@/lib/tags";
+import { fallbackColorFor, updateTag, type Tag, type TagDefaults } from "@/lib/tags";
+import { isSupertag } from "@/lib/supertag";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
 
 export default function TagDetail() {
   const { name = "" } = useParams();
