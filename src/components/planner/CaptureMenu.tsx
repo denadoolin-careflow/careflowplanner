@@ -43,17 +43,17 @@ export function CaptureMenu({ onCapture, writeDate }: { onCapture: (kind?: Kind)
     onCapture(kind);
   };
   return (
-    <div className="inline-flex items-stretch overflow-hidden rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-sm">
+    <div className="inline-flex h-8 items-stretch overflow-hidden rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-sm">
       <button
         onClick={() => onCapture("task")}
-        className="flex items-center gap-1 px-3 text-xs font-medium hover:bg-primary/90"
+        className="flex h-8 items-center gap-1.5 px-4 text-xs font-medium hover:bg-primary/90"
       >
-        <Plus className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Capture</span>
+        <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Capture</span>
       </button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button aria-label="Capture options" className="grid w-7 place-items-center border-l border-primary-foreground/20 hover:bg-primary/90">
-            <ChevronDown className="h-3.5 w-3.5" />
+          <button aria-label="Capture options" className="grid h-8 w-8 place-items-center border-l border-primary-foreground/20 hover:bg-primary/90">
+            <ChevronDown className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
