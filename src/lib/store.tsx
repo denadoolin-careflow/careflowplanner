@@ -849,7 +849,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const { ensureWithinLimit } = await import("@/lib/limit-guard");
       const ok = await ensureWithinLimit("habits", state.habits.length);
       if (!ok) return;
-      const { data } = await supabase.from("habits").insert({ user_id: uid, title: h.title, cadence: h.cadence ?? "daily", category: h.category ?? "self-care" }).select().single();
+      // Supertags: a tag on the new habit can steer its category.
+      let category = h.category;
+      const habitTags = (h as any).tags as string[] | undefined;
+      if (!category && habitTags?.length) {
+        try {
+          const { getCachedTags } = await import("@/hooks/use-tags");
+          const { supertagHabitPatch } = await import("./supertag");
+          category = supertagHabitPatch(getCachedTags(), habitTags, h as any).category as typeof category;
+        } catch { /* supertags are optional */ }
+      }
+      const { data } = await supabase.from("habits").insert({ user_id: uid, title: h.title, cadence: h.cadence ?? "daily", category: category ?? "self-care" }).select().single();
       if (data) setState(s => ({ ...s, habits: [{ ...habitFrom(data), log: {} }, ...s.habits] }));
     },
     toggleHabit: async (id, date) => {
@@ -1009,6 +1019,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addAppointment: async (a) => {
       if (!uid) return null;
+      // Supertags: area, color and a default duration can come from a tag.
+      const apptTags = (a as any).tags as string[] | undefined;
+      if (apptTags?.length) {
+        try {
+          const { getCachedTags } = await import("@/hooks/use-tags");
+          const { supertagAppointmentPatch } = await import("./supertag");
+          Object.assign(a, supertagAppointmentPatch(getCachedTags(), apptTags, a as any));
+        } catch { /* supertags are optional */ }
+      }
       const { data } = await supabase.from("appointments").insert({
         user_id: uid,
         title: a.title, date: a.date,
