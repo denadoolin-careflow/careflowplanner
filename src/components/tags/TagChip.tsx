@@ -5,6 +5,7 @@ import { fallbackColorFor, readableTextOn } from "@/lib/tags";
 import { useTags } from "@/hooks/use-tags";
 import { tagIconFor } from "./tag-icon";
 import { TagPreviewHover } from "./TagPreview";
+import { TagFieldsPopover } from "./TagFieldsPopover";
 
 interface Props {
   name: string;
@@ -15,9 +16,12 @@ interface Props {
   size?: "xs" | "sm" | "md";
   /** Use the muted/outline style instead of a saturated chip. */
   subtle?: boolean;
+  /** When set, the chip opens a dropdown to fill this tag's fields for the item. */
+  entityId?: string;
+  entityType?: string;
 }
 
-export function TagChip({ name, linkable, onRemove, className, size = "sm", subtle }: Props) {
+export function TagChip({ name, linkable, onRemove, className, size = "sm", subtle, entityId, entityType = "task" }: Props) {
   const { resolve } = useTags();
   const meta = resolve(name);
   const Icon = tagIconFor(meta.icon);
@@ -58,6 +62,14 @@ export function TagChip({ name, linkable, onRemove, className, size = "sm", subt
       )}
     </span>
   );
+
+  if (entityId) {
+    return (
+      <TagFieldsPopover tagName={meta.name} entityId={entityId} entityType={entityType}>
+        {inner}
+      </TagFieldsPopover>
+    );
+  }
 
   if (linkable) {
     return (
