@@ -54,7 +54,7 @@ import {
   Table as TableIcon, Rows3, Columns3, Trash2,
   FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
-import { ChevronsDownUp, ChevronsUpDown, ListFilter } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, ListFilter, ShoppingCart } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -68,6 +68,7 @@ import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { InlineEntityCard } from "@/components/notes/InlineEntityCardNode";
 import { QueryBlock, DEFAULT_QUERY_FILTERS } from "@/components/notes/QueryBlockNode";
+import { GroceryBlock } from "@/components/notes/GroceryBlockNode";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
@@ -1850,6 +1851,7 @@ export function BlockEditor({
       FileEmbed,
       InlineEntityCard,
       QueryBlock,
+      GroceryBlock,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
