@@ -170,8 +170,60 @@ export function PlannerQuickCapture({ open, onOpenChange, defaultDate, defaultTi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] max-w-lg gap-3 overflow-y-auto p-4">
         <DialogTitle className="text-xs uppercase tracking-wider text-muted-foreground">Quick add</DialogTitle>
+
+        {/* Supertag selector — the `Q` shortcut opens straight into this. */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Popover open={tagOpen} onOpenChange={setTagOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Choose a supertag"
+                className="h-8 gap-1.5 rounded-full"
+              >
+                <Hash className="h-3.5 w-3.5" /> Tag
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-0">
+              <Command>
+                <CommandInput placeholder="Search tags…" autoFocus />
+                <CommandList>
+                  <CommandEmpty>No tags found.</CommandEmpty>
+                  <CommandGroup>
+                    {tagOptions.map(t => {
+                      const Icon = tagIconFor(t.icon);
+                      const on = picked.some(p => p.toLowerCase() === t.name.toLowerCase());
+                      return (
+                        <CommandItem
+                          key={t.id}
+                          value={t.name}
+                          onSelect={() => { toggleTag(t.name); textRef.current?.focus(); }}
+                          className="gap-2"
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: t.color || fallbackColorFor(t.name) }} />
+                          <span className="truncate">{t.name}</span>
+                          {isSupertag(t) && (
+                            <span className="ml-auto rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-primary">
+                              super
+                            </span>
+                          )}
+                          {on && <Check className="ml-1 h-3.5 w-3.5 text-primary" />}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {picked.map(name => (
+            <TagChip key={name} name={name} size="sm" onRemove={() => toggleTag(name)} />
+          ))}
+        </div>
+
         <Input
-          autoFocus
+          ref={textRef}
+          autoFocus={!focusTag}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } }}
