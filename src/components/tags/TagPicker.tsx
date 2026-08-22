@@ -258,36 +258,21 @@ export function ColorSwatchPicker({
   );
 }
 
+/**
+ * Kept for call sites that already use this name — now a searchable picker
+ * with a live chip preview.
+ */
 export function IconGroupPicker({
-  value, onChange,
-}: { value: string; onChange: (icon: string) => void }) {
+  value, onChange, color, previewName,
+}: { value: string; onChange: (icon: string) => void; color?: string; previewName?: string }) {
   return (
-    <div className="mt-2 space-y-2">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Icon</div>
-      {TAG_ICON_GROUPS.map((group) => (
-        <div key={group.label}>
-          <div className="mb-1 text-[10px] text-muted-foreground/80">{group.label}</div>
-          <div className="grid grid-cols-8 gap-1">
-            {group.icons.map((i) => {
-              const I = tagIconFor(i);
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => onChange(i)}
-                  className={cn(
-                    "grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition",
-                    value === i && "bg-primary/15 text-primary ring-1 ring-primary/40",
-                  )}
-                  title={i}
-                >
-                  <I className="h-3.5 w-3.5" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
+    <TagIconPicker
+      value={value}
+      onChange={onChange}
+      color={color}
+      previewName={previewName}
+      className="mt-2"
+    />
   );
+
 }
