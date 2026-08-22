@@ -218,8 +218,8 @@ export default function TagDetail() {
         <TagOutline
           tagName={tagName}
           accent={accent}
-          onAddTask={async (title) => {
-            await addTask({ title, tags: [tagName] } as any);
+          onAddTask={async (title, opts) => {
+            await addTask({ title, tags: [tagName], parentTaskId: opts?.parentId } as any);
             toast.success(`Added to #${tagName}`);
           }}
           groups={[
@@ -227,6 +227,7 @@ export default function TagDetail() {
               key: "tasks", label: "Tasks", icon: OUTLINE_ICONS.task,
               nodes: tasks.map(t => ({
                 id: t.id, title: t.title, done: t.done, editable: true,
+                parentId: (t as any).parentTaskId ?? null,
                 meta: t.dueDate ? format(parseISO(t.dueDate), "MMM d") : undefined,
               })),
             },
