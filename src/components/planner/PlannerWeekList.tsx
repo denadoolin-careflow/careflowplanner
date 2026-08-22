@@ -2,16 +2,15 @@ import { useState } from "react";
 import { addDays, format, isSameDay } from "date-fns";
 import { Check, ChevronDown, ChevronRight, Maximize2 } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { type PlannerFeedItem } from "@/lib/planner/feed";
+import { useRangeRows } from "@/lib/planner/use-range-rows";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
-import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
 import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME } from "@/lib/planner/use-schedule-drop";
 import { KIND_ICONS } from "./kindIcon";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlannerBulkBar } from "./PlannerBulkBar";
 import { usePlannerSelection } from "@/lib/planner/selection";
-import { useOutlineFilter } from "@/lib/planner/outline";
 import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
 import { cn } from "@/lib/utils";
 
@@ -22,12 +21,10 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
   onSelectDay?: (d: Date) => void;
   onOpenItem?: (item: PlannerFeedItem) => void;
 }) {
-  const { state, updateTask } = useStore() as any;
-  const { byDay } = usePlannerFeed(weekStart, days);
-  const { filters } = useWeekFilters();
+  const { state } = useStore() as any;
+  const { byDay, toggleDone, outline } = useRangeRows(weekStart, days);
   const { schedule, scheduleMany, pending, setPending, resolve } = useScheduleDrop();
   const { selected, ids: selectedIds, toggle: toggleSel, clear } = usePlannerSelection();
-  const outline = useOutlineFilter(state.tasks ?? []);
   const [dropDay, setDropDay] = useState<string | null>(null);
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
@@ -40,9 +37,7 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
       <div className="divide-y divide-border/50">
         {cols.map(d => {
           const key = format(d, "yyyy-MM-dd");
-          const items = filterFeedItems([...(byDay.get(key) ?? [])], filters)
-            .filter(it => it.sourceRef.type !== "task" ? !outline.zoomRoot : outline.allowed(it.sourceRef.id))
-            .sort((a, b) => (a.time ?? "zz").localeCompare(b.time ?? "zz"));
+          const items = byDay.get(key) ?? [];
           const isToday = isSameDay(d, today);
           return (
             <section
@@ -107,8 +102,8 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
                               role="checkbox"
                               aria-checked={!!it.done}
                               tabIndex={0}
-                              onClick={e => { e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); }}
-                              onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); } }}
+                              onClick={e => { e.stopPropagation(); toggleDone(it); }}
+                              onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); toggleDone(it); } }}
                               className={cn(
                                 "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border",
                                 it.done ? "border-transparent" : "border-muted-foreground/40 hover:border-muted-foreground/70",
