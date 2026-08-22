@@ -285,3 +285,103 @@ function CardSection({
     </section>
   );
 }
+/* ------------------------------------------------------------------ */
+/*  Supertag settings                                                  */
+/* ------------------------------------------------------------------ */
+
+function TagSettingsPanel({
+  tagName, tag, ensure, reload,
+}: {
+  tagName: string;
+  tag: Tag | null;
+  ensure: () => Promise<Tag>;
+  reload: () => Promise<void>;
+}) {
+  const { atmosphere } = useAtmosphere();
+  const [open, setOpen] = useState(false);
+  const [working, setWorking] = useState<Tag | null>(tag);
+  const [color, setColor] = useState(tag?.color ?? fallbackColorFor(tagName));
+  const [icon, setIcon] = useState(tag?.icon ?? "tag");
+  const [defaults, setDefaults] = useState<TagDefaults>(tag?.defaults ?? {});
+  const [checklist, setChecklist] = useState<string[]>(tag?.checklist ?? []);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!tag) return;
+    setWorking(tag);
+    setColor(tag.color);
+    setIcon(tag.icon);
+    setDefaults(tag.defaults ?? {});
+    setChecklist(tag.checklist ?? []);
+  }, [tag?.id, tag?.updatedAt]);
+
+  const openPanel = async () => {
+    if (!open && !working) {
+      try { setWorking(await ensure()); } catch { toast.error("Could not set up this tag"); return; }
+    }
+    setOpen(v => !v);
+  };
+
+  const save = async () => {
+    const t = working ?? (await ensure());
+    setSaving(true);
+    try {
+      await updateTag(t.id, { color, icon, defaults, checklist });
+      await reload();
+      toast.success(`#${tagName} settings saved`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't save settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const superOn = tag ? isSupertag(tag) : false;
+
+  return (
+    <section className="rounded-2xl border border-border/60 bg-card/50">
+      <button
+        type="button"
+        onClick={() => void openPanel()}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 px-3 py-3 text-left"
+      >
+        <Settings2 className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">Tag settings</span>
+        {superOn && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            <Sparkles className="h-3 w-3" /> Supertag
+          </span>
+        )}
+        <span className="ml-auto text-[11px] text-muted-foreground">
+          Defaults, checklist &amp; fields
+        </span>
+        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition", open && "rotate-180")} />
+      </button>
+
+      {open && working && (
+        <div className="space-y-3 border-t border-border/60 p-3">
+          <ColorSwatchPicker
+            value={color}
+            onChange={setColor}
+            atmosphereName={atmosphere.name}
+            atmospherePalette={atmosphere.palette}
+          />
+          <IconGroupPicker value={icon} onChange={setIcon} />
+          <SupertagEditor
+            tag={working}
+            defaults={defaults}
+            onDefaultsChange={setDefaults}
+            checklist={checklist}
+            onChecklistChange={setChecklist}
+          />
+          <div className="flex justify-end">
+            <Button size="sm" disabled={saving} onClick={() => void save()}>
+              <Save className="mr-1 h-3.5 w-3.5" /> {saving ? "Saving…" : "Save settings"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
