@@ -24,7 +24,7 @@ export default function TagDetail() {
   const { name = "" } = useParams();
   const tagName = decodeURIComponent(name);
   const { state, addTask, addGrocery, addProject } = useStore();
-  const { resolve, byName, ensure, setPinned, setDescription } = useTags();
+  const { resolve, byName, ensure, setPinned, setDescription, reload } = useTags();
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
   const [descDraft, setDescDraft] = useState<string>("");
