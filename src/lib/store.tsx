@@ -274,9 +274,9 @@ interface Ctx {
   authLoading: boolean;
   signOut: () => Promise<void>;
 
-  addTask: (t: Partial<Task> & { title: string }) => Promise<string | undefined>;
+  addTask: (t: Partial<Task> & { title: string; skipChecklist?: boolean }) => Promise<string | undefined>;
   toggleTask: (id: string) => Promise<void>;
-  updateTask: (id: string, patch: Partial<Task>) => Promise<void>;
+  updateTask: (id: string, patch: Partial<Task>, opts?: { silent?: boolean }) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 
   addProject: (p: Partial<Project> & { name: string }) => Promise<Project | null>;
@@ -580,6 +580,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // Supertags: a tag can carry defaults (area, priority, energy, duration,
       // repeat) and a checklist template. Fill in anything the user didn't set.
       let checklistLines: string[] = [];
+      const skipChecklist = (t as any).skipChecklist === true;
+      delete (enriched as any).skipChecklist;
       if (enriched.tags?.length) {
         try {
           const { getCachedTags } = await import("@/hooks/use-tags");
@@ -587,7 +589,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const cached = getCachedTags();
           const given = t as Record<string, unknown>;
           Object.assign(enriched, supertagPatch(cached, enriched.tags, given));
-          checklistLines = supertagChecklist(cached, enriched.tags);
+          checklistLines = skipChecklist ? [] : supertagChecklist(cached, enriched.tags);
         } catch { /* supertags are optional */ }
       }
       const { data } = await supabase.from("tasks").insert({ user_id: uid, ...taskTo(enriched) }).select().single();
@@ -662,9 +664,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         });
       }
     },
-    updateTask: async (id, patch) => {
+    updateTask: async (id, patch, opts) => {
       const prev = state.tasks.find(t => t.id === id);
       const localTs = nowIso();
+      // Capture what changed so the user can revert this edit from a toast.
+      let undoPlan: import("./task-undo").UndoPlan | null = null;
+      if (!opts?.silent && prev) {
+        try {
+          const { planTaskUndo } = await import("./task-undo");
+          undoPlan = planTaskUndo(prev as any, patch as Record<string, unknown>);
+        } catch { /* undo toast is optional */ }
+      }
       // Re-stamp the cosmic tag when a task moves to a different day and
       // hasn't been stamped by hand.
       if (patch.dueDate && patch.dueDate !== prev?.dueDate && patch.cosmicTag === undefined) {
@@ -677,6 +687,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const values = taskPatchTo(patch);
       if (Object.keys(values).length === 0) return;
       await syncOp({ kind: "update", table: "tasks", id, values, localTs });
+      if (undoPlan) {
+        try {
+          const { showTaskUndoToast } = await import("./task-undo");
+          showTaskUndoToast(undoPlan, prev?.title, () =>
+            ctx.updateTask(id, undoPlan!.before as Partial<Task>, { silent: true }));
+        } catch { /* noop */ }
+      }
       if (patch.dueDate !== undefined && patch.dueDate && patch.dueDate !== prev?.dueDate) {
         const merged = { ...(prev ?? {}), ...patch } as Task;
         emitScheduleEvent({

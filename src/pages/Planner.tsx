@@ -7,7 +7,7 @@ import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
-import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
+import { PlannerQuickCapture, PLANNER_QUICK_ADD_EVENT } from "@/components/planner/PlannerQuickCapture";
 import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
 import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
@@ -93,6 +93,17 @@ export default function Planner() {
   }, [date]);
 
   const [captureOpen, setCaptureOpen] = useState(false);
+  const [captureSeed, setCaptureSeed] = useState<{ time?: string; tags?: string[] }>({});
+  // Any planner view (or a grid slot) can raise the shared quick-add sheet.
+  useEffect(() => {
+    const onQuickAdd = (e: Event) => {
+      const d = (e as CustomEvent).detail ?? {};
+      setCaptureSeed({ time: d.time, tags: d.tags });
+      setCaptureOpen(true);
+    };
+    window.addEventListener(PLANNER_QUICK_ADD_EVENT, onQuickAdd as EventListener);
+    return () => window.removeEventListener(PLANNER_QUICK_ADD_EVENT, onQuickAdd as EventListener);
+  }, []);
   const [planOpen, setPlanOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -683,7 +694,13 @@ export default function Planner() {
         )}
       </div>
 
-      <PlannerQuickCapture open={captureOpen} onOpenChange={setCaptureOpen} defaultDate={day} />
+      <PlannerQuickCapture
+        open={captureOpen}
+        onOpenChange={(o) => { setCaptureOpen(o); if (!o) setCaptureSeed({}); }}
+        defaultDate={day}
+        defaultTime={captureSeed.time}
+        defaultTags={captureSeed.tags}
+      />
       <PlannerShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <PlanMyDayDialog open={planOpen} onOpenChange={setPlanOpen} date={day} />
       <PlannerCommandBar
