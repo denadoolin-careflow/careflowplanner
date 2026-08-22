@@ -15,6 +15,7 @@ import {
 } from "@/lib/planner/table-columns";
 import { useFieldColumns, parseFieldColumn } from "@/lib/planner/field-columns";
 import { FieldCell } from "./FieldCell";
+import { TagChip } from "@/components/tags/TagChip";
 import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
 import { usePlannerSelection } from "@/lib/planner/selection";
 import { PlannerBulkBar } from "./PlannerBulkBar";
@@ -155,7 +156,20 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
       case "energy": return it.energy ? <span className="capitalize">{it.energy}</span> : "—";
       case "duration": return it.estMinutes ? `${it.estMinutes}m` : "—";
       case "project": return projectName(it.projectId) || "—";
-      case "tags": return it.tags?.length ? it.tags.join(", ") : "—";
+      case "tags":
+        return it.tags?.length ? (
+          <span className="flex flex-wrap gap-1" onClick={e => e.stopPropagation()}>
+            {it.tags.map(t => (
+              <TagChip
+                key={t}
+                name={t}
+                size="xs"
+                subtle
+                entityId={it.sourceRef.type === "task" ? it.sourceRef.id : undefined}
+              />
+            ))}
+          </span>
+        ) : "—";
       default: return null;
     }
   };
