@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useWeekFilters, type WeekDueRange } from "@/lib/planner/week-filters";
 import { useTags } from "@/hooks/use-tags";
 import { SavedViewsMenu } from "./SavedViewsMenu";
+import { FieldFilterRows } from "./FieldFilterRows";
 import type { SavedViewLayout, SavedViewScope } from "@/lib/saved-views";
 import type { Area, Energy, Priority } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -140,7 +141,10 @@ export function PlannerWeekFilterBar({
             </div>
           )}
 
+          <FieldFilterRows />
+
           <Chip on={filters.hideDone} onClick={() => patch({ hideDone: !filters.hideDone })}>Hide completed</Chip>
+
         </PopoverContent>
       </Popover>
 

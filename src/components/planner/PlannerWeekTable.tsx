@@ -4,17 +4,18 @@ import { Columns3, GripVertical, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStore } from "@/lib/store";
-import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { type PlannerFeedItem } from "@/lib/planner/feed";
+import { useRangeRows } from "@/lib/planner/use-range-rows";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { KIND_LABEL } from "@/lib/calendar-colors";
-import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
+import { useWeekFilters } from "@/lib/planner/week-filters";
 import {
   useTableConfig, COLUMN_LABEL, ALL_COLUMNS, type TableColumnId, type BuiltinColumnId, type TableScope,
 } from "@/lib/planner/table-columns";
 import { useFieldColumns, parseFieldColumn } from "@/lib/planner/field-columns";
 import { FieldCell } from "./FieldCell";
-import { useOutlineFilter } from "@/lib/planner/outline";
+import { TagChip } from "@/components/tags/TagChip";
 import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
 import { usePlannerSelection } from "@/lib/planner/selection";
 import { PlannerBulkBar } from "./PlannerBulkBar";
@@ -53,8 +54,8 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
   /** Column layout + sort are remembered separately per range. */
   scope?: TableScope;
 }) {
-  const { state, updateTask } = useStore() as any;
-  const { items } = usePlannerFeed(weekStart, days);
+  const { state } = useStore() as any;
+  const { rows: baseRows, taskRows, toggleDone, outline } = useRangeRows(weekStart, days);
   const { filters } = useWeekFilters();
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
@@ -62,7 +63,6 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
   const { schedule, scheduleMany, pending, setPending, resolve } = useScheduleDrop();
   const { selected, ids: selectedIds, toggle: toggleSel, replace, clear } = usePlannerSelection();
   const fieldCols = useFieldColumns(filters.tags);
-  const outline = useOutlineFilter(state.tasks ?? []);
   const [dragCol, setDragCol] = useState<TableColumnId | null>(null);
   const [dropRow, setDropRow] = useState<string | null>(null);
   const today = new Date();
@@ -72,8 +72,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
     (state.projects ?? []).find((p: any) => p.id === id)?.name ?? "";
 
   const rows = useMemo(() => {
-    const list = filterFeedItems(items, filters)
-      .filter(it => it.sourceRef.type !== "task" ? !outline.zoomRoot : outline.allowed(it.sourceRef.id));
+    const list = baseRows.slice();
     const dir = config.asc ? 1 : -1;
     const isField = !!parseFieldColumn(String(config.sort));
     return list.sort((a, b) => {
@@ -82,9 +81,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
       if (av === bv) return a.date.localeCompare(b.date) || (a.time ?? "zz").localeCompare(b.time ?? "zz");
       return dir * (typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv)));
     });
-  }, [items, filters, config.sort, config.asc, fieldCols, outline]);
-
-  const taskRows = useMemo(() => rows.filter(r => r.sourceRef.type === "task"), [rows]);
+  }, [baseRows, config.sort, config.asc, fieldCols]);
 
   /** Built-in columns plus whatever tag fields the active tag filter exposes. */
   const pickable: TableColumnId[] = useMemo(() => {
@@ -148,7 +145,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
         return it.sourceRef.type === "task" ? (
           <button
             type="button"
-            onClick={e => { e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); }}
+            onClick={e => { e.stopPropagation(); toggleDone(it); }}
             className="rounded-full border border-border/60 px-2 py-0.5 text-[11px] hover:bg-muted"
           >
             {it.done ? "Done" : "Open"}
@@ -159,7 +156,20 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
       case "energy": return it.energy ? <span className="capitalize">{it.energy}</span> : "—";
       case "duration": return it.estMinutes ? `${it.estMinutes}m` : "—";
       case "project": return projectName(it.projectId) || "—";
-      case "tags": return it.tags?.length ? it.tags.join(", ") : "—";
+      case "tags":
+        return it.tags?.length ? (
+          <span className="flex flex-wrap gap-1" onClick={e => e.stopPropagation()}>
+            {it.tags.map(t => (
+              <TagChip
+                key={t}
+                name={t}
+                size="xs"
+                subtle
+                entityId={it.sourceRef.type === "task" ? it.sourceRef.id : undefined}
+              />
+            ))}
+          </span>
+        ) : "—";
       default: return null;
     }
   };

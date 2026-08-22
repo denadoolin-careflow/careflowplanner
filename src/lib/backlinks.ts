@@ -52,7 +52,9 @@ export async function listBacklinks(entityType: EntityType, entityId: string): P
       sourceId: id,
       title: n?.title?.trim() || (n?.kind === "journal" ? "Journal entry" : "Untitled note"),
       snippet: snippetOf(n?.body),
-      route: n?.kind === "journal" ? "/journal" : `/notes/${id}`,
+      // Journal entries are note rows too, so the note route opens the exact
+      // entry rather than dropping you on the journal index.
+      route: `/notes/${id}`,
     });
   }
 
@@ -66,7 +68,7 @@ export async function listBacklinks(entityType: EntityType, entityId: string): P
       sourceId: id,
       title: t?.title?.trim() || "Untitled task",
       snippet: snippetOf(t?.notes),
-      route: `/anytime?task=${id}`,
+      route: `/anytime?taskId=${id}`,
     });
   }
 

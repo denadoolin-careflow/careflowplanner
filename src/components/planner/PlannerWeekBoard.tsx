@@ -3,16 +3,15 @@ import { addDays, format, isSameDay } from "date-fns";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
-import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { type PlannerFeedItem } from "@/lib/planner/feed";
+import { useRangeRows } from "@/lib/planner/use-range-rows";
 import { PlannerCapacityBar } from "./PlannerCapacityBar";
 import { PlannerDaySummaryStrip } from "./PlannerDaySummaryStrip";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
-import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
 import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME, type DayPartKey } from "@/lib/planner/use-schedule-drop";
-import { useOutlineFilter } from "@/lib/planner/outline";
 import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
 import { cn } from "@/lib/utils";
 
@@ -43,14 +42,12 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
   /** The weekly plan dashboard now lives on the Overview tab. */
   showDashboard?: boolean;
 }) {
-  const { state, updateTask } = useStore() as any;
-  const { byDay } = usePlannerFeed(weekStart, 7);
-  const { filters } = useWeekFilters();
+  const { state } = useStore() as any;
+  const { byDay, toggleDone, outline } = useRangeRows(weekStart, 7);
   const { schedule, pending, setPending, resolve } = useScheduleDrop();
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
   const [dragOver, setDragOver] = useState<string | null>(null);
-  const outline = useOutlineFilter(state.tasks ?? []);
   const cols = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
 
@@ -69,8 +66,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         {cols.map(d => {
           const key = format(d, "yyyy-MM-dd");
-          const items = filterFeedItems(byDay.get(key) ?? [], filters)
-            .filter(it => it.sourceRef.type !== "task" ? !outline.zoomRoot : outline.allowed(it.sourceRef.id));
+          const items = byDay.get(key) ?? [];
           const isToday = isSameDay(d, today);
           return (
             <div
@@ -120,8 +116,8 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
                           role="checkbox"
                           aria-checked={!!it.done}
                           tabIndex={0}
-                          onClick={(e) => { e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); }}
-                          onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); } }}
+                          onClick={(e) => { e.stopPropagation(); toggleDone(it); }}
+                          onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); toggleDone(it); } }}
                           className={cn(
                             "mt-0.5 flex h-3.5 w-3.5 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border transition-colors",
                             it.done ? "border-transparent" : "border-muted-foreground/40 hover:border-muted-foreground/70",
