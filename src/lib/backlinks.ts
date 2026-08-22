@@ -15,6 +15,12 @@ export interface Backlink {
   sourceId: string;
   title: string;
   snippet?: string;
+  /** Longer excerpt used by the hover preview. */
+  preview?: string;
+  /** ISO timestamp of the source's last edit, for preview context. */
+  updatedAt?: string;
+  /** "note" | "journal" for notes; "done" | "open" for tasks. */
+  kindLabel?: string;
   route: string;
 }
 
@@ -29,12 +35,12 @@ export async function listBacklinks(entityType: EntityType, entityId: string): P
   const [noteRes, taskRes] = await Promise.all([
     (supabase as any)
       .from("note_links")
-      .select("note_id, notes:note_id (id, title, body, kind)")
+      .select("note_id, notes:note_id (id, title, body, kind, updated_at)")
       .eq("entity_type", entityType)
       .eq("entity_id", entityId),
     (supabase as any)
       .from("task_links")
-      .select("task_id, tasks:task_id (id, title, notes)")
+      .select("task_id, tasks:task_id (id, title, notes, done, due_date, updated_at)")
       .eq("entity_type", entityType)
       .eq("entity_id", entityId),
   ]);
@@ -52,6 +58,9 @@ export async function listBacklinks(entityType: EntityType, entityId: string): P
       sourceId: id,
       title: n?.title?.trim() || (n?.kind === "journal" ? "Journal entry" : "Untitled note"),
       snippet: snippetOf(n?.body),
+      preview: snippetOf(n?.body, 320),
+      updatedAt: n?.updated_at ?? undefined,
+      kindLabel: n?.kind === "journal" ? "Journal" : "Note",
       // Journal entries are note rows too, so the note route opens the exact
       // entry rather than dropping you on the journal index.
       route: `/notes/${id}`,
@@ -68,6 +77,9 @@ export async function listBacklinks(entityType: EntityType, entityId: string): P
       sourceId: id,
       title: t?.title?.trim() || "Untitled task",
       snippet: snippetOf(t?.notes),
+      preview: snippetOf(t?.notes, 320),
+      updatedAt: t?.updated_at ?? undefined,
+      kindLabel: t?.done ? "Completed task" : "Task",
       route: `/anytime?taskId=${id}`,
     });
   }
