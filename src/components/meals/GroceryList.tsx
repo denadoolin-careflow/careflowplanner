@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { ShopMenu } from "@/components/meals/ShopMenu";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -204,6 +205,7 @@ export function GroceryList() {
               </button>
             )}
             <div className="ml-1 flex shrink-0 items-center gap-0.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-70">
+              <ShopMenu items={item.name} size="xs" variant="ghost" compact className="h-7 px-1.5" />
               <button onPointerDown={(e) => e.stopPropagation()} onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"
                 className="grid h-9 w-9 place-items-center text-muted-foreground hover:text-foreground sm:h-7 sm:w-7"><Pencil className="h-3.5 w-3.5" /></button>
               <button onPointerDown={(e) => e.stopPropagation()} onClick={() => deleteGrocery(item.id)} title="Delete"
@@ -290,6 +292,11 @@ export function GroceryList() {
             })}
 
             <div className="ml-auto flex flex-wrap items-center gap-1.5">
+              <ShopMenu
+                items={sorted.filter(i => !i.bought).map(i => i.name)}
+                size="sm"
+                className="h-7 rounded-full text-xs"
+              />
               <Button size="sm" variant="outline" className="h-7 rounded-full text-xs" onClick={() => setSavedOpen(true)}>
                 <BookmarkPlus className="mr-1 h-3.5 w-3.5" />Saved
               </Button>
