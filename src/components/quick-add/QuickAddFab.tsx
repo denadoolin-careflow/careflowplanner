@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useStore, todayISO } from "@/lib/store";
 import { AREAS, type TaskStatus, type Area } from "@/lib/types";
 import { toast } from "sonner";
+import { inferCleaningZone, CLEANING_ZONES } from "@/lib/cleaning-zone-infer";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -659,14 +660,27 @@ function HolidayForm({ onClose }: { onClose: () => void }) {
 }
 
 function CleaningForm({ onClose, initialText }: { onClose: () => void; initialText: string }) {
-  const { addCleaning } = useStore(); const [title, setTitle] = useState(initialText); const [zone, setZone] = useState<any>("Kitchen");
+  const { addCleaning } = useStore();
+  const [title, setTitle] = useState(initialText);
+  const [zone, setZone] = useState<any>(() => inferCleaningZone(initialText) ?? "Kitchen");
+  // Zone follows what you type until you pick one yourself.
+  const [zoneTouched, setZoneTouched] = useState(false);
+  const guess = inferCleaningZone(title);
+  useEffect(() => {
+    if (zoneTouched) return;
+    const g = inferCleaningZone(title);
+    if (g && g !== zone) setZone(g);
+  }, [title, zoneTouched]);
   return (
     <TabsContent value="cleaning" className="mt-0 space-y-3">
       <Input placeholder="What to clean?" value={title} onChange={e => setTitle(e.target.value)} autoFocus />
-      <Select value={zone} onValueChange={setZone}>
+      <Select value={zone} onValueChange={v => { setZoneTouched(true); setZone(v); }}>
         <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectContent>{["Kitchen","Bathroom","Bedrooms","Living","Laundry","Entryway","Outdoor","Whole home"].map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
+        <SelectContent>{CLEANING_ZONES.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
       </Select>
+      {guess && !zoneTouched && (
+        <p className="text-[11px] text-muted-foreground">Zone picked automatically from “{title.trim()}”.</p>
+      )}
       <Button className="w-full" onClick={() => { if (!title.trim()) return; addCleaning({ title, zone }); toast.success("Added to home reset."); onClose(); }}>Add cleaning task</Button>
     </TabsContent>
   );
