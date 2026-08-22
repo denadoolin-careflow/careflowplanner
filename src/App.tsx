@@ -10,6 +10,7 @@ import { WorkspaceLayoutProvider } from "@/components/workspace/useWorkspaceLayo
 import "@/lib/theme-preset";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { InlineTagPreviewLayer } from "@/components/tags/InlineTagPreviewLayer";
+import { DayRefPreviewLayer } from "@/components/notes/DayRefPreviewLayer";
 import { MediaLightbox } from "@/components/media/MediaLightbox";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import Today from "./pages/Today";
@@ -141,6 +142,7 @@ const App = () => (
             <CyclePlanningListener />
             <ExhaleReminderHost />
             <InlineTagPreviewLayer />
+            <DayRefPreviewLayer />
             <MediaLightbox />
             <CalendarBackgroundServices />
             <Routes>
