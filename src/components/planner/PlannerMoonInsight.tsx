@@ -380,18 +380,27 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
                 <>
                   <div className="flex items-center justify-between gap-2">
                     <p className="min-w-0 truncate text-[11px] text-muted-foreground">{note.title || "Daily note"}</p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <SaveState status={noteSave.status} />
+                      <EditorPrefsMenu />
                       <Button asChild size="sm" variant="ghost" className="h-7 rounded-full text-[11px]">
                         <Link to={`/notes/${note.id}`}><ExternalLink className="mr-1 h-3 w-3" />Open note</Link>
                       </Button>
                     </div>
                   </div>
-                  <Textarea
-                    value={noteBody}
-                    className="min-h-[180px] font-mono text-[12px]"
-                    onChange={(e) => { setNoteBody(e.target.value); noteSave.schedule({ title: "", body: e.target.value }); }}
-                  />
+                  <div className="rounded-xl border border-border/50 bg-card/40 px-2 py-1">
+                    <BlockEditor
+                      key={note.id}
+                      body={noteBody}
+                      noteId={note.id}
+                      minHeight="180px"
+                      showFooter={false}
+                      toolbarPlacement="top"
+                      placeholder="Press / for blocks · @ to mention"
+                      onChange={(md) => { setNoteBody(md); noteSave.schedule({ title: "", body: md }); }}
+                    />
+                  </div>
+
                 </>
               )}
             </TabsContent>
