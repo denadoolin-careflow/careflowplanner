@@ -20,6 +20,8 @@ import { useCycleDot } from "@/lib/planner/day-rhythm";
 import { moonPlanningTip } from "@/lib/planner/moon-planning-tip";
 import { PhaseHabitNudge } from "./PhaseHabitNudge";
 import { MoonInsightHistory } from "./MoonInsightHistory";
+import { BlockEditor } from "@/components/notes/BlockEditor";
+import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { PlannerWeatherStrip } from "./PlannerWeatherStrip";
 import { elementTheme } from "@/lib/planner/element-theme";
 import { buildMoonInsightPdf, shareOrDownloadPdf } from "@/lib/planner/moon-insight-pdf";
