@@ -352,7 +352,10 @@ function TagSettingsPanel({
   reload: () => Promise<void>;
 }) {
   const { atmosphere } = useAtmosphere();
-  const [open, setOpen] = useState(false);
+  // `?edit=1` (from the inline chip popover) opens settings straight away.
+  const [open, setOpen] = useState(
+    () => new URLSearchParams(window.location.search).get("edit") === "1",
+  );
   const [working, setWorking] = useState<Tag | null>(tag);
   const [color, setColor] = useState(tag?.color ?? fallbackColorFor(tagName));
   const [icon, setIcon] = useState(tag?.icon ?? "tag");

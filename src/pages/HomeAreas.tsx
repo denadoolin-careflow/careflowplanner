@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { inferCleaningZone } from "@/lib/cleaning-zone-infer";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,10 +53,11 @@ function ZonesPanel({ uid }: { uid: string }) {
     await supabase.from("cleaning_tasks").update({ done: !t.done, last_done: !t.done ? today() : t.last_done }).eq("id", t.id);
     load();
   }
-  async function addTask(zone: string) {
+  async function addTask(zone: string, overrideZone?: string) {
     const title = (quickAdd[zone] ?? "").trim();
     if (!title) return;
-    const { error } = await supabase.from("cleaning_tasks").insert({ user_id: uid, title, zone, cadence: "weekly" });
+    const target = overrideZone ?? zone;
+    const { error } = await supabase.from("cleaning_tasks").insert({ user_id: uid, title, zone: target, cadence: "weekly" });
     if (error) return toast.error(error.message);
     setQuickAdd(s => ({ ...s, [zone]: "" }));
     load();
@@ -197,6 +199,21 @@ function ZonesPanel({ uid }: { uid: string }) {
                 className="h-7 border-0 bg-transparent px-0 text-xs focus-visible:ring-0"
               />
             </div>
+            {(() => {
+              // Suggest a better-matching zone from the words being typed.
+              const typed = quickAdd[zone] ?? "";
+              const guess = inferCleaningZone(typed);
+              if (!guess || guess === zone || !grouped[guess]) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => addTask(zone, guess)}
+                  className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] text-primary hover:bg-primary/20"
+                >
+                  <Sparkles className="h-3 w-3" aria-hidden /> Add to {guess} instead
+                </button>
+              );
+            })()}
           </div>
         ))}
         {Object.keys(grouped).length === 0 && (

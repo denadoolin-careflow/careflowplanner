@@ -5,6 +5,9 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 const RefLink = Link.extend({
+  // Non-inclusive: typing (or pressing space) right after a chip continues in
+  // plain text instead of growing the link.
+  inclusive: false,
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -54,7 +57,7 @@ import {
   Table as TableIcon, Rows3, Columns3, Trash2,
   FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
-import { ChevronsDownUp, ChevronsUpDown, ListFilter } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, ListFilter, ShoppingCart } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -68,6 +71,7 @@ import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { InlineEntityCard } from "@/components/notes/InlineEntityCardNode";
 import { QueryBlock, DEFAULT_QUERY_FILTERS } from "@/components/notes/QueryBlockNode";
+import { GroceryBlock } from "@/components/notes/GroceryBlockNode";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
@@ -100,6 +104,38 @@ export function extractHashtagsFromText(text: string): string[] {
     if (!seen.has(k)) { seen.add(k); out.push(n); }
   }
   return out;
+}
+
+/**
+ * Tag chips no longer keep a visible `#`, so tags are recovered from the chip
+ * links themselves (`/tags/<name>`) in both HTML and markdown bodies.
+ */
+const TAG_LINK_RE = /\/tags\/([^)"'\s>]+)/g;
+export function extractTagLinks(source: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const m of source.matchAll(TAG_LINK_RE)) {
+    let n = m[1];
+    try { n = decodeURIComponent(n); } catch { /* raw */ }
+    n = n.replace(/^#+/, "").trim();
+    const k = n.toLowerCase();
+    if (!n || seen.has(k)) continue;
+    seen.add(k);
+    out.push(n);
+  }
+  return out;
+}
+
+/** All tags in a body: legacy `#hashtags` plus modern chip links. */
+export function extractAllTags(source: string): string[] {
+  const merged = [...extractHashtagsFromText(source), ...extractTagLinks(source)];
+  const seen = new Set<string>();
+  return merged.filter(n => {
+    const k = n.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -1254,7 +1290,7 @@ export function BlockEditor({
     if (!noteIdRef.current) return;
     if (tagSyncTimer.current) window.clearTimeout(tagSyncTimer.current);
     tagSyncTimer.current = window.setTimeout(async () => {
-      const found = extractHashtagsFromText(markdown);
+      const found = extractAllTags(markdown);
       if (!found.length) return;
       const sig = found.map(s => s.toLowerCase()).sort().join(",");
       if (sig === lastTagSetRef.current) return;
@@ -1311,6 +1347,17 @@ export function BlockEditor({
                 e.chain().focus().insertContent({
                   type: "queryBlock",
                   attrs: { viewId: null, layout: "list", label: "Open tasks", filters: DEFAULT_QUERY_FILTERS },
+                }).run(),
+            },
+            {
+              title: "Grocery list",
+              description: "Live grocery list with store links",
+              icon: ShoppingCart,
+              keywords: ["grocery", "groceries", "shopping", "store", "list", "food"],
+              command: (e: Editor) =>
+                e.chain().focus().insertContent({
+                  type: "groceryBlock",
+                  attrs: { label: "Grocery list", hideBought: true },
                 }).run(),
             },
             {
@@ -1636,12 +1683,14 @@ export function BlockEditor({
             .deleteRange(range)
             .insertContent({
               type: "text",
-              text: `@${item.label}`,
-              marks: [{ type: "link", attrs: { href, class: "ref-chip" } }],
+              text: item.label,
+              marks: [
+                { type: "link", attrs: { href, class: "ref-chip", "data-ref-label": item.label } },
+              ],
             })
-            // Insert a plain space without the link mark so typing continues
-            // outside the chip instead of extending the link.
-            .insertContent({ type: "text", text: " " })
+            // Insert a plain space with no marks so typing continues outside
+            // the chip instead of extending the link.
+            .insertContent({ type: "text", text: " ", marks: [] })
             .unsetMark("link")
             .run();
           const entityType = TYPE_TO_ENTITY[item.type];
@@ -1689,15 +1738,16 @@ export function BlockEditor({
           editor.chain().focus().deleteRange(range)
             .insertContent({
               type: "text",
-              text: `#${name}`,
+              text: name,
               marks: [{ type: "link", attrs: { href, class: "tag-chip" } }],
             })
-            .insertContent(" ")
+            .insertContent({ type: "text", text: " ", marks: [] })
+            .unsetMark("link")
             .run();
           // Persist on the note record so it appears on the tag hub immediately.
           if (noteIdRef.current) {
-            const text = (editor.getText?.() ?? "") + ` #${name}`;
-            const all = extractHashtagsFromText(text);
+            const html = (editor.getHTML?.() ?? "");
+            const all = Array.from(new Set([...extractAllTags(html), name]));
             updateNote(noteIdRef.current, { tags: all }).catch(() => {});
           }
         },
@@ -1839,6 +1889,7 @@ export function BlockEditor({
       FileEmbed,
       InlineEntityCard,
       QueryBlock,
+      GroceryBlock,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
@@ -1904,6 +1955,28 @@ export function BlockEditor({
     const next = bodyToHtml(body);
     if (next !== editor.getHTML()) editor.commands.setContent(next, { emitUpdate: false });
   }, [body, editor]);
+
+  // "Remove link" from the inline chip hover popover: keep the words, drop the
+  // reference. The popover lives outside React's tree, so it signals via event.
+  useEffect(() => {
+    if (!editor) return;
+    const onUnlink = (e: Event) => {
+      const el = (e as CustomEvent).detail?.el as HTMLElement | undefined;
+      if (!el || !editor.view.dom.contains(el)) return;
+      try {
+        const pos = editor.view.posAtDOM(el, 0);
+        const len = (el.textContent ?? "").length;
+        editor.chain().focus()
+          .setTextSelection({ from: pos, to: pos + len })
+          .unsetMark("link")
+          .setTextSelection(pos + len)
+          .run();
+      } catch { /* chip no longer in the doc */ }
+    };
+    document.addEventListener("careflow:unlink-chip", onUnlink as EventListener);
+    return () => document.removeEventListener("careflow:unlink-chip", onUnlink as EventListener);
+  }, [editor]);
+
 
   // Track focus + selection so the toolbar can be context-aware.
   useEffect(() => {
@@ -2362,14 +2435,16 @@ export function BlockEditor({
       .insertContent(" ")
       .insertContent({
         type: "text",
-        text: `#${cleaned}`,
+        text: cleaned,
         marks: [{ type: "link", attrs: { href, class: "tag-chip" } }],
       })
-      .insertContent(" ")
+      .insertContent({ type: "text", text: " ", marks: [] })
+      .unsetMark("link")
       .run();
     if (noteIdRef.current) {
-      const text = (editor.getText?.() ?? "") + ` #${cleaned}`;
-      updateNote(noteIdRef.current, { tags: extractHashtagsFromText(text) }).catch(() => {});
+      const html = (editor.getHTML?.() ?? "");
+      const all = Array.from(new Set([...extractAllTags(html), cleaned]));
+      updateNote(noteIdRef.current, { tags: all }).catch(() => {});
     }
   }, [editor]);
 
