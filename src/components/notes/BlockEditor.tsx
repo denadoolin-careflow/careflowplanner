@@ -5,6 +5,9 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 const RefLink = Link.extend({
+  // Non-inclusive: typing (or pressing space) right after a chip continues in
+  // plain text instead of growing the link.
+  inclusive: false,
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -1648,12 +1651,14 @@ export function BlockEditor({
             .deleteRange(range)
             .insertContent({
               type: "text",
-              text: `@${item.label}`,
-              marks: [{ type: "link", attrs: { href, class: "ref-chip" } }],
+              text: item.label,
+              marks: [
+                { type: "link", attrs: { href, class: "ref-chip", "data-ref-label": item.label } },
+              ],
             })
-            // Insert a plain space without the link mark so typing continues
-            // outside the chip instead of extending the link.
-            .insertContent({ type: "text", text: " " })
+            // Insert a plain space with no marks so typing continues outside
+            // the chip instead of extending the link.
+            .insertContent({ type: "text", text: " ", marks: [] })
             .unsetMark("link")
             .run();
           const entityType = TYPE_TO_ENTITY[item.type];
@@ -1701,10 +1706,11 @@ export function BlockEditor({
           editor.chain().focus().deleteRange(range)
             .insertContent({
               type: "text",
-              text: `#${name}`,
+              text: name,
               marks: [{ type: "link", attrs: { href, class: "tag-chip" } }],
             })
-            .insertContent(" ")
+            .insertContent({ type: "text", text: " ", marks: [] })
+            .unsetMark("link")
             .run();
           // Persist on the note record so it appears on the tag hub immediately.
           if (noteIdRef.current) {
@@ -2375,10 +2381,11 @@ export function BlockEditor({
       .insertContent(" ")
       .insertContent({
         type: "text",
-        text: `#${cleaned}`,
+        text: cleaned,
         marks: [{ type: "link", attrs: { href, class: "tag-chip" } }],
       })
-      .insertContent(" ")
+      .insertContent({ type: "text", text: " ", marks: [] })
+      .unsetMark("link")
       .run();
     if (noteIdRef.current) {
       const text = (editor.getText?.() ?? "") + ` #${cleaned}`;
