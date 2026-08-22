@@ -7,21 +7,27 @@
  * checklist template, and its typed fields — all editable right here, so a
  * capture never needs a second trip through the task editor.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { X } from "lucide-react";
+import { X, Hash, Check } from "lucide-react";
 import { RecurrencePicker, type RecurrenceValue } from "@/components/tasks/RecurrencePicker";
 import { useTags } from "@/hooks/use-tags";
-import { matchTags, supertagPatch, supertagChecklist } from "@/lib/supertag";
+import { matchTags, supertagPatch, supertagChecklist, isSupertag } from "@/lib/supertag";
 import { listTagFields, setItemFieldValue, type TagField } from "@/lib/tag-fields";
 import { FieldCell } from "@/components/planner/FieldCell";
 import { TagChip } from "@/components/tags/TagChip";
+import { tagIconFor } from "@/components/tags/tag-icon";
+import { fallbackColorFor } from "@/lib/tags";
 
 interface Props {
   open: boolean;
@@ -30,11 +36,13 @@ interface Props {
   /** Optional pre-fill, e.g. from a clicked time slot. */
   defaultTime?: string;
   defaultTags?: string[];
+  /** Open with the supertag selector focused instead of the text input. */
+  focusTag?: boolean;
 }
 
 /** Fire-and-forget opener so any surface can raise the shared sheet. */
 export const PLANNER_QUICK_ADD_EVENT = "careflow:planner-quick-add";
-export function openPlannerQuickAdd(detail?: { time?: string; tags?: string[]; text?: string }) {
+export function openPlannerQuickAdd(detail?: { time?: string; tags?: string[]; text?: string; focus?: "tag" | "text" }) {
   window.dispatchEvent(new CustomEvent(PLANNER_QUICK_ADD_EVENT, { detail: detail ?? {} }));
 }
 
@@ -43,29 +51,47 @@ const DEFAULT_LABEL: Record<string, string> = {
   estMinutes: "Duration", recurrenceType: "Repeats",
 };
 
-export function PlannerQuickCapture({ open, onOpenChange, defaultDate, defaultTime, defaultTags }: Props) {
+export function PlannerQuickCapture({ open, onOpenChange, defaultDate, defaultTime, defaultTags, focusTag }: Props) {
   const { addTask } = useStore();
   const { tags: allTags } = useTags();
   const [text, setText] = useState("");
+  const [picked, setPicked] = useState<string[]>([]);
+  const [tagOpen, setTagOpen] = useState(false);
   const [repeat, setRepeat] = useState<RecurrenceValue>({});
   const [fields, setFields] = useState<TagField[]>([]);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [dropped, setDropped] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const textRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    setText(defaultTags?.length ? defaultTags.map(t => `#${t}`).join(" ") + " " : "");
+    setText("");
+    setPicked(defaultTags ?? []);
     setRepeat({});
     setValues({});
     setDropped([]);
-  }, [open, defaultTags]);
+    // The `Q` shortcut lands straight on the supertag selector.
+    setTagOpen(Boolean(focusTag));
+  }, [open, defaultTags, focusTag]);
 
   const parsed = text ? parseTaskInput(text) : null;
   const tagNames = useMemo(() => {
     const fromText = parsed?.tags ?? [];
-    return Array.from(new Set([...(defaultTags ?? []), ...fromText].map(t => String(t))));
-  }, [parsed?.tags, defaultTags]);
+    return Array.from(new Set([...picked, ...fromText].map(t => String(t))));
+  }, [parsed?.tags, picked]);
+
+  const toggleTag = (name: string) => {
+    setPicked(p => (p.some(x => x.toLowerCase() === name.toLowerCase())
+      ? p.filter(x => x.toLowerCase() !== name.toLowerCase())
+      : [...p, name]));
+  };
+
+  // Supertags first — they're the ones that carry defaults worth picking.
+  const tagOptions = useMemo(
+    () => [...allTags].sort((a, b) => Number(isSupertag(b)) - Number(isSupertag(a)) || a.name.localeCompare(b.name)),
+    [allTags],
+  );
 
   const supertags = useMemo(() => matchTags(allTags, tagNames), [allTags, tagNames]);
 
@@ -144,8 +170,60 @@ export function PlannerQuickCapture({ open, onOpenChange, defaultDate, defaultTi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] max-w-lg gap-3 overflow-y-auto p-4">
         <DialogTitle className="text-xs uppercase tracking-wider text-muted-foreground">Quick add</DialogTitle>
+
+        {/* Supertag selector — the `Q` shortcut opens straight into this. */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Popover open={tagOpen} onOpenChange={setTagOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Choose a supertag"
+                className="h-8 gap-1.5 rounded-full"
+              >
+                <Hash className="h-3.5 w-3.5" /> Tag
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-0">
+              <Command>
+                <CommandInput placeholder="Search tags…" autoFocus />
+                <CommandList>
+                  <CommandEmpty>No tags found.</CommandEmpty>
+                  <CommandGroup>
+                    {tagOptions.map(t => {
+                      const Icon = tagIconFor(t.icon);
+                      const on = picked.some(p => p.toLowerCase() === t.name.toLowerCase());
+                      return (
+                        <CommandItem
+                          key={t.id}
+                          value={t.name}
+                          onSelect={() => { toggleTag(t.name); textRef.current?.focus(); }}
+                          className="gap-2"
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: t.color || fallbackColorFor(t.name) }} />
+                          <span className="truncate">{t.name}</span>
+                          {isSupertag(t) && (
+                            <span className="ml-auto rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-primary">
+                              super
+                            </span>
+                          )}
+                          {on && <Check className="ml-1 h-3.5 w-3.5 text-primary" />}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {picked.map(name => (
+            <TagChip key={name} name={name} size="sm" onRemove={() => toggleTag(name)} />
+          ))}
+        </div>
+
         <Input
-          autoFocus
+          ref={textRef}
+          autoFocus={!focusTag}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } }}

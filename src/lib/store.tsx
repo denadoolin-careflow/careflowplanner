@@ -690,8 +690,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (undoPlan) {
         try {
           const { showTaskUndoToast } = await import("./task-undo");
-          showTaskUndoToast(undoPlan, prev?.title, () =>
-            ctx.updateTask(id, undoPlan!.before as Partial<Task>, { silent: true }));
+          showTaskUndoToast(undoPlan, prev?.title, (values) =>
+            ctx.updateTask(id, values as Partial<Task>, { silent: true }));
         } catch { /* noop */ }
       }
       if (patch.dueDate !== undefined && patch.dueDate && patch.dueDate !== prev?.dueDate) {

@@ -31,9 +31,11 @@ import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
-import { BookTemplate, Images, Type } from "lucide-react";
+import { BookTemplate, Images, Type, IndentIncrease, Table2 } from "lucide-react";
+import { NotesOutlineView } from "@/components/notes/NotesOutlineView";
+import { NotesTableView } from "@/components/notes/NotesTableView";
 
-type View = "list" | "grid" | "board" | "timeline" | "calendar";
+type View = "outline" | "list" | "grid" | "board" | "table" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
 
 const VIEW_KEY = "careflow.notes.view";
@@ -41,9 +43,11 @@ const COLLECTION_KEY = "careflow.notes.collection";
 const SIDE_NAV_KEY = "careflow.notes.sidenav";
 
 const VIEW_TABS: { id: View; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "outline",   label: "Outline",   icon: IndentIncrease },
   { id: "list",      label: "All notes", icon: ListIcon },
   { id: "grid",      label: "Grid",      icon: LayoutGrid },
   { id: "board",     label: "Board",     icon: KanbanSquare },
+  { id: "table",     label: "Table",     icon: Table2 },
   { id: "timeline",  label: "Timeline",  icon: Clock3 },
   { id: "calendar",  label: "Calendar",  icon: CalendarIcon },
 ];
@@ -449,6 +453,10 @@ export default function Notes() {
                 <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} previewLines={previewLines} />
                 ))}
               </div>
+            ) : view === "outline" ? (
+              <NotesOutlineView notes={filtered} selectedId={noteParam} onSelect={selectNote} term={q} />
+            ) : view === "table" ? (
+              <NotesTableView notes={filtered} selectedId={noteParam} onSelect={selectNote} sort={sort} onSortChange={setSort} />
             ) : view === "list" ? (
               <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} onDelete={handleDeleteNote} onPin={handlePinNote} onArchive={handleArchiveNote} />
             ) : view === "board" ? (

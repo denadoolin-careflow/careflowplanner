@@ -31,6 +31,8 @@ const GROUPS: { label: string; items: [string, string][] }[] = [
     label: "Actions",
     items: [
       ["C", "Quick capture"],
+      ["Q", "Quick add on the tag picker"],
+      ["Shift + #", "Quick add on the tag picker"],
       ["⌘ / Ctrl + K", "Command bar"],
       ["?", "This list"],
     ],

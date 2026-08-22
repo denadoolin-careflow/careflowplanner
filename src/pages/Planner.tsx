@@ -93,12 +93,12 @@ export default function Planner() {
   }, [date]);
 
   const [captureOpen, setCaptureOpen] = useState(false);
-  const [captureSeed, setCaptureSeed] = useState<{ time?: string; tags?: string[] }>({});
+  const [captureSeed, setCaptureSeed] = useState<{ time?: string; tags?: string[]; focus?: "tag" | "text" }>({});
   // Any planner view (or a grid slot) can raise the shared quick-add sheet.
   useEffect(() => {
     const onQuickAdd = (e: Event) => {
       const d = (e as CustomEvent).detail ?? {};
-      setCaptureSeed({ time: d.time, tags: d.tags });
+      setCaptureSeed({ time: d.time, tags: d.tags, focus: d.focus });
       setCaptureOpen(true);
     };
     window.addEventListener(PLANNER_QUICK_ADD_EVENT, onQuickAdd as EventListener);
@@ -213,10 +213,13 @@ export default function Planner() {
         if (k === "s") { e.preventDefault(); setView("day"); setPeriod("schedule"); return; }
         if (k === "d") { e.preventDefault(); setView("day"); setPeriod("timeofday"); return; }
         if (e.key === "?") { e.preventDefault(); setShortcutsOpen(true); return; }
+        if (e.key === "#") { e.preventDefault(); setCaptureSeed({ focus: "tag" }); setCaptureOpen(true); return; }
       }
       if (e.key === "?") { e.preventDefault(); setShortcutsOpen(true); return; }
       if (e.shiftKey) return;
-      if (k === "c") { e.preventDefault(); setCaptureOpen(true); return; }
+      if (k === "c") { e.preventDefault(); setCaptureSeed({}); setCaptureOpen(true); return; }
+      // Q (and Shift+#) open quick add straight on the supertag selector.
+      if (k === "q") { e.preventDefault(); setCaptureSeed({ focus: "tag" }); setCaptureOpen(true); return; }
       if (k === "t") { e.preventDefault(); go(new Date()); return; }
       if (e.key === "[") { e.preventDefault(); step(-1); return; }
       if (e.key === "]") { e.preventDefault(); step(1); return; }
@@ -700,6 +703,7 @@ export default function Planner() {
         defaultDate={day}
         defaultTime={captureSeed.time}
         defaultTags={captureSeed.tags}
+        focusTag={captureSeed.focus === "tag"}
       />
       <PlannerShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <PlanMyDayDialog open={planOpen} onOpenChange={setPlanOpen} date={day} />
