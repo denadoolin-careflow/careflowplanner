@@ -40,9 +40,12 @@ export function PlannerBulkBar({ ids, anchorDate, onClear, onScheduleMany }: {
     const flipped = ids.filter(id => !state.tasks?.find((t: any) => t.id === id)?.done);
     await Promise.all(flipped.map(id => toggleTask(id)));
     const { showBulkUndoToast } = await import("@/lib/task-undo");
-    showBulkUndoToast(flipped.length || ids.length, "Marked done", async () => {
-      await Promise.all(flipped.map(id => updateTask(id, { done: false }, { silent: true })));
-    });
+    showBulkUndoToast(
+      flipped.length || ids.length,
+      "Marked done",
+      async () => { await Promise.all(flipped.map(id => updateTask(id, { done: false }, { silent: true }))); },
+      async () => { await Promise.all(flipped.map(id => updateTask(id, { done: true }, { silent: true }))); },
+    );
     onClear();
   };
 
