@@ -186,6 +186,15 @@ export default function TagDetail() {
         )}
       </section>
 
+      <TagSettingsPanel
+        tagName={tagName}
+        tag={existing ?? null}
+        ensure={() => ensure(tagName)}
+        reload={reload}
+      />
+
+
+
       <CardSection
         title="Tasks" icon={CheckCircle2} accent={accent}
         emptyLabel="No tasks tagged yet" emptyCta="Add task"
