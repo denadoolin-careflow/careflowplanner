@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import type { Area, Energy, Priority } from "@/lib/types";
 import type { PlannerFeedItem } from "./feed";
+import type { FieldFilter } from "./field-filters";
 
 export type WeekDueRange = "any" | "today" | "overdue" | "unscheduled" | "scheduled";
 
@@ -20,6 +21,8 @@ export interface WeekFilterState {
   tags: string[];
   /** Hide items that are already done. */
   hideDone: boolean;
+  /** Predicates over tag-scoped custom fields (see `field-filters.ts`). */
+  fieldFilters: FieldFilter[];
 }
 
 export const EMPTY_WEEK_FILTERS: WeekFilterState = {
@@ -30,6 +33,7 @@ export const EMPTY_WEEK_FILTERS: WeekFilterState = {
   dueRange: "any",
   tags: [],
   hideDone: false,
+  fieldFilters: [],
 };
 
 const KEY = "careflow:planner:week-filters";
@@ -80,7 +84,8 @@ export function countActive(f: WeekFilterState): number {
     (f.search.trim() ? 1 : 0) +
     f.areas.length + f.priorities.length + f.energies.length + f.tags.length +
     (f.dueRange !== "any" ? 1 : 0) +
-    (f.hideDone ? 1 : 0)
+    (f.hideDone ? 1 : 0) +
+    (f.fieldFilters?.length ?? 0)
   );
 }
 
