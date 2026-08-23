@@ -70,7 +70,7 @@ import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { InlineEntityCard } from "@/components/notes/InlineEntityCardNode";
-import { QueryBlock, DEFAULT_QUERY_FILTERS } from "@/components/notes/QueryBlockNode";
+import { QueryBlock, DEFAULT_QUERY_FILTERS, DEFAULT_CHORE_FILTERS } from "@/components/notes/QueryBlockNode";
 import { GroceryBlock } from "@/components/notes/GroceryBlockNode";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -1347,6 +1347,38 @@ export function BlockEditor({
                 e.chain().focus().insertContent({
                   type: "queryBlock",
                   attrs: { viewId: null, layout: "list", label: "Open tasks", filters: DEFAULT_QUERY_FILTERS },
+                }).run(),
+            },
+            {
+              title: "Cleaning tasks query",
+              description: "Live cleaning list grouped by zone",
+              icon: ListFilter,
+              keywords: ["cleaning", "chores", "zone", "home", "reset", "query"],
+              command: (e: Editor) =>
+                e.chain().focus().insertContent({
+                  type: "queryBlock",
+                  attrs: {
+                    viewId: null, layout: "board", group: "zone", source: "cleaning",
+                    label: "Cleaning tasks", sort: "title", limit: 50,
+                    columns: JSON.stringify(["zone", "cadence"]),
+                    filters: DEFAULT_CHORE_FILTERS,
+                  },
+                }).run(),
+            },
+            {
+              title: "Caretaking tasks query",
+              description: "Live caregiving chores grouped by cadence",
+              icon: ListFilter,
+              keywords: ["care", "caretaking", "caregiving", "chores", "query"],
+              command: (e: Editor) =>
+                e.chain().focus().insertContent({
+                  type: "queryBlock",
+                  attrs: {
+                    viewId: null, layout: "board", group: "cadence", source: "caregiving",
+                    label: "Caretaking tasks", sort: "title", limit: 50,
+                    columns: JSON.stringify(["zone", "cadence", "area"]),
+                    filters: DEFAULT_CHORE_FILTERS,
+                  },
                 }).run(),
             },
             {
