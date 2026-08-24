@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 import { DashCard, EmptyLine } from "./DashCard";
 import { capacityLimit, useCapacity } from "./capacity-context";
 import { PersonCareCard } from "@/components/today/care/PersonCareCard";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useTodayCarePeople } from "@/lib/today-care-people";
+
 
 export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (id: string) => void }) {
   const { state, toggleCleaning, toggleHabit } = useStore();
