@@ -33,31 +33,24 @@ export function CareColumn({ date }: { date: Date }) {
 
   return (
     <div className="space-y-3">
-      <DashCard
-        eyebrow="Care" title="People"
-        action={
-          <button type="button" onClick={() => navigate("/care")}
-            className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
-            All <ChevronRight className="h-3 w-3" aria-hidden />
-          </button>
-        }
-      >
-        {people.length === 0 ? (
+      {people.length === 0 ? (
+        <DashCard
+          eyebrow="Care" title="People"
+          action={
+            <button type="button" onClick={() => navigate("/care")}
+              className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+              All <ChevronRight className="h-3 w-3" aria-hidden />
+            </button>
+          }
+        >
           <EmptyLine>No one added yet — add the people you care for.</EmptyLine>
-        ) : (
-          <ul className="space-y-2">
-            {people.map(p => (
-              <li key={p.id} className="flex items-center gap-2 text-[12.5px]">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-care-capture-soft text-[11px] font-semibold text-care-capture">
-                  {p.name.slice(0, 1).toUpperCase()}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                <span className="text-[11px] capitalize text-muted-foreground">{p.kind}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </DashCard>
+        </DashCard>
+      ) : (
+        people.map(p => (
+          <PersonCareCard key={p.id} person={p} date={date} onTaskClick={onTaskClick} />
+        ))
+      )}
+
 
       <DashCard
         eyebrow="Care" title="Home"
