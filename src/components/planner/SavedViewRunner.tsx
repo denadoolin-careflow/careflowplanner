@@ -10,7 +10,7 @@
  *
  * Layouts: list, table, and board (grouped columns).
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Check, ListFilter } from "lucide-react";
