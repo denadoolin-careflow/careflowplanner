@@ -119,6 +119,7 @@ function QuickAddRow({ placeholder, hint, value, onChange, onSubmit, label }: {
 
 export function CleaningSourceSection({ search }: { search: string }) {
   const { state, addCleaning, toggleCleaning } = useStore();
+  const { lowEnergy, toggleLowEnergy } = useLowEnergyMode("cleaning");
   const [open, setOpen] = useState(false);
   const [openZones, setOpenZones] = useState<Record<string, boolean>>({});
   const [draft, setDraft] = useState("");
@@ -126,8 +127,11 @@ export function CleaningSourceSection({ search }: { search: string }) {
 
   const items = useMemo(() => {
     const all = (state.cleaning ?? []) as CleaningTask[];
-    return needle ? all.filter(c => c.title.toLowerCase().includes(needle)) : all;
-  }, [state.cleaning, needle]);
+    const searched = needle ? all.filter(c => c.title.toLowerCase().includes(needle)) : all;
+    return lowEnergy
+      ? pickLowEnergy(searched.map(c => ({ ...c, minutes: (c as any).estMinutes ?? null })))
+      : searched;
+  }, [state.cleaning, needle, lowEnergy]);
 
   const byZone = useMemo(() => {
     const map = new Map<string, CleaningTask[]>();
@@ -155,7 +159,13 @@ export function CleaningSourceSection({ search }: { search: string }) {
 
   return (
     <Collapsible id="cleaning" label="Cleaning" Icon={Sparkles} count={items.length}
-      open={open} onToggle={() => setOpen(o => !o)}>
+      open={open} onToggle={() => setOpen(o => !o)}
+      action={<LowEnergyToggle on={lowEnergy} onToggle={toggleLowEnergy} label="Cleaning" />}>
+      {lowEnergy && (
+        <p className="px-2 pb-1 text-[10px] text-muted-foreground">
+          Low-energy mode · up to {LOW_ENERGY_LIMIT} essentials
+        </p>
+      )}
       {byZone.length === 0 && <p className="px-2 py-2 text-[11px] text-muted-foreground">No cleaning tasks yet.</p>}
       {byZone.map(g => {
         const zOpen = openZones[g.zone] ?? true;
@@ -198,14 +208,16 @@ export function CleaningSourceSection({ search }: { search: string }) {
 export function CaretakingSourceSection({ search }: { search: string }) {
   const { state } = useStore();
   const chores = useCaregivingChores();
+  const { lowEnergy, toggleLowEnergy } = useLowEnergyMode("caretaking");
   const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [draft, setDraft] = useState("");
   const needle = search.trim().toLowerCase();
 
-  const items = useMemo(() => (
-    needle ? chores.filter(c => c.title.toLowerCase().includes(needle)) : chores
-  ), [chores, needle]);
+  const items = useMemo(() => {
+    const searched = needle ? chores.filter(c => c.title.toLowerCase().includes(needle)) : chores;
+    return lowEnergy ? pickLowEnergy(searched) : searched;
+  }, [chores, needle, lowEnergy]);
 
   const recipientName = (id: string | null) =>
     (state.recipients ?? []).find((r: any) => r.id === id)?.name ?? "Everyone";
@@ -233,7 +245,13 @@ export function CaretakingSourceSection({ search }: { search: string }) {
 
   return (
     <Collapsible id="caretaking" label="Caretaking" Icon={HeartHandshake} count={items.length}
-      open={open} onToggle={() => setOpen(o => !o)}>
+      open={open} onToggle={() => setOpen(o => !o)}
+      action={<LowEnergyToggle on={lowEnergy} onToggle={toggleLowEnergy} label="Caretaking" />}>
+      {lowEnergy && (
+        <p className="px-2 pb-1 text-[10px] text-muted-foreground">
+          Low-energy mode · up to {LOW_ENERGY_LIMIT} essentials
+        </p>
+      )}
       {groups.length === 0 && <p className="px-2 py-2 text-[11px] text-muted-foreground">No caretaking chores yet.</p>}
       {groups.map(g => {
         const gOpen = openGroups[g.label] ?? true;
