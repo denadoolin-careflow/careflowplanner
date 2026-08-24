@@ -32,6 +32,7 @@ export function ArriveBand({ date }: { date: Date }) {
   return (
     <section aria-label="Arrive" className="animate-fade-in space-y-3">
       <GreetingBlock date={date} />
+      <MorningCheckInPrompt />
 
       <div className="rounded-3xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
