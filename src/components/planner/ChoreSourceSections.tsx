@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Sparkles, HeartHandshake, Plus, GripVertical } from "lucide-react";
+import { ChevronRight, Sparkles, HeartHandshake, Plus, GripVertical, BatteryLow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
@@ -10,6 +10,7 @@ import {
 } from "@/lib/caregiving-chores";
 import type { CleaningTask } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
+import { pickLowEnergy, useLowEnergyMode, LOW_ENERGY_LIMIT } from "@/lib/planner/low-energy";
 import { toast } from "sonner";
 
 /**
@@ -20,22 +21,47 @@ import { toast } from "sonner";
  * without converting the chore by hand first.
  */
 
-function Collapsible({ id, label, Icon, count, open, onToggle, children }: {
+function LowEnergyToggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={on}
+      title={on ? "Showing essentials only" : "Show only the essentials"}
+      aria-label={`${on ? "Show all" : "Show essentials only"} in ${label}`}
+      className={cn(
+        "flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] uppercase tracking-wide transition-colors",
+        on
+          ? "border-primary/50 bg-primary/10 text-primary"
+          : "border-border/60 text-muted-foreground hover:bg-muted",
+      )}
+    >
+      <BatteryLow className="h-3 w-3" aria-hidden />
+      Low
+    </button>
+  );
+}
+
+function Collapsible({ id, label, Icon, count, open, onToggle, action, children }: {
   id: string; label: string; Icon: React.ComponentType<{ className?: string }>;
-  count: number; open: boolean; onToggle: (id: string) => void; children: React.ReactNode;
+  count: number; open: boolean; onToggle: (id: string) => void;
+  action?: React.ReactNode; children: React.ReactNode;
 }) {
   return (
     <div>
-      <button
-        onClick={() => onToggle(id)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-semibold text-foreground/90 hover:bg-muted/60"
-      >
-        <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
-        <Icon className="h-3.5 w-3.5 opacity-70" />
-        <span className="flex-1 truncate">{label}</span>
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">{count}</span>
-      </button>
+      <div className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-foreground/90 hover:bg-muted/60">
+        <button
+          onClick={() => onToggle(id)}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+        >
+          <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
+          <Icon className="h-3.5 w-3.5 opacity-70" />
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">{count}</span>
+        </button>
+        {action}
+      </div>
       {open && <div className="ml-1 space-y-1 py-1">{children}</div>}
     </div>
   );
