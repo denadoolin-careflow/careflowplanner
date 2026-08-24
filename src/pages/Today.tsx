@@ -11,7 +11,6 @@ import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
-import { MorningCheckInPrompt } from "@/components/checkin/MorningCheckInPrompt";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { useTodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
 import { TodayDashboard } from "@/components/today/dashboard/TodayDashboard";
@@ -158,7 +157,6 @@ function TodayInner() {
           onTemplates={() => setGalleryOpen(true)}
         />
         <DemoTasksBanner />
-        <MorningCheckInPrompt />
         {prefs.showQuickAdd && <QuickAddBar date={day} />}
         {view !== "board" && <ArriveBand date={day} />}
 
