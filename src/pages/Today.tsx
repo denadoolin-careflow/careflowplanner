@@ -157,7 +157,6 @@ function TodayInner() {
           onTemplates={() => setGalleryOpen(true)}
         />
         <DemoTasksBanner />
-        <MorningCheckInPrompt />
         {prefs.showQuickAdd && <QuickAddBar date={day} />}
         {view !== "board" && <ArriveBand date={day} />}
 
