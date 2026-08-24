@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
+import { NEW_TASK_DRAG_MIME, readNewTaskDrag } from "@/lib/planner/chore-drag";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { openMobileBlockEditor } from "@/lib/open-mobile-block-editor";
 import { resolveTaskIcon } from "@/lib/task-icons";
