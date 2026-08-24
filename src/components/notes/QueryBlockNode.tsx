@@ -6,11 +6,14 @@
  * Each embed keeps its own source, layout, grouping, columns, sort and limit,
  * and can be saved to `saved_views` for reuse elsewhere.
  */
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Node as TiptapNode } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
-import { ListFilter, RefreshCw, Table2, List as ListIcon, Settings2, Columns3, BookmarkPlus } from "lucide-react";
+import {
+  ListFilter, RefreshCw, Table2, List as ListIcon, Settings2, Columns3, BookmarkPlus,
+  RotateCcw, ChevronUp, ChevronDown, Save,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useSavedViews, type SavedViewLayout } from "@/lib/saved-views";
 import { EMPTY_WEEK_FILTERS, type WeekFilterState, type WeekDueRange } from "@/lib/planner/week-filters";
