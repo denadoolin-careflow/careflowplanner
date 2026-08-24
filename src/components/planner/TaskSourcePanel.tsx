@@ -408,6 +408,9 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
               </div>
             ))}
           </SectionBlock>
+
+          <CleaningSourceSection search={q} />
+          <CaretakingSourceSection search={q} />
         </div>
       </div>
     </aside>
