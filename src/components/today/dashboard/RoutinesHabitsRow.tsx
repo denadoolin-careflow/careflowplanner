@@ -90,15 +90,19 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
             {shownRoutines.map(r => {
               const done = r.items.filter(i => i.done).length;
               const mins = routineMinutes(r.items);
+              const Icon = SLOT_ICON[r.slot] ?? Sun;
+              const complete = r.items.length > 0 && done === r.items.length;
               return (
-                <li key={r.id} className="rounded-2xl bg-muted/35 p-3">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="min-w-0 truncate text-[12.5px] font-medium">
+                <li key={r.id} className={cn("rounded-2xl bg-muted/35 p-3", complete && "opacity-70")}>
+                  <div className="flex items-center gap-2">
+                    <ProgressRing done={done} total={r.items.length} />
+                    <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium">
                       {r.person_name} · <span className="capitalize">{r.slot}</span>
                     </span>
                     <span className="shrink-0 text-[11px] text-muted-foreground">
                       {mins > 0 && (<><Clock className="mr-0.5 inline h-3 w-3" aria-hidden />{mins}m · </>)}
-                      {done}/{r.items.length}
+                      {done}/{r.items.length} steps
                     </span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1" aria-hidden>
@@ -112,6 +116,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
                 </li>
               );
             })}
+
           </ul>
         )}
       </DashCard>
