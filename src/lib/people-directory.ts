@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { listLovedOnes, type LovedOne } from "@/lib/loved-ones";
+import { listLovedOnes, createLovedOne, type LovedOne } from "@/lib/loved-ones";
 
 export type PersonKind = "recipient" | "loved_one";
 
