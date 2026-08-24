@@ -36,7 +36,9 @@ import { Sparkles } from "lucide-react";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
-import { Copy } from "lucide-react";
+import { Copy, MessageCircleHeart } from "lucide-react";
+import { PersonPicker } from "@/components/people/PersonPicker";
+
 import { useAtmosphere } from "@/lib/atmospheres";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TaskAIAssistPopover } from "@/components/tasks/TaskAIAssistPopover";
