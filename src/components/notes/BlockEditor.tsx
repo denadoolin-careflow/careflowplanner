@@ -200,7 +200,7 @@ turndown.addRule("queryBlock", {
   filter: (node) => node.nodeName === "DIV" && (node as HTMLElement).hasAttribute("data-query-block"),
   replacement: (_content, node) => {
     const el = node as HTMLElement;
-    const attrs = ["view-id", "layout", "label", "filters"]
+    const attrs = [...QUERY_BLOCK_ATTRS]
       .map(k => {
         const v = el.getAttribute(`data-${k}`);
         return v ? ` data-${k}="${v.replace(/"/g, "&quot;")}"` : "";
