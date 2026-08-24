@@ -69,7 +69,7 @@ export function PersonCareCard({
       action={
         <button
           type="button"
-          onClick={() => navigate(`/care/${person.id}`)}
+          onClick={() => navigate("/care")}
           aria-label={`Open ${person.name}'s care page`}
           className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground"
         >
@@ -84,7 +84,7 @@ export function PersonCareCard({
               <li key={a.id} className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
                 <Clock3 className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-foreground">{a.title}</span>
-                {a.startTime && <span className="text-[11px]">{a.startTime}</span>}
+                {a.time && <span className="text-[11px]">{a.time}</span>}
               </li>
             ))}
           </ul>
