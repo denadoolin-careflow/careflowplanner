@@ -1,22 +1,24 @@
 /**
  * "What needs cleaned" — the day's open chores grouped by zone, with the same
- * low-energy essentials filter the planner sidebar uses.
+ * low-energy essentials filter the planner sidebar uses and an inline add row.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, ChevronRight, Sparkles } from "lucide-react";
+import { Check, ChevronRight, Plus, Sparkles } from "lucide-react";
 import { DashCard, EmptyLine } from "@/components/today/dashboard/DashCard";
 import { capacityLimit, useCapacity } from "@/components/today/dashboard/capacity-context";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { pickLowEnergy, useLowEnergyMode } from "@/lib/planner/low-energy";
+import { inferCleaningZoneOr } from "@/lib/cleaning-zone-infer";
 import type { CleaningTask } from "@/lib/types";
 
 export function CleaningTodayCard({ className }: { className?: string }) {
-  const { state, toggleCleaning } = useStore();
+  const { state, toggleCleaning, addCleaning } = useStore();
   const capacity = useCapacity();
   const { lowEnergy, toggleLowEnergy } = useLowEnergyMode("cleaning");
+  const [draft, setDraft] = useState("");
 
   const limit = capacityLimit(6, capacity);
 
@@ -36,6 +38,14 @@ export function CleaningTodayCard({ className }: { className?: string }) {
   }, [items]);
 
   const openCount = state.cleaning.filter(c => !c.done).length;
+
+  const submit = async () => {
+    const title = draft.trim();
+    if (!title) return;
+    setDraft("");
+    await addCleaning({ title, zone: inferCleaningZoneOr(title, "Whole home") as CleaningTask["zone"], cadence: "daily" });
+    haptics.tap?.();
+  };
 
   return (
     <DashCard
@@ -96,6 +106,20 @@ export function CleaningTodayCard({ className }: { className?: string }) {
           ))}
         </div>
       )}
+
+      <form
+        onSubmit={(e) => { e.preventDefault(); void submit(); }}
+        className="mt-2.5 flex items-center gap-1.5 rounded-xl border border-border/50 bg-background/50 px-2.5 py-1.5"
+      >
+        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Add a chore — zone is guessed"
+          aria-label="Add a cleaning task"
+          className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-muted-foreground/70"
+        />
+      </form>
     </DashCard>
   );
 }

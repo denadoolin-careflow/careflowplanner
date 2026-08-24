@@ -1495,6 +1495,45 @@ export type Database = {
           },
         ]
       }
+      connection_checkins: {
+        Row: {
+          checked_in_at: string
+          created_at: string
+          id: string
+          note: string | null
+          person_id: string
+          person_kind: string
+          person_name: string | null
+          task_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          person_id: string
+          person_kind?: string
+          person_name?: string | null
+          task_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          person_id?: string
+          person_kind?: string
+          person_name?: string | null
+          task_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cosmic_birth_chart: {
         Row: {
           birth_date: string
@@ -3628,6 +3667,47 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_people: {
+        Row: {
+          created_at: string
+          id: string
+          meal_id: string
+          person_id: string
+          person_kind: string
+          serve_time: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meal_id: string
+          person_id: string
+          person_kind?: string
+          serve_time?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meal_id?: string
+          person_id?: string
+          person_kind?: string
+          serve_time?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_people_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_preferences: {
         Row: {
           allergies: string[]
@@ -5174,6 +5254,7 @@ export type Database = {
           planning_style: string
           theme: string
           time_zone: string
+          today_care_people: Json
           updated_at: string
         }
         Insert: {
@@ -5194,6 +5275,7 @@ export type Database = {
           planning_style?: string
           theme?: string
           time_zone?: string
+          today_care_people?: Json
           updated_at?: string
         }
         Update: {
@@ -5214,6 +5296,7 @@ export type Database = {
           planning_style?: string
           theme?: string
           time_zone?: string
+          today_care_people?: Json
           updated_at?: string
         }
         Relationships: [

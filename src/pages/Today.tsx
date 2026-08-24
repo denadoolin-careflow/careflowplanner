@@ -27,6 +27,7 @@ import { RhythmTodayCard } from "@/components/today/RhythmTodayCard";
 import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
 import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
 import { ConnectionsCard } from "@/components/today/ConnectionsCard";
+import { TodayNudgeStrip } from "@/components/today/TodayNudgeStrip";
 
 import { RoutinesHabitsRow } from "@/components/today/dashboard/RoutinesHabitsRow";
 import { CapacityProvider } from "@/components/today/dashboard/capacity-context";
@@ -124,6 +125,7 @@ function TodayInner() {
 
   const circle = (
     <div className="animate-fade-in space-y-3">
+      <TodayNudgeStrip date={day} />
       <RhythmTodayCard date={day} />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <DinnerTonightCard date={day} />
