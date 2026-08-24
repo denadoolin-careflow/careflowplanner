@@ -23,6 +23,11 @@ import { SelfCareCard } from "@/components/today/SelfCareCard";
 import { JournalCard } from "@/components/today/JournalCard";
 import { CareColumn } from "@/components/today/dashboard/CareColumn";
 import { GrowColumn } from "@/components/today/dashboard/GrowColumn";
+import { RhythmTodayCard } from "@/components/today/RhythmTodayCard";
+import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
+import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
+import { ConnectionsCard } from "@/components/today/ConnectionsCard";
+
 import { RoutinesHabitsRow } from "@/components/today/dashboard/RoutinesHabitsRow";
 import { CapacityProvider } from "@/components/today/dashboard/capacity-context";
 import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
