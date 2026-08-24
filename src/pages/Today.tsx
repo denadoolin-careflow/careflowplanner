@@ -117,13 +117,17 @@ function TodayInner() {
     isSpacious: entry.level === "spacious",
   }), [entry.level]);
 
-  const secondary = (
-    <div className="space-y-3">
+  const circle = (
+    <div className="animate-fade-in space-y-3">
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <CareColumn date={day} />
+        <CareColumn date={day} onTaskClick={setEditTaskId} />
         <GrowColumn date={day} />
       </div>
       <RoutinesHabitsRow date={day} />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+        <JournalCard date={day} />
+      </div>
       <CollapsibleSection
         storageKey="planning.section.debrief.collapsed"
         eyebrow="Daily debrief"
@@ -131,17 +135,10 @@ function TodayInner() {
       >
         <DailyDebrief date={day} onTaskClick={setEditTaskId} />
       </CollapsibleSection>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
-        <div className="min-w-0">
-          <div className="font-display text-sm font-semibold text-foreground">End-of-day exhale</div>
-          <p className="text-xs text-muted-foreground">A few quiet prompts to close the day.</p>
-        </div>
-        <Button size="sm" onClick={() => setExhaleOpen(true)} className="rounded-full">
-          <Wind className="mr-1.5 h-3.5 w-3.5" /> Begin exhale
-        </Button>
-      </div>
     </div>
   );
+  const secondary = circle;
+
 
   return (
     <CapacityProvider value={capacity}>
