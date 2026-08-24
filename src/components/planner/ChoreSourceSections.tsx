@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Sparkles, HeartHandshake, Plus, GripVertical } from "lucide-react";
+import { ChevronRight, Sparkles, HeartHandshake, Plus, GripVertical, BatteryLow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
@@ -10,6 +10,7 @@ import {
 } from "@/lib/caregiving-chores";
 import type { CleaningTask } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
+import { pickLowEnergy, useLowEnergyMode, LOW_ENERGY_LIMIT } from "@/lib/planner/low-energy";
 import { toast } from "sonner";
 
 /**
@@ -20,22 +21,47 @@ import { toast } from "sonner";
  * without converting the chore by hand first.
  */
 
-function Collapsible({ id, label, Icon, count, open, onToggle, children }: {
+function LowEnergyToggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={on}
+      title={on ? "Showing essentials only" : "Show only the essentials"}
+      aria-label={`${on ? "Show all" : "Show essentials only"} in ${label}`}
+      className={cn(
+        "flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] uppercase tracking-wide transition-colors",
+        on
+          ? "border-primary/50 bg-primary/10 text-primary"
+          : "border-border/60 text-muted-foreground hover:bg-muted",
+      )}
+    >
+      <BatteryLow className="h-3 w-3" aria-hidden />
+      Low
+    </button>
+  );
+}
+
+function Collapsible({ id, label, Icon, count, open, onToggle, action, children }: {
   id: string; label: string; Icon: React.ComponentType<{ className?: string }>;
-  count: number; open: boolean; onToggle: (id: string) => void; children: React.ReactNode;
+  count: number; open: boolean; onToggle: (id: string) => void;
+  action?: React.ReactNode; children: React.ReactNode;
 }) {
   return (
     <div>
-      <button
-        onClick={() => onToggle(id)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-semibold text-foreground/90 hover:bg-muted/60"
-      >
-        <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
-        <Icon className="h-3.5 w-3.5 opacity-70" />
-        <span className="flex-1 truncate">{label}</span>
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">{count}</span>
-      </button>
+      <div className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-foreground/90 hover:bg-muted/60">
+        <button
+          onClick={() => onToggle(id)}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+        >
+          <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
+          <Icon className="h-3.5 w-3.5 opacity-70" />
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">{count}</span>
+        </button>
+        {action}
+      </div>
       {open && <div className="ml-1 space-y-1 py-1">{children}</div>}
     </div>
   );
@@ -93,6 +119,7 @@ function QuickAddRow({ placeholder, hint, value, onChange, onSubmit, label }: {
 
 export function CleaningSourceSection({ search }: { search: string }) {
   const { state, addCleaning, toggleCleaning } = useStore();
+  const { lowEnergy, toggleLowEnergy } = useLowEnergyMode("cleaning");
   const [open, setOpen] = useState(false);
   const [openZones, setOpenZones] = useState<Record<string, boolean>>({});
   const [draft, setDraft] = useState("");
@@ -100,8 +127,11 @@ export function CleaningSourceSection({ search }: { search: string }) {
 
   const items = useMemo(() => {
     const all = (state.cleaning ?? []) as CleaningTask[];
-    return needle ? all.filter(c => c.title.toLowerCase().includes(needle)) : all;
-  }, [state.cleaning, needle]);
+    const searched = needle ? all.filter(c => c.title.toLowerCase().includes(needle)) : all;
+    return lowEnergy
+      ? pickLowEnergy(searched.map(c => ({ ...c, minutes: (c as any).estMinutes ?? null })))
+      : searched;
+  }, [state.cleaning, needle, lowEnergy]);
 
   const byZone = useMemo(() => {
     const map = new Map<string, CleaningTask[]>();
@@ -129,7 +159,13 @@ export function CleaningSourceSection({ search }: { search: string }) {
 
   return (
     <Collapsible id="cleaning" label="Cleaning" Icon={Sparkles} count={items.length}
-      open={open} onToggle={() => setOpen(o => !o)}>
+      open={open} onToggle={() => setOpen(o => !o)}
+      action={<LowEnergyToggle on={lowEnergy} onToggle={toggleLowEnergy} label="Cleaning" />}>
+      {lowEnergy && (
+        <p className="px-2 pb-1 text-[10px] text-muted-foreground">
+          Low-energy mode · up to {LOW_ENERGY_LIMIT} essentials
+        </p>
+      )}
       {byZone.length === 0 && <p className="px-2 py-2 text-[11px] text-muted-foreground">No cleaning tasks yet.</p>}
       {byZone.map(g => {
         const zOpen = openZones[g.zone] ?? true;
@@ -172,14 +208,16 @@ export function CleaningSourceSection({ search }: { search: string }) {
 export function CaretakingSourceSection({ search }: { search: string }) {
   const { state } = useStore();
   const chores = useCaregivingChores();
+  const { lowEnergy, toggleLowEnergy } = useLowEnergyMode("caretaking");
   const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [draft, setDraft] = useState("");
   const needle = search.trim().toLowerCase();
 
-  const items = useMemo(() => (
-    needle ? chores.filter(c => c.title.toLowerCase().includes(needle)) : chores
-  ), [chores, needle]);
+  const items = useMemo(() => {
+    const searched = needle ? chores.filter(c => c.title.toLowerCase().includes(needle)) : chores;
+    return lowEnergy ? pickLowEnergy(searched) : searched;
+  }, [chores, needle, lowEnergy]);
 
   const recipientName = (id: string | null) =>
     (state.recipients ?? []).find((r: any) => r.id === id)?.name ?? "Everyone";
@@ -207,7 +245,13 @@ export function CaretakingSourceSection({ search }: { search: string }) {
 
   return (
     <Collapsible id="caretaking" label="Caretaking" Icon={HeartHandshake} count={items.length}
-      open={open} onToggle={() => setOpen(o => !o)}>
+      open={open} onToggle={() => setOpen(o => !o)}
+      action={<LowEnergyToggle on={lowEnergy} onToggle={toggleLowEnergy} label="Caretaking" />}>
+      {lowEnergy && (
+        <p className="px-2 pb-1 text-[10px] text-muted-foreground">
+          Low-energy mode · up to {LOW_ENERGY_LIMIT} essentials
+        </p>
+      )}
       {groups.length === 0 && <p className="px-2 py-2 text-[11px] text-muted-foreground">No caretaking chores yet.</p>}
       {groups.map(g => {
         const gOpen = openGroups[g.label] ?? true;
