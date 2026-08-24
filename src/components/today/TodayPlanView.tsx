@@ -84,46 +84,28 @@ export function TodayPlanView({ date }: { date: Date }) {
         <PlannerOverdueSection date={date} />
         <PhaseHabitNudge date={date} />
 
-        <CollapsibleSection
-          storageKey="today.mobile.section.planned.collapsed"
-          eyebrow="Planned"
-          title="What's committed today"
-          defaultCollapsed={false}
-        >
-          <div className="space-y-2 px-2 pb-2">
-            <div className="overflow-x-auto">
-              <PlannerPeriodTabs value={plannedPeriod} onChange={setPeriod} hideGrid />
-            </div>
-            <div className="max-h-[52vh] overflow-y-auto overscroll-contain">
-              {plannedPeriod === "schedule" && <PlannerScheduleList date={date} />}
-              {plannedPeriod === "timeofday" && (
-                <div className="grid grid-cols-1 gap-3">
-                  <PlannerPeriodList date={date} period="morning" />
-                  <PlannerPeriodList date={date} period="afternoon" />
-                  <PlannerPeriodList date={date} period="evening" />
-                </div>
-              )}
-              {(plannedPeriod === "morning" || plannedPeriod === "afternoon" || plannedPeriod === "evening") && (
-                <PlannerPeriodList date={date} period={plannedPeriod} />
-              )}
-            </div>
+        <div className="space-y-2">
+          <div className="overflow-x-auto">
+            <PlannerPeriodTabs value={plannedPeriod} onChange={setPeriod} hideGrid />
           </div>
-        </CollapsibleSection>
+          {plannedPeriod === "schedule" && <PlannerScheduleList date={date} />}
+          {plannedPeriod === "timeofday" && (
+            <div className="grid grid-cols-1 gap-3">
+              <PlannerPeriodList date={date} period="morning" />
+              <PlannerPeriodList date={date} period="afternoon" />
+              <PlannerPeriodList date={date} period="evening" />
+            </div>
+          )}
+          {(plannedPeriod === "morning" || plannedPeriod === "afternoon" || plannedPeriod === "evening") && (
+            <PlannerPeriodList date={date} period={plannedPeriod} />
+          )}
+        </div>
 
-        <CollapsibleSection
-          storageKey="today.mobile.section.timeblocking.collapsed"
-          eyebrow="Time blocking"
-          title="Drag tasks onto the grid"
-          defaultCollapsed={false}
-        >
-          <div className="space-y-2 px-2 pb-2">
-            <TodayPlannedRail date={date} />
-            <TodayInboxRail date={date} />
-            <div className="h-[76vh] min-h-[520px]">
-              <PlannerTimeline date={date} />
-            </div>
-          </div>
-        </CollapsibleSection>
+        <TodayPlannedRail date={date} />
+        <TodayInboxRail date={date} />
+        <div className="h-[78vh] min-h-[520px]">
+          <PlannerTimeline date={date} />
+        </div>
       </section>
     );
   }

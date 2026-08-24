@@ -7,8 +7,6 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useStore } from "@/lib/store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
-import { Wind } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
