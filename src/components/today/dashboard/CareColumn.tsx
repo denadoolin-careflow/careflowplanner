@@ -6,8 +6,9 @@ import { Users, Home, HeartPulse, ChevronRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DashCard, EmptyLine } from "./DashCard";
 import { capacityLimit, useCapacity } from "./capacity-context";
+import { PersonCareCard } from "@/components/today/care/PersonCareCard";
 
-export function CareColumn({ date }: { date: Date }) {
+export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (id: string) => void }) {
   const { state, toggleCleaning, toggleHabit } = useStore();
   const navigate = useNavigate();
   const capacity = useCapacity();
