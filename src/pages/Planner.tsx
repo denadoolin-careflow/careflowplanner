@@ -558,6 +558,7 @@ export default function Planner() {
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
               <PlannerMoonInsight date={day} onSelectDate={openDay} />
+              <SolarSeasonGuide date={day} />
               {isMobile ? (
                 <CollapsibleSection
                   storageKey="planner.mobile.daycontext.collapsed"
