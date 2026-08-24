@@ -81,7 +81,22 @@ export function SelfCareCard({ date, onExhale }: { date: Date; onExhale: () => v
             })}
           </ul>
         )}
+
+        <form
+          onSubmit={(e) => { e.preventDefault(); void submit(); }}
+          className="flex items-center gap-1.5 rounded-xl border border-border/50 bg-background/50 px-2.5 py-1.5"
+        >
+          <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Add a small kindness…"
+            aria-label="Add a self-care habit"
+            className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-muted-foreground/70"
+          />
+        </form>
       </div>
+
     </DashCard>
   );
 }
