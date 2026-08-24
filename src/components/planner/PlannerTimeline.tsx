@@ -542,14 +542,38 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       }));
 
   const onDrop = async (e: React.DragEvent) => {
-    const id = e.dataTransfer.getData(TASK_DRAG_MIME);
     setDragOverMin(null);
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const absOf = () => yToMin(e.clientY - rect.top) + START_H * 60;
+
+    // Chores dragged from the sidebar aren't tasks yet — create one on drop.
+    const fresh = readNewTaskDrag(e);
+    if (fresh) {
+      e.preventDefault();
+      const abs = absOf();
+      const startHM = minToHM(abs);
+      await addTask({
+        title: fresh.title,
+        area: (fresh.area ?? "Home") as any,
+        priority: "medium",
+        done: false,
+        dueDate: iso,
+        startTime: startHM,
+        estMinutes: fresh.estMinutes ?? 30,
+        tags: fresh.tags,
+        inbox: false,
+      } as any);
+      haptics.drop();
+      setAnnouncement(`${fresh.title} scheduled at ${minTo12(abs)}`);
+      toast.success(`Scheduled ${minTo12(abs)}`);
+      return;
+    }
+
+    const id = e.dataTransfer.getData(TASK_DRAG_MIME);
     if (!id) return;
     e.preventDefault();
-    const rect = gridRef.current!.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const abs = yToMin(y) + START_H * 60;
-    await scheduleTaskAt(id, abs);
+    await scheduleTaskAt(id, absOf());
   };
 
   // Touch/long-press drop from PlannerTaskRow (mobile + web).
@@ -563,9 +587,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
   });
 
   const onDragOver = (e: React.DragEvent) => {
-    if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) {
+    const types = Array.from(e.dataTransfer.types);
+    if (types.includes(TASK_DRAG_MIME) || types.includes(NEW_TASK_DRAG_MIME)) {
       e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
+      e.dataTransfer.dropEffect = types.includes(NEW_TASK_DRAG_MIME) ? "copy" : "move";
       const rect = gridRef.current?.getBoundingClientRect();
       if (rect) setDragOverMin(yToMin(e.clientY - rect.top));
     }
