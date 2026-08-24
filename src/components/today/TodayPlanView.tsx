@@ -10,7 +10,6 @@ import { useCapacity } from "@/components/today/dashboard/capacity-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Leaf, Sparkles, ListTodo, Inbox } from "lucide-react";
 import { tray, useTray } from "@/lib/tray-store";
-import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { PhaseHabitNudge } from "@/components/planner/PhaseHabitNudge";
 import { TodayInboxRail } from "@/components/today/TodayInboxRail";
 import { TodayPlannedRail } from "@/components/today/TodayPlannedRail";
