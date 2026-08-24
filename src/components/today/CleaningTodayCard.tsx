@@ -11,7 +11,7 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { pickLowEnergy, useLowEnergyMode } from "@/lib/planner/low-energy";
-import { inferZone } from "@/lib/cleaning-zone-infer";
+import { inferCleaningZoneOr } from "@/lib/cleaning-zone-infer";
 import type { CleaningTask } from "@/lib/types";
 
 export function CleaningTodayCard({ className }: { className?: string }) {
@@ -43,7 +43,7 @@ export function CleaningTodayCard({ className }: { className?: string }) {
     const title = draft.trim();
     if (!title) return;
     setDraft("");
-    await addCleaning({ title, zone: (inferZone(title) ?? "Whole home") as CleaningTask["zone"], cadence: "daily" });
+    await addCleaning({ title, zone: inferCleaningZoneOr(title, "Whole home") as CleaningTask["zone"], cadence: "daily" });
     haptics.tap?.();
   };
 
