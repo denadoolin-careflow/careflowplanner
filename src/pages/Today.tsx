@@ -203,6 +203,7 @@ function TodayInner() {
             {mobileTab === "plan" && (
               <div className="space-y-3">
                 {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                <RhythmTodayCard date={day} />
                 <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
                 <TodayPlanView date={day} />
               </div>
@@ -210,9 +211,13 @@ function TodayInner() {
             {mobileTab === "care" && (
               <div className="animate-fade-in space-y-3">
                 <CareColumn date={day} onTaskClick={setEditTaskId} />
+                <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
+                <DinnerTonightCard date={day} />
+                <CleaningTodayCard />
                 <RoutinesHabitsRow date={day} />
               </div>
             )}
+
             {mobileTab === "grow" && (
               <div className="animate-fade-in space-y-3">
                 <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
