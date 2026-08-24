@@ -69,7 +69,10 @@ const taskFrom = (r: any): Task => ({
   cosmicTag: r.cosmic_tag ?? undefined,
   followUpAt: r.follow_up_at ?? undefined,
   followUpNote: r.follow_up_note ?? undefined,
+  connectionId: r.connection_id ?? undefined,
+  connectionKind: r.connection_kind ?? undefined,
 });
+
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null,
   cover_url: t.coverUrl === undefined ? undefined : (t.coverUrl ?? null), done: t.done,
