@@ -111,7 +111,7 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
             </h4>
             <Row>{moon.label} · {illum}% lit · {ELEMENT_LABEL[season.element]} season sky</Row>
             <Link
-              to="/cosmic"
+              to="/cosmic-flow"
               className="inline-flex items-center gap-1 text-[11.5px] text-primary hover:underline"
             >
               Open Cosmic Flow <ExternalLink className="h-3 w-3" aria-hidden />
