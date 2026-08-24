@@ -23,6 +23,11 @@ import { SelfCareCard } from "@/components/today/SelfCareCard";
 import { JournalCard } from "@/components/today/JournalCard";
 import { CareColumn } from "@/components/today/dashboard/CareColumn";
 import { GrowColumn } from "@/components/today/dashboard/GrowColumn";
+import { RhythmTodayCard } from "@/components/today/RhythmTodayCard";
+import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
+import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
+import { ConnectionsCard } from "@/components/today/ConnectionsCard";
+
 import { RoutinesHabitsRow } from "@/components/today/dashboard/RoutinesHabitsRow";
 import { CapacityProvider } from "@/components/today/dashboard/capacity-context";
 import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
@@ -119,10 +124,16 @@ function TodayInner() {
 
   const circle = (
     <div className="animate-fade-in space-y-3">
+      <RhythmTodayCard date={day} />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <DinnerTonightCard date={day} />
+        <CleaningTodayCard />
+      </div>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <CareColumn date={day} onTaskClick={setEditTaskId} />
         <GrowColumn date={day} />
       </div>
+      <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
       <RoutinesHabitsRow date={day} />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
@@ -138,6 +149,7 @@ function TodayInner() {
     </div>
   );
   const secondary = circle;
+
 
 
   return (
@@ -191,6 +203,7 @@ function TodayInner() {
             {mobileTab === "plan" && (
               <div className="space-y-3">
                 {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                <RhythmTodayCard date={day} />
                 <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
                 <TodayPlanView date={day} />
               </div>
@@ -198,9 +211,13 @@ function TodayInner() {
             {mobileTab === "care" && (
               <div className="animate-fade-in space-y-3">
                 <CareColumn date={day} onTaskClick={setEditTaskId} />
+                <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
+                <DinnerTonightCard date={day} />
+                <CleaningTodayCard />
                 <RoutinesHabitsRow date={day} />
               </div>
             )}
+
             {mobileTab === "grow" && (
               <div className="animate-fade-in space-y-3">
                 <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />

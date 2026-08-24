@@ -6522,6 +6522,8 @@ export type Database = {
           area: string
           attachments: Json
           auto_reset: boolean
+          connection_id: string | null
+          connection_kind: string | null
           cosmic_tag: string | null
           cover_url: string | null
           created_at: string
@@ -6567,6 +6569,8 @@ export type Database = {
           area?: string
           attachments?: Json
           auto_reset?: boolean
+          connection_id?: string | null
+          connection_kind?: string | null
           cosmic_tag?: string | null
           cover_url?: string | null
           created_at?: string
@@ -6612,6 +6616,8 @@ export type Database = {
           area?: string
           attachments?: Json
           auto_reset?: boolean
+          connection_id?: string | null
+          connection_kind?: string | null
           cosmic_tag?: string | null
           cover_url?: string | null
           created_at?: string

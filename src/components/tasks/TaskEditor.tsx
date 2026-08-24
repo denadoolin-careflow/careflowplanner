@@ -36,7 +36,9 @@ import { Sparkles } from "lucide-react";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
-import { Copy } from "lucide-react";
+import { Copy, MessageCircleHeart } from "lucide-react";
+import { PersonPicker } from "@/components/people/PersonPicker";
+
 import { useAtmosphere } from "@/lib/atmospheres";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TaskAIAssistPopover } from "@/components/tasks/TaskAIAssistPopover";
@@ -141,7 +143,19 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
           </SelectContent>
         </Select>
       </Field>
+      <Field icon={MessageCircleHeart} label="Connection">
+        <PersonPicker
+          value={draft.connectionId ?? null}
+          placeholder="Someone to check in with"
+          onChange={(p) => {
+            set("connectionId", p?.id);
+            set("connectionKind", p?.kind);
+          }}
+          className="w-full justify-start"
+        />
+      </Field>
     </>
+
   );
 }
 

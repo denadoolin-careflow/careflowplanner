@@ -69,7 +69,10 @@ const taskFrom = (r: any): Task => ({
   cosmicTag: r.cosmic_tag ?? undefined,
   followUpAt: r.follow_up_at ?? undefined,
   followUpNote: r.follow_up_note ?? undefined,
+  connectionId: r.connection_id ?? undefined,
+  connectionKind: r.connection_kind ?? undefined,
 });
+
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null,
   cover_url: t.coverUrl === undefined ? undefined : (t.coverUrl ?? null), done: t.done,
@@ -100,7 +103,10 @@ const taskTo = (t: Partial<Task>) => ({
   cosmic_tag: t.cosmicTag === undefined ? undefined : (t.cosmicTag ?? null),
   follow_up_at: t.followUpAt === undefined ? undefined : (t.followUpAt ?? null),
   follow_up_note: t.followUpNote === undefined ? undefined : (t.followUpNote ?? null),
+  connection_id: t.connectionId === undefined ? undefined : (t.connectionId ?? null),
+  connection_kind: t.connectionKind === undefined ? undefined : (t.connectionKind ?? null),
 });
+
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 
 /**
@@ -125,7 +131,9 @@ const TASK_COLUMNS: Record<string, string> = {
   attachments: "attachments", anchorKey: "anchor_key",
   cosmicTag: "cosmic_tag",
   followUpAt: "follow_up_at", followUpNote: "follow_up_note",
+  connectionId: "connection_id", connectionKind: "connection_kind",
 };
+
 
 export const taskPatchTo = (patch: Partial<Task>): Record<string, unknown> => {
   const out: Record<string, unknown> = {};
