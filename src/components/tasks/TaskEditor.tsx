@@ -141,7 +141,19 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
           </SelectContent>
         </Select>
       </Field>
+      <Field icon={MessageCircleHeart} label="Connection">
+        <PersonPicker
+          value={draft.connectionId ?? null}
+          placeholder="Someone to check in with"
+          onChange={(p) => {
+            set("connectionId", p?.id);
+            set("connectionKind", p?.kind);
+          }}
+          className="w-full justify-start"
+        />
+      </Field>
     </>
+
   );
 }
 
