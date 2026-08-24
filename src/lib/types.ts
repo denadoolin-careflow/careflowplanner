@@ -77,7 +77,12 @@ export interface Task {
   followUpAt?: string;
   /** Optional note shown alongside the follow-up reminder. */
   followUpNote?: string;
+  /** Person this task is a connection with (check in, call back, respond). */
+  connectionId?: string;
+  /** Which list the connection person comes from. */
+  connectionKind?: "recipient" | "loved_one";
 }
+
 
 
 export interface AreaRecord {
