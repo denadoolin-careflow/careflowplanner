@@ -12,6 +12,11 @@ import { CareColumn } from "./CareColumn";
 import { GrowColumn } from "./GrowColumn";
 import { RoutinesHabitsRow } from "./RoutinesHabitsRow";
 import { CapacityProvider } from "./capacity-context";
+import { RhythmTodayCard } from "@/components/today/RhythmTodayCard";
+import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
+import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
+import { ConnectionsCard } from "@/components/today/ConnectionsCard";
+
 
 export function TodayDashboard({
   date, onTaskClick, onExhale, controls,
