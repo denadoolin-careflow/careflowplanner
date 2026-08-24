@@ -151,8 +151,8 @@ export function CyclePlanningGuide({ date, className }: { date: Date; className?
 
           <div className="flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
             <span>{meta.affirmation}</span>
-            <Link to="/cycle" className="inline-flex items-center gap-1 text-primary hover:underline">
-              Cycle <ExternalLink className="h-3 w-3" aria-hidden />
+            <Link to="/rhythm" className="inline-flex items-center gap-1 text-primary hover:underline">
+              Rhythm <ExternalLink className="h-3 w-3" aria-hidden />
             </Link>
           </div>
         </div>
