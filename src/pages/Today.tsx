@@ -7,8 +7,6 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useStore } from "@/lib/store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
-import { Wind } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
@@ -21,6 +19,9 @@ import { TodayHeader } from "@/components/today/TodayHeader";
 import { TodayPlanView } from "@/components/today/TodayPlanView";
 import { TodayFocusRail } from "@/components/today/TodayFocusRail";
 import { NowNextCard } from "@/components/today/NowNextCard";
+import { ArriveBand } from "@/components/today/ArriveBand";
+import { SelfCareCard } from "@/components/today/SelfCareCard";
+import { JournalCard } from "@/components/today/JournalCard";
 import { CareColumn } from "@/components/today/dashboard/CareColumn";
 import { GrowColumn } from "@/components/today/dashboard/GrowColumn";
 import { RoutinesHabitsRow } from "@/components/today/dashboard/RoutinesHabitsRow";
@@ -117,13 +118,17 @@ function TodayInner() {
     isSpacious: entry.level === "spacious",
   }), [entry.level]);
 
-  const secondary = (
-    <div className="space-y-3">
+  const circle = (
+    <div className="animate-fade-in space-y-3">
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <CareColumn date={day} />
+        <CareColumn date={day} onTaskClick={setEditTaskId} />
         <GrowColumn date={day} />
       </div>
       <RoutinesHabitsRow date={day} />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+        <JournalCard date={day} />
+      </div>
       <CollapsibleSection
         storageKey="planning.section.debrief.collapsed"
         eyebrow="Daily debrief"
@@ -131,17 +136,10 @@ function TodayInner() {
       >
         <DailyDebrief date={day} onTaskClick={setEditTaskId} />
       </CollapsibleSection>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
-        <div className="min-w-0">
-          <div className="font-display text-sm font-semibold text-foreground">End-of-day exhale</div>
-          <p className="text-xs text-muted-foreground">A few quiet prompts to close the day.</p>
-        </div>
-        <Button size="sm" onClick={() => setExhaleOpen(true)} className="rounded-full">
-          <Wind className="mr-1.5 h-3.5 w-3.5" /> Begin exhale
-        </Button>
-      </div>
     </div>
   );
+  const secondary = circle;
+
 
   return (
     <CapacityProvider value={capacity}>
@@ -162,6 +160,7 @@ function TodayInner() {
         <DemoTasksBanner />
         <MorningCheckInPrompt />
         {prefs.showQuickAdd && <QuickAddBar date={day} />}
+        {view !== "board" && <ArriveBand date={day} />}
 
         {view === "board" ? (
           <>
@@ -194,11 +193,30 @@ function TodayInner() {
             {mobileTab === "plan" && (
               <div className="space-y-3">
                 {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
                 <TodayPlanView date={day} />
               </div>
             )}
-            {mobileTab === "care" && <TodayFocusRail date={day} onTaskClick={setEditTaskId} />}
-            {mobileTab === "grow" && secondary}
+            {mobileTab === "care" && (
+              <div className="animate-fade-in space-y-3">
+                <CareColumn date={day} onTaskClick={setEditTaskId} />
+                <RoutinesHabitsRow date={day} />
+              </div>
+            )}
+            {mobileTab === "grow" && (
+              <div className="animate-fade-in space-y-3">
+                <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+                <JournalCard date={day} />
+                <GrowColumn date={day} />
+                <CollapsibleSection
+                  storageKey="planning.section.debrief.collapsed"
+                  eyebrow="Daily debrief"
+                  title="Reflect and reset"
+                >
+                  <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+                </CollapsibleSection>
+              </div>
+            )}
           </div>
         ) : (
           <div className="animate-fade-in space-y-4">
