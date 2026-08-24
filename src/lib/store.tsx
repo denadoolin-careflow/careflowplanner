@@ -103,7 +103,10 @@ const taskTo = (t: Partial<Task>) => ({
   cosmic_tag: t.cosmicTag === undefined ? undefined : (t.cosmicTag ?? null),
   follow_up_at: t.followUpAt === undefined ? undefined : (t.followUpAt ?? null),
   follow_up_note: t.followUpNote === undefined ? undefined : (t.followUpNote ?? null),
+  connection_id: t.connectionId === undefined ? undefined : (t.connectionId ?? null),
+  connection_kind: t.connectionKind === undefined ? undefined : (t.connectionKind ?? null),
 });
+
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 
 /**
