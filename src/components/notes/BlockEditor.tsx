@@ -70,7 +70,7 @@ import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { InlineEntityCard } from "@/components/notes/InlineEntityCardNode";
-import { QueryBlock, DEFAULT_QUERY_FILTERS, DEFAULT_CHORE_FILTERS } from "@/components/notes/QueryBlockNode";
+import { QueryBlock, DEFAULT_QUERY_FILTERS, DEFAULT_CHORE_FILTERS, QUERY_BLOCK_ATTRS } from "@/components/notes/QueryBlockNode";
 import { GroceryBlock } from "@/components/notes/GroceryBlockNode";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -200,7 +200,7 @@ turndown.addRule("queryBlock", {
   filter: (node) => node.nodeName === "DIV" && (node as HTMLElement).hasAttribute("data-query-block"),
   replacement: (_content, node) => {
     const el = node as HTMLElement;
-    const attrs = ["view-id", "layout", "label", "filters"]
+    const attrs = [...QUERY_BLOCK_ATTRS]
       .map(k => {
         const v = el.getAttribute(`data-${k}`);
         return v ? ` data-${k}="${v.replace(/"/g, "&quot;")}"` : "";

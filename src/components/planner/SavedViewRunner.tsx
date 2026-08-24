@@ -10,7 +10,7 @@
  *
  * Layouts: list, table, and board (grouped columns).
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Check, ListFilter } from "lucide-react";
@@ -103,6 +103,7 @@ export function SavedViewRunner({
   source = "tasks",
   group = "none",
   emptyLabel = "Nothing matches this view.",
+  onCount,
 }: {
   filters: Partial<WeekFilterState>;
   layout?: RunnerLayout;
@@ -112,6 +113,8 @@ export function SavedViewRunner({
   source?: RunnerSource;
   group?: RunnerGroup;
   emptyLabel?: string;
+  /** Reports how many rows are currently showing (used by note query blocks). */
+  onCount?: (n: number) => void;
 }) {
   const { state, updateTask, updateCleaning, toggleCleaning } = useStore() as any;
   const chores = useCaregivingChores();
@@ -185,6 +188,10 @@ export function SavedViewRunner({
     };
     return list.slice().sort(cmp).slice(0, limit);
   }, [state.tasks, state.cleaning, chores, f, limit, sort, source, updateTask, updateCleaning, toggleCleaning]);
+
+  const countRef = useRef(onCount);
+  countRef.current = onCount;
+  useEffect(() => { countRef.current?.(rows.length); }, [rows.length]);
 
   if (rows.length === 0) {
     return <p className="px-3 py-4 text-[12px] text-muted-foreground">{emptyLabel}</p>;

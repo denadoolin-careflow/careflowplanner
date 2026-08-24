@@ -27,6 +27,7 @@ import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
 import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
 import { PlannerMoonInsight } from "@/components/planner/PlannerMoonInsight";
+import { SolarSeasonGuide } from "@/components/planner/SolarSeasonGuide";
 import { PlannerDayAssistant } from "@/components/planner/PlannerDayAssistant";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
@@ -558,6 +559,7 @@ export default function Planner() {
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
               <PlannerMoonInsight date={day} onSelectDate={openDay} />
+              <SolarSeasonGuide date={day} />
               {isMobile ? (
                 <CollapsibleSection
                   storageKey="planner.mobile.daycontext.collapsed"

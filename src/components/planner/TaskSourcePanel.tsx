@@ -18,6 +18,7 @@ import { MEAL_SLOTS } from "@/components/planner/PlannerMealLane";
 import { routines as routinesApi, useRoutines, SLOT_LABEL } from "@/lib/routines";
 import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
 import { toast } from "sonner";
+import { CleaningSourceSection, CaretakingSourceSection } from "./ChoreSourceSections";
 
 interface Section {
   id: string;
@@ -408,6 +409,9 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
               </div>
             ))}
           </SectionBlock>
+
+          <CleaningSourceSection search={q} />
+          <CaretakingSourceSection search={q} />
         </div>
       </div>
     </aside>
