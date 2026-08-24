@@ -189,6 +189,10 @@ export function SavedViewRunner({
     return list.slice().sort(cmp).slice(0, limit);
   }, [state.tasks, state.cleaning, chores, f, limit, sort, source, updateTask, updateCleaning, toggleCleaning]);
 
+  const countRef = useRef(onCount);
+  countRef.current = onCount;
+  useEffect(() => { countRef.current?.(rows.length); }, [rows.length]);
+
   if (rows.length === 0) {
     return <p className="px-3 py-4 text-[12px] text-muted-foreground">{emptyLabel}</p>;
   }
