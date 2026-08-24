@@ -119,10 +119,16 @@ function TodayInner() {
 
   const circle = (
     <div className="animate-fade-in space-y-3">
+      <RhythmTodayCard date={day} />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <DinnerTonightCard date={day} />
+        <CleaningTodayCard />
+      </div>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <CareColumn date={day} onTaskClick={setEditTaskId} />
         <GrowColumn date={day} />
       </div>
+      <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
       <RoutinesHabitsRow date={day} />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
@@ -138,6 +144,7 @@ function TodayInner() {
     </div>
   );
   const secondary = circle;
+
 
 
   return (
