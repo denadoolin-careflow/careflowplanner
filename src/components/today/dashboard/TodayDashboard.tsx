@@ -53,12 +53,19 @@ export function TodayDashboard({
           <CapacityCard date={date} />
           <AnchorTodayCard date={date} onTaskClick={onTaskClick} />
         </div>
+        <RhythmTodayCard date={date} />
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <DinnerTonightCard date={date} />
+          <CleaningTodayCard />
+        </div>
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <PlanColumn date={date} onTaskClick={onTaskClick} />
-          <CareColumn date={date} />
+          <CareColumn date={date} onTaskClick={onTaskClick} />
           <GrowColumn date={date} />
         </div>
+        <ConnectionsCard date={date} onTaskClick={onTaskClick} />
         <RoutinesHabitsRow date={date} />
+
       </div>
     </CapacityProvider>
   );
