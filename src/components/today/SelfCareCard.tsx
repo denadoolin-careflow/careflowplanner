@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useStore } from "@/lib/store";
 import { DashCard, EmptyLine } from "@/components/today/dashboard/DashCard";
 import { Button } from "@/components/ui/button";
-import { Check, Wind } from "lucide-react";
+import { Check, Plus, Wind } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 
@@ -19,8 +19,9 @@ const GENTLE = [
 
 /** Self-care: your own habits, one gentle suggestion, and a way to exhale. */
 export function SelfCareCard({ date, onExhale }: { date: Date; onExhale: () => void }) {
-  const { state, toggleHabit } = useStore();
+  const { state, toggleHabit, addHabit } = useStore();
   const iso = format(date, "yyyy-MM-dd");
+  const [draft, setDraft] = useState("");
 
   const habits = useMemo(
     () => state.habits.filter(h => h.category === "self-care" || h.category === "health").slice(0, 4),
@@ -28,6 +29,15 @@ export function SelfCareCard({ date, onExhale }: { date: Date; onExhale: () => v
   );
 
   const suggestion = GENTLE[Math.abs(Number(format(date, "yyyyMMdd"))) % GENTLE.length];
+
+  const submit = async () => {
+    const title = draft.trim();
+    if (!title) return;
+    setDraft("");
+    await addHabit({ title, category: "self-care", cadence: "daily" });
+    haptics.tap?.();
+  };
+
 
   return (
     <DashCard
