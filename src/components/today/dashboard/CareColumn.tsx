@@ -13,8 +13,13 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
   const navigate = useNavigate();
   const capacity = useCapacity();
   const iso = format(date, "yyyy-MM-dd");
+  const { selectedIds, toggle, clear, isAuto } = useTodayCarePeople();
 
-  const people = state.recipients.slice(0, capacityLimit(3, capacity));
+  const people = useMemo(() => (
+    isAuto
+      ? state.recipients.slice(0, capacityLimit(3, capacity))
+      : state.recipients.filter(r => selectedIds.includes(r.id))
+  ), [state.recipients, selectedIds, isAuto, capacity]);
 
   const homeItems = useMemo(() => {
     const open = state.cleaning.filter(c => !c.done);
@@ -34,6 +39,55 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
 
   return (
     <div className="space-y-3">
+      {state.recipients.length > 0 && (
+        <div className="flex items-center justify-between gap-2 px-1">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Care circle</p>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="Choose which people show on Today"
+                className="inline-flex min-h-[28px] items-center gap-1 rounded-full border border-border/60 bg-background/60 px-2.5 text-[11px] text-muted-foreground hover:text-foreground"
+              >
+                <Users className="h-3 w-3" aria-hidden /> Choose people
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-2">
+              <ul className="max-h-64 space-y-0.5 overflow-y-auto">
+                {state.recipients.map(r => {
+                  const on = selectedIds.includes(r.id);
+                  return (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => toggle(r.id)}
+                        aria-pressed={on}
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] hover:bg-muted"
+                      >
+                        <span className={cn(
+                          "grid h-4 w-4 shrink-0 place-items-center rounded-full border",
+                          on ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent",
+                        )}>
+                          <Check className="h-2.5 w-2.5" aria-hidden />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">{r.name}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <button
+                type="button"
+                onClick={clear}
+                className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-[11.5px] text-muted-foreground hover:bg-muted"
+              >
+                Automatic (show first few)
+              </button>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
       {people.length === 0 ? (
         <DashCard
           eyebrow="Care" title="People"
@@ -44,13 +98,18 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
             </button>
           }
         >
-          <EmptyLine>No one added yet — add the people you care for.</EmptyLine>
+          <EmptyLine>
+            {state.recipients.length === 0
+              ? "No one added yet — add the people you care for."
+              : "No one chosen — pick who shows here."}
+          </EmptyLine>
         </DashCard>
       ) : (
         people.map(p => (
           <PersonCareCard key={p.id} person={p} date={date} onTaskClick={onTaskClick} />
         ))
       )}
+
 
 
       <DashCard
