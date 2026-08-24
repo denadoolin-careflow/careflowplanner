@@ -16,6 +16,7 @@ import { RhythmTodayCard } from "@/components/today/RhythmTodayCard";
 import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
 import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
 import { ConnectionsCard } from "@/components/today/ConnectionsCard";
+import { TodayNudgeStrip } from "@/components/today/TodayNudgeStrip";
 
 
 export function TodayDashboard({
