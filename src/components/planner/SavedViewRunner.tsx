@@ -103,6 +103,7 @@ export function SavedViewRunner({
   source = "tasks",
   group = "none",
   emptyLabel = "Nothing matches this view.",
+  onCount,
 }: {
   filters: Partial<WeekFilterState>;
   layout?: RunnerLayout;
@@ -112,6 +113,8 @@ export function SavedViewRunner({
   source?: RunnerSource;
   group?: RunnerGroup;
   emptyLabel?: string;
+  /** Reports how many rows are currently showing (used by note query blocks). */
+  onCount?: (n: number) => void;
 }) {
   const { state, updateTask, updateCleaning, toggleCleaning } = useStore() as any;
   const chores = useCaregivingChores();
