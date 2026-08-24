@@ -21,6 +21,9 @@ import { TodayHeader } from "@/components/today/TodayHeader";
 import { TodayPlanView } from "@/components/today/TodayPlanView";
 import { TodayFocusRail } from "@/components/today/TodayFocusRail";
 import { NowNextCard } from "@/components/today/NowNextCard";
+import { ArriveBand } from "@/components/today/ArriveBand";
+import { SelfCareCard } from "@/components/today/SelfCareCard";
+import { JournalCard } from "@/components/today/JournalCard";
 import { CareColumn } from "@/components/today/dashboard/CareColumn";
 import { GrowColumn } from "@/components/today/dashboard/GrowColumn";
 import { RoutinesHabitsRow } from "@/components/today/dashboard/RoutinesHabitsRow";
@@ -159,6 +162,7 @@ function TodayInner() {
         <DemoTasksBanner />
         <MorningCheckInPrompt />
         {prefs.showQuickAdd && <QuickAddBar date={day} />}
+        {view !== "board" && <ArriveBand date={day} />}
 
         {view === "board" ? (
           <>
@@ -191,11 +195,30 @@ function TodayInner() {
             {mobileTab === "plan" && (
               <div className="space-y-3">
                 {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
                 <TodayPlanView date={day} />
               </div>
             )}
-            {mobileTab === "care" && <TodayFocusRail date={day} onTaskClick={setEditTaskId} />}
-            {mobileTab === "grow" && secondary}
+            {mobileTab === "care" && (
+              <div className="animate-fade-in space-y-3">
+                <CareColumn date={day} onTaskClick={setEditTaskId} />
+                <RoutinesHabitsRow date={day} />
+              </div>
+            )}
+            {mobileTab === "grow" && (
+              <div className="animate-fade-in space-y-3">
+                <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+                <JournalCard date={day} />
+                <GrowColumn date={day} />
+                <CollapsibleSection
+                  storageKey="planning.section.debrief.collapsed"
+                  eyebrow="Daily debrief"
+                  title="Reflect and reset"
+                >
+                  <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+                </CollapsibleSection>
+              </div>
+            )}
           </div>
         ) : (
           <div className="animate-fade-in space-y-4">
