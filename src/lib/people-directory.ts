@@ -45,6 +45,29 @@ async function load(force = false): Promise<LovedOne[]> {
 /** Refresh the shared loved-ones cache (after an edit elsewhere). */
 export function refreshLovedOnes() { void load(true); }
 
+/** Add a friend / family member straight from a picker, then refresh. */
+export async function addDirectoryPerson(input: {
+  name: string; relation?: string; emoji?: string; color?: string;
+}): Promise<DirectoryPerson> {
+  const created = await createLovedOne({
+    name: input.name.trim(),
+    relation: input.relation?.trim() || undefined,
+    kind: "person",
+    avatarEmoji: input.emoji,
+    color: input.color,
+  });
+  await load(true);
+  return {
+    id: created.id,
+    kind: "loved_one",
+    name: created.name,
+    relation: created.relation,
+    emoji: created.avatarEmoji,
+    color: created.color,
+  };
+}
+
+
 export function useLovedOnes(): LovedOne[] {
   const [rows, setRows] = useState<LovedOne[]>(() => cache ?? []);
   useEffect(() => {
