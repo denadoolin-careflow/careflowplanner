@@ -3,13 +3,45 @@ import { format, subDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { useRoutines } from "@/lib/routines";
-import { ChevronRight, Clock } from "lucide-react";
+import { ChevronRight, Clock, Moon, Sun, Sunrise } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DashCard, EmptyLine } from "./DashCard";
 import { capacityLimit, useCapacity } from "./capacity-context";
 
 function routineMinutes(items: { durationMin?: number }[]) {
   return items.reduce((n, i) => n + (i.durationMin ?? 0), 0);
+}
+
+const SLOT_ICON: Record<string, typeof Sunrise> = {
+  morning: Sunrise,
+  afternoon: Sun,
+  evening: Moon,
+};
+
+/** Which routine slot the current hour belongs to. */
+function currentSlot(d: Date): string {
+  const h = d.getHours();
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
+/** Small SVG progress ring — done / total of a routine. */
+function ProgressRing({ done, total }: { done: number; total: number }) {
+  const pct = total > 0 ? done / total : 0;
+  const r = 9;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 -rotate-90" aria-hidden>
+      <circle cx="12" cy="12" r={r} className="fill-none stroke-border" strokeWidth="3" />
+      <circle
+        cx="12" cy="12" r={r}
+        className="fill-none stroke-primary transition-[stroke-dashoffset] duration-300"
+        strokeWidth="3" strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
+      />
+    </svg>
+  );
 }
 
 export function RoutinesHabitsRow({ date }: { date: Date }) {
@@ -19,13 +51,26 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
   const capacity = useCapacity();
   const iso = format(date, "yyyy-MM-dd");
 
-  const shownRoutines = routines.slice(0, capacityLimit(3, capacity));
+  // Due-now first, then nearly-finished, then untouched; completed sink.
+  const shownRoutines = useMemo(() => {
+    const now = currentSlot(new Date());
+    const score = (r: { slot: string; items: { done?: boolean }[] }) => {
+      const total = r.items.length || 1;
+      const done = r.items.filter(i => i.done).length;
+      if (done === r.items.length && r.items.length > 0) return 100;
+      if (r.slot === now) return 0;
+      return 10 - Math.round((done / total) * 5);
+    };
+    return [...routines].sort((a, b) => score(a) - score(b)).slice(0, capacityLimit(3, capacity));
+  }, [routines, capacity]);
+
   const shownHabits = state.habits.slice(0, capacityLimit(5, capacity));
 
   const last7 = useMemo(
     () => Array.from({ length: 7 }, (_, i) => format(subDays(date, 6 - i), "yyyy-MM-dd")),
     [date],
   );
+
 
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
