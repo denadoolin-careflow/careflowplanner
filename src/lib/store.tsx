@@ -131,7 +131,9 @@ const TASK_COLUMNS: Record<string, string> = {
   attachments: "attachments", anchorKey: "anchor_key",
   cosmicTag: "cosmic_tag",
   followUpAt: "follow_up_at", followUpNote: "follow_up_note",
+  connectionId: "connection_id", connectionKind: "connection_kind",
 };
+
 
 export const taskPatchTo = (patch: Partial<Task>): Record<string, unknown> => {
   const out: Record<string, unknown> = {};
