@@ -3675,6 +3675,7 @@ export type Database = {
           person_id: string
           person_kind: string
           serve_time: string | null
+          served_at: string | null
           updated_at: string
           user_id: string
         }
@@ -3685,6 +3686,7 @@ export type Database = {
           person_id: string
           person_kind?: string
           serve_time?: string | null
+          served_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -3695,6 +3697,7 @@ export type Database = {
           person_id?: string
           person_kind?: string
           serve_time?: string | null
+          served_at?: string | null
           updated_at?: string
           user_id?: string
         }

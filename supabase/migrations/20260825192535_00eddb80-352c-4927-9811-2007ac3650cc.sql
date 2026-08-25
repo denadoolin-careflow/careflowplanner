@@ -1,0 +1,1 @@
+ALTER TABLE public.meal_people ADD COLUMN IF NOT EXISTS served_at timestamptz;
