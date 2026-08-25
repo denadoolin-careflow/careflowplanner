@@ -1,9 +1,11 @@
 /**
- * "What needs cleaned" — the day's open chores grouped by zone, with the same
- * low-energy essentials filter the planner sidebar uses and an inline add row.
+ * "What needs cleaned" — the day's open chores grouped by zone, with gentle
+ * completion animations, a live progress line, the low-energy essentials
+ * filter the planner sidebar uses, and an inline add row.
  */
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronRight, Plus, Sparkles } from "lucide-react";
 import { DashCard, EmptyLine } from "@/components/today/dashboard/DashCard";
 import { capacityLimit, useCapacity } from "@/components/today/dashboard/capacity-context";
@@ -38,6 +40,9 @@ export function CleaningTodayCard({ className }: { className?: string }) {
   }, [items]);
 
   const openCount = state.cleaning.filter(c => !c.done).length;
+  const doneCount = state.cleaning.filter(c => c.done).length;
+  const total = openCount + doneCount;
+  const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
   const submit = async () => {
     const title = draft.trim();
@@ -79,31 +84,68 @@ export function CleaningTodayCard({ className }: { className?: string }) {
         ) : undefined
       }
     >
+      {total > 0 && (
+        <div className="mb-2.5 space-y-1" aria-live="polite">
+          <div className="flex items-center justify-between text-[10.5px] text-muted-foreground">
+            <span>{doneCount} of {total} done</span>
+            <span className="tabular-nums">{pct}%</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/60" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Cleaning progress">
+            <motion.div
+              className="h-full rounded-full bg-primary"
+              initial={false}
+              animate={{ width: `${pct}%` }}
+              transition={{ type: "spring", stiffness: 170, damping: 26 }}
+            />
+          </div>
+        </div>
+      )}
+
       {items.length === 0 ? (
         <EmptyLine>{capacity.isLow ? "Only the essentials today — and they're done." : "Home is caught up."}</EmptyLine>
       ) : (
         <div className="space-y-2.5">
-          {byZone.map(([zone, list]) => (
-            <div key={zone} className="space-y-1.5">
-              <p className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">{zone}</p>
-              <ul className="space-y-1.5">
-                {list.map(c => (
-                  <li key={c.id} className="flex items-start gap-2 text-[12.5px]">
-                    <button
-                      type="button"
-                      onClick={() => { haptics.success?.(); void toggleCleaning(c.id); }}
-                      aria-label={`Mark ${c.title} done`}
-                      className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent transition-all hover:bg-muted active:scale-125"
-                    >
-                      <Check className="h-2.5 w-2.5" aria-hidden />
-                    </button>
-                    <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{c.title}</span>
-                    <span className="shrink-0 text-[10.5px] capitalize text-muted-foreground">{c.cadence}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <AnimatePresence initial={false}>
+            {byZone.map(([zone, list]) => (
+              <motion.div
+                key={zone}
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-1.5"
+              >
+                <p className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">{zone}</p>
+                <ul className="space-y-1.5">
+                  <AnimatePresence initial={false}>
+                    {list.map(c => (
+                      <motion.li
+                        key={c.id}
+                        layout
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: 14, scale: 0.97 }}
+                        transition={{ type: "spring", stiffness: 320, damping: 30 }}
+                        className="flex items-start gap-2 text-[12.5px]"
+                      >
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 1.35 }}
+                          onClick={() => { haptics.success?.(); void toggleCleaning(c.id); }}
+                          aria-label={`Mark ${c.title} done`}
+                          className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent transition-colors hover:bg-muted"
+                        >
+                          <Check className="h-2.5 w-2.5" aria-hidden />
+                        </motion.button>
+                        <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{c.title}</span>
+                        <span className="shrink-0 text-[10.5px] capitalize text-muted-foreground">{c.cadence}</span>
+                      </motion.li>
+                    ))}
+                  </AnimatePresence>
+                </ul>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
 

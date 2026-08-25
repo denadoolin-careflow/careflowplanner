@@ -1,6 +1,7 @@
 /**
  * Gentle in-app nudges for the Today page. Pure rules over the day's status,
- * with per-type on/off prefs and a dismissal that lasts until tomorrow.
+ * with per-type on/off prefs, a dismissal that lasts until tomorrow, and a
+ * timed snooze for "not right now".
  */
 import { useCallback, useEffect, useState } from "react";
 
@@ -36,6 +37,7 @@ export const DEFAULT_NUDGE_PREFS: NudgePrefs = {
 
 const PREFS_KEY = "careflow:today:nudge-prefs";
 const DISMISS_KEY = "careflow:today:nudge-dismissed";
+const SNOOZE_KEY = "careflow:today:nudge-snoozed";
 const EVENT = "careflow:today:nudges-changed";
 
 export function readNudgePrefs(): NudgePrefs {
@@ -74,6 +76,33 @@ export function isDismissed(id: string, dayIso: string): boolean {
   return readDismissed()[id] === dayIso;
 }
 
+/** Mark a nudge handled — hides it until tomorrow, like a dismiss with intent. */
+export function completeNudge(id: string, dayIso: string) {
+  dismissNudge(id, dayIso);
+}
+
+function readSnoozed(): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(SNOOZE_KEY);
+    const v = raw ? JSON.parse(raw) : {};
+    return v && typeof v === "object" ? v : {};
+  } catch { return {}; }
+}
+
+/** Hide a nudge for a while (default one hour), then let it resurface. */
+export function snoozeNudge(id: string, minutes = 60) {
+  const next = { ...readSnoozed(), [id]: Date.now() + minutes * 60_000 };
+  try {
+    window.localStorage.setItem(SNOOZE_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent(EVENT));
+  } catch { /* private mode */ }
+}
+
+export function isSnoozed(id: string, nowTs = Date.now()): boolean {
+  return (readSnoozed()[id] ?? 0) > nowTs;
+}
+
 export interface NudgeInput {
   hour: number;
   dayIso: string;
@@ -81,6 +110,8 @@ export interface NudgeInput {
   openEssentials: number;
   /** People with no contact for longer than the threshold. */
   staleConnections: { id: string; name: string; days: number }[];
+  /** Evaluation time for snooze checks. */
+  nowTs?: number;
 }
 
 export function buildNudges(input: NudgeInput, prefs: NudgePrefs): TodayNudge[] {
@@ -118,7 +149,7 @@ export function buildNudges(input: NudgeInput, prefs: NudgePrefs): TodayNudge[] 
     }
   }
 
-  return out.filter(n => !isDismissed(n.id, input.dayIso));
+  return out.filter(n => !isDismissed(n.id, input.dayIso) && !isSnoozed(n.id, input.nowTs));
 }
 
 export function useNudgePrefs() {
@@ -143,7 +174,7 @@ export function useNudgePrefs() {
   return { prefs, update };
 }
 
-/** Re-render hook so dismissals refresh the strip. */
+/** Re-render hook so dismissals and snoozes refresh the strip. */
 export function useNudgeTick() {
   const [tick, setTick] = useState(0);
   useEffect(() => {

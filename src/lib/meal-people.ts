@@ -12,6 +12,8 @@ export interface MealPerson {
   personId: string;
   personKind: PersonKind;
   serveTime?: string;
+  /** Set when this person's plate was served. */
+  servedAt?: string;
 }
 
 const EVENT = "careflow:meal-people-changed";
@@ -23,6 +25,7 @@ function fromRow(r: any): MealPerson {
     personId: r.person_id,
     personKind: (r.person_kind ?? "recipient") as PersonKind,
     serveTime: r.serve_time ?? undefined,
+    servedAt: r.served_at ?? undefined,
   };
 }
 
@@ -54,6 +57,16 @@ export async function linkMealPerson(input: {
 export async function setMealServeTime(mealId: string, serveTime: string | null): Promise<void> {
   const { error } = await (supabase as any)
     .from("meal_people").update({ serve_time: serveTime }).eq("meal_id", mealId);
+  if (error) throw error;
+  notify();
+}
+
+/** Mark one person's plate served (or undo). */
+export async function setMealPersonServed(mealId: string, personId: string, served: boolean): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("meal_people")
+    .update({ served_at: served ? new Date().toISOString() : null })
+    .eq("meal_id", mealId).eq("person_id", personId);
   if (error) throw error;
   notify();
 }
