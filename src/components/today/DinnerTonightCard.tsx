@@ -1,18 +1,21 @@
 /**
  * "What's for dinner" — tonight's dinner at a glance, who it's for and when,
- * with one tap to pick something from the meal library or type a name in.
+ * gentle suggestions when nothing is planned, and a per-person "served"
+ * toggle so the card can say when everyone's been fed.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
-import { ChevronRight, Clock3, Pencil, Plus, UsersRound, UtensilsCrossed } from "lucide-react";
+import { Check, ChevronRight, Clock3, Pencil, Plus, Sparkles, UsersRound, UtensilsCrossed } from "lucide-react";
 import { DashCard, EmptyLine } from "@/components/today/dashboard/DashCard";
 import { MealPickerPopover } from "@/components/meals/MealPickerPopover";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PersonAvatar } from "@/components/people/PersonPicker";
 import { AddPersonPopover } from "@/components/people/AddPersonPopover";
 import { usePeopleDirectory } from "@/lib/people-directory";
-import { useMealPeople, linkMealPerson, unlinkMealPerson, setMealServeTime } from "@/lib/meal-people";
+import { useMealPeople, linkMealPerson, unlinkMealPerson, setMealServeTime, setMealPersonServed } from "@/lib/meal-people";
+import { useMealsLibrary } from "@/lib/meals-library";
+import { useTodayCarePeople } from "@/lib/today-care-people";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
@@ -23,6 +26,8 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
   const { state, addMeal, updateMeal } = useStore();
   const iso = format(date, "yyyy-MM-dd");
   const people = usePeopleDirectory();
+  const { items: library } = useMealsLibrary();
+  const { selectedIds: careIds } = useTodayCarePeople();
   const [slot, setSlot] = useState<(typeof SLOTS)[number]>("Dinner");
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
@@ -34,6 +39,33 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
   const meal = todaysMeals.find(m => m.slot === slot);
   const mealLinks = meal ? links.filter(l => l.mealId === meal.id) : [];
   const serveTime = mealLinks.find(l => l.serveTime)?.serveTime;
+  const servedCount = mealLinks.filter(l => l.servedAt).length;
+  const allServed = mealLinks.length > 0 && servedCount === mealLinks.length;
+
+  // Today's chosen care people — suggestions and auto-linking aim at them.
+  const carePeople = useMemo(
+    () => people.filter(p => careIds.includes(p.id)),
+    [people, careIds],
+  );
+
+  const suggestions = useMemo(() => {
+    if (meal) return [];
+    return library
+      .filter(l => !l.is_archived && (!l.slot || l.slot === slot))
+      .sort((a, b) => Number(b.is_favorite ?? false) - Number(a.is_favorite ?? false))
+      .slice(0, 3);
+  }, [library, meal, slot]);
+
+  // When a suggestion creates the meal, link today's care people to it.
+  const autoLinkRef = useRef(false);
+  useEffect(() => {
+    if (!meal || !autoLinkRef.current) return;
+    if (carePeople.length === 0) { autoLinkRef.current = false; return; }
+    autoLinkRef.current = false;
+    for (const p of carePeople) {
+      void linkMealPerson({ mealId: meal.id, personId: p.id, personKind: p.kind }).catch(() => { /* best-effort */ });
+    }
+  }, [meal, carePeople]);
 
   const fedIds = new Set(links.map(l => l.personId));
   const unfed = people.filter(p => !fedIds.has(p.id));
@@ -44,7 +76,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
     setTyping(false);
     if (!name) return;
     if (meal) await updateMeal(meal.id, { name });
-    else await addMeal({ name, date: iso, slot });
+    else { autoLinkRef.current = true; await addMeal({ name, date: iso, slot }); }
     haptics.success?.();
   };
 
@@ -57,7 +89,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
       tags: picked.tags,
     };
     if (meal) void updateMeal(meal.id, patch);
-    else void addMeal({ ...patch, date: iso, slot });
+    else { autoLinkRef.current = true; void addMeal({ ...patch, date: iso, slot }); }
     haptics.tap?.();
   };
 
@@ -68,15 +100,28 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
     haptics.tap?.();
   };
 
+  const toggleServed = async (personId: string, served: boolean) => {
+    if (!meal) return;
+    if (served) haptics.success?.(); else haptics.tap?.();
+    try { await setMealPersonServed(meal.id, personId, served); } catch { /* best-effort */ }
+  };
+
   return (
     <DashCard
       eyebrow="Nourish"
       title="What's for dinner"
       className={className}
       action={
-        <Link to="/meals" className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
-          Meals <ChevronRight className="h-3 w-3" aria-hidden />
-        </Link>
+        <div className="flex items-center gap-2">
+          {allServed && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10.5px] text-primary">
+              <Check className="h-3 w-3" aria-hidden /> Served
+            </span>
+          )}
+          <Link to="/meals" className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+            Meals <ChevronRight className="h-3 w-3" aria-hidden />
+          </Link>
+        </div>
       }
       footer={
         unfed.length > 0 ? (
@@ -118,10 +163,9 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
                   </span>
                 ) : null}
                 {mealLinks.length > 0 && (
-                  <span className="inline-flex items-center gap-1 [overflow-wrap:anywhere]">
+                  <span className="inline-flex items-center gap-1">
                     <UsersRound className="h-3 w-3" aria-hidden />
-                    {mealLinks.map(l => people.find(p => p.id === l.personId)?.name ?? "Someone").join(", ")}
-                    {serveTime ? ` · ${serveTime}` : ""}
+                    {servedCount} of {mealLinks.length} served{serveTime ? ` · ${serveTime}` : ""}
                   </span>
                 )}
               </div>
@@ -129,6 +173,64 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
           </div>
         ) : (
           <EmptyLine>Nothing planned for {slot.toLowerCase()} yet.</EmptyLine>
+        )}
+
+        {/* Per-person served toggles */}
+        {meal && mealLinks.length > 0 && (
+          <ul className="space-y-1" aria-label="Who's been served">
+            {mealLinks.map(l => {
+              const person = people.find(p => p.id === l.personId);
+              const served = !!l.servedAt;
+              return (
+                <li key={l.personId} className="flex items-center gap-2 text-[12.5px]">
+                  {person
+                    ? <PersonAvatar person={person} className="h-4 w-4 text-[9px]" />
+                    : <UsersRound className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />}
+                  <span className={cn("min-w-0 flex-1 truncate", served && "text-muted-foreground")}>
+                    {person?.name ?? "Someone"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void toggleServed(l.personId, !served)}
+                    aria-pressed={served}
+                    aria-label={served ? `Mark ${person?.name ?? "person"} not served` : `Mark ${person?.name ?? "person"} served`}
+                    className={cn(
+                      "inline-flex min-h-[26px] shrink-0 items-center gap-1 rounded-full border px-2 text-[11px] transition-all active:scale-95",
+                      served
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                    )}
+                  >
+                    <Check className="h-3 w-3" aria-hidden />
+                    {served ? `Served ${format(new Date(l.servedAt!), "h:mm a")}` : "Mark served"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {/* Gentle suggestions when nothing is planned */}
+        {!meal && suggestions.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="inline-flex items-center gap-1 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+              <Sparkles className="h-3 w-3" aria-hidden />
+              Ideas{carePeople.length > 0 ? ` for ${carePeople.map(p => p.name).slice(0, 2).join(" & ")}` : ""}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {suggestions.map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => pick({ name: s.title, prep_minutes: s.prep_minutes, ingredients: s.ingredients, steps: s.steps, tags: s.tags })}
+                  className="inline-flex min-h-[30px] items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2.5 text-[11.5px] transition-colors hover:border-primary/40 hover:bg-primary/5"
+                >
+                  <span className="max-w-[10rem] truncate">{s.title}</span>
+                  {s.prep_minutes ? <span className="shrink-0 text-[10px] text-muted-foreground">{s.prep_minutes}m</span> : null}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {typing ? (
