@@ -3969,6 +3969,97 @@ export type Database = {
         }
         Relationships: []
       }
+      medication_logs: {
+        Row: {
+          created_at: string
+          id: string
+          medication_id: string
+          scheduled_date: string
+          scheduled_time: string
+          status: string
+          taken_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medication_id: string
+          scheduled_date: string
+          scheduled_time: string
+          status?: string
+          taken_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medication_id?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string
+          taken_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_logs_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          active: boolean
+          created_at: string
+          dose: string | null
+          id: string
+          name: string
+          notes: string | null
+          recipient_id: string | null
+          times: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          dose?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          recipient_id?: string | null
+          times?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          dose?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          recipient_id?: string | null
+          times?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "care_recipients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memories: {
         Row: {
           atmosphere: string | null
@@ -6378,6 +6469,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      symptom_logs: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          id: string
+          logged_at: string
+          note: string | null
+          recipient_id: string | null
+          severity: number
+          symptom: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          logged_at?: string
+          note?: string | null
+          recipient_id?: string | null
+          severity: number
+          symptom: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          logged_at?: string
+          note?: string | null
+          recipient_id?: string | null
+          severity?: number
+          symptom?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "symptom_logs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "care_recipients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tag_fields: {
         Row: {
