@@ -171,6 +171,11 @@ export function initReminders() {
   }
 }
 
+/** Fire a one-off reminder through the shared toast + Notification path. */
+export function notifyReminder(title: string, body: string, tag: string) {
+  notify(title, body, tag);
+}
+
 function notify(title: string, body: string, tag: string, task?: { id: string }) {
   if (inQuietHours()) {
     // Hold it until quiet hours end rather than dropping it entirely.
