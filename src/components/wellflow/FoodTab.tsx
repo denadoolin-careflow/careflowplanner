@@ -1,3 +1,5 @@
+import { SuggestedMeals } from "@/components/wellflow/SuggestedMeals";
+import { useGoals } from "@/lib/wellflow/data";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,7 @@ import { MEAL_TYPES, todayISO, type MealType } from "@/lib/wellflow/types";
 export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLogFood: () => void }) {
   const { entries, loading } = useFoodEntries(date);
   const { foods } = useSavedFoods();
+  const { goals } = useGoals();
   const totals = useMemo(() => sumEntries(entries), [entries]);
 
   const byMeal = useMemo(() => {
