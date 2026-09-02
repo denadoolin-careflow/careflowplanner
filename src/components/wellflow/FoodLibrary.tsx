@@ -11,6 +11,7 @@ import {
   createSavedFood, deleteSavedFood, logFood, parseFoodText, savedToCandidate, searchFoods,
   toggleFavoriteFood, updateSavedFood, useSavedFoods,
 } from "@/lib/wellflow/data";
+import { STORES, mergeWithCatalog, searchCatalog, storeForBrand, type Store } from "@/lib/wellflow/food-catalog";
 import type { FoodCandidate, MealType, SavedFood } from "@/lib/wellflow/types";
 
 
@@ -37,6 +38,7 @@ export function FoodLibrary({ date }: { date: string }) {
   const [results, setResults] = useState<FoodCandidate[]>([]);
   const [editing, setEditing] = useState<{ value: EditableFood; savedId?: string } | null>(null);
   const [details, setDetails] = useState<FoodCandidate | null>(null);
+  const [store, setStore] = useState<Store | null>(null);
 
   /** Scan a product barcode with the device camera when the browser supports it. */
   const scan = async () => {
@@ -77,8 +79,14 @@ export function FoodLibrary({ date }: { date: string }) {
   const runSearch = async () => {
     if (q.trim().length < 2) { toast("Type at least two letters."); return; }
     setBusy("search");
-    try { setResults(await searchFoods(q.trim())); }
-    catch { toast.error("Food search is unavailable right now"); }
+    const term = q.trim();
+    try {
+      const remote = await searchFoods(term).catch(() => [] as FoodCandidate[]);
+      const merged = mergeWithCatalog(term, remote, store);
+      if (!merged.length) toast("No matches — try fewer words, or describe it instead.");
+      setResults(merged);
+    }
+    catch { setResults(searchCatalog(term, store)); toast("Showing shelf staples — online search is unavailable right now."); }
     finally { setBusy(null); }
   };
 
@@ -154,15 +162,37 @@ export function FoodLibrary({ date }: { date: string }) {
 
       </div>
 
+      <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Filter by store">
+        <button type="button" onClick={() => setStore(null)} aria-pressed={store === null}
+                className={cn("min-h-[2rem] rounded-full border px-3 text-xs transition-colors",
+                  store === null ? "border-primary bg-primary/15 font-medium" : "border-border/60 bg-card/50 text-muted-foreground")}>
+          All stores
+        </button>
+        {STORES.map(s2 => (
+          <button key={s2} type="button" onClick={() => setStore(st => (st === s2 ? null : s2))} aria-pressed={store === s2}
+                  className={cn("min-h-[2rem] rounded-full border px-3 text-xs transition-colors",
+                    store === s2 ? "border-primary bg-primary/15 font-medium" : "border-border/60 bg-card/50 text-muted-foreground")}>
+            {s2}
+          </button>
+        ))}
+      </div>
+
       {results.length > 0 && (
         <div className="mt-3">
           <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Results</p>
           <ul className="space-y-1.5">
             {results.map(c => (
               <li key={c.id} className="rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
-                <p className="truncate text-sm font-medium">{c.name}</p>
+                <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+                  <span className="truncate">{c.name}</span>
+                  {storeForBrand(c.brand) && (
+                    <span className="shrink-0 rounded-full bg-muted/50 px-2 py-0.5 text-[10px] font-normal text-muted-foreground">
+                      {storeForBrand(c.brand)}
+                    </span>
+                  )}
+                </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {c.servingSize || "1 serving"} · {Math.round(c.calories)} cal • {Math.round(c.protein)}g P • {Math.round(c.carbs)}g C • {Math.round(c.fat)}g F
+                  {c.brand ? `${c.brand} · ` : ""}{c.servingSize || "1 serving"} · {Math.round(c.calories)} cal • {Math.round(c.protein)}g P • {Math.round(c.carbs)}g C • {Math.round(c.fat)}g F
                 </p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   <Button size="sm" variant="secondary" onClick={() => logNow(c)}>Log</Button>
