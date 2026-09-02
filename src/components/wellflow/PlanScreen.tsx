@@ -22,6 +22,7 @@ import {
 import type { FoodEntry } from "@/lib/wellflow/types";
 import { PlanOnboarding } from "@/components/wellflow/PlanOnboarding";
 import { MovementCard } from "@/components/wellflow/MovementCard";
+import { MovementSuggestions } from "@/components/wellflow/MovementSuggestions";
 import { MovementSheet } from "@/components/wellflow/MovementSheet";
 
 const FIELDS: { key: keyof PlanTargets; label: string; suffix: string; max: number }[] = [
@@ -232,6 +233,16 @@ export function PlanScreen() {
           check big changes with your clinician first. No plan here guarantees a result.
         </p>
       </SectionCard>
+
+      <MovementSuggestions
+        onAccept={async v => {
+          setMovementDays(v.days.length);
+          await savePlan({
+            id: plan?.id, style, pace, targets, movement_days: v.days.length,
+            movement_prefs: { activity: v.activity, minutes: v.minutes, days: v.days },
+          });
+        }}
+      />
 
       {def.dayShape.length > 0 && (
         <SectionCard title={`A ${def.label.toLowerCase()} day`} subtitle="Meal shapes, not rules" accent="warm">

@@ -10,6 +10,7 @@ import { InsightsCharts } from "@/components/wellflow/InsightsCharts";
 import { FoodFeelPatterns } from "@/components/wellflow/FoodFeelPatterns";
 import { CyclePhaseInsights } from "@/components/wellflow/CyclePhaseInsights";
 import { FoodSymptomCompare } from "@/components/wellflow/FoodSymptomCompare";
+import { SymptomCorrelations } from "@/components/wellflow/SymptomCorrelations";
 import { observations, useInsights, type InsightRange, type InsightWindow } from "@/lib/wellflow/insights";
 import { todayISO } from "@/lib/wellflow/types";
 
@@ -105,6 +106,8 @@ export function InsightsTab() {
       <FoodFeelPatterns />
 
       <FoodSymptomCompare />
+
+      <SymptomCorrelations />
 
       <CyclePhaseInsights />
 

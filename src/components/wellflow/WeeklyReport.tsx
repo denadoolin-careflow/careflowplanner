@@ -1,6 +1,7 @@
 /** Weekly progress report — last 7 days next to the 7 before. Descriptive only. */
 import { format } from "date-fns";
 import { SectionCard } from "@/components/cards/SectionCard";
+import { AdherenceCard } from "@/components/wellflow/AdherenceCard";
 import { EmptyState } from "@/components/cards/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowRight, ArrowUp, Download } from "lucide-react";
@@ -135,6 +136,8 @@ export function WeeklyReportScreen({ onExport }: { onExport?: () => void }) {
           </div>
         </SectionCard>
       )}
+
+      <AdherenceCard />
 
       <p className="px-1 text-xs text-muted-foreground">
         A summary of what you logged — not medical advice, and not a prediction. Share it with your care team if
