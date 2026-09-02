@@ -1,4 +1,5 @@
 import { TrendStrip } from "@/components/wellflow/TrendStrip";
+import { GoalBars } from "@/components/wellflow/GoalBars";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
