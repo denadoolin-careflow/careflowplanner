@@ -123,6 +123,10 @@ export function TodayTab({
           <TrendStrip />
         </div>
 
+        <CyclePhaseStrip className="mt-4" />
+
+
+
 
 
         <Button className="mt-4 w-full gap-2 rounded-2xl py-6 text-base" onClick={onLogFood}>
