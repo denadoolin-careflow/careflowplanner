@@ -129,13 +129,17 @@ export function LogFoodSheet({
     } finally { setAiBusy(false); }
   };
 
+  const [feelFor, setFeelFor] = useState<string | null>(null);
+
   const save = async () => {
     if (!selected || !selected.name.trim()) { toast("Give the food a name first."); return; }
     setSaving(true);
     try {
       await logFood({ date, candidate: selected, servings: Math.max(servings, 0.1), mealType, time });
       toast.success("Logged");
+      const name = selected.name.trim();
       onOpenChange(false);
+      setFeelFor(name);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not log that");
     } finally { setSaving(false); }
