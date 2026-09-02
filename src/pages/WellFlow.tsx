@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { BellRing, CalendarDays, CalendarHeart, Download, Sliders, Sparkles, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
+import { BellRing, CalendarDays, CalendarHeart, ClipboardList, Download, Sliders, Sparkles, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TodayTab } from "@/components/wellflow/TodayTab";
 import { FoodTab } from "@/components/wellflow/FoodTab";
@@ -11,6 +11,7 @@ import { Glp1Tab } from "@/components/wellflow/Glp1Tab";
 import { InsightsTab } from "@/components/wellflow/InsightsTab";
 import { GoalsScreen } from "@/components/wellflow/GoalsScreen";
 import { FoodCalendar } from "@/components/wellflow/FoodCalendar";
+import { PlanScreen } from "@/components/wellflow/PlanScreen";
 import { GoalsEditor } from "@/components/wellflow/GoalsEditor";
 import { LogFoodSheet } from "@/components/wellflow/LogFoodSheet";
 import { RemindersSheet } from "@/components/wellflow/RemindersSheet";
@@ -29,7 +30,7 @@ const TABS = [
 ];
 
 /** Reachable from the header, not the tab bar. */
-const EXTRA_TABS = ["goals", "calendar"];
+const EXTRA_TABS = ["goals", "calendar", "plan"];
 
 export default function WellFlow() {
   const { tab } = useParams<{ tab?: string }>();
@@ -85,6 +86,9 @@ export default function WellFlow() {
                   onClick={() => go("calendar")}>
             <CalendarDays className="h-4 w-4" />
           </Button>
+          <Button variant="ghost" size="icon" aria-label="Eating plan" onClick={() => go("plan")}>
+            <ClipboardList className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" aria-label="Goal settings" onClick={() => go("goals")}>
             <Sliders className="h-4 w-4" />
           </Button>
@@ -130,6 +134,9 @@ export default function WellFlow() {
         </TabsContent>
         <TabsContent value="calendar" className="mt-4">
           <FoodCalendar />
+        </TabsContent>
+        <TabsContent value="plan" className="mt-4">
+          <PlanScreen />
         </TabsContent>
       </Tabs>
 

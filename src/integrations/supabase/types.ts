@@ -2584,6 +2584,59 @@ export type Database = {
         }
         Relationships: []
       }
+      food_feel_logs: {
+        Row: {
+          created_at: string
+          date: string
+          delay_minutes: number | null
+          entry_id: string | null
+          food_name: string
+          id: string
+          logged_at: string
+          note: string | null
+          rating: number
+          symptoms: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          delay_minutes?: number | null
+          entry_id?: string | null
+          food_name: string
+          id?: string
+          logged_at?: string
+          note?: string | null
+          rating?: number
+          symptoms?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          delay_minutes?: number | null
+          entry_id?: string | null
+          food_name?: string
+          id?: string
+          logged_at?: string
+          note?: string | null
+          rating?: number
+          symptoms?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_feel_logs_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "food_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       glp1_injections: {
         Row: {
           created_at: string
@@ -7878,6 +7931,63 @@ export type Database = {
           notes?: string | null
           user_id?: string
           weight_lb?: number
+        }
+        Relationships: []
+      }
+      wellflow_plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          movement_days: number
+          notes: string | null
+          pace: string
+          started_on: string
+          style: string
+          target_calories: number | null
+          target_carbs: number | null
+          target_fat: number | null
+          target_fiber: number | null
+          target_protein: number | null
+          target_water_oz: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          movement_days?: number
+          notes?: string | null
+          pace?: string
+          started_on?: string
+          style?: string
+          target_calories?: number | null
+          target_carbs?: number | null
+          target_fat?: number | null
+          target_fiber?: number | null
+          target_protein?: number | null
+          target_water_oz?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          movement_days?: number
+          notes?: string | null
+          pace?: string
+          started_on?: string
+          style?: string
+          target_calories?: number | null
+          target_carbs?: number | null
+          target_fat?: number | null
+          target_fiber?: number | null
+          target_protein?: number | null
+          target_water_oz?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

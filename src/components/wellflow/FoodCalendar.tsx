@@ -7,14 +7,20 @@ import {
   addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth,
   startOfMonth, startOfWeek, subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Droplets, Scale, Syringe } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, Clock, Droplets, HeartPulse, Moon, Pencil, Scale, Sun,
+  Sunrise, Syringe, Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { useFoodEntries, sumEntries } from "@/lib/wellflow/data";
-import { todayISO } from "@/lib/wellflow/types";
+import { useFoodEntries, sumEntries, updateFoodEntry, deleteFoodEntry } from "@/lib/wellflow/data";
+import { EditFoodDialog } from "@/components/wellflow/EditFoodDialog";
+import { FoodFeelSheet } from "@/components/wellflow/FoodFeelSheet";
+import { MEAL_TYPES, todayISO, type FoodEntry, type MealType } from "@/lib/wellflow/types";
 
 interface DayCell {
   calories: number;
@@ -158,16 +164,73 @@ function Legend({ className, label }: { className: string; label: string }) {
   return <span className="flex items-center gap-1"><Dot className={className} /> {label}</span>;
 }
 
+type PartKey = "morning" | "afternoon" | "evening" | "untimed";
+
+const PART_LABEL: Record<PartKey, string> = {
+  morning: "Morning", afternoon: "Afternoon", evening: "Evening", untimed: "No time set",
+};
+const PART_ICON: Record<PartKey, typeof Sunrise> = {
+  morning: Sunrise, afternoon: Sun, evening: Moon, untimed: Clock,
+};
+
+/** Local hour from a logged_at timestamp, or null when it isn't usable. */
+function hourOf(loggedAt?: string | null): number | null {
+  if (!loggedAt) return null;
+  const d = new Date(loggedAt);
+  return Number.isNaN(d.getTime()) ? null : d.getHours();
+}
+
+function partOf(loggedAt?: string | null): PartKey {
+  const h = hourOf(loggedAt);
+  if (h == null) return "untimed";
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
+const timeValue = (loggedAt?: string | null) => {
+  if (!loggedAt) return "";
+  const d = new Date(loggedAt);
+  return Number.isNaN(d.getTime()) ? "" : format(d, "HH:mm");
+};
+
 function DaySheet({
   date, summary, onClose,
 }: { date: string | null; summary?: DayCell; onClose: () => void }) {
   const { entries, loading } = useFoodEntries(date ?? todayISO());
   const totals = useMemo(() => sumEntries(entries), [entries]);
+  const [editing, setEditing] = useState<FoodEntry | null>(null);
+  const [feelFor, setFeelFor] = useState<FoodEntry | null>(null);
+
+  const grouped = useMemo(() => {
+    const buckets: Record<PartKey, FoodEntry[]> = { morning: [], afternoon: [], evening: [], untimed: [] };
+    for (const e of entries) buckets[partOf(e.logged_at)].push(e);
+    for (const k of Object.keys(buckets) as PartKey[]) {
+      buckets[k].sort((a, b) => (a.logged_at ?? "").localeCompare(b.logged_at ?? ""));
+    }
+    return buckets;
+  }, [entries]);
+
+  const setTime = async (e: FoodEntry, hhmm: string) => {
+    if (!hhmm) return;
+    const next = new Date(`${e.date}T${hhmm}:00`);
+    if (Number.isNaN(next.getTime())) return;
+    await updateFoodEntry(e.id, { logged_at: next.toISOString() });
+  };
+
+  const setMeal = async (e: FoodEntry, meal: MealType) => {
+    await updateFoodEntry(e.id, { meal_type: meal });
+  };
+
+  const remove = async (e: FoodEntry) => {
+    await deleteFoodEntry(e.id);
+    toast.success("Removed");
+  };
 
   return (
     <Sheet open={!!date} onOpenChange={v => { if (!v) onClose(); }}>
       <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl">
-        <SheetHeader>
+        <SheetHeader className="text-left">
           <SheetTitle className="font-display">
             {date ? format(new Date(`${date}T12:00:00`), "EEEE, MMMM d") : ""}
           </SheetTitle>
@@ -199,20 +262,104 @@ function DaySheet({
           </div>
         )}
 
-        <div className="mt-4 space-y-1.5 pb-6">
+        <div className="mt-4 space-y-4 pb-6">
           {loading ? (
             <div className="h-16 animate-pulse rounded-xl bg-muted/50" />
           ) : entries.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nothing logged this day.</p>
-          ) : entries.map(e => (
-            <div key={e.id} className="rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
-              <p className="truncate text-sm font-medium">{e.food_name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {e.meal_type} · {Math.round(e.calories)} cal • {Math.round(e.protein)}g P • {Math.round(e.carbs)}g C • {Math.round(e.fat)}g F
-              </p>
-            </div>
-          ))}
+          ) : (["morning", "afternoon", "evening", "untimed"] as PartKey[]).map(pk => {
+            const rows = grouped[pk];
+            if (rows.length === 0) return null;
+            const Icon = PART_ICON[pk];
+            const cals = rows.reduce((s, r) => s + r.calories, 0);
+            return (
+              <section key={pk}>
+                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Icon className="h-3.5 w-3.5" aria-hidden />
+                  {PART_LABEL[pk]}
+                  <span className="font-normal opacity-70 tabular-nums">· {Math.round(cals)} cal</span>
+                </p>
+                <ul className="space-y-1.5">
+                  {rows.map(e => (
+                    <li key={e.id} className="rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
+                      <p className="truncate text-sm font-medium">{e.food_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {Math.round(e.calories)} cal • {Math.round(e.protein)}g P • {Math.round(e.carbs)}g C • {Math.round(e.fat)}g F
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <input
+                          type="time" aria-label={`Time for ${e.food_name}`}
+                          defaultValue={timeValue(e.logged_at)}
+                          onChange={ev => void setTime(e, ev.target.value)}
+                          className="h-9 rounded-lg border border-border/60 bg-background px-2 text-xs"
+                        />
+                        <select
+                          aria-label={`Meal for ${e.food_name}`}
+                          value={e.meal_type}
+                          onChange={ev => void setMeal(e, ev.target.value as MealType)}
+                          className="h-9 rounded-lg border border-border/60 bg-background px-2 text-xs capitalize"
+                        >
+                          {MEAL_TYPES.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+                        </select>
+                        <Button size="sm" variant="ghost" className="h-9 gap-1 px-2 text-xs"
+                                onClick={() => setEditing(e)}>
+                          <Pencil className="h-3.5 w-3.5" /> Edit
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-9 gap-1 px-2 text-xs"
+                                onClick={() => setFeelFor(e)}>
+                          <HeartPulse className="h-3.5 w-3.5" /> Feel
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-9 gap-1 px-2 text-xs text-destructive"
+                                onClick={() => void remove(e)} aria-label={`Delete ${e.food_name}`}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
         </div>
+
+        <EditFoodDialog
+          open={!!editing}
+          onOpenChange={v => { if (!v) setEditing(null); }}
+          title="Edit logged food"
+          withServings
+          value={editing ? {
+            name: editing.food_name,
+            serving_size: editing.serving_size,
+            calories: editing.calories,
+            protein: editing.protein,
+            carbs: editing.carbs,
+            fat: editing.fat,
+            fiber: editing.fiber,
+            servings: editing.servings,
+          } : null}
+          onSave={async next => {
+            if (!editing) return;
+            await updateFoodEntry(editing.id, {
+              food_name: next.name,
+              serving_size: next.serving_size,
+              servings: next.servings ?? editing.servings,
+              calories: next.calories,
+              protein: next.protein,
+              carbs: next.carbs,
+              fat: next.fat,
+              fiber: next.fiber,
+            });
+            setEditing(null);
+          }}
+        />
+
+        <FoodFeelSheet
+          open={!!feelFor}
+          onOpenChange={v => { if (!v) setFeelFor(null); }}
+          foodName={feelFor?.food_name ?? ""}
+          entryId={feelFor?.id}
+          date={date ?? undefined}
+        />
       </SheetContent>
     </Sheet>
   );

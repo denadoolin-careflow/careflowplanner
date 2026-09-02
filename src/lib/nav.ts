@@ -57,6 +57,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/trips": "Plan trips and packing lists.",
   "/health": "Health, energy, and check-ins.",
   "/wellflow": "Nutrition, weight, and GLP-1 tracking.",
+  "/wellflow/plan": "Your eating plan and daily targets.",
   "/habits": "Daily habits and streaks.",
   "/journal": "A quiet space to write.",
   "/journal-flow": "Guided journaling and flow.",
@@ -195,6 +196,7 @@ export const NAV_GROUPS = [
     items: [
       { to: "/health", label: "Health", icon: HeartPulse },
       { to: "/wellflow", label: "Nutrition & GLP-1", icon: Salad },
+      { to: "/wellflow/plan", label: "Eating plan", icon: Salad },
       { to: "/habits", label: "Habits", icon: Sparkles },
       { to: "/journal", label: "Journal", icon: BookHeart },
       { to: "/journal-flow", label: "Journal & Flow", icon: Wind },

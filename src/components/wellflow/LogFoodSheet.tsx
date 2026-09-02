@@ -14,6 +14,7 @@ import {
   logFood, parseFoodText, savedToCandidate, searchFoods, toggleFavoriteFood, useSavedFoods,
 } from "@/lib/wellflow/data";
 import { logPlannedMeal, usePlannedMeals } from "@/lib/wellflow/meal-plan";
+import { FoodFeelSheet } from "@/components/wellflow/FoodFeelSheet";
 
 const blank: FoodCandidate = {
   id: "manual", name: "", servingSize: "", calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, source: "manual",
@@ -129,13 +130,17 @@ export function LogFoodSheet({
     } finally { setAiBusy(false); }
   };
 
+  const [feelFor, setFeelFor] = useState<string | null>(null);
+
   const save = async () => {
     if (!selected || !selected.name.trim()) { toast("Give the food a name first."); return; }
     setSaving(true);
     try {
       await logFood({ date, candidate: selected, servings: Math.max(servings, 0.1), mealType, time });
       toast.success("Logged");
+      const name = selected.name.trim();
       onOpenChange(false);
+      setFeelFor(name);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not log that");
     } finally { setSaving(false); }
@@ -183,6 +188,7 @@ export function LogFoodSheet({
   );
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl p-0">
         <SheetHeader className="px-5 pt-5">
@@ -435,5 +441,12 @@ export function LogFoodSheet({
         )}
       </SheetContent>
     </Sheet>
+    <FoodFeelSheet
+      open={!!feelFor}
+      onOpenChange={v => { if (!v) setFeelFor(null); }}
+      foodName={feelFor ?? ""}
+      date={date}
+    />
+    </>
   );
 }

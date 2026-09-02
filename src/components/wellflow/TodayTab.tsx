@@ -1,5 +1,6 @@
 import { TrendStrip } from "@/components/wellflow/TrendStrip";
 import { GoalBars } from "@/components/wellflow/GoalBars";
+import { CyclePhaseStrip } from "@/components/wellflow/CyclePhaseStrip";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,10 @@ export function TodayTab({
         <div className="mt-4">
           <TrendStrip />
         </div>
+
+        <CyclePhaseStrip className="mt-4" />
+
+
 
 
 

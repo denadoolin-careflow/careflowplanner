@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Droplets, Flame, Syringe, TrendingDown, TrendingUp } from "lucide-react";
 import { InsightsCharts } from "@/components/wellflow/InsightsCharts";
+import { FoodFeelPatterns } from "@/components/wellflow/FoodFeelPatterns";
+import { CyclePhaseInsights } from "@/components/wellflow/CyclePhaseInsights";
 import { observations, useInsights, type InsightRange, type InsightWindow } from "@/lib/wellflow/insights";
 import { todayISO } from "@/lib/wellflow/types";
 
@@ -98,6 +100,11 @@ export function InsightsTab() {
       </SectionCard>
 
       {data?.hasData && <InsightsCharts data={data} />}
+
+      <FoodFeelPatterns />
+
+      <CyclePhaseInsights />
+
 
       <p className="px-1 text-xs text-muted-foreground">
         These are patterns from your own log — a personal summary, not medical advice. Talk with your care
