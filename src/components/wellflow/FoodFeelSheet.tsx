@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { DELAY_OPTIONS, FEEL_SYMPTOMS, POSITIVE_SYMPTOMS, logFoodFeel } from "@/lib/wellflow/food-feel";
+import {
+  DELAY_OPTIONS, FEEL_SYMPTOMS, POSITIVE_SYMPTOMS, deleteFoodFeel, findFeelForEntry,
+  logFoodFeel, updateFoodFeel, type Severities,
+} from "@/lib/wellflow/food-feel";
 
 const RATINGS = [
   { value: 1, emoji: "😖", label: "Rough" },
@@ -29,26 +32,67 @@ export function FoodFeelSheet({
 }) {
   const [rating, setRating] = useState(3);
   const [symptoms, setSymptoms] = useState<string[]>([]);
+  const [severities, setSeverities] = useState<Severities>({});
   const [delay, setDelay] = useState<number | null>(60);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
 
+  /* Reopening for an entry loads what you already saved, so it can be edited. */
   useEffect(() => {
-    if (open) { setRating(3); setSymptoms([]); setDelay(60); setNote(""); }
-  }, [open, foodName]);
+    if (!open) return;
+    setRating(3); setSymptoms([]); setSeverities({}); setDelay(60); setNote(""); setExistingId(null);
+    if (!entryId) return;
+    let cancel = false;
+    void findFeelForEntry(entryId).then(log => {
+      if (cancel || !log) return;
+      setExistingId(log.id);
+      setRating(log.rating);
+      setSymptoms(log.symptoms);
+      setSeverities(log.severities ?? {});
+      setDelay(log.delay_minutes);
+      setNote(log.note ?? "");
+    });
+    return () => { cancel = true; };
+  }, [open, foodName, entryId]);
 
   const toggle = (s: string) =>
-    setSymptoms(list => (list.includes(s) ? list.filter(x => x !== s) : [...list, s]));
+    setSymptoms(list => {
+      const on = list.includes(s);
+      setSeverities(sev => {
+        const next = { ...sev };
+        if (on) delete next[s];
+        else next[s] = next[s] ?? 2;
+        return next;
+      });
+      return on ? list.filter(x => x !== s) : [...list, s];
+    });
+
+  const setSeverity = (s: string, value: number) =>
+    setSeverities(sev => ({ ...sev, [s]: value }));
 
   const save = async () => {
     setSaving(true);
     try {
-      await logFoodFeel({ food_name: foodName, entry_id: entryId ?? null, date, rating, symptoms, delay_minutes: delay, note });
-      toast.success("Noted — patterns build up over time");
+      const payload = { rating, symptoms, severities, delay_minutes: delay, note };
+      if (existingId) {
+        await updateFoodFeel(existingId, payload);
+        toast.success("Updated");
+      } else {
+        await logFoodFeel({ food_name: foodName, entry_id: entryId ?? null, date, ...payload });
+        toast.success("Noted — patterns build up over time");
+      }
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not save that");
     } finally { setSaving(false); }
+  };
+
+  const removeLog = async () => {
+    if (!existingId) return;
+    await deleteFoodFeel(existingId);
+    toast.success("Entry removed");
+    onOpenChange(false);
   };
 
   return (
@@ -100,6 +144,38 @@ export function FoodFeelSheet({
           })}
         </div>
 
+        {symptoms.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              How strong
+            </p>
+            {symptoms.map(s => (
+              <div key={s} className="flex items-center gap-2">
+                <span className="w-24 shrink-0 truncate text-xs">{s}</span>
+                <div className="flex flex-1 gap-1">
+                  {[1, 2, 3].map(v => (
+                    <button
+                      key={v} type="button" onClick={() => setSeverity(s, v)}
+                      aria-label={`${s} strength ${v} of 3`}
+                      aria-pressed={(severities[s] ?? 2) === v}
+                      className={cn(
+                        "min-h-[2.25rem] flex-1 rounded-full border text-[11px] transition-colors",
+                        (severities[s] ?? 2) === v
+                          ? POSITIVE_SYMPTOMS.has(s)
+                            ? "border-primary bg-primary/20 font-medium"
+                            : "border-destructive/60 bg-destructive/15 font-medium"
+                          : "border-border/60 bg-card/50 text-muted-foreground",
+                      )}
+                    >
+                      {v === 1 ? "Mild" : v === 2 ? "Medium" : "Strong"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <p className="mb-1.5 mt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           When
         </p>
@@ -127,8 +203,15 @@ export function FoodFeelSheet({
         />
 
         <div className="mt-4 flex gap-2 pb-6">
-          <Button className="flex-1" onClick={save} disabled={saving}>Save</Button>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Skip</Button>
+          <Button className="flex-1" onClick={save} disabled={saving}>
+            {existingId ? "Update" : "Save"}
+          </Button>
+          {existingId && (
+            <Button variant="ghost" onClick={removeLog}>Delete</Button>
+          )}
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            {existingId ? "Close" : "Skip"}
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

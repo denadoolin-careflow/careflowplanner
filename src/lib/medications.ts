@@ -14,7 +14,16 @@ export interface Medication {
   times: string[];
   active: boolean;
   recipient_id: string | null;
+  /** medication | vitamin | mineral | supplement */
+  kind: string;
 }
+
+export const MED_KINDS = [
+  { key: "medication", label: "Medication" },
+  { key: "vitamin", label: "Vitamin" },
+  { key: "mineral", label: "Mineral" },
+  { key: "supplement", label: "Supplement" },
+] as const;
 
 export type DoseStatus = "taken" | "skipped" | "missed";
 
@@ -47,6 +56,7 @@ function mapMed(r: any): Medication {
     times: (r.times ?? []).map(normalizeTime).sort(),
     active: r.active !== false,
     recipient_id: r.recipient_id ?? null,
+    kind: r.kind ?? "medication",
   };
 }
 
@@ -71,7 +81,8 @@ export const medications = {
       times: (input.times ?? []).map(normalizeTime),
       active: input.active ?? true,
       recipient_id: input.recipient_id ?? null,
-    }).select().single();
+      kind: input.kind ?? "medication",
+    } as any).select().single();
     if (data) { meds = [...meds, mapMed(data)].sort((a, b) => a.name.localeCompare(b.name)); emit(); }
   },
   async update(id: string, patch: Partial<Medication>) {
@@ -82,6 +93,7 @@ export const medications = {
     if (patch.times !== undefined) row.times = patch.times.map(normalizeTime);
     if (patch.active !== undefined) row.active = patch.active;
     if (patch.recipient_id !== undefined) row.recipient_id = patch.recipient_id;
+    if (patch.kind !== undefined) row.kind = patch.kind;
     meds = meds.map(m => m.id === id ? { ...m, ...patch } : m);
     emit();
     await supabase.from("medications").update(row as any).eq("id", id);
