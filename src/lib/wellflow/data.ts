@@ -233,6 +233,25 @@ export async function deleteSavedFood(id: string) {
   emitWellflow("saved-foods");
 }
 
+/** Edit a food already in the personal library. */
+export async function updateSavedFood(id: string, patch: Partial<SavedFood>) {
+  await supabase.from("custom_foods").update(patch as any).eq("id", id);
+  emitWellflow("saved-foods");
+}
+
+/** Save a new food (typed by hand or estimated from a description). */
+export async function createSavedFood(c: FoodCandidate) {
+  const user_id = await uid();
+  if (!user_id) throw new Error("Please sign in");
+  const { error } = await supabase.from("custom_foods").insert({
+    user_id, name: c.name, brand: c.brand ?? null, serving_size: c.servingSize ?? null,
+    calories: c.calories, protein: c.protein, carbs: c.carbs, fat: c.fat, fiber: c.fiber,
+    barcode: c.barcode ?? null, times_logged: 0,
+  });
+  if (error) throw error;
+  emitWellflow("saved-foods");
+}
+
 /* --------------------------------------------------------------- search */
 
 /** Open Food Facts lookup, proxied through an edge function. */
