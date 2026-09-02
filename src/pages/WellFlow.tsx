@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarHeart, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BellRing, CalendarHeart, Download, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TodayTab } from "@/components/wellflow/TodayTab";
 import { FoodTab } from "@/components/wellflow/FoodTab";
@@ -9,8 +10,12 @@ import { ProgressTab } from "@/components/wellflow/ProgressTab";
 import { Glp1Tab } from "@/components/wellflow/Glp1Tab";
 import { GoalsEditor } from "@/components/wellflow/GoalsEditor";
 import { LogFoodSheet } from "@/components/wellflow/LogFoodSheet";
+import { RemindersSheet } from "@/components/wellflow/RemindersSheet";
+import { ExportSheet } from "@/components/wellflow/ExportSheet";
 import { CheckInSheet, InjectionSheet, WaterSheet, WeightSheet } from "@/components/wellflow/QuickSheets";
+import { initWellflowReminders } from "@/lib/wellflow/reminders";
 import { todayISO } from "@/lib/wellflow/types";
+
 
 const TABS = [
   { key: "today", label: "Today", icon: CalendarHeart, path: "/wellflow" },
