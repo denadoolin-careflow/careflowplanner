@@ -124,9 +124,15 @@ export function WeightSheet({ open, onOpenChange, date = todayISO() }: SheetProp
 
 /* -------------------------------------------------------------- injection */
 
+const nowTime = () => {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
 export function InjectionSheet({ open, onOpenChange, date = todayISO() }: SheetProps) {
   const { profile } = useGlp1Profile();
   const [when, setWhen] = useState(date);
+  const [time, setTime] = useState(nowTime);
   const [medication, setMedication] = useState("");
   const [dose, setDose] = useState("");
   const [site, setSite] = useState<string>(INJECTION_SITES[0]);
@@ -137,6 +143,7 @@ export function InjectionSheet({ open, onOpenChange, date = todayISO() }: SheetP
   useEffect(() => {
     if (!open) return;
     setWhen(date);
+    setTime(nowTime());
     setMedication(profile.medication_name ?? "");
     setDose(profile.prescribed_dose ?? "");
     setSymptoms([]); setNotes("");
@@ -150,6 +157,7 @@ export function InjectionSheet({ open, onOpenChange, date = todayISO() }: SheetP
     try {
       await logInjection({
         date: when,
+        time_of_day: time || null,
         medication: medication.trim() || null,
         dose: dose.trim() || null,
         injection_site: site,
@@ -179,14 +187,18 @@ export function InjectionSheet({ open, onOpenChange, date = todayISO() }: SheetP
               <Input id="wf-inj-date" type="date" value={when} onChange={e => setWhen(e.target.value)} />
             </div>
             <div>
+              <Label htmlFor="wf-inj-time">Time</Label>
+              <Input id="wf-inj-time" type="time" value={time} onChange={e => setTime(e.target.value)} />
+            </div>
+            <div>
               <Label htmlFor="wf-inj-dose">Dose</Label>
               <Input id="wf-inj-dose" value={dose} placeholder="e.g. 2.5 mg"
                      onChange={e => setDose(e.target.value)} />
             </div>
-          </div>
-          <div>
-            <Label htmlFor="wf-inj-med">Medication</Label>
-            <Input id="wf-inj-med" value={medication} onChange={e => setMedication(e.target.value)} />
+            <div>
+              <Label htmlFor="wf-inj-med">Medication</Label>
+              <Input id="wf-inj-med" value={medication} onChange={e => setMedication(e.target.value)} />
+            </div>
           </div>
           <div>
             <Label htmlFor="wf-inj-site">Injection site</Label>
