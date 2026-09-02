@@ -12,7 +12,7 @@ import { InsightsTab } from "@/components/wellflow/InsightsTab";
 import { GoalsScreen } from "@/components/wellflow/GoalsScreen";
 import { FoodCalendar } from "@/components/wellflow/FoodCalendar";
 import { PlanScreen } from "@/components/wellflow/PlanScreen";
-import { WeeklyReport } from "@/components/wellflow/WeeklyReport";
+import { WeeklyReportScreen } from "@/components/wellflow/WeeklyReport";
 import { NutritionGuide } from "@/components/wellflow/NutritionGuide";
 import { MovementSheet } from "@/components/wellflow/MovementSheet";
 import { GoalsEditor } from "@/components/wellflow/GoalsEditor";
@@ -151,7 +151,7 @@ export default function WellFlow() {
           <PlanScreen />
         </TabsContent>
         <TabsContent value="report" className="mt-4">
-          <WeeklyReport onExport={() => setExportOpen(true)} />
+          <WeeklyReportScreen onExport={() => setExportOpen(true)} />
         </TabsContent>
         <TabsContent value="guide" className="mt-4">
           <NutritionGuide onLogFood={() => setFood(true)} />

@@ -28,7 +28,7 @@ const mealLabel = (k: string) => MEAL_TYPES.find(m => m.key === k)?.label ?? "Ot
 const timeOf = (iso: string) => { try { return format(new Date(iso), "h:mm a"); } catch { return ""; } };
 
 export function TodayTab({
-  date = todayISO(), onLogFood, onWater, onWeight, onInjection, onGoals,
+  date = todayISO(), onLogFood, onWater, onWeight, onInjection, onGoals, onMovement,
 }: {
   date?: string;
   onLogFood: () => void;
