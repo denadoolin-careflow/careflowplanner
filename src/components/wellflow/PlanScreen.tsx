@@ -20,6 +20,9 @@ import {
   targetsAsGoals, useWellflowPlan, type PlanPace, type PlanStyle, type PlanTargets,
 } from "@/lib/wellflow/diet-plans";
 import type { FoodEntry } from "@/lib/wellflow/types";
+import { PlanOnboarding } from "@/components/wellflow/PlanOnboarding";
+import { MovementCard } from "@/components/wellflow/MovementCard";
+import { MovementSheet } from "@/components/wellflow/MovementSheet";
 
 const FIELDS: { key: keyof PlanTargets; label: string; suffix: string; max: number }[] = [
   { key: "calories", label: "Calories", suffix: "cal", max: 6000 },
@@ -63,6 +66,9 @@ export function PlanScreen() {
   const [applyGoals, setApplyGoals] = useState(true);
   const [saving, setSaving] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [onboarding, setOnboarding] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [askedOnce, setAskedOnce] = useState(false);
 
   const currentWeight = latest?.weight_lb ?? goals.starting_weight ?? null;
 
@@ -78,6 +84,13 @@ export function PlanScreen() {
       fiber: plan.target_fiber ?? 0, water_oz: plan.target_water_oz ?? 0,
     });
   }, [plan]);
+
+  /* First visit with no plan yet — offer the guided setup. */
+  useEffect(() => {
+    if (loading || plan || askedOnce) return;
+    setAskedOnce(true);
+    setOnboarding(true);
+  }, [loading, plan, askedOnce]);
 
   const def = styleByKey(style);
 
@@ -119,7 +132,16 @@ export function PlanScreen() {
 
   return (
     <div className="space-y-4">
-      <SectionCard title="Your eating plan" subtitle="Pick a style, then make every number your own" accent="sage">
+      <SectionCard
+        title="Your eating plan"
+        subtitle="Pick a style, then make every number your own"
+        accent="sage"
+        action={
+          <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => setOnboarding(true)}>
+            {plan ? "Change plan" : "Guided setup"}
+          </Button>
+        }
+      >
         {loading ? (
           <div className="h-24 animate-pulse rounded-xl bg-muted/40" />
         ) : (
@@ -269,6 +291,16 @@ export function PlanScreen() {
           <p className="mt-2 text-sm text-muted-foreground">Log a few days and this fills in on its own.</p>
         )}
       </SectionCard>
+
+      <MovementCard targetDays={movementDays} onLog={() => setMoveOpen(true)} />
+
+      <PlanOnboarding
+        open={onboarding}
+        onOpenChange={setOnboarding}
+        currentWeight={currentWeight}
+        planId={plan?.id}
+      />
+      <MovementSheet open={moveOpen} onOpenChange={setMoveOpen} />
     </div>
   );
 }

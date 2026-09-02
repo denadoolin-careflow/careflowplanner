@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { BellRing, CalendarDays, CalendarHeart, ClipboardList, Download, Sliders, Sparkles, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
+import { BellRing, BookOpen, CalendarDays, CalendarHeart, ClipboardList, Download, FileText, Sliders, Sparkles, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TodayTab } from "@/components/wellflow/TodayTab";
 import { FoodTab } from "@/components/wellflow/FoodTab";
@@ -12,6 +12,9 @@ import { InsightsTab } from "@/components/wellflow/InsightsTab";
 import { GoalsScreen } from "@/components/wellflow/GoalsScreen";
 import { FoodCalendar } from "@/components/wellflow/FoodCalendar";
 import { PlanScreen } from "@/components/wellflow/PlanScreen";
+import { WeeklyReportScreen } from "@/components/wellflow/WeeklyReport";
+import { NutritionGuide } from "@/components/wellflow/NutritionGuide";
+import { MovementSheet } from "@/components/wellflow/MovementSheet";
 import { GoalsEditor } from "@/components/wellflow/GoalsEditor";
 import { LogFoodSheet } from "@/components/wellflow/LogFoodSheet";
 import { RemindersSheet } from "@/components/wellflow/RemindersSheet";
@@ -30,7 +33,7 @@ const TABS = [
 ];
 
 /** Reachable from the header, not the tab bar. */
-const EXTRA_TABS = ["goals", "calendar", "plan"];
+const EXTRA_TABS = ["goals", "calendar", "plan", "report", "guide"];
 
 export default function WellFlow() {
   const { tab } = useParams<{ tab?: string }>();
@@ -47,6 +50,7 @@ export default function WellFlow() {
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [remindersOpen, setRemindersOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [movement, setMovement] = useState(false);
 
   /* Keep reminder notifications scheduled while the app is open. */
   useEffect(() => { void initWellflowReminders(); }, []);
@@ -61,6 +65,7 @@ export default function WellFlow() {
     if (log === "weight") setWeight(true);
     if (log === "injection") setInjection(true);
     if (log === "checkin") setCheckin(true);
+    if (log === "movement") setMovement(true);
     const next = new URLSearchParams(params);
     next.delete("log");
     setParams(next, { replace: true });
@@ -85,6 +90,12 @@ export default function WellFlow() {
           <Button variant="ghost" size="icon" aria-label="Food calendar"
                   onClick={() => go("calendar")}>
             <CalendarDays className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Weekly report" onClick={() => go("report")}>
+            <FileText className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Nutrition guide" onClick={() => go("guide")}>
+            <BookOpen className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" aria-label="Eating plan" onClick={() => go("plan")}>
             <ClipboardList className="h-4 w-4" />
@@ -115,6 +126,7 @@ export default function WellFlow() {
             onWeight={() => setWeight(true)}
             onInjection={() => setInjection(true)}
             onGoals={() => go("goals")}
+            onMovement={() => setMovement(true)}
           />
         </TabsContent>
         <TabsContent value="food" className="mt-4">
@@ -137,6 +149,12 @@ export default function WellFlow() {
         </TabsContent>
         <TabsContent value="plan" className="mt-4">
           <PlanScreen />
+        </TabsContent>
+        <TabsContent value="report" className="mt-4">
+          <WeeklyReportScreen onExport={() => setExportOpen(true)} />
+        </TabsContent>
+        <TabsContent value="guide" className="mt-4">
+          <NutritionGuide onLogFood={() => setFood(true)} />
         </TabsContent>
       </Tabs>
 
@@ -169,6 +187,7 @@ export default function WellFlow() {
       <GoalsEditor open={goalsOpen} onOpenChange={setGoalsOpen} />
       <RemindersSheet open={remindersOpen} onOpenChange={setRemindersOpen} />
       <ExportSheet open={exportOpen} onOpenChange={setExportOpen} />
+      <MovementSheet open={movement} onOpenChange={setMovement} date={date} />
 
     </div>
   );

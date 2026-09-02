@@ -22,6 +22,9 @@ export const DELAY_OPTIONS = [
   { value: 480, label: "Later that day" },
 ];
 
+/** Per-symptom severity, 1 (mild) … 3 (strong). */
+export type Severities = Record<string, number>;
+
 export interface FoodFeelLog {
   id: string;
   entry_id: string | null;
@@ -31,6 +34,7 @@ export interface FoodFeelLog {
   /** 1 (drained me) … 5 (great) */
   rating: number;
   symptoms: string[];
+  severities: Severities;
   delay_minutes: number | null;
   note: string | null;
 }
@@ -41,6 +45,7 @@ export interface FoodFeelDraft {
   date?: string;
   rating: number;
   symptoms?: string[];
+  severities?: Severities;
   delay_minutes?: number | null;
   note?: string | null;
 }
@@ -53,6 +58,7 @@ const map = (r: any): FoodFeelLog => ({
   logged_at: r.logged_at,
   rating: Number(r.rating) || 3,
   symptoms: Array.isArray(r.symptoms) ? r.symptoms.map(String) : [],
+  severities: (r.severities && typeof r.severities === "object" ? r.severities : {}) as Severities,
   delay_minutes: r.delay_minutes ?? null,
   note: r.note ?? null,
 });
@@ -70,11 +76,32 @@ export async function logFoodFeel(draft: FoodFeelDraft) {
     date: draft.date ?? todayISO(),
     rating: Math.min(5, Math.max(1, Math.round(draft.rating))),
     symptoms: draft.symptoms ?? [],
+    severities: draft.severities ?? {},
     delay_minutes: draft.delay_minutes ?? null,
     note: draft.note?.trim() || null,
-  });
+  } as any);
   if (error) throw error;
   emit();
+}
+
+/** Update a saved feel log — rating, symptoms, severities, timing, or note. */
+export async function updateFoodFeel(id: string, patch: Partial<FoodFeelDraft>) {
+  const row: Record<string, unknown> = {};
+  if (patch.rating !== undefined) row.rating = Math.min(5, Math.max(1, Math.round(patch.rating)));
+  if (patch.symptoms !== undefined) row.symptoms = patch.symptoms;
+  if (patch.severities !== undefined) row.severities = patch.severities;
+  if (patch.delay_minutes !== undefined) row.delay_minutes = patch.delay_minutes;
+  if (patch.note !== undefined) row.note = patch.note?.trim() || null;
+  const { error } = await supabase.from("food_feel_logs").update(row as any).eq("id", id);
+  if (error) throw error;
+  emit();
+}
+
+/** The most recent feel log for a food entry, if one exists. */
+export async function findFeelForEntry(entryId: string): Promise<FoodFeelLog | null> {
+  const { data } = await supabase.from("food_feel_logs")
+    .select("*").eq("entry_id", entryId).order("logged_at", { ascending: false }).limit(1).maybeSingle();
+  return data ? map(data) : null;
 }
 
 export async function deleteFoodFeel(id: string) {
@@ -184,4 +211,65 @@ export function useFeelPatterns(days = 90) {
   const { logs, loading } = useFoodFeel(days);
   const patterns = useMemo(() => findFeelPatterns(logs), [logs]);
   return { logs, patterns, loading };
+}
+
+/* --------------------------------------------- per-food symptom compare */
+
+export interface FoodSymptomProfile {
+  food: string;
+  count: number;
+  avgRating: number;
+  /** Average severity (0 when never noted) per symptom, worst first. */
+  symptoms: { symptom: string; times: number; avgSeverity: number; positive: boolean }[];
+  /** Rating per log, oldest → newest, for the trend line. */
+  trend: { date: string; rating: number }[];
+  logs: FoodFeelLog[];
+}
+
+/** Full symptom profile for one food, grouped across every time you logged it. */
+export function profileForFood(logs: FoodFeelLog[], food: string): FoodSymptomProfile | null {
+  const key = baseName(food);
+  const mine = logs.filter(l => baseName(l.food_name) === key);
+  if (!mine.length) return null;
+
+  const stats = new Map<string, { times: number; total: number }>();
+  for (const l of mine) {
+    for (const s of l.symptoms) {
+      const cur = stats.get(s) ?? { times: 0, total: 0 };
+      cur.times += 1;
+      cur.total += Number(l.severities?.[s]) || 2;
+      stats.set(s, cur);
+    }
+  }
+
+  return {
+    food: mine[0].food_name.replace(/\s*\([^)]*\)\s*$/, "").trim(),
+    count: mine.length,
+    avgRating: mine.reduce((s, l) => s + l.rating, 0) / mine.length,
+    symptoms: Array.from(stats.entries())
+      .map(([symptom, v]) => ({
+        symptom, times: v.times, avgSeverity: v.total / v.times,
+        positive: POSITIVE_SYMPTOMS.has(symptom),
+      }))
+      .sort((a, b) => Number(a.positive) - Number(b.positive) || b.times - a.times),
+    trend: [...mine]
+      .sort((a, b) => a.logged_at.localeCompare(b.logged_at))
+      .map(l => ({ date: l.date, rating: l.rating })),
+    logs: [...mine].sort((a, b) => b.logged_at.localeCompare(a.logged_at)),
+  };
+}
+
+/** Foods you've logged a feel for more than once, most-logged first. */
+export function comparableFoods(logs: FoodFeelLog[]): { key: string; label: string; count: number }[] {
+  const m = new Map<string, { label: string; count: number }>();
+  for (const l of logs) {
+    const key = baseName(l.food_name);
+    if (!key) continue;
+    const cur = m.get(key) ?? { label: l.food_name.replace(/\s*\([^)]*\)\s*$/, "").trim(), count: 0 };
+    cur.count += 1;
+    m.set(key, cur);
+  }
+  return Array.from(m.entries())
+    .map(([key, v]) => ({ key, label: v.label, count: v.count }))
+    .sort((a, b) => b.count - a.count);
 }

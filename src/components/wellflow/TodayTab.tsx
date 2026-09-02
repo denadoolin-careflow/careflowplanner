@@ -1,5 +1,6 @@
 import { TrendStrip } from "@/components/wellflow/TrendStrip";
 import { GoalBars } from "@/components/wellflow/GoalBars";
+import { MedsSupplementsCard } from "@/components/wellflow/MedsSupplementsCard";
 import { CyclePhaseStrip } from "@/components/wellflow/CyclePhaseStrip";
 import { useMemo } from "react";
 import { format } from "date-fns";
@@ -8,7 +9,7 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { EmptyState } from "@/components/cards/EmptyState";
 import { ProgressRing } from "./ProgressRing";
 import { CheckInFields } from "./QuickSheets";
-import { Droplets, Plus, Scale, Syringe, Trash2, UtensilsCrossed, Target } from "lucide-react";
+import { Footprints, Droplets, Plus, Scale, Syringe, Trash2, UtensilsCrossed, Target } from "lucide-react";
 import { toast } from "sonner";
 import {
   deleteFoodEntry, deleteWater, daysBetween, nextInjectionDate, sumEntries,
@@ -27,7 +28,7 @@ const mealLabel = (k: string) => MEAL_TYPES.find(m => m.key === k)?.label ?? "Ot
 const timeOf = (iso: string) => { try { return format(new Date(iso), "h:mm a"); } catch { return ""; } };
 
 export function TodayTab({
-  date = todayISO(), onLogFood, onWater, onWeight, onInjection, onGoals,
+  date = todayISO(), onLogFood, onWater, onWeight, onInjection, onGoals, onMovement,
 }: {
   date?: string;
   onLogFood: () => void;
@@ -35,6 +36,7 @@ export function TodayTab({
   onWeight: () => void;
   onInjection: () => void;
   onGoals: () => void;
+  onMovement?: () => void;
 }) {
   const { goals } = useGoals();
   const { entries, loading } = useFoodEntries(date);
@@ -133,7 +135,7 @@ export function TodayTab({
         <Button className="mt-4 w-full gap-2 rounded-2xl py-6 text-base" onClick={onLogFood}>
           <Plus className="h-5 w-5" /> Log food
         </Button>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Button variant="secondary" size="sm" className="gap-1.5" onClick={onWater}>
             <Droplets className="h-4 w-4" /> Water
           </Button>
@@ -143,8 +145,15 @@ export function TodayTab({
           <Button variant="secondary" size="sm" className="gap-1.5" onClick={onInjection}>
             <Syringe className="h-4 w-4" /> Injection
           </Button>
+          {onMovement && (
+            <Button variant="secondary" size="sm" className="gap-1.5" onClick={onMovement}>
+              <Footprints className="h-4 w-4" /> Movement
+            </Button>
+          )}
         </div>
       </SectionCard>
+
+      <MedsSupplementsCard date={date} />
 
       <SectionCard title="How are you feeling today?" subtitle="Optional, saves as you tap" collapsibleId="wellflow-checkin">
         <CheckInFields date={date} />

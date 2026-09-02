@@ -2595,6 +2595,7 @@ export type Database = {
           logged_at: string
           note: string | null
           rating: number
+          severities: Json
           symptoms: string[]
           updated_at: string
           user_id: string
@@ -2609,6 +2610,7 @@ export type Database = {
           logged_at?: string
           note?: string | null
           rating?: number
+          severities?: Json
           symptoms?: string[]
           updated_at?: string
           user_id: string
@@ -2623,6 +2625,7 @@ export type Database = {
           logged_at?: string
           note?: string | null
           rating?: number
+          severities?: Json
           symptoms?: string[]
           updated_at?: string
           user_id?: string
@@ -4267,6 +4270,7 @@ export type Database = {
           created_at: string
           dose: string | null
           id: string
+          kind: string
           name: string
           notes: string | null
           recipient_id: string | null
@@ -4279,6 +4283,7 @@ export type Database = {
           created_at?: string
           dose?: string | null
           id?: string
+          kind?: string
           name: string
           notes?: string | null
           recipient_id?: string | null
@@ -4291,6 +4296,7 @@ export type Database = {
           created_at?: string
           dose?: string | null
           id?: string
+          kind?: string
           name?: string
           notes?: string | null
           recipient_id?: string | null
@@ -7931,6 +7937,45 @@ export type Database = {
           notes?: string | null
           user_id?: string
           weight_lb?: number
+        }
+        Relationships: []
+      }
+      wellflow_movement_logs: {
+        Row: {
+          activity: string
+          created_at: string
+          date: string
+          id: string
+          intensity: string
+          logged_at: string
+          minutes: number
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity?: string
+          created_at?: string
+          date?: string
+          id?: string
+          intensity?: string
+          logged_at?: string
+          minutes?: number
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity?: string
+          created_at?: string
+          date?: string
+          id?: string
+          intensity?: string
+          logged_at?: string
+          minutes?: number
+          note?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
