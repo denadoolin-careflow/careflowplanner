@@ -37,6 +37,15 @@ export function RemindersSheet({
         : [...p.weight_days, d].sort(),
     }));
 
+  const toggleMovementDay = (d: number) =>
+    setDraft(p => ({
+      ...p,
+      movement_days: p.movement_days.includes(d)
+        ? p.movement_days.filter(x => x !== d)
+        : [...p.movement_days, d].sort(),
+    }));
+
+
   const submit = async () => {
     if (draft.water_enabled && draft.water_end <= draft.water_start) {
       toast.error("Water end time needs to be after the start time");
