@@ -7985,6 +7985,7 @@ export type Database = {
           created_at: string
           id: string
           movement_days: number
+          movement_prefs: Json
           notes: string | null
           pace: string
           started_on: string
@@ -8003,6 +8004,7 @@ export type Database = {
           created_at?: string
           id?: string
           movement_days?: number
+          movement_prefs?: Json
           notes?: string | null
           pace?: string
           started_on?: string
@@ -8021,6 +8023,7 @@ export type Database = {
           created_at?: string
           id?: string
           movement_days?: number
+          movement_prefs?: Json
           notes?: string | null
           pace?: string
           started_on?: string
@@ -8045,6 +8048,12 @@ export type Database = {
           glp1_day_before: boolean
           glp1_enabled: boolean
           glp1_time: string
+          meds_enabled: boolean
+          movement_days: number[]
+          movement_enabled: boolean
+          movement_time: string
+          symptom_enabled: boolean
+          symptom_time: string
           updated_at: string
           user_id: string
           water_enabled: boolean
@@ -8063,6 +8072,12 @@ export type Database = {
           glp1_day_before?: boolean
           glp1_enabled?: boolean
           glp1_time?: string
+          meds_enabled?: boolean
+          movement_days?: number[]
+          movement_enabled?: boolean
+          movement_time?: string
+          symptom_enabled?: boolean
+          symptom_time?: string
           updated_at?: string
           user_id: string
           water_enabled?: boolean
@@ -8081,6 +8096,12 @@ export type Database = {
           glp1_day_before?: boolean
           glp1_enabled?: boolean
           glp1_time?: string
+          meds_enabled?: boolean
+          movement_days?: number[]
+          movement_enabled?: boolean
+          movement_time?: string
+          symptom_enabled?: boolean
+          symptom_time?: string
           updated_at?: string
           user_id?: string
           water_enabled?: boolean
