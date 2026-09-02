@@ -65,13 +65,24 @@ export default function WellFlow() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-3 pb-28 pt-4 sm:px-4 md:pb-8">
-      <header className="mb-4">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">WellFlow</p>
-        <h1 className="font-display text-2xl font-semibold">Nutrition, weight & GLP-1</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Track what helps you understand yourself. Let the rest be simple.
-        </p>
+      <header className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">WellFlow</p>
+          <h1 className="font-display text-2xl font-semibold">Nutrition, weight & GLP-1</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Track what helps you understand yourself. Let the rest be simple.
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-1">
+          <Button variant="ghost" size="icon" aria-label="Reminders" onClick={() => setRemindersOpen(true)}>
+            <BellRing className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Export my data" onClick={() => setExportOpen(true)}>
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
       </header>
+
 
       <Tabs value={active} onValueChange={go}>
         <TabsList className="hidden w-full md:grid md:grid-cols-4">
