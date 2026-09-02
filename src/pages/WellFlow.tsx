@@ -87,7 +87,7 @@ export default function WellFlow() {
 
 
       <Tabs value={active} onValueChange={go}>
-        <TabsList className="hidden w-full md:grid md:grid-cols-4">
+        <TabsList className="hidden w-full md:grid md:grid-cols-5">
           {TABS.map(t => <TabsTrigger key={t.key} value={t.key}>{t.label}</TabsTrigger>)}
         </TabsList>
 
@@ -107,14 +107,18 @@ export default function WellFlow() {
         <TabsContent value="progress" className="mt-4">
           <ProgressTab onWeight={() => setWeight(true)} onGoals={() => setGoalsOpen(true)} />
         </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTab />
+        </TabsContent>
         <TabsContent value="glp1" className="mt-4">
           <Glp1Tab onInjection={() => setInjection(true)} />
         </TabsContent>
       </Tabs>
 
-      {/* Mobile bottom bar */}
+      {/* Mobile section tabs — sit just above the app's bottom navigation */}
       <nav aria-label="WellFlow sections"
-           className="fixed inset-x-0 bottom-16 z-30 mx-auto flex max-w-md items-center justify-around rounded-2xl border border-border/50 bg-card/90 px-2 py-1.5 shadow-soft backdrop-blur-xl md:hidden">
+           className="fixed inset-x-0 z-30 mx-auto flex max-w-md items-center justify-around rounded-2xl border border-border/50 bg-card/90 px-1.5 py-1.5 shadow-soft backdrop-blur-xl md:hidden"
+           style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 4.75rem)" }}>
         {TABS.map(t => {
           const Icon = t.icon;
           const on = active === t.key;
