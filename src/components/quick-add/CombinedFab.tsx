@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange } from "lucide-react";
+import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange, Salad, Droplets, Scale, Syringe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
@@ -110,6 +110,10 @@ export function CombinedFab() {
     { key: "checklist", label: "Checklist", icon: ListChecks, onClick: () => openNewNote("- [ ] \n- [ ] \n- [ ] ") },
     { key: "notepad", label: "Notepad", icon: NotebookPen, onClick: () => { tray.setTab("notepad"); tray.setOpen(true); } },
     { key: "tray", label: "Task tray", icon: Inbox, onClick: () => { tray.setTab("tray"); tray.setOpen(true); } },
+    { key: "food", label: "Food", icon: Salad, onClick: () => navigate("/wellflow?log=food") },
+    { key: "water", label: "Water", icon: Droplets, onClick: () => navigate("/wellflow?log=water") },
+    { key: "weight", label: "Weight", icon: Scale, onClick: () => navigate("/wellflow?log=weight") },
+    { key: "injection", label: "Injection", icon: Syringe, onClick: () => navigate("/wellflow?log=injection") },
     { key: "photo", label: "Photo", icon: Camera, onClick: () => photoInputRef.current?.click() },
     { key: "pdf", label: "PDF", icon: FileUp, onClick: () => pdfInputRef.current?.click() },
   ];

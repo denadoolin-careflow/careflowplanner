@@ -36,6 +36,7 @@ import TagDetail from "./pages/TagDetail";
 import Settings from "./pages/Settings";
 import PomodoroPicker from "./pages/PomodoroPicker";
 import Health from "./pages/Health";
+import WellFlow from "./pages/WellFlow";
 import WealthHub from "./pages/WealthHub";
 import HomeAreas from "./pages/HomeAreas";
 import AreaPage from "./pages/AreaPage";
@@ -206,6 +207,8 @@ const App = () => (
                 <Route path="/home" element={<HomeHub />} />
                 <Route path="/home/groceries" element={<HomeGroceries />} />
                 <Route path="/health" element={<Health />} />
+                <Route path="/wellflow" element={<WellFlow />} />
+                <Route path="/wellflow/:tab" element={<WellFlow />} />
                 <Route path="/wealth" element={<WealthHub />} />
                 <Route path="/mental-load" element={<MentalLoad />} />
                 <Route path="/care" element={<CareHub />} />

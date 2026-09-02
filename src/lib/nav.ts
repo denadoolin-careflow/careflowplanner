@@ -5,6 +5,7 @@ import {
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
   Wind, PenLine, Coffee, Share2,
   Zap, Plane, Users, PartyPopper, Gift, CheckSquare, Heart, Album,
+  Salad,
 } from "lucide-react";
 
 /** Per-flow accent classes for tints and gradients. */
@@ -55,6 +56,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/routines": "Repeatable rhythms for daily life.",
   "/trips": "Plan trips and packing lists.",
   "/health": "Health, energy, and check-ins.",
+  "/wellflow": "Nutrition, weight, and GLP-1 tracking.",
   "/habits": "Daily habits and streaks.",
   "/journal": "A quiet space to write.",
   "/journal-flow": "Guided journaling and flow.",
@@ -192,6 +194,7 @@ export const NAV_GROUPS = [
     icon: Leaf,
     items: [
       { to: "/health", label: "Health", icon: HeartPulse },
+      { to: "/wellflow", label: "Nutrition & GLP-1", icon: Salad },
       { to: "/habits", label: "Habits", icon: Sparkles },
       { to: "/journal", label: "Journal", icon: BookHeart },
       { to: "/journal-flow", label: "Journal & Flow", icon: Wind },
