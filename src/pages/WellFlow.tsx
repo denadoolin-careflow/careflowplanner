@@ -136,6 +136,9 @@ export default function WellFlow() {
       <InjectionSheet open={injection} onOpenChange={setInjection} date={date} />
       <CheckInSheet open={checkin} onOpenChange={setCheckin} date={date} />
       <GoalsEditor open={goalsOpen} onOpenChange={setGoalsOpen} />
+      <RemindersSheet open={remindersOpen} onOpenChange={setRemindersOpen} />
+      <ExportSheet open={exportOpen} onOpenChange={setExportOpen} />
+
     </div>
   );
 }
