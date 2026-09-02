@@ -99,6 +99,11 @@ export function InsightsTab() {
 
       {data?.hasData && <InsightsCharts data={data} />}
 
+      <FoodFeelPatterns />
+
+      <CyclePhaseInsights />
+
+
       <p className="px-1 text-xs text-muted-foreground">
         These are patterns from your own log — a personal summary, not medical advice. Talk with your care
         team about anything that concerns you or about your medication.
