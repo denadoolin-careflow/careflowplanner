@@ -1,4 +1,5 @@
 import { TrendStrip } from "@/components/wellflow/TrendStrip";
+import { GoalBars } from "@/components/wellflow/GoalBars";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -83,11 +84,22 @@ export function TodayTab({
         }
       >
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <ProgressRing label="Calories" value={totals.calories} goal={goals.calories} />
-          <ProgressRing label="Protein" value={totals.protein} goal={goals.protein} unit="g" />
-          <ProgressRing label="Fiber" value={totals.fiber} goal={goals.fiber} unit="g" />
-          <ProgressRing label="Water" value={waterTotal} goal={goals.water_oz} unit="oz" />
+          <ProgressRing label="Calories" value={totals.calories} goal={goals.calories} onTap={onLogFood} />
+          <ProgressRing label="Protein" value={totals.protein} goal={goals.protein} unit="g" onTap={onLogFood} />
+          <ProgressRing label="Fiber" value={totals.fiber} goal={goals.fiber} unit="g" onTap={onLogFood} />
+          <ProgressRing label="Water" value={waterTotal} goal={goals.water_oz} unit="oz"
+                        variant="water" onTap={onWater} />
         </div>
+
+        <GoalBars
+          className="mt-4"
+          items={[
+            { label: "Calories", value: totals.calories, goal: goals.calories },
+            { label: "Protein", value: totals.protein, goal: goals.protein, unit: "g" },
+            { label: "Carbs", value: totals.carbs, goal: goals.carbs, unit: "g" },
+            { label: "Fat", value: totals.fat, goal: goals.fat, unit: "g" },
+          ]}
+        />
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
           {encouragement(totals, goals)}
