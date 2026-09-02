@@ -7881,6 +7881,63 @@ export type Database = {
         }
         Relationships: []
       }
+      wellflow_reminders: {
+        Row: {
+          checkin_enabled: boolean
+          checkin_time: string
+          created_at: string
+          glp1_day: number
+          glp1_day_before: boolean
+          glp1_enabled: boolean
+          glp1_time: string
+          updated_at: string
+          user_id: string
+          water_enabled: boolean
+          water_end: string
+          water_interval_minutes: number
+          water_start: string
+          weight_days: number[]
+          weight_enabled: boolean
+          weight_time: string
+        }
+        Insert: {
+          checkin_enabled?: boolean
+          checkin_time?: string
+          created_at?: string
+          glp1_day?: number
+          glp1_day_before?: boolean
+          glp1_enabled?: boolean
+          glp1_time?: string
+          updated_at?: string
+          user_id: string
+          water_enabled?: boolean
+          water_end?: string
+          water_interval_minutes?: number
+          water_start?: string
+          weight_days?: number[]
+          weight_enabled?: boolean
+          weight_time?: string
+        }
+        Update: {
+          checkin_enabled?: boolean
+          checkin_time?: string
+          created_at?: string
+          glp1_day?: number
+          glp1_day_before?: boolean
+          glp1_enabled?: boolean
+          glp1_time?: string
+          updated_at?: string
+          user_id?: string
+          water_enabled?: boolean
+          water_end?: string
+          water_interval_minutes?: number
+          water_start?: string
+          weight_days?: number[]
+          weight_enabled?: boolean
+          weight_time?: string
+        }
+        Relationships: []
+      }
       wellness_checkins: {
         Row: {
           created_at: string

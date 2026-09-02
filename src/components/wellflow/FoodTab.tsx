@@ -1,3 +1,5 @@
+import { SuggestedMeals } from "@/components/wellflow/SuggestedMeals";
+import { useGoals } from "@/lib/wellflow/data";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,7 @@ import { MEAL_TYPES, todayISO, type MealType } from "@/lib/wellflow/types";
 export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLogFood: () => void }) {
   const { entries, loading } = useFoodEntries(date);
   const { foods } = useSavedFoods();
+  const { goals } = useGoals();
   const totals = useMemo(() => sumEntries(entries), [entries]);
 
   const byMeal = useMemo(() => {
@@ -54,6 +57,16 @@ export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLog
           <Mini label="Fat" v={totals.fat} unit="g" />
         </div>
       </SectionCard>
+
+      <SuggestedMeals
+        date={date}
+        remaining={{
+          calories: goals.calories == null ? null : Math.max(goals.calories - totals.calories, 0),
+          protein: goals.protein == null ? null : Math.max(goals.protein - totals.protein, 0),
+        }}
+      />
+
+
 
       {(favorites.length > 0 || recents.length > 0) && (
         <SectionCard title="Log again" subtitle="Your favorites and recent foods" collapsibleId="wellflow-again">

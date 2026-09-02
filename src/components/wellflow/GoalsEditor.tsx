@@ -21,6 +21,7 @@ const FIELDS: { key: keyof Goals; label: string; unit: string }[] = [
 export function GoalsEditor({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { goals, save } = useGoals();
   const [draft, setDraft] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -28,17 +29,42 @@ export function GoalsEditor({ open, onOpenChange }: { open: boolean; onOpenChang
     const d: Record<string, string> = {};
     FIELDS.forEach(f => { const v = goals[f.key]; d[f.key as string] = v == null ? "" : String(v); });
     setDraft(d);
+    setErrors({});
   }, [open, goals]);
+
+  const validate = (key: string, raw: string) => {
+    const v = raw.trim();
+    if (v === "") return "";
+    const num = Number(v);
+    if (!Number.isFinite(num) || num < 0) return "Enter a number of 0 or more";
+    return "";
+  };
+
+  /** Save a single field as soon as it's valid, so rings and bars update live. */
+  const commit = async (key: keyof Goals, raw: string) => {
+    const err = validate(key as string, raw);
+    setErrors(p => ({ ...p, [key as string]: err }));
+    if (err) return;
+    const v = raw.trim();
+    const next = v === "" ? null : Number(v);
+    if ((goals[key] ?? null) === next) return;
+    try {
+      await save({ [key]: next } as Partial<Goals>);
+    } catch {
+      toast.error("Could not save that goal");
+    }
+  };
 
   const submit = async () => {
     const patch: Partial<Goals> = {};
+    const errs: Record<string, string> = {};
     for (const f of FIELDS) {
       const raw = (draft[f.key as string] ?? "").trim();
-      if (raw === "") { (patch as any)[f.key] = null; continue; }
-      const num = Number(raw);
-      if (!Number.isFinite(num) || num < 0) { toast.error(`${f.label} needs to be a number`); return; }
-      (patch as any)[f.key] = num;
+      const err = validate(f.key as string, raw);
+      if (err) { errs[f.key as string] = err; continue; }
+      (patch as any)[f.key] = raw === "" ? null : Number(raw);
     }
+    if (Object.keys(errs).length) { setErrors(errs); toast.error("Check the highlighted fields"); return; }
     setBusy(true);
     try {
       await save(patch);
@@ -56,23 +82,38 @@ export function GoalsEditor({ open, onOpenChange }: { open: boolean; onOpenChang
           <DialogTitle className="font-display">Set my goals</DialogTitle>
           <DialogDescription>
             These are your own targets — set them yourself or with your healthcare professional.
-            Leave anything blank to skip it.
+            Leave anything blank to skip it. Changes save as you go.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3">
-          {FIELDS.map(f => (
-            <div key={f.key as string}>
-              <Label htmlFor={`goal-${String(f.key)}`}>{f.label} <span className="text-muted-foreground">({f.unit})</span></Label>
-              <Input
-                id={`goal-${String(f.key)}`} inputMode="decimal"
-                value={draft[f.key as string] ?? ""}
-                onChange={e => setDraft(p => ({ ...p, [f.key as string]: e.target.value }))}
-              />
-            </div>
-          ))}
+          {FIELDS.map(f => {
+            const err = errors[f.key as string];
+            return (
+              <div key={f.key as string}>
+                <Label htmlFor={`goal-${String(f.key)}`}>{f.label} <span className="text-muted-foreground">({f.unit})</span></Label>
+                <Input
+                  id={`goal-${String(f.key)}`} inputMode="decimal"
+                  aria-invalid={!!err}
+                  aria-describedby={err ? `goal-${String(f.key)}-err` : undefined}
+                  className={err ? "border-destructive" : undefined}
+                  value={draft[f.key as string] ?? ""}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setDraft(p => ({ ...p, [f.key as string]: v }));
+                    setErrors(p => ({ ...p, [f.key as string]: validate(f.key as string, v) }));
+                  }}
+                  onBlur={e => void commit(f.key, e.target.value)}
+                />
+                {err && (
+                  <p id={`goal-${String(f.key)}-err`} className="mt-1 text-[11px] text-destructive">{err}</p>
+                )}
+              </div>
+            );
+          })}
         </div>
         <Button className="w-full" disabled={busy} onClick={submit}>Save goals</Button>
       </DialogContent>
     </Dialog>
   );
 }
+

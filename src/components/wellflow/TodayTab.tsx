@@ -1,3 +1,4 @@
+import { TrendStrip } from "@/components/wellflow/TrendStrip";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,12 @@ export function TodayTab({
             hint={sinceLast != null ? `${sinceLast}d since last` : undefined}
           />
         </div>
+
+        <div className="mt-4">
+          <TrendStrip />
+        </div>
+
+
 
         <Button className="mt-4 w-full gap-2 rounded-2xl py-6 text-base" onClick={onLogFood}>
           <Plus className="h-5 w-5" /> Log food
