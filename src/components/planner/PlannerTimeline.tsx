@@ -39,6 +39,7 @@ import { DurationEditor } from "./DurationEditor";
 import { useActuals, fmtMinutesShort } from "@/lib/planner/actuals";
 import { PlannerTemplatesMenu } from "./PlannerTemplatesMenu";
 import { PlannerMealLane } from "./PlannerMealLane";
+import { PlannerWellnessLane } from "./PlannerWellnessLane";
 import { PlannerAtmosphereStrip } from "./PlannerAtmosphereStrip";
 import { useBandColors, bandClass, type BandId } from "@/lib/planner-band-colors";
 import type { PlannerTemplate, TemplateItem } from "@/lib/planner-templates";
@@ -1247,6 +1248,16 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
 
             {/* Meals: breakfast · lunch · dinner */}
             <PlannerMealLane
+              iso={iso}
+              topFor={(absMin) => {
+                const rel = absMin - START_H * 60;
+                if (rel < 0 || rel > totalMin) return null;
+                return rel * (HOUR_PX / 60);
+              }}
+            />
+
+            {/* Wellness: doses, movement, symptom check-in */}
+            <PlannerWellnessLane
               iso={iso}
               topFor={(absMin) => {
                 const rel = absMin - START_H * 60;
