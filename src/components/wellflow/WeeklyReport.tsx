@@ -1,12 +1,18 @@
 /** Weekly progress report — last 7 days next to the 7 before. Descriptive only. */
 import { format } from "date-fns";
 import { SectionCard } from "@/components/cards/SectionCard";
+import { AdherenceCard } from "@/components/wellflow/AdherenceCard";
 import { EmptyState } from "@/components/cards/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowRight, ArrowUp, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGoals } from "@/lib/wellflow/data";
 import { useWeeklyReport, type WeekStats } from "@/lib/wellflow/weekly-report";
+import { exportWeeklyCSV, exportWeeklyPDF, fetchWeeklyExport } from "@/lib/wellflow/export";
+import { fetchAdherence } from "@/lib/wellflow/adherence";
+import { doseSlots, useMedications } from "@/lib/medications";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const fmt = (n: number, unit = "") => `${Math.round(n)}${unit}`;
 
@@ -42,6 +48,33 @@ const rangeLabel = (w: WeekStats) =>
 export function WeeklyReportScreen({ onExport }: { onExport?: () => void }) {
   const { goals } = useGoals();
   const { report, loading } = useWeeklyReport({ calories: goals.calories, protein: goals.protein });
+  const { medications } = useMedications();
+  const [busy, setBusy] = useState<"csv" | "pdf" | null>(null);
+
+  const runExport = async (kind: "csv" | "pdf") => {
+    if (!report) return;
+    setBusy(kind);
+    try {
+      const { current } = await fetchAdherence({
+        calories: goals.calories ?? null,
+        protein: goals.protein ?? null,
+        water: goals.water_oz ?? null,
+        movementDays: 3,
+        doseSlotsPerDay: doseSlots(medications).length,
+      });
+      const data = await fetchWeeklyExport(
+        report.current.from, report.current.to,
+        { calories: goals.calories ?? null, protein: goals.protein ?? null,
+          fiber: goals.fiber ?? null, water_oz: goals.water_oz ?? null },
+        { score: current.score, streak: current.loggingStreak, best: current.bestStreak,
+          parts: current.parts.map(p => ({ label: p.label, hit: p.hit, of: p.of })) },
+      );
+      if (kind === "csv") exportWeeklyCSV(data); else exportWeeklyPDF(data);
+      toast.success("Weekly report ready");
+    } catch {
+      toast.error("Could not build that report");
+    } finally { setBusy(null); }
+  };
 
   return (
     <div className="space-y-4">
@@ -49,11 +82,23 @@ export function WeeklyReportScreen({ onExport }: { onExport?: () => void }) {
         title="This week"
         subtitle={report ? rangeLabel(report.current) : "Last 7 days"}
         accent="sage"
-        action={onExport && (
-          <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={onExport}>
-            <Download className="mr-1 h-3.5 w-3.5" /> Share
-          </Button>
-        )}
+        action={
+          <div className="flex gap-1">
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" disabled={!!busy || !report}
+                    onClick={() => runExport("csv")}>
+              <Download className="mr-1 h-3.5 w-3.5" /> CSV
+            </Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" disabled={!!busy || !report}
+                    onClick={() => runExport("pdf")}>
+              <Download className="mr-1 h-3.5 w-3.5" /> PDF
+            </Button>
+            {onExport && (
+              <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={onExport}>
+                More
+              </Button>
+            )}
+          </div>
+        }
       >
         {loading || !report ? (
           <div className="h-32 animate-pulse rounded-xl bg-muted/40" />
@@ -135,6 +180,8 @@ export function WeeklyReportScreen({ onExport }: { onExport?: () => void }) {
           </div>
         </SectionCard>
       )}
+
+      <AdherenceCard />
 
       <p className="px-1 text-xs text-muted-foreground">
         A summary of what you logged — not medical advice, and not a prediction. Share it with your care team if

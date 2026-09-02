@@ -234,6 +234,8 @@ export async function savePlan(input: {
   pace: PlanPace;
   targets: PlanTargets;
   movement_days: number;
+  /** Optional accepted movement idea: activity, minutes, weekday indexes. */
+  movement_prefs?: { activity: string; minutes: number; days: number[] } | null;
   notes?: string | null;
 }) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -251,6 +253,7 @@ export async function savePlan(input: {
     target_fiber: input.targets.fiber,
     target_water_oz: input.targets.water_oz,
     movement_days: input.movement_days,
+    movement_prefs: input.movement_prefs ?? null,
     notes: input.notes ?? null,
   };
 

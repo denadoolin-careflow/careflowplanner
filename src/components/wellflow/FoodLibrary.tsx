@@ -11,7 +11,10 @@ import {
   createSavedFood, deleteSavedFood, logFood, parseFoodText, savedToCandidate, searchFoods,
   toggleFavoriteFood, updateSavedFood, useSavedFoods,
 } from "@/lib/wellflow/data";
-import { STORES, mergeWithCatalog, searchCatalog, storeForBrand, type Store } from "@/lib/wellflow/food-catalog";
+import {
+  DIET_TAGS, STORES, dietShelf, mergeWithCatalog, searchCatalog, storeForBrand,
+  type DietTag, type Store,
+} from "@/lib/wellflow/food-catalog";
 import type { FoodCandidate, MealType, SavedFood } from "@/lib/wellflow/types";
 
 
@@ -39,6 +42,8 @@ export function FoodLibrary({ date }: { date: string }) {
   const [editing, setEditing] = useState<{ value: EditableFood; savedId?: string } | null>(null);
   const [details, setDetails] = useState<FoodCandidate | null>(null);
   const [store, setStore] = useState<Store | null>(null);
+  const [diet, setDiet] = useState<DietTag | null>(null);
+  const shelf = useMemo(() => (diet ? dietShelf(diet, store) : []), [diet, store]);
 
   /** Scan a product barcode with the device camera when the browser supports it. */
   const scan = async () => {
@@ -176,6 +181,43 @@ export function FoodLibrary({ date }: { date: string }) {
           </button>
         ))}
       </div>
+
+      <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Popular for a way of eating">
+        {DIET_TAGS.map(d => (
+          <button key={d.key} type="button" onClick={() => setDiet(t => (t === d.key ? null : d.key))}
+                  aria-pressed={diet === d.key}
+                  className={cn("min-h-[2rem] rounded-full border px-3 text-xs transition-colors",
+                    diet === d.key ? "border-primary bg-primary/15 font-medium"
+                                   : "border-border/60 bg-card/50 text-muted-foreground")}>
+            {d.label}
+          </button>
+        ))}
+      </div>
+
+      {shelf.length > 0 && (
+        <div className="mt-3">
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Popular picks{store ? ` at ${store}` : ""}
+          </p>
+          <ul className="space-y-1.5">
+            {shelf.map(c => (
+              <li key={c.id} className="flex items-center gap-2 rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{c.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {c.brand ? `${c.brand} · ` : ""}{c.servingSize} · {Math.round(c.calories)} cal • {Math.round(c.protein)}g P
+                  </p>
+                </div>
+                <Button size="sm" variant="secondary" onClick={() => logNow(c)}>Log</Button>
+                <Button size="sm" variant="ghost" onClick={() => saveToLibrary(c)}>Save</Button>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Matched on nutrition facts, not a recommendation — check anything that matters to you.
+          </p>
+        </div>
+      )}
 
       {results.length > 0 && (
         <div className="mt-3">

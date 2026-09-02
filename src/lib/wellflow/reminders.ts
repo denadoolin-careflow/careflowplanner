@@ -12,6 +12,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { inQuietHours, notifyReminder } from "@/lib/reminders";
+import { doseSlots } from "@/lib/medications";
+import { hasMovementOn } from "@/lib/wellflow/movement";
+
+/** Dose times already entered by the user — never generated or adjusted here. */
+function medSlotsForReminders() {
+  return doseSlots().map(s => ({
+    id: s.med.id, name: s.med.name, dose: s.med.dose, time: s.time,
+  }));
+}
 
 export interface WellflowReminderSettings {
   water_enabled: boolean;
@@ -27,6 +36,15 @@ export interface WellflowReminderSettings {
   glp1_day: number;
   glp1_time: string;
   glp1_day_before: boolean;
+  /** Nudge at each medication / supplement dose time already entered. */
+  meds_enabled: boolean;
+  /** Daily "how did food feel?" nudge. */
+  symptom_enabled: boolean;
+  symptom_time: string;
+  /** Movement nudge on chosen weekdays (skipped if already logged). */
+  movement_enabled: boolean;
+  movement_days: number[];
+  movement_time: string;
 }
 
 export const DEFAULT_WELLFLOW_REMINDERS: WellflowReminderSettings = {
@@ -43,6 +61,12 @@ export const DEFAULT_WELLFLOW_REMINDERS: WellflowReminderSettings = {
   glp1_day: 0,
   glp1_time: "09:00",
   glp1_day_before: false,
+  meds_enabled: false,
+  symptom_enabled: false,
+  symptom_time: "19:30",
+  movement_enabled: false,
+  movement_days: [1, 3, 6],
+  movement_time: "17:00",
 };
 
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -66,6 +90,12 @@ function normalize(row: any): WellflowReminderSettings {
     glp1_day: Number(row.glp1_day) || 0,
     glp1_time: hhmm(row.glp1_time, "09:00"),
     glp1_day_before: !!row.glp1_day_before,
+    meds_enabled: !!row.meds_enabled,
+    symptom_enabled: !!row.symptom_enabled,
+    symptom_time: hhmm(row.symptom_time, "19:30"),
+    movement_enabled: !!row.movement_enabled,
+    movement_days: Array.isArray(row.movement_days) ? row.movement_days.map(Number) : [1, 3, 6],
+    movement_time: hhmm(row.movement_time, "17:00"),
   };
 }
 
@@ -146,7 +176,7 @@ const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
 /** Every fire time in the next 24 hours for the given settings. */
 export function upcomingFires(s: WellflowReminderSettings, from = new Date()) {
-  const out: { at: Date; key: string; title: string; body: string }[] = [];
+  const out: { at: Date; key: string; title: string; body: string; skipIfMoved?: string }[] = [];
   const horizon = new Date(from.getTime() + 24 * 60 * 60_000);
 
   for (let offset = 0; offset <= 1; offset++) {
@@ -191,6 +221,30 @@ export function upcomingFires(s: WellflowReminderSettings, from = new Date()) {
         });
       }
     }
+    if (s.symptom_enabled) {
+      out.push({
+        at: at(day, s.symptom_time), key: `symptom-${dk}`,
+        title: "How did today's food feel?",
+        body: "A quick note on energy or symptoms keeps your patterns honest.",
+      });
+    }
+    if (s.movement_enabled && s.movement_days.includes(day.getDay())) {
+      out.push({
+        at: at(day, s.movement_time), key: `movement-${dk}`,
+        title: "Movement, if you're up for it",
+        body: "Even a short walk counts — log it when you're done.",
+        skipIfMoved: dk,
+      });
+    }
+    if (s.meds_enabled) {
+      for (const slot of medSlotsForReminders()) {
+        out.push({
+          at: at(day, slot.time), key: `meds-${dk}-${slot.id}-${slot.time}`,
+          title: `${slot.name}`,
+          body: `${slot.time}${slot.dose ? ` · ${slot.dose}` : ""} — mark it taken or skipped when you can.`,
+        });
+      }
+    }
   }
 
   return out
@@ -211,8 +265,12 @@ export function scheduleWellflowReminders(s: WellflowReminderSettings) {
     const delay = f.at.getTime() - Date.now();
     if (delay < 0) return;
     timers.push(setTimeout(() => {
-      markFired(f.key);
-      if (!inQuietHours()) notifyReminder(f.title, f.body, f.key);
+      void (async () => {
+        markFired(f.key);
+        // A movement nudge stays quiet if the day is already logged.
+        if (f.skipIfMoved && await hasMovementOn(f.skipIfMoved)) return;
+        if (!inQuietHours()) notifyReminder(f.title, f.body, f.key);
+      })();
       scheduleWellflowReminders(s);
     }, Math.min(delay, 2_147_000_000)));
   });

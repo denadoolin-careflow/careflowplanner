@@ -231,3 +231,44 @@ export function mergeWithCatalog(
   });
   return [...local, ...rest];
 }
+
+/* ------------------------------------------------------------ diet shelves */
+
+export const DIET_TAGS = [
+  { key: "keto", label: "Keto" },
+  { key: "atkins", label: "Atkins" },
+  { key: "glp1", label: "GLP-1 friendly" },
+  { key: "points", label: "Points friendly" },
+  { key: "high_protein", label: "High protein" },
+  { key: "high_fiber", label: "High fiber" },
+] as const;
+
+export type DietTag = (typeof DIET_TAGS)[number]["key"];
+
+const per100 = (f: CatalogFood, k: "protein" | "carbs" | "fiber") =>
+  f.calories > 0 ? ((f[k] as number) * 100) / f.calories : 0;
+
+/** Does this catalog food fit the shape of a given eating style? */
+export function matchesDiet(f: CatalogFood, tag: DietTag): boolean {
+  switch (tag) {
+    case "keto": return f.carbs <= 8 && f.fat >= 4;
+    case "atkins": return f.carbs <= 12;
+    case "glp1": return f.protein >= 10 && f.calories <= 350;
+    case "points": return f.calories <= 200 && f.fat <= 8;
+    case "high_protein": return per100(f, "protein") >= 8 || f.protein >= 20;
+    case "high_fiber": return f.fiber >= 4;
+  }
+}
+
+/** Popular shelf for a diet style, optionally limited to one grocer. */
+export function dietShelf(tag: DietTag, store?: Store | null, limit = 12): CatalogFood[] {
+  return FOOD_CATALOG
+    .filter(f => (store ? f.store === store : true) && matchesDiet(f, tag))
+    .sort((a, b) => b.protein - a.protein || a.calories - b.calories)
+    .slice(0, limit);
+}
+
+/** Shelf staples for one grocer, handy before you've typed anything. */
+export function storeShelf(store: Store, limit = 12): CatalogFood[] {
+  return FOOD_CATALOG.filter(f => f.store === store).slice(0, limit);
+}

@@ -203,3 +203,10 @@ export function useMovementEnergy(days = 60) {
   }, [days]);
   return data;
 }
+
+/** Did the user already log movement on this date? Used to keep nudges quiet. */
+export async function hasMovementOn(date: string): Promise<boolean> {
+  const { data } = await supabase.from("wellflow_movement_logs")
+    .select("id").eq("date", date).limit(1);
+  return (data ?? []).length > 0;
+}
