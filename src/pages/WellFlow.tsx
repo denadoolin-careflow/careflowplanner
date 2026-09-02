@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { BellRing, CalendarHeart, Download, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
+import { BellRing, CalendarHeart, Download, Sparkles, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TodayTab } from "@/components/wellflow/TodayTab";
 import { FoodTab } from "@/components/wellflow/FoodTab";
 import { ProgressTab } from "@/components/wellflow/ProgressTab";
 import { Glp1Tab } from "@/components/wellflow/Glp1Tab";
+import { InsightsTab } from "@/components/wellflow/InsightsTab";
 import { GoalsEditor } from "@/components/wellflow/GoalsEditor";
 import { LogFoodSheet } from "@/components/wellflow/LogFoodSheet";
 import { RemindersSheet } from "@/components/wellflow/RemindersSheet";
@@ -21,6 +22,7 @@ const TABS = [
   { key: "today", label: "Today", icon: CalendarHeart, path: "/wellflow" },
   { key: "food", label: "Food", icon: UtensilsCrossed, path: "/wellflow/food" },
   { key: "progress", label: "Progress", icon: TrendingUp, path: "/wellflow/progress" },
+  { key: "insights", label: "Insights", icon: Sparkles, path: "/wellflow/insights" },
   { key: "glp1", label: "GLP-1", icon: Syringe, path: "/wellflow/glp1" },
 ];
 
