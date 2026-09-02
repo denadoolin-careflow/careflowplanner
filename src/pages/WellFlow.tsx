@@ -37,6 +37,12 @@ export default function WellFlow() {
   const [injection, setInjection] = useState(false);
   const [checkin, setCheckin] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
+  const [remindersOpen, setRemindersOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  /* Keep reminder notifications scheduled while the app is open. */
+  useEffect(() => { void initWellflowReminders(); }, []);
+
 
   /* Deep links from the global quick-capture FAB: /wellflow?log=food */
   useEffect(() => {
