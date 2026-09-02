@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { BellRing, CalendarHeart, Download, Sparkles, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
+import { BellRing, CalendarDays, CalendarHeart, Download, Sliders, Sparkles, Syringe, TrendingUp, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TodayTab } from "@/components/wellflow/TodayTab";
 import { FoodTab } from "@/components/wellflow/FoodTab";
 import { ProgressTab } from "@/components/wellflow/ProgressTab";
 import { Glp1Tab } from "@/components/wellflow/Glp1Tab";
 import { InsightsTab } from "@/components/wellflow/InsightsTab";
+import { GoalsScreen } from "@/components/wellflow/GoalsScreen";
+import { FoodCalendar } from "@/components/wellflow/FoodCalendar";
 import { GoalsEditor } from "@/components/wellflow/GoalsEditor";
 import { LogFoodSheet } from "@/components/wellflow/LogFoodSheet";
 import { RemindersSheet } from "@/components/wellflow/RemindersSheet";
@@ -26,11 +28,14 @@ const TABS = [
   { key: "glp1", label: "GLP-1", icon: Syringe, path: "/wellflow/glp1" },
 ];
 
+/** Reachable from the header, not the tab bar. */
+const EXTRA_TABS = ["goals", "calendar"];
+
 export default function WellFlow() {
   const { tab } = useParams<{ tab?: string }>();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const active = TABS.some(t => t.key === tab) ? (tab as string) : "today";
+  const active = TABS.some(t => t.key === tab) || EXTRA_TABS.includes(tab ?? "") ? (tab as string) : "today";
   const date = todayISO();
 
   const [food, setFood] = useState(false);
@@ -62,7 +67,7 @@ export default function WellFlow() {
 
   const go = (key: string) => {
     const t = TABS.find(x => x.key === key);
-    if (t) navigate(t.path);
+    navigate(t ? t.path : `/wellflow/${key}`);
   };
 
   return (
@@ -76,6 +81,13 @@ export default function WellFlow() {
           </p>
         </div>
         <div className="flex shrink-0 gap-1">
+          <Button variant="ghost" size="icon" aria-label="Food calendar"
+                  onClick={() => go("calendar")}>
+            <CalendarDays className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Goal settings" onClick={() => go("goals")}>
+            <Sliders className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" aria-label="Reminders" onClick={() => setRemindersOpen(true)}>
             <BellRing className="h-4 w-4" />
           </Button>
@@ -98,20 +110,26 @@ export default function WellFlow() {
             onWater={() => setWater(true)}
             onWeight={() => setWeight(true)}
             onInjection={() => setInjection(true)}
-            onGoals={() => setGoalsOpen(true)}
+            onGoals={() => go("goals")}
           />
         </TabsContent>
         <TabsContent value="food" className="mt-4">
           <FoodTab date={date} onLogFood={() => setFood(true)} />
         </TabsContent>
         <TabsContent value="progress" className="mt-4">
-          <ProgressTab onWeight={() => setWeight(true)} onGoals={() => setGoalsOpen(true)} />
+          <ProgressTab onWeight={() => setWeight(true)} onGoals={() => go("goals")} />
         </TabsContent>
         <TabsContent value="insights" className="mt-4">
           <InsightsTab />
         </TabsContent>
         <TabsContent value="glp1" className="mt-4">
           <Glp1Tab onInjection={() => setInjection(true)} />
+        </TabsContent>
+        <TabsContent value="goals" className="mt-4">
+          <GoalsScreen />
+        </TabsContent>
+        <TabsContent value="calendar" className="mt-4">
+          <FoodCalendar />
         </TabsContent>
       </Tabs>
 

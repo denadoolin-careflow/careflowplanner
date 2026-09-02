@@ -81,9 +81,13 @@ function group(rows: DayRow[]): GroupStats {
   };
 }
 
-export async function fetchInsights(windowDays: InsightWindow): Promise<InsightSummary> {
-  const from = daysAgoISO(windowDays);
-  const to = todayISO();
+/** Either a rolling window in days, or an explicit inclusive date range. */
+export type InsightRange = InsightWindow | { from: string; to: string };
+
+export async function fetchInsights(range: InsightRange): Promise<InsightSummary> {
+  const from = typeof range === "number" ? daysAgoISO(range) : range.from;
+  const to = typeof range === "number" ? todayISO() : range.to;
+
 
   const [food, water, weights, injections, checkins] = await Promise.all([
     supabase.from("food_entries").select("date,calories,protein,carbs,fat,fiber").gte("date", from).lte("date", to),
@@ -172,18 +176,23 @@ export async function fetchInsights(windowDays: InsightWindow): Promise<InsightS
   };
 }
 
-export function useInsights(windowDays: InsightWindow) {
+export function useInsights(range: InsightRange) {
   const [data, setData] = useState<InsightSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const key = typeof range === "number" ? String(range) : `${range.from}..${range.to}`;
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { setData(await fetchInsights(windowDays)); } finally { setLoading(false); }
-  }, [windowDays]);
+    const r: InsightRange = key.includes("..")
+      ? { from: key.split("..")[0], to: key.split("..")[1] }
+      : (Number(key) as InsightWindow);
+    try { setData(await fetchInsights(r)); } finally { setLoading(false); }
+  }, [key]);
 
   useEffect(() => { void load(); }, [load]);
   return { data, loading, reload: load };
 }
+
 
 /** Plain-language observations. Descriptive only — no advice. */
 export function observations(s: InsightSummary): string[] {

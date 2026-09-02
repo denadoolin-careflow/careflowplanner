@@ -71,9 +71,23 @@ export function EditFoodDialog({
                 <Label htmlFor="wf-servings">Servings</Label>
                 <Input id="wf-servings" type="number" min="0.1" step="0.1" inputMode="decimal"
                        value={draft.servings ?? 1}
-                       onChange={e => set({ servings: Math.max(num(e.target.value), 0.1) })} />
+                       onChange={e => {
+                         const next = Math.max(num(e.target.value), 0.1);
+                         const prev = draft.servings ?? 1;
+                         const k = next / prev;
+                         // Keep macros in step with the portion you actually ate.
+                         set({
+                           servings: next,
+                           calories: Math.round(draft.calories * k * 10) / 10,
+                           protein: Math.round(draft.protein * k * 10) / 10,
+                           carbs: Math.round(draft.carbs * k * 10) / 10,
+                           fat: Math.round(draft.fat * k * 10) / 10,
+                           fiber: Math.round(draft.fiber * k * 10) / 10,
+                         });
+                       }} />
               </div>
             )}
+
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {([
