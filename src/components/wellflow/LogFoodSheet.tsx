@@ -438,6 +438,12 @@ export function LogFoodSheet({
           </Tabs>
         )}
       </SheetContent>
+      <FoodFeelSheet
+        open={!!feelFor}
+        onOpenChange={v => { if (!v) setFeelFor(null); }}
+        foodName={feelFor ?? ""}
+        date={date}
+      />
     </Sheet>
   );
 }
