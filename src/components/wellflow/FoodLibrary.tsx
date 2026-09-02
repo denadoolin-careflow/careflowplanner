@@ -2,15 +2,17 @@ import { useMemo, useState } from "react";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Pencil, Plus, Search, Sparkles, Star, Trash2 } from "lucide-react";
+import { Info, Loader2, Pencil, Plus, ScanLine, Search, Sparkles, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EditFoodDialog, type EditableFood } from "./EditFoodDialog";
+import { FoodDetailsSheet } from "./FoodDetailsSheet";
 import {
   createSavedFood, deleteSavedFood, logFood, parseFoodText, savedToCandidate, searchFoods,
   toggleFavoriteFood, updateSavedFood, useSavedFoods,
 } from "@/lib/wellflow/data";
 import type { FoodCandidate, MealType, SavedFood } from "@/lib/wellflow/types";
+
 
 function guessMeal(): MealType {
   const h = new Date().getHours();
@@ -31,9 +33,40 @@ const toEditable = (c: FoodCandidate): EditableFood => ({
 export function FoodLibrary({ date }: { date: string }) {
   const { foods } = useSavedFoods();
   const [q, setQ] = useState("");
-  const [busy, setBusy] = useState<"search" | "ai" | null>(null);
+  const [busy, setBusy] = useState<"search" | "ai" | "scan" | null>(null);
   const [results, setResults] = useState<FoodCandidate[]>([]);
   const [editing, setEditing] = useState<{ value: EditableFood; savedId?: string } | null>(null);
+  const [details, setDetails] = useState<FoodCandidate | null>(null);
+
+  /** Scan a product barcode with the device camera when the browser supports it. */
+  const scan = async () => {
+    const Detector = (window as { BarcodeDetector?: any }).BarcodeDetector;
+    if (!Detector) { toast("Barcode scanning isn't supported here — type the number instead."); return; }
+    setBusy("scan");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      await video.play();
+      const detector = new Detector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
+      const deadline = Date.now() + 10_000;
+      let code: string | null = null;
+      while (Date.now() < deadline && !code) {
+        const codes = await detector.detect(video).catch(() => []);
+        if (codes?.length) code = codes[0].rawValue;
+        else await new Promise(r => setTimeout(r, 250));
+      }
+      stream.getTracks().forEach(t => t.stop());
+      if (!code) { toast("No barcode detected — try again in better light."); return; }
+      const found = await searchFoods("", code);
+      if (!found.length) { toast("That product isn't in the food database yet — add it by hand."); return; }
+      setResults(found);
+      setDetails(found[0]);
+    } catch {
+      toast("Camera access wasn't available.");
+    } finally { setBusy(null); }
+  };
+
 
   const mine = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -66,12 +99,13 @@ export function FoodLibrary({ date }: { date: string }) {
     catch (e) { toast.error(e instanceof Error ? e.message : "Could not save that"); }
   };
 
-  const logNow = async (c: FoodCandidate) => {
+  const logNow = async (c: FoodCandidate, servings?: number) => {
     try {
-      await logFood({ date, candidate: c, servings: c.servings ?? 1, mealType: guessMeal() });
+      await logFood({ date, candidate: c, servings: servings ?? c.servings ?? 1, mealType: guessMeal() });
       toast.success(`${c.name} logged`);
     } catch (e) { toast.error(e instanceof Error ? e.message : "Could not log that"); }
   };
+
 
   const saveEdit = async (next: EditableFood) => {
     if (editing?.savedId) {
@@ -114,6 +148,10 @@ export function FoodLibrary({ date }: { date: string }) {
         <Button variant="secondary" size="icon" aria-label="Estimate from description" onClick={describe} disabled={busy !== null}>
           {busy === "ai" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         </Button>
+        <Button variant="secondary" size="icon" aria-label="Scan a barcode" onClick={scan} disabled={busy !== null}>
+          {busy === "scan" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
+        </Button>
+
       </div>
 
       {results.length > 0 && (
@@ -129,11 +167,15 @@ export function FoodLibrary({ date }: { date: string }) {
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   <Button size="sm" variant="secondary" onClick={() => logNow(c)}>Log</Button>
                   <Button size="sm" variant="ghost" onClick={() => saveToLibrary(c)}>Save</Button>
+                  <Button size="sm" variant="ghost" className="gap-1" onClick={() => setDetails(c)}>
+                    <Info className="h-3.5 w-3.5" /> Details
+                  </Button>
                   <Button size="sm" variant="ghost" className="gap-1"
                           onClick={() => setEditing({ value: toEditable(c) })}>
                     <Pencil className="h-3.5 w-3.5" /> Edit
                   </Button>
                 </div>
+
               </li>
             ))}
           </ul>
@@ -159,10 +201,15 @@ export function FoodLibrary({ date }: { date: string }) {
                   </p>
                 </div>
                 <Button size="sm" variant="ghost" onClick={() => logNow(savedToCandidate(f))}>Log</Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8" aria-label={`Details for ${f.name}`}
+                        onClick={() => setDetails(savedToCandidate(f))}>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </Button>
                 <Button size="icon" variant="ghost" className="h-8 w-8" aria-label={`Edit ${f.name}`}
                         onClick={() => setEditing({ value: toEditable(savedToCandidate(f)), savedId: f.id })}>
                   <Pencil className="h-4 w-4 text-muted-foreground" />
                 </Button>
+
                 <Button size="icon" variant="ghost" className="h-8 w-8" aria-label={`Remove ${f.name}`}
                         onClick={async () => { await deleteSavedFood(f.id); toast.success("Removed"); }}>
                   <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -180,6 +227,14 @@ export function FoodLibrary({ date }: { date: string }) {
         value={editing?.value ?? null}
         onSave={saveEdit}
       />
+
+      <FoodDetailsSheet
+        food={details}
+        onOpenChange={v => { if (!v) setDetails(null); }}
+        onLog={(f, servings) => logNow(f, servings)}
+        onSave={saveToLibrary}
+      />
+
     </SectionCard>
   );
 }

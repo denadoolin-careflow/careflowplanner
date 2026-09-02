@@ -257,7 +257,7 @@ export async function createSavedFood(c: FoodCandidate) {
 /** Open Food Facts lookup, proxied through an edge function. */
 export async function searchFoods(query: string, barcode?: string): Promise<FoodCandidate[]> {
   const { data, error } = await supabase.functions.invoke("food-search", {
-    body: barcode ? { barcode } : { query },
+    body: barcode ? { barcode } : { q: query, query },
   });
   if (error) throw error;
   return ((data as any)?.results ?? []).map((r: any, i: number): FoodCandidate => ({

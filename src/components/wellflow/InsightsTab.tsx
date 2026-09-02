@@ -1,16 +1,34 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { EmptyState } from "@/components/cards/EmptyState";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Droplets, Flame, Syringe, TrendingDown, TrendingUp } from "lucide-react";
-import { observations, useInsights, type InsightWindow } from "@/lib/wellflow/insights";
+import { InsightsCharts } from "@/components/wellflow/InsightsCharts";
+import { observations, useInsights, type InsightRange, type InsightWindow } from "@/lib/wellflow/insights";
+import { todayISO } from "@/lib/wellflow/types";
 
 const WINDOWS: InsightWindow[] = [30, 60, 90];
 
+const daysAgo = (n: number) => {
+  const d = new Date(`${todayISO()}T12:00:00`);
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+};
+
 export function InsightsTab() {
   const [win, setWin] = useState<InsightWindow>(30);
-  const { data, loading } = useInsights(win);
+  const [custom, setCustom] = useState(false);
+  const [from, setFrom] = useState(daysAgo(30));
+  const [to, setTo] = useState(todayISO());
+
+  const range: InsightRange = useMemo(
+    () => (custom && from && to && from <= to ? { from, to } : win),
+    [custom, from, to, win],
+  );
+  const { data, loading } = useInsights(range);
 
   return (
     <div className="space-y-4">
@@ -21,14 +39,33 @@ export function InsightsTab() {
         action={
           <div className="flex gap-1">
             {WINDOWS.map(w => (
-              <Button key={w} size="sm" variant={w === win ? "secondary" : "ghost"}
-                      className="h-7 px-2 text-xs" onClick={() => setWin(w)}>
+              <Button key={w} size="sm" variant={!custom && w === win ? "secondary" : "ghost"}
+                      className="h-7 px-2 text-xs" onClick={() => { setCustom(false); setWin(w); }}>
                 {w}d
               </Button>
             ))}
+            <Button size="sm" variant={custom ? "secondary" : "ghost"} className="h-7 px-2 text-xs"
+                    onClick={() => setCustom(c => !c)}>
+              Custom
+            </Button>
           </div>
         }
       >
+        {custom && (
+          <div className="mb-3 grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="wf-ins-from">From</Label>
+              <Input id="wf-ins-from" type="date" value={from} max={to}
+                     onChange={e => setFrom(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="wf-ins-to">To</Label>
+              <Input id="wf-ins-to" type="date" value={to} min={from} max={todayISO()}
+                     onChange={e => setTo(e.target.value)} />
+            </div>
+          </div>
+        )}
+
         {loading || !data ? (
           <div className="h-24 animate-pulse rounded-xl bg-muted/50" />
         ) : !data.hasData ? (
@@ -60,26 +97,7 @@ export function InsightsTab() {
         )}
       </SectionCard>
 
-      {data?.hasData && (
-        <SectionCard title="Across the injection cycle" subtitle="Averages by days since your last injection">
-          <ul className="space-y-1.5">
-            {data.byDayAfter.filter(b => b.count > 0).map(b => (
-              <li key={b.day} className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
-                <span className="w-16 shrink-0 text-xs font-medium">
-                  {b.day === 0 ? "Shot day" : `Day +${b.day}`}
-                </span>
-                <div className="min-w-0 flex-1 text-xs text-muted-foreground">
-                  <span className="tabular-nums">{Math.round(b.calories)} cal</span>
-                  {" · "}
-                  <span className="tabular-nums">{Math.round(b.water)} oz water</span>
-                  {b.energy != null && <> {" · "}<span className="tabular-nums">energy {b.energy.toFixed(1)}</span></>}
-                </div>
-                <span className="shrink-0 text-[10px] text-muted-foreground">{b.count}d</span>
-              </li>
-            ))}
-          </ul>
-        </SectionCard>
-      )}
+      {data?.hasData && <InsightsCharts data={data} />}
 
       <p className="px-1 text-xs text-muted-foreground">
         These are patterns from your own log — a personal summary, not medical advice. Talk with your care
