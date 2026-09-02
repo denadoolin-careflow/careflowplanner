@@ -1,24 +1,27 @@
 import { SuggestedMeals } from "@/components/wellflow/SuggestedMeals";
+import { FoodLibrary } from "@/components/wellflow/FoodLibrary";
+import { GoalBars } from "@/components/wellflow/GoalBars";
+import { EditFoodDialog, type EditableFood } from "@/components/wellflow/EditFoodDialog";
 import { useGoals } from "@/lib/wellflow/data";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { EmptyState } from "@/components/cards/EmptyState";
-import { Plus, Star, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import {
-  deleteFoodEntry, deleteSavedFood, logFood, savedToCandidate, sumEntries,
-  toggleFavoriteFood, useFoodEntries, useSavedFoods,
+  deleteFoodEntry, logFood, savedToCandidate, sumEntries, updateFoodEntry,
+  useFoodEntries, useSavedFoods,
 } from "@/lib/wellflow/data";
-import { MEAL_TYPES, todayISO, type MealType } from "@/lib/wellflow/types";
+import { MEAL_TYPES, todayISO, type FoodEntry, type MealType } from "@/lib/wellflow/types";
 
 export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLogFood: () => void }) {
   const { entries, loading } = useFoodEntries(date);
   const { foods } = useSavedFoods();
   const { goals } = useGoals();
   const totals = useMemo(() => sumEntries(entries), [entries]);
+  const [editing, setEditing] = useState<FoodEntry | null>(null);
 
   const byMeal = useMemo(() => {
     const map: Record<MealType, typeof entries> = {
@@ -30,6 +33,10 @@ export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLog
 
   const favorites = foods.filter(f => f.favorite).slice(0, 8);
   const recents = foods.slice(0, 8);
+
+  /** Rough per-meal share of the daily goal, so each meal gets its own bar. */
+  const mealGoal = (g: number | null, meals: number) => (g == null ? null : g / Math.max(meals, 1));
+  const activeMeals = MEAL_TYPES.filter(m => byMeal[m.key].length > 0).length || 1;
 
   const logAgain = async (id: string) => {
     const saved = foods.find(f => f.id === id);
@@ -56,7 +63,20 @@ export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLog
           <Mini label="Carbs" v={totals.carbs} unit="g" />
           <Mini label="Fat" v={totals.fat} unit="g" />
         </div>
+
+        <GoalBars
+          className="mt-4"
+          items={[
+            { label: "Calories", value: totals.calories, goal: goals.calories },
+            { label: "Protein", value: totals.protein, goal: goals.protein, unit: "g" },
+            { label: "Fiber", value: totals.fiber, goal: goals.fiber, unit: "g" },
+            { label: "Carbs", value: totals.carbs, goal: goals.carbs, unit: "g" },
+            { label: "Fat", value: totals.fat, goal: goals.fat, unit: "g" },
+          ]}
+        />
       </SectionCard>
+
+      <FoodLibrary date={date} />
 
       <SuggestedMeals
         date={date}
@@ -65,8 +85,6 @@ export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLog
           protein: goals.protein == null ? null : Math.max(goals.protein - totals.protein, 0),
         }}
       />
-
-
 
       {(favorites.length > 0 || recents.length > 0) && (
         <SectionCard title="Log again" subtitle="Your favorites and recent foods" collapsibleId="wellflow-again">
@@ -90,61 +108,78 @@ export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLog
           </EmptyState>
         ) : (
           <div className="space-y-4">
-            {MEAL_TYPES.filter(m => byMeal[m.key].length > 0).map(m => (
-              <div key={m.key}>
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {m.label}
-                </p>
-                <ul className="space-y-1.5">
-                  {byMeal[m.key].map(e => (
-                    <li key={e.id} className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{e.food_name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {e.servings !== 1 ? `${e.servings} × ` : ""}{e.serving_size || "1 serving"} ·{" "}
-                          {Math.round(e.calories)} cal • {Math.round(e.protein)}g P • {Math.round(e.carbs)}g C • {Math.round(e.fat)}g F
-                        </p>
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Delete ${e.food_name}`}
-                              onClick={async () => { await deleteFoodEntry(e.id); toast.success("Entry removed"); }}>
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            {MEAL_TYPES.filter(m => byMeal[m.key].length > 0).map(m => {
+              const mealTotals = sumEntries(byMeal[m.key]);
+              return (
+                <div key={m.key}>
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {m.label}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {byMeal[m.key].map(e => (
+                      <li key={e.id} className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{e.food_name}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {e.servings !== 1 ? `${e.servings} × ` : ""}{e.serving_size || "1 serving"} ·{" "}
+                            {Math.round(e.calories)} cal • {Math.round(e.protein)}g P • {Math.round(e.carbs)}g C • {Math.round(e.fat)}g F
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Edit ${e.food_name}`}
+                                onClick={() => setEditing(e)}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Delete ${e.food_name}`}
+                                onClick={async () => { await deleteFoodEntry(e.id); toast.success("Entry removed"); }}>
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                  <GoalBars
+                    compact
+                    className="mt-2 rounded-2xl bg-muted/20 px-3 py-2"
+                    items={[
+                      { label: "Calories", value: mealTotals.calories, goal: mealGoal(goals.calories, activeMeals) },
+                      { label: "Protein", value: mealTotals.protein, goal: mealGoal(goals.protein, activeMeals), unit: "g" },
+                    ]}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </SectionCard>
 
-      <SectionCard title="My foods" subtitle="Saved and custom foods" collapsibleId="wellflow-myfoods" defaultOpen={false}>
-        {foods.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Foods you log are saved here automatically.</p>
-        ) : (
-          <ul className="space-y-1.5">
-            {foods.map(f => (
-              <li key={f.id} className="flex items-center gap-2 rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
-                <button type="button" aria-label={f.favorite ? "Unfavorite" : "Favorite"}
-                        onClick={() => toggleFavoriteFood(f.id, !f.favorite)}>
-                  <Star className={cn("h-4 w-4", f.favorite ? "fill-accent text-accent" : "text-muted-foreground")} />
-                </button>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{f.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {f.serving_size || "1 serving"} · {Math.round(f.calories)} cal • {Math.round(f.protein)}g protein
-                  </p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => logAgain(f.id)}>Log</Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Remove ${f.name}`}
-                        onClick={async () => { await deleteSavedFood(f.id); toast.success("Removed"); }}>
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
+      <EditFoodDialog
+        open={!!editing}
+        onOpenChange={v => { if (!v) setEditing(null); }}
+        title="Edit meal"
+        withServings
+        value={editing ? {
+          name: editing.food_name,
+          serving_size: editing.serving_size,
+          calories: editing.calories,
+          protein: editing.protein,
+          carbs: editing.carbs,
+          fat: editing.fat,
+          fiber: editing.fiber,
+          servings: editing.servings,
+        } : null}
+        onSave={async next => {
+          if (!editing) return;
+          await updateFoodEntry(editing.id, {
+            food_name: next.name,
+            serving_size: next.serving_size,
+            servings: next.servings ?? editing.servings,
+            calories: next.calories,
+            protein: next.protein,
+            carbs: next.carbs,
+            fat: next.fat,
+            fiber: next.fiber,
+          });
+        }}
+      />
     </div>
   );
 }
