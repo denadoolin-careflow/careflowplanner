@@ -14,6 +14,7 @@ import {
   logFood, parseFoodText, savedToCandidate, searchFoods, toggleFavoriteFood, useSavedFoods,
 } from "@/lib/wellflow/data";
 import { logPlannedMeal, usePlannedMeals } from "@/lib/wellflow/meal-plan";
+import { FoodFeelSheet } from "@/components/wellflow/FoodFeelSheet";
 
 const blank: FoodCandidate = {
   id: "manual", name: "", servingSize: "", calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, source: "manual",
@@ -187,6 +188,7 @@ export function LogFoodSheet({
   );
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl p-0">
         <SheetHeader className="px-5 pt-5">
@@ -438,12 +440,13 @@ export function LogFoodSheet({
           </Tabs>
         )}
       </SheetContent>
-      <FoodFeelSheet
-        open={!!feelFor}
-        onOpenChange={v => { if (!v) setFeelFor(null); }}
-        foodName={feelFor ?? ""}
-        date={date}
-      />
     </Sheet>
+    <FoodFeelSheet
+      open={!!feelFor}
+      onOpenChange={v => { if (!v) setFeelFor(null); }}
+      foodName={feelFor ?? ""}
+      date={date}
+    />
+    </>
   );
 }
