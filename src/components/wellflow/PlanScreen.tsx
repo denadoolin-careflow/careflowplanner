@@ -291,7 +291,8 @@ export function PlanScreen() {
           <p className="mt-2 text-sm text-muted-foreground">Log a few days and this fills in on its own.</p>
         )}
       </SectionCard>
-          <MovementCard targetDays={movementDays} onLog={() => setMoveOpen(true)} />
+
+      <MovementCard targetDays={movementDays} onLog={() => setMoveOpen(true)} />
 
       <PlanOnboarding
         open={onboarding}
@@ -300,7 +301,6 @@ export function PlanScreen() {
         planId={plan?.id}
       />
       <MovementSheet open={moveOpen} onOpenChange={setMoveOpen} />
-
-</div>
+    </div>
   );
 }
