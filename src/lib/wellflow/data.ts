@@ -110,15 +110,21 @@ export async function logFood(input: {
   servings: number;
   mealType: MealType;
   notes?: string | null;
+  /** "HH:MM" — when the food was actually eaten. Defaults to now. */
+  time?: string | null;
 }) {
   const user_id = await uid();
   if (!user_id) throw new Error("Please sign in");
   const c = input.candidate;
   const mult = input.servings;
+  const day = input.date ?? todayISO();
+  const loggedAt = input.time
+    ? new Date(`${day}T${input.time.length === 5 ? `${input.time}:00` : input.time}`).toISOString()
+    : new Date().toISOString();
   const { data, error } = await supabase.from("food_entries").insert({
     user_id,
-    date: input.date ?? todayISO(),
-    logged_at: new Date().toISOString(),
+    date: day,
+    logged_at: loggedAt,
     food_name: c.brand ? `${c.name} (${c.brand})` : c.name,
     serving_size: c.servingSize ?? null,
     servings: mult,
