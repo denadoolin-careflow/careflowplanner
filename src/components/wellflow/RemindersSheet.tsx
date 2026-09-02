@@ -166,7 +166,55 @@ export function RemindersSheet({
               </p>
             </Block>
 
+            {/* meds & supplements */}
+            <Block title="Meds & supplements" checked={draft.meds_enabled}
+                   onChange={v => set("meds_enabled", v)}>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Nudges at the dose times you already entered for each medication or supplement.
+                Nothing is suggested or changed here — edit the times on the item itself.
+              </p>
+            </Block>
+
+            {/* symptom check-in */}
+            <Block title="Symptom check-in" checked={draft.symptom_enabled}
+                   onChange={v => set("symptom_enabled", v)}>
+              <div className="w-40">
+                <Label htmlFor="wr-symptom-time">Time</Label>
+                <Input id="wr-symptom-time" type="time" value={draft.symptom_time}
+                       onChange={e => set("symptom_time", e.target.value)} />
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                A daily prompt to note how foods felt — energy, bloating, nausea, heartburn.
+              </p>
+            </Block>
+
+            {/* movement */}
+            <Block title="Movement" checked={draft.movement_enabled}
+                   onChange={v => set("movement_enabled", v)}>
+              <div className="flex flex-wrap gap-1.5">
+                {WEEKDAYS.map((d, i) => (
+                  <button key={d} type="button" onClick={() => toggleMovementDay(i)}
+                          aria-pressed={draft.movement_days.includes(i)}
+                          className={cn("rounded-full border px-3 py-1 text-xs",
+                            draft.movement_days.includes(i)
+                              ? "border-primary bg-primary/15 font-medium"
+                              : "border-border/60 text-muted-foreground hover:bg-muted/50")}>
+                    {d}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 w-40">
+                <Label htmlFor="wr-movement-time">Time</Label>
+                <Input id="wr-movement-time" type="time" value={draft.movement_time}
+                       onChange={e => set("movement_time", e.target.value)} />
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Skipped automatically on days you've already logged movement.
+              </p>
+            </Block>
+
             <Button className="w-full" disabled={busy} onClick={submit}>Save reminders</Button>
+
           </div>
         )}
       </SheetContent>
