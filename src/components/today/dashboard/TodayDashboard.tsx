@@ -17,6 +17,7 @@ import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
 import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
 import { ConnectionsCard } from "@/components/today/ConnectionsCard";
 import { TodayNudgeStrip } from "@/components/today/TodayNudgeStrip";
+import { WellFlowTodayCard } from "@/components/today/WellFlowTodayCard";
 
 
 export function TodayDashboard({
@@ -65,6 +66,9 @@ export function TodayDashboard({
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <DinnerTonightCard date={date} />
           <CleaningTodayCard />
+        </div>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <WellFlowTodayCard />
         </div>
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <PlanColumn date={date} onTaskClick={onTaskClick} />
