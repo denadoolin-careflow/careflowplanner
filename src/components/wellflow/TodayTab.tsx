@@ -106,6 +106,12 @@ export function TodayTab({
           />
         </div>
 
+        <div className="mt-4">
+          <TrendStrip />
+        </div>
+
+
+
         <Button className="mt-4 w-full gap-2 rounded-2xl py-6 text-base" onClick={onLogFood}>
           <Plus className="h-5 w-5" /> Log food
         </Button>
