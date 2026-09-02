@@ -55,6 +55,16 @@ export function FoodTab({ date = todayISO(), onLogFood }: { date?: string; onLog
         </div>
       </SectionCard>
 
+      <SuggestedMeals
+        date={date}
+        remaining={{
+          calories: goals.calories == null ? null : Math.max(goals.calories - totals.calories, 0),
+          protein: goals.protein == null ? null : Math.max(goals.protein - totals.protein, 0),
+        }}
+      />
+
+
+
       {(favorites.length > 0 || recents.length > 0) && (
         <SectionCard title="Log again" subtitle="Your favorites and recent foods" collapsibleId="wellflow-again">
           <div className="flex flex-wrap gap-2">
