@@ -9,6 +9,7 @@ import { Droplets, Flame, Syringe, TrendingDown, TrendingUp } from "lucide-react
 import { InsightsCharts } from "@/components/wellflow/InsightsCharts";
 import { FoodFeelPatterns } from "@/components/wellflow/FoodFeelPatterns";
 import { CyclePhaseInsights } from "@/components/wellflow/CyclePhaseInsights";
+import { FoodSymptomCompare } from "@/components/wellflow/FoodSymptomCompare";
 import { observations, useInsights, type InsightRange, type InsightWindow } from "@/lib/wellflow/insights";
 import { todayISO } from "@/lib/wellflow/types";
 
@@ -102,6 +103,8 @@ export function InsightsTab() {
       {data?.hasData && <InsightsCharts data={data} />}
 
       <FoodFeelPatterns />
+
+      <FoodSymptomCompare />
 
       <CyclePhaseInsights />
 
