@@ -68,11 +68,38 @@ Deno.serve(async (req) => {
       });
     }
 
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}`
-      + `&search_simple=1&action=process&json=1&page_size=25&fields=${FIELDS}`;
-    const r = await fetch(url, { headers: { "User-Agent": UA } });
-    if (!r.ok) throw new Error(`lookup failed (${r.status})`);
-    const j = await r.json();
+    // Open Food Facts search: try the v2 API first, then the legacy CGI endpoint.
+    // Both go down intermittently (503), so retry briefly before giving up.
+    const endpoints = [
+      `https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(q)}`
+        + `&page_size=25&fields=${FIELDS}`,
+      `https://world.openfoodfacts.net/api/v2/search?search_terms=${encodeURIComponent(q)}`
+        + `&page_size=25&fields=${FIELDS}`,
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}`
+        + `&search_simple=1&action=process&json=1&page_size=25&fields=${FIELDS}`,
+    ];
+
+    let j: any = null;
+    let lastStatus = 0;
+    for (const url of endpoints) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
+          lastStatus = r.status;
+          if (r.ok) { j = await r.json(); break; }
+        } catch { /* try next */ }
+        await new Promise(res => setTimeout(res, 350));
+      }
+      if (j) break;
+    }
+
+    if (!j) {
+      return new Response(
+        JSON.stringify({ results: [], notice: `Food database is busy right now (${lastStatus || "network"}). Try again in a moment.` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const results = (j?.products ?? [])
       .map(normalize)
       .filter((x: any) => x && (x.calories > 0 || x.protein > 0))
@@ -83,7 +110,8 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message, results: [] }), {
-      status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
+
