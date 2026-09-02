@@ -5,6 +5,7 @@ import {
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
   Wind, PenLine, Coffee, Share2,
   Zap, Plane, Users, PartyPopper, Gift, CheckSquare, Heart, Album,
+  Salad,
 } from "lucide-react";
 
 /** Per-flow accent classes for tints and gradients. */
