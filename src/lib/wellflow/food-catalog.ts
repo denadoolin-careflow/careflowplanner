@@ -272,3 +272,75 @@ export function dietShelf(tag: DietTag, store?: Store | null, limit = 12): Catal
 export function storeShelf(store: Store, limit = 12): CatalogFood[] {
   return FOOD_CATALOG.filter(f => f.store === store).slice(0, limit);
 }
+
+/* ------------------------------------------------------- sorting results */
+
+export const SORT_OPTIONS = [
+  { key: "best", label: "Best match" },
+  { key: "name", label: "Name A–Z" },
+  { key: "cal_asc", label: "Calories low → high" },
+  { key: "cal_desc", label: "Calories high → low" },
+  { key: "protein", label: "Protein high → low" },
+  { key: "fiber", label: "Fiber high → low" },
+  { key: "carbs_asc", label: "Carbs low → high" },
+] as const;
+
+export type SortKey = (typeof SORT_OPTIONS)[number]["key"];
+
+/** Sort any list of food candidates. "Best match" keeps the incoming order. */
+export function sortCandidates<T extends FoodCandidate>(list: T[], key: SortKey): T[] {
+  const out = [...list];
+  switch (key) {
+    case "best": return out;
+    case "name": return out.sort((a, b) => a.name.localeCompare(b.name));
+    case "cal_asc": return out.sort((a, b) => a.calories - b.calories);
+    case "cal_desc": return out.sort((a, b) => b.calories - a.calories);
+    case "protein": return out.sort((a, b) => b.protein - a.protein);
+    case "fiber": return out.sort((a, b) => b.fiber - a.fiber);
+    case "carbs_asc": return out.sort((a, b) => a.carbs - b.carbs);
+  }
+}
+
+/** Relevance score for a food against a typed term: exact > prefix > word > brand. */
+export function relevance(food: FoodCandidate & { category?: string }, term: string): number {
+  const q = term.trim().toLowerCase();
+  if (!q) return 0;
+  const name = food.name.toLowerCase();
+  const brand = (food.brand ?? "").toLowerCase();
+  const cat = (food.category ?? "").toLowerCase();
+  if (name === q) return 100;
+  if (name.startsWith(q)) return 80;
+  if (name.includes(q)) return 60;
+  const words = q.split(/\s+/).filter(Boolean);
+  const nameHits = words.filter(w => name.includes(w)).length;
+  if (nameHits) return 30 + nameHits * 5;
+  const otherHits = words.filter(w => brand.includes(w) || cat.includes(w)).length;
+  return otherHits ? 10 + otherHits : 0;
+}
+
+/** Rank a merged result list by relevance, keeping only real matches. */
+export function rankByRelevance<T extends FoodCandidate>(list: T[], term: string): T[] {
+  if (!term.trim()) return list;
+  return list
+    .map(f => ({ f, s: relevance(f, term) }))
+    .filter(x => x.s > 0)
+    .sort((a, b) => b.s - a.s || a.f.name.localeCompare(b.f.name))
+    .map(x => x.f);
+}
+
+/* --------------------------------------------- preferred store crosswalk */
+
+/** Grocery preference ids (see src/lib/retailer-links.ts) mapped to catalog stores. */
+export const RETAILER_TO_STORE: Record<string, Store> = {
+  walmart: "Walmart",
+  kroger: "Kroger",
+  target: "Target",
+  costco: "Costco",
+};
+
+export const STORE_TO_RETAILER: Partial<Record<Store, string>> = {
+  "Walmart": "walmart",
+  "Kroger": "kroger",
+  "Target": "target",
+  "Costco": "costco",
+};
