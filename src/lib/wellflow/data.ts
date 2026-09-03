@@ -515,3 +515,53 @@ export function sumEntries(entries: FoodEntry[]): DayTotals {
     meals: acc.meals + 1,
   }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, meals: 0 });
 }
+
+/* ------------------------------------------------- bulk library helpers */
+
+export interface BulkAddResult { added: number; skipped: number }
+
+/**
+ * Add several foods to the personal library in one round trip.
+ * Foods already saved under the same name + brand are skipped, never duplicated.
+ */
+export async function createSavedFoods(items: FoodCandidate[]): Promise<BulkAddResult> {
+  const user_id = await uid();
+  if (!user_id) throw new Error("Please sign in");
+  if (!items.length) return { added: 0, skipped: 0 };
+
+  const { data: existing } = await supabase.from("custom_foods").select("name, brand");
+  const seen = new Set((existing ?? []).map(r => `${r.name}|${r.brand ?? ""}`.toLowerCase()));
+
+  const rows: Record<string, unknown>[] = [];
+  let skipped = 0;
+  for (const c of items) {
+    const key = `${c.name}|${c.brand ?? ""}`.toLowerCase();
+    if (seen.has(key)) { skipped++; continue; }
+    seen.add(key);
+    rows.push({
+      user_id, name: c.name, brand: c.brand ?? null, serving_size: c.servingSize ?? null,
+      calories: c.calories, protein: c.protein, carbs: c.carbs, fat: c.fat, fiber: c.fiber,
+      barcode: c.barcode ?? null, times_logged: 0,
+    });
+  }
+
+  if (rows.length) {
+    const { error } = await supabase.from("custom_foods").insert(rows as any);
+    if (error) throw error;
+  }
+  emitWellflow("saved-foods");
+  return { added: rows.length, skipped };
+}
+
+/** Rescale a saved food's portion — macros follow the multiplier. */
+export async function setSavedFoodPortion(
+  food: SavedFood, scale: number, servingSize?: string | null,
+) {
+  const k = Number.isFinite(scale) && scale > 0 ? scale : 1;
+  const r = (v: number) => Math.round(v * k * 10) / 10;
+  await updateSavedFood(food.id, {
+    serving_size: servingSize !== undefined ? servingSize : food.serving_size,
+    calories: r(food.calories), protein: r(food.protein), carbs: r(food.carbs),
+    fat: r(food.fat), fiber: r(food.fiber),
+  });
+}
