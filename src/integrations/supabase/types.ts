@@ -7940,6 +7940,42 @@ export type Database = {
         }
         Relationships: []
       }
+      wellflow_journal: {
+        Row: {
+          created_at: string
+          date: string
+          energy: number | null
+          entry: string
+          id: string
+          mood: number | null
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          energy?: number | null
+          entry?: string
+          id?: string
+          mood?: number | null
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          energy?: number | null
+          entry?: string
+          id?: string
+          mood?: number | null
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wellflow_movement_logs: {
         Row: {
           activity: string
