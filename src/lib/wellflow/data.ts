@@ -254,26 +254,43 @@ export async function createSavedFood(c: FoodCandidate) {
 
 /* --------------------------------------------------------------- search */
 
-/** Open Food Facts lookup, proxied through an edge function. */
+/**
+ * Food lookup: the built-in ingredient catalog answers instantly, and
+ * Open Food Facts results are merged in behind it (deduped and ranked).
+ */
 export async function searchFoods(query: string, barcode?: string): Promise<FoodCandidate[]> {
-  const { data, error } = await supabase.functions.invoke("food-search", {
-    body: barcode ? { barcode } : { q: query, query },
-  });
-  if (error) throw error;
-  return ((data as any)?.results ?? []).map((r: any, i: number): FoodCandidate => ({
-    id: r.barcode ?? `off-${i}-${r.name}`,
-    name: r.name,
-    brand: r.brand ?? null,
-    servingSize: r.servingSize ?? null,
-    calories: n(r.calories),
-    protein: n(r.protein),
-    carbs: n(r.carbs),
-    fat: n(r.fat),
-    fiber: n(r.fiber),
-    barcode: r.barcode ?? null,
-    source: "openfoodfacts",
-  }));
+  let remote: FoodCandidate[] = [];
+  try {
+    const { data, error } = await supabase.functions.invoke("food-search", {
+      body: barcode ? { barcode } : { q: query, query },
+    });
+    if (error) throw error;
+    remote = ((data as any)?.results ?? []).map((r: any, i: number): FoodCandidate => ({
+      id: r.barcode ?? `off-${i}-${r.name}`,
+      name: r.name,
+      brand: r.brand ?? null,
+      servingSize: r.servingSize ?? null,
+      calories: n(r.calories),
+      protein: n(r.protein),
+      carbs: n(r.carbs),
+      fat: n(r.fat),
+      fiber: n(r.fiber),
+      barcode: r.barcode ?? null,
+      source: "openfoodfacts",
+    }));
+  } catch (e) {
+    // The catalog still answers when the lookup service is unavailable.
+    if (barcode) throw e;
+  }
+  if (barcode) return remote;
+  return mergeWithCatalog(query, remote, null, 20);
 }
+
+/** Instant, offline-friendly matches from the built-in catalog. */
+export function searchFoodsLocal(query: string, limit = 12): FoodCandidate[] {
+  return searchCatalog(query, null, limit);
+}
+
 
 /** Plain-language estimate ("2 eggs and toast") — always shown for review. */
 export async function parseFoodText(text: string): Promise<FoodCandidate[]> {
