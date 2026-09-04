@@ -711,20 +711,13 @@ export function sortCandidates<T extends FoodCandidate>(list: T[], key: SortKey)
 
 /** Relevance score for a food against a typed term: exact > prefix > word > brand. */
 export function relevance(food: FoodCandidate & { category?: string }, term: string): number {
-  const q = term.trim().toLowerCase();
-  if (!q) return 0;
-  const name = food.name.toLowerCase();
-  const brand = (food.brand ?? "").toLowerCase();
-  const cat = (food.category ?? "").toLowerCase();
-  if (name === q) return 100;
-  if (name.startsWith(q)) return 80;
-  if (name.includes(q)) return 60;
-  const words = q.split(/\s+/).filter(Boolean);
-  const nameHits = words.filter(w => name.includes(w)).length;
-  if (nameHits) return 30 + nameHits * 5;
-  const otherHits = words.filter(w => brand.includes(w) || cat.includes(w)).length;
-  return otherHits ? 10 + otherHits : 0;
+  const base = scoreFood(food, term);
+  if (!base) return 0;
+  // Your own saved foods and previously logged items float to the top.
+  const bonus = food.source === "saved" ? 20 : food.source === "catalog" ? 8 : 0;
+  return base + bonus;
 }
+
 
 /** Rank a merged result list by relevance, keeping only real matches. */
 export function rankByRelevance<T extends FoodCandidate>(list: T[], term: string): T[] {
