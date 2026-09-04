@@ -13,6 +13,8 @@ import {
   type Injection, type MealType, type SavedFood, type WaterEntry,
   type WeightEntry, type WellnessCheckIn,
 } from "./types";
+import { mergeWithCatalog, searchCatalog } from "./food-catalog";
+
 
 /* ------------------------------------------------------------------ bus */
 
