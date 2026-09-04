@@ -509,21 +509,112 @@ export const FOOD_CATALOG: CatalogFood[] = ALL_ROWS.map(
   }),
 );
 
+/* ------------------------------------------------------------ text search */
+
+/** Words that mean the same thing, so either spelling finds the food. */
+const SYNONYMS: Record<string, string[]> = {
+  shrimp: ["prawn", "prawns"],
+  prawn: ["shrimp"],
+  garbanzo: ["chickpea", "chickpeas"],
+  chickpea: ["garbanzo"],
+  soda: ["cola", "pop", "soft drink"],
+  pop: ["soda", "cola"],
+  yoghurt: ["yogurt"],
+  yogurt: ["yoghurt", "greek"],
+  aubergine: ["eggplant"],
+  eggplant: ["aubergine"],
+  courgette: ["zucchini"],
+  zucchini: ["courgette"],
+  coriander: ["cilantro"],
+  cilantro: ["coriander"],
+  mince: ["ground"],
+  ground: ["mince", "minced"],
+  fries: ["french fries", "chips"],
+  crisps: ["potato chips"],
+  soy: ["soya"],
+  cheddar: ["cheese"],
+  noodle: ["pasta", "noodles"],
+  pasta: ["noodle", "noodles"],
+  bell: ["pepper"],
+  oats: ["oatmeal", "oat"],
+  oatmeal: ["oats"],
+  taters: ["potato"],
+  spud: ["potato"],
+  beef: ["steak"],
+  soda_water: ["sparkling water"],
+};
+
+/** Lowercase, strip punctuation, drop a trailing plural. */
+export function normalizeTerm(word: string): string {
+  const w = word.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (w.length > 3 && w.endsWith("es")) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith("s")) return w.slice(0, -1);
+  return w;
+}
+
+const tokens = (s: string) => s.split(/\s+/).map(normalizeTerm).filter(Boolean);
+
+/** Every variant of a typed word we should accept as a match. */
+function variants(word: string): string[] {
+  const base = normalizeTerm(word);
+  const extra = (SYNONYMS[word.toLowerCase()] ?? SYNONYMS[base] ?? []).flatMap(s => tokens(s));
+  return Array.from(new Set([base, ...extra])).filter(Boolean);
+}
+
+interface Scored { name: string; brand?: string | null; category?: string }
+
+/**
+ * Score a food against a typed term. Every typed word must match somewhere
+ * (name, brand, or category); name matches count far more than brand matches.
+ */
+function scoreFood(food: Scored, term: string): number {
+  const raw = term.trim().toLowerCase();
+  if (!raw) return 0;
+
+  const name = food.name.toLowerCase();
+  const brand = (food.brand ?? "").toLowerCase();
+  const cat = (food.category ?? "").toLowerCase();
+
+  const nameTokens = tokens(name);
+  const brandTokens = tokens(brand);
+  const catTokens = tokens(cat);
+
+  let score = 0;
+  if (name === raw) score += 120;
+  else if (name.startsWith(raw)) score += 70;
+  else if (name.includes(raw)) score += 40;
+
+  const words = raw.split(/\s+/).filter(Boolean);
+  for (const w of words) {
+    const vs = variants(w);
+    if (!vs.length) continue;
+    const inNameWhole = vs.some(v => nameTokens.includes(v));
+    const inNamePrefix = vs.some(v => nameTokens.some(t => t.startsWith(v)));
+    const inNamePart = vs.some(v => nameTokens.some(t => t.includes(v)));
+    const inBrand = vs.some(v => brandTokens.some(t => t.includes(v)));
+    const inCat = vs.some(v => catTokens.some(t => t.includes(v)));
+
+    if (inNameWhole) score += 25;
+    else if (inNamePrefix) score += 18;
+    else if (inNamePart) score += 10;
+    else if (inBrand) score += 6;
+    else if (inCat) score += 4;
+    else return 0; // this word matched nothing — not a real result
+  }
+
+  // Prefer simple, ingredient-style names over long packaged ones.
+  score += Math.max(0, 12 - nameTokens.length);
+  return score;
+}
+
 /** Search the built-in catalog. Store filter narrows to that grocer's brands. */
 export function searchCatalog(query: string, store?: Store | null, limit = 12): CatalogFood[] {
-  const q = query.trim().toLowerCase();
-  const words = q.split(/\s+/).filter(Boolean);
-  return FOOD_CATALOG
-    .filter(f => (store ? f.store === store : true))
-    .map(f => {
-      const hay = `${f.name} ${f.brand ?? ""} ${f.category}`.toLowerCase();
-      if (!words.length) return { f, score: 0 };
-      const hits = words.filter(w => hay.includes(w)).length;
-      if (hits === 0) return null;
-      const starts = hay.startsWith(q) ? 2 : 0;
-      return { f, score: hits * 2 + starts };
-    })
-    .filter((x): x is { f: CatalogFood; score: number } => x !== null)
+  const q = query.trim();
+  const pool = FOOD_CATALOG.filter(f => (store ? f.store === store : true));
+  if (!q) return pool.slice(0, limit);
+  return pool
+    .map(f => ({ f, score: scoreFood(f, q) }))
+    .filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score || a.f.name.localeCompare(b.f.name))
     .slice(0, limit)
     .map(x => x.f);
@@ -531,18 +622,23 @@ export function searchCatalog(query: string, store?: Store | null, limit = 12): 
 
 /** Merge catalog matches ahead of remote results, dropping duplicates. */
 export function mergeWithCatalog(
-  query: string, remote: FoodCandidate[], store?: Store | null,
+  query: string, remote: FoodCandidate[], store?: Store | null, limit = 16,
 ): FoodCandidate[] {
-  const local = searchCatalog(query, store);
-  const seen = new Set(local.map(f => `${f.name}|${f.brand ?? ""}`.toLowerCase()));
-  const rest = remote.filter(r => {
-    const key = `${r.name}|${r.brand ?? ""}`.toLowerCase();
-    if (seen.has(key)) return false;
-    if (store && storeForBrand(r.brand) !== store) return false;
-    return true;
-  });
-  return [...local, ...rest];
+  const local = searchCatalog(query, store, limit);
+  const keyOf = (f: FoodCandidate) =>
+    f.barcode ? `bc:${f.barcode}` : `${normalizeTerm(f.name)}|${(f.brand ?? "").toLowerCase()}`;
+  const seen = new Set(local.map(keyOf));
+  const rest: FoodCandidate[] = [];
+  for (const r of remote) {
+    const key = keyOf(r);
+    if (seen.has(key)) continue;
+    if (store && storeForBrand(r.brand) !== store) continue;
+    seen.add(key);
+    rest.push(r);
+  }
+  return [...local, ...rankByRelevance(rest, query)];
 }
+
 
 /* ------------------------------------------------------------ diet shelves */
 
