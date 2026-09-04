@@ -34,8 +34,15 @@ const nowTime = () => {
 };
 
 export function LogFoodSheet({
-  open, onOpenChange, date,
-}: { open: boolean; onOpenChange: (v: boolean) => void; date: string }) {
+  open, onOpenChange, date, defaultTime, defaultMeal,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  date: string;
+  /** "HH:MM" to pre-fill when opened from a calendar section. */
+  defaultTime?: string | null;
+  defaultMeal?: MealType;
+}) {
   const { foods } = useSavedFoods();
   const { meals: planned, loading: planLoading } = usePlannedMeals(date);
   const [tab, setTab] = useState("search");
@@ -54,10 +61,13 @@ export function LogFoodSheet({
 
   useEffect(() => {
     if (open) {
-      setSelected(null); setServings(1); setMealType(guessMeal());
-      setTime(nowTime()); setPicked({});
+      setSelected(null); setServings(1);
+      setMealType(defaultMeal ?? guessMeal());
+      setTime(defaultTime ?? nowTime()); setPicked({});
     }
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultTime, defaultMeal]);
+
 
   const recents = useMemo(() => foods.slice(0, 25), [foods]);
   const favorites = useMemo(() => foods.filter(f => f.favorite), [foods]);
