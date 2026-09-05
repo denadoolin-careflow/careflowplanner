@@ -74,8 +74,66 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
     move(type, id, targetISO);
   };
 
+  const ghost = touch.ghost;
+
+  if (isMobile && mobileView === "list") {
+    return (
+      <div className="flex min-h-0 flex-col gap-2">
+        <MobileViewSwitch value={mobileView} onChange={pickMobileView} />
+        <div className="space-y-1.5 overflow-y-auto">
+          {days.filter(d => isSameMonth(d, date)).map(d => {
+            const key = format(d, "yyyy-MM-dd");
+            const items = byDay.get(key) ?? [];
+            const isToday = isSameDay(d, today);
+            return (
+              <div key={key} data-drop-day={key}
+                   className={cn("rounded-2xl border border-border/60 bg-card/50 p-2",
+                     isToday && "border-primary/60 bg-primary/5",
+                     touch.overDay === key && "ring-1 ring-inset ring-primary/60")}>
+                <button type="button" onClick={() => onSelectDay(d)}
+                        className="flex w-full items-baseline justify-between gap-2 text-left">
+                  <span className="text-sm font-semibold">{format(d, "EEE d")}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {items.length ? `${items.length} planned` : "Open"}
+                  </span>
+                </button>
+                {items.length > 0 && (
+                  <ul className="mt-1.5 space-y-1">
+                    {items.map(it => {
+                      const Icon = KIND_ICONS[it.kind];
+                      return (
+                        <li key={it.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpen(it)}
+                            {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
+                            className={cn("flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs",
+                              it.done && "opacity-55")}
+                            style={{ background: `${it.color}14`, color: it.color }}
+                          >
+                            <Icon className="h-3 w-3 shrink-0" />
+                            <span className="min-w-0 flex-1 truncate text-foreground">
+                              {it.time ? `${it.time} · ` : ""}{it.title}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {ghost && <DragGhost label={ghost.label} x={ghost.x} y={ghost.y} />}
+        {dialogs}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+      {isMobile && <MobileViewSwitch value={mobileView} onChange={pickMobileView} className="m-2 self-start" />}
       <div className="sticky top-0 z-10 grid grid-cols-7 border-b border-border/60 bg-card/90 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur">
         {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
           <div key={d} className={cn("py-1.5", isMobile ? "text-center" : "px-2")}>{isMobile ? d.slice(0, 1) : d}</div>
@@ -143,7 +201,33 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                   </span>
                 )}
               </div>
-              {isMobile ? (
+              {isMobile && mobileView === "chips" ? (
+                <div className="flex min-h-0 flex-1 flex-col gap-[2px] pt-1">
+                  {items.slice(0, 3).map(it => (
+                    <button
+                      key={it.id}
+                      type="button"
+                      onClick={() => handleOpen(it)}
+                      {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
+                      className={cn("truncate rounded px-1 py-[1px] text-left text-[9px] leading-tight",
+                        it.done && "opacity-55")}
+                      style={{ background: `${it.color}1f`, color: it.color }}
+                    >
+                      {it.title}
+                    </button>
+                  ))}
+                  {items.length > 3 && (
+                    <button type="button" onClick={() => onSelectDay(d)}
+                            className="px-1 text-left text-[9px] text-muted-foreground">
+                      +{items.length - 3} more
+                    </button>
+                  )}
+                  {items.length === 0 && (
+                    <button type="button" onClick={() => onSelectDay(d)} aria-label={`Open ${format(d, "MMMM d")}`}
+                            className="min-h-[18px] flex-1" />
+                  )}
+                </div>
+              ) : isMobile ? (
                 <button
                   type="button"
                   onClick={() => onSelectDay(d)}
@@ -190,6 +274,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                         e.dataTransfer.effectAllowed = "move";
                       }}
                       onClick={() => handleOpen(it)}
+                      {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
                       title={it.title}
                       className={cn("flex w-full items-center gap-1 rounded px-1 py-[2px] text-left text-[10px] leading-tight",
                         it.done && "opacity-55")}
@@ -247,7 +332,31 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
           );
         })}
       </div>
+      {ghost && <DragGhost label={ghost.label} x={ghost.x} y={ghost.y} />}
       {dialogs}
+    </div>
+  );
+}
+
+/** Layout choices for the month grid on small screens. */
+function MobileViewSwitch({ value, onChange, className }: {
+  value: MobileMonthView; onChange: (v: MobileMonthView) => void; className?: string;
+}) {
+  return (
+    <ViewPills items={MOBILE_VIEW_ITEMS} value={value} onChange={onChange}
+               ariaLabel="Month layout" className={className} />
+  );
+}
+
+/** Floating label that follows the finger during a long-press drag. */
+function DragGhost({ label, x, y }: { label: string; x: number; y: number }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed z-50 max-w-[60vw] truncate rounded-full border border-primary/50 bg-card px-3 py-1.5 text-xs shadow-lg"
+      style={{ left: x + 12, top: y - 14 }}
+    >
+      {label}
     </div>
   );
 }
