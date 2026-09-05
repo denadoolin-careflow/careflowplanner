@@ -8,7 +8,7 @@ import {
   startOfMonth, startOfWeek, subMonths,
 } from "date-fns";
 import {
-  ChevronLeft, ChevronRight, Clock, Droplets, HeartPulse, Moon, Pencil, Scale, Sun,
+  ChevronLeft, ChevronRight, Clock, Droplets, HeartPulse, Moon, Pencil, Plus, Scale, Sun,
   Sunrise, Syringe, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +20,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFoodEntries, sumEntries, updateFoodEntry, deleteFoodEntry } from "@/lib/wellflow/data";
 import { EditFoodDialog } from "@/components/wellflow/EditFoodDialog";
 import { FoodFeelSheet } from "@/components/wellflow/FoodFeelSheet";
+import { InlineAddFood } from "@/components/wellflow/InlineAddFood";
+import { HealthJournalCard } from "@/components/wellflow/HealthJournalCard";
+import { LogFoodSheet } from "@/components/wellflow/LogFoodSheet";
+import { useJournalDates } from "@/lib/wellflow/journal";
 import { MEAL_TYPES, todayISO, type FoodEntry, type MealType } from "@/lib/wellflow/types";
 
 interface DayCell {
@@ -67,13 +71,14 @@ function useMonthData(anchor: Date) {
     return () => { cancel = true; };
   }, [from, to]);
 
-  return { map, loading };
+  return { map, loading, from, to };
 }
 
 export function FoodCalendar() {
   const [anchor, setAnchor] = useState(new Date());
   const [selected, setSelected] = useState<string | null>(null);
-  const { map, loading } = useMonthData(anchor);
+  const { map, loading, from, to } = useMonthData(anchor);
+  const journalDates = useJournalDates(from, to);
 
   const days = useMemo(
     () => eachDayOfInterval({
@@ -115,7 +120,7 @@ export function FoodCalendar() {
             return (
               <button
                 key={key} type="button" onClick={() => setSelected(key)}
-                aria-label={`${format(d, "MMMM d")}${cell ? `, ${Math.round(cell.calories)} calories` : ", nothing logged"}`}
+                aria-label={`${format(d, "MMMM d")}${cell ? `, ${Math.round(cell.calories)} calories` : ", nothing logged"}${journalDates.has(key) ? ", journal entry" : ""} — tap to log food`}
                 className={cn(
                   "flex min-h-[3.5rem] flex-col items-center gap-0.5 rounded-xl border px-1 py-1 text-[10px] transition-colors",
                   inMonth ? "border-border/40 bg-card/50" : "border-transparent text-muted-foreground/50",
@@ -131,6 +136,7 @@ export function FoodCalendar() {
                   {cell?.water ? <Dot className="bg-sky-400" /> : null}
                   {cell?.injection ? <Dot className="bg-accent" /> : null}
                   {cell?.weight != null ? <Dot className="bg-muted-foreground" /> : null}
+                  {journalDates.has(key) ? <Dot className="bg-violet-400" /> : null}
                 </span>
               </button>
             );
@@ -142,6 +148,7 @@ export function FoodCalendar() {
           <Legend className="bg-sky-400" label="Water" />
           <Legend className="bg-accent" label="Injection" />
           <Legend className="bg-muted-foreground" label="Weight" />
+          <Legend className="bg-violet-400" label="Journal" />
         </div>
 
         <div className="mt-3">
