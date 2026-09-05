@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { addDays, differenceInCalendarDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
+import { Check, LayoutGrid, List, Rows3 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -10,6 +10,17 @@ import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { useCycleDots } from "@/lib/planner/day-rhythm";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ViewPills } from "@/components/layout/ViewPills";
+import { useTouchDrag } from "@/lib/planner/touch-drag";
+
+/** Mobile-only layout choices for the month grid. */
+type MobileMonthView = "dots" | "chips" | "list";
+const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v1";
+const MOBILE_VIEW_ITEMS = [
+  { value: "dots" as const, label: "Dots", icon: LayoutGrid },
+  { value: "chips" as const, label: "Chips", icon: Rows3 },
+  { value: "list" as const, label: "List", icon: List },
+];
 
 
 /**
@@ -35,14 +46,32 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   const [dragOver, setDragOver] = useState<string | null>(null);
   const todayKey = format(today, "yyyy-MM-dd");
 
+  const [mobileView, setMobileView] = useState<MobileMonthView>("dots");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(MOBILE_VIEW_KEY);
+      if (v === "dots" || v === "chips" || v === "list") setMobileView(v);
+    } catch { /* ignore */ }
+  }, []);
+  const pickMobileView = (v: MobileMonthView) => {
+    setMobileView(v);
+    try { localStorage.setItem(MOBILE_VIEW_KEY, v); } catch { /* ignore */ }
+  };
+
+  const move = (type: string, id: string, targetISO: string) => {
+    if (type === "task") { updateTask(id, { dueDate: targetISO }); toast.success(`Moved to ${format(new Date(`${targetISO}T12:00:00`), "MMM d")}`); }
+    else if (type === "appointment") { updateAppointment(id, { date: targetISO }); toast.success("Appointment moved"); }
+  };
+
+  const touch = useTouchDrag((p, dayISO) => move(p.type, p.id, dayISO));
+
   const onDrop = (targetISO: string, e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(null);
     const raw = e.dataTransfer.getData("application/x-planner-item") || e.dataTransfer.getData("text/plain");
     if (!raw) return;
     const [type, id] = raw.split(":");
-    if (type === "task") { updateTask(id, { dueDate: targetISO }); toast.success(`Moved to ${format(new Date(`${targetISO}T12:00:00`), "MMM d")}`); }
-    else if (type === "appointment") { updateAppointment(id, { date: targetISO }); toast.success("Appointment moved"); }
+    move(type, id, targetISO);
   };
 
   return (
@@ -70,7 +99,8 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
           return (
             <div
               key={i}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(key); }}
+              data-drop-day={key}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOver(key); }}
               onDragLeave={() => setDragOver(cur => (cur === key ? null : cur))}
               onDrop={(e) => onDrop(key, e)}
               className={cn(
@@ -79,7 +109,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                 dim && "bg-muted/20 text-muted-foreground/60",
                 allDone && !dim && "ring-1 ring-inset ring-emerald-500/40",
                 hasOverdue && !dim && "ring-1 ring-inset ring-amber-500/40",
-                dragOver === key && "bg-primary/5 ring-1 ring-inset ring-primary/50",
+                (dragOver === key || touch.overDay === key) && "bg-primary/5 ring-1 ring-inset ring-primary/50",
               )}
               style={load > 0 && !dim ? { backgroundColor: `hsl(var(--primary) / ${0.04 + load * 0.06})` } : undefined}
             >
@@ -162,7 +192,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                       onClick={() => handleOpen(it)}
                       title={it.title}
                       className={cn("flex w-full items-center gap-1 rounded px-1 py-[2px] text-left text-[10px] leading-tight",
-                        it.done && "line-through opacity-45")}
+                        it.done && "opacity-55")}
                       style={{ background: `${it.color}1f`, color: it.color }}
                     >
                       {it.done
@@ -194,7 +224,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                             type="button"
                             onClick={() => handleOpen(it)}
                             className={cn("flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-left text-[11px] hover:bg-muted",
-                              it.done && "line-through opacity-50")}
+                              it.done && "opacity-55")}
                           >
                             <Icon className="h-3 w-3 shrink-0" style={{ color: it.color }} />
                             <span className="line-clamp-2 [overflow-wrap:anywhere] whitespace-normal">{it.time ? `${it.time} ` : ""}{it.title}</span>
