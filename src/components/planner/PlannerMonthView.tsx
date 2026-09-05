@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { addDays, differenceInCalendarDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
+import { Check, LayoutGrid, List, Rows3 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -10,6 +10,17 @@ import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { useCycleDots } from "@/lib/planner/day-rhythm";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ViewPills } from "@/components/layout/ViewPills";
+import { useTouchDrag } from "@/lib/planner/touch-drag";
+
+/** Mobile-only layout choices for the month grid. */
+type MobileMonthView = "dots" | "chips" | "list";
+const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v1";
+const MOBILE_VIEW_ITEMS = [
+  { value: "dots" as const, label: "Dots", icon: LayoutGrid },
+  { value: "chips" as const, label: "Chips", icon: Rows3 },
+  { value: "list" as const, label: "List", icon: List },
+];
 
 
 /**
@@ -35,18 +46,94 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   const [dragOver, setDragOver] = useState<string | null>(null);
   const todayKey = format(today, "yyyy-MM-dd");
 
+  const [mobileView, setMobileView] = useState<MobileMonthView>("dots");
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(MOBILE_VIEW_KEY);
+      if (v === "dots" || v === "chips" || v === "list") setMobileView(v);
+    } catch { /* ignore */ }
+  }, []);
+  const pickMobileView = (v: MobileMonthView) => {
+    setMobileView(v);
+    try { localStorage.setItem(MOBILE_VIEW_KEY, v); } catch { /* ignore */ }
+  };
+
+  const move = (type: string, id: string, targetISO: string) => {
+    if (type === "task") { updateTask(id, { dueDate: targetISO }); toast.success(`Moved to ${format(new Date(`${targetISO}T12:00:00`), "MMM d")}`); }
+    else if (type === "appointment") { updateAppointment(id, { date: targetISO }); toast.success("Appointment moved"); }
+  };
+
+  const touch = useTouchDrag((p, dayISO) => move(p.type, p.id, dayISO));
+
   const onDrop = (targetISO: string, e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(null);
     const raw = e.dataTransfer.getData("application/x-planner-item") || e.dataTransfer.getData("text/plain");
     if (!raw) return;
     const [type, id] = raw.split(":");
-    if (type === "task") { updateTask(id, { dueDate: targetISO }); toast.success(`Moved to ${format(new Date(`${targetISO}T12:00:00`), "MMM d")}`); }
-    else if (type === "appointment") { updateAppointment(id, { date: targetISO }); toast.success("Appointment moved"); }
+    move(type, id, targetISO);
   };
+
+  const ghost = touch.ghost;
+
+  if (isMobile && mobileView === "list") {
+    return (
+      <div className="flex min-h-0 flex-col gap-2">
+        <MobileViewSwitch value={mobileView} onChange={pickMobileView} />
+        <div className="space-y-1.5 overflow-y-auto">
+          {days.filter(d => isSameMonth(d, date)).map(d => {
+            const key = format(d, "yyyy-MM-dd");
+            const items = byDay.get(key) ?? [];
+            const isToday = isSameDay(d, today);
+            return (
+              <div key={key} data-drop-day={key}
+                   className={cn("rounded-2xl border border-border/60 bg-card/50 p-2",
+                     isToday && "border-primary/60 bg-primary/5",
+                     touch.overDay === key && "ring-1 ring-inset ring-primary/60")}>
+                <button type="button" onClick={() => onSelectDay(d)}
+                        className="flex w-full items-baseline justify-between gap-2 text-left">
+                  <span className="text-sm font-semibold">{format(d, "EEE d")}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {items.length ? `${items.length} planned` : "Open"}
+                  </span>
+                </button>
+                {items.length > 0 && (
+                  <ul className="mt-1.5 space-y-1">
+                    {items.map(it => {
+                      const Icon = KIND_ICONS[it.kind];
+                      return (
+                        <li key={it.id}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpen(it)}
+                            {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
+                            className={cn("flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs",
+                              it.done && "opacity-55")}
+                            style={{ background: `${it.color}14`, color: it.color }}
+                          >
+                            <Icon className="h-3 w-3 shrink-0" />
+                            <span className="min-w-0 flex-1 truncate text-foreground">
+                              {it.time ? `${it.time} · ` : ""}{it.title}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {ghost && <DragGhost label={ghost.label} x={ghost.x} y={ghost.y} />}
+        {dialogs}
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+      {isMobile && <MobileViewSwitch value={mobileView} onChange={pickMobileView} className="m-2 self-start" />}
       <div className="sticky top-0 z-10 grid grid-cols-7 border-b border-border/60 bg-card/90 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur">
         {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
           <div key={d} className={cn("py-1.5", isMobile ? "text-center" : "px-2")}>{isMobile ? d.slice(0, 1) : d}</div>
@@ -70,7 +157,8 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
           return (
             <div
               key={i}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(key); }}
+              data-drop-day={key}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOver(key); }}
               onDragLeave={() => setDragOver(cur => (cur === key ? null : cur))}
               onDrop={(e) => onDrop(key, e)}
               className={cn(
@@ -79,7 +167,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                 dim && "bg-muted/20 text-muted-foreground/60",
                 allDone && !dim && "ring-1 ring-inset ring-emerald-500/40",
                 hasOverdue && !dim && "ring-1 ring-inset ring-amber-500/40",
-                dragOver === key && "bg-primary/5 ring-1 ring-inset ring-primary/50",
+                (dragOver === key || touch.overDay === key) && "bg-primary/5 ring-1 ring-inset ring-primary/50",
               )}
               style={load > 0 && !dim ? { backgroundColor: `hsl(var(--primary) / ${0.04 + load * 0.06})` } : undefined}
             >
@@ -113,7 +201,33 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                   </span>
                 )}
               </div>
-              {isMobile ? (
+              {isMobile && mobileView === "chips" ? (
+                <div className="flex min-h-0 flex-1 flex-col gap-[2px] pt-1">
+                  {items.slice(0, 3).map(it => (
+                    <button
+                      key={it.id}
+                      type="button"
+                      onClick={() => handleOpen(it)}
+                      {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
+                      className={cn("truncate rounded px-1 py-[1px] text-left text-[9px] leading-tight",
+                        it.done && "opacity-55")}
+                      style={{ background: `${it.color}1f`, color: it.color }}
+                    >
+                      {it.title}
+                    </button>
+                  ))}
+                  {items.length > 3 && (
+                    <button type="button" onClick={() => onSelectDay(d)}
+                            className="px-1 text-left text-[9px] text-muted-foreground">
+                      +{items.length - 3} more
+                    </button>
+                  )}
+                  {items.length === 0 && (
+                    <button type="button" onClick={() => onSelectDay(d)} aria-label={`Open ${format(d, "MMMM d")}`}
+                            className="min-h-[18px] flex-1" />
+                  )}
+                </div>
+              ) : isMobile ? (
                 <button
                   type="button"
                   onClick={() => onSelectDay(d)}
@@ -160,9 +274,10 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                         e.dataTransfer.effectAllowed = "move";
                       }}
                       onClick={() => handleOpen(it)}
+                      {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
                       title={it.title}
                       className={cn("flex w-full items-center gap-1 rounded px-1 py-[2px] text-left text-[10px] leading-tight",
-                        it.done && "line-through opacity-45")}
+                        it.done && "opacity-55")}
                       style={{ background: `${it.color}1f`, color: it.color }}
                     >
                       {it.done
@@ -194,7 +309,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                             type="button"
                             onClick={() => handleOpen(it)}
                             className={cn("flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-left text-[11px] hover:bg-muted",
-                              it.done && "line-through opacity-50")}
+                              it.done && "opacity-55")}
                           >
                             <Icon className="h-3 w-3 shrink-0" style={{ color: it.color }} />
                             <span className="line-clamp-2 [overflow-wrap:anywhere] whitespace-normal">{it.time ? `${it.time} ` : ""}{it.title}</span>
@@ -217,7 +332,31 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
           );
         })}
       </div>
+      {ghost && <DragGhost label={ghost.label} x={ghost.x} y={ghost.y} />}
       {dialogs}
+    </div>
+  );
+}
+
+/** Layout choices for the month grid on small screens. */
+function MobileViewSwitch({ value, onChange, className }: {
+  value: MobileMonthView; onChange: (v: MobileMonthView) => void; className?: string;
+}) {
+  return (
+    <ViewPills items={MOBILE_VIEW_ITEMS} value={value} onChange={onChange}
+               ariaLabel="Month layout" className={className} />
+  );
+}
+
+/** Floating label that follows the finger during a long-press drag. */
+function DragGhost({ label, x, y }: { label: string; x: number; y: number }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed z-50 max-w-[60vw] truncate rounded-full border border-primary/50 bg-card px-3 py-1.5 text-xs shadow-lg"
+      style={{ left: x + 12, top: y - 14 }}
+    >
+      {label}
     </div>
   );
 }

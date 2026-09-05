@@ -3,6 +3,7 @@ import { GoalBars } from "@/components/wellflow/GoalBars";
 import { MedsSupplementsCard } from "@/components/wellflow/MedsSupplementsCard";
 import { AdherenceCard } from "@/components/wellflow/AdherenceCard";
 import { CyclePhaseStrip } from "@/components/wellflow/CyclePhaseStrip";
+import { HealthJournalCard } from "@/components/wellflow/HealthJournalCard";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,8 @@ export function TodayTab({
       <MedsSupplementsCard date={date} />
 
       <AdherenceCard />
+
+      <HealthJournalCard date={date} />
 
       <SectionCard title="How are you feeling today?" subtitle="Optional, saves as you tap" collapsibleId="wellflow-checkin">
         <CheckInFields date={date} />

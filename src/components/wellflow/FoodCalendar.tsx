@@ -8,7 +8,7 @@ import {
   startOfMonth, startOfWeek, subMonths,
 } from "date-fns";
 import {
-  ChevronLeft, ChevronRight, Clock, Droplets, HeartPulse, Moon, Pencil, Scale, Sun,
+  ChevronLeft, ChevronRight, Clock, Droplets, HeartPulse, Moon, Pencil, Plus, Scale, Sun,
   Sunrise, Syringe, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +20,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useFoodEntries, sumEntries, updateFoodEntry, deleteFoodEntry } from "@/lib/wellflow/data";
 import { EditFoodDialog } from "@/components/wellflow/EditFoodDialog";
 import { FoodFeelSheet } from "@/components/wellflow/FoodFeelSheet";
+import { InlineAddFood } from "@/components/wellflow/InlineAddFood";
+import { HealthJournalCard } from "@/components/wellflow/HealthJournalCard";
+import { LogFoodSheet } from "@/components/wellflow/LogFoodSheet";
+import { useJournalDates } from "@/lib/wellflow/journal";
 import { MEAL_TYPES, todayISO, type FoodEntry, type MealType } from "@/lib/wellflow/types";
 
 interface DayCell {
@@ -67,13 +71,14 @@ function useMonthData(anchor: Date) {
     return () => { cancel = true; };
   }, [from, to]);
 
-  return { map, loading };
+  return { map, loading, from, to };
 }
 
 export function FoodCalendar() {
   const [anchor, setAnchor] = useState(new Date());
   const [selected, setSelected] = useState<string | null>(null);
-  const { map, loading } = useMonthData(anchor);
+  const { map, loading, from, to } = useMonthData(anchor);
+  const journalDates = useJournalDates(from, to);
 
   const days = useMemo(
     () => eachDayOfInterval({
@@ -115,7 +120,7 @@ export function FoodCalendar() {
             return (
               <button
                 key={key} type="button" onClick={() => setSelected(key)}
-                aria-label={`${format(d, "MMMM d")}${cell ? `, ${Math.round(cell.calories)} calories` : ", nothing logged"}`}
+                aria-label={`${format(d, "MMMM d")}${cell ? `, ${Math.round(cell.calories)} calories` : ", nothing logged"}${journalDates.has(key) ? ", journal entry" : ""} — tap to log food`}
                 className={cn(
                   "flex min-h-[3.5rem] flex-col items-center gap-0.5 rounded-xl border px-1 py-1 text-[10px] transition-colors",
                   inMonth ? "border-border/40 bg-card/50" : "border-transparent text-muted-foreground/50",
@@ -131,6 +136,7 @@ export function FoodCalendar() {
                   {cell?.water ? <Dot className="bg-sky-400" /> : null}
                   {cell?.injection ? <Dot className="bg-accent" /> : null}
                   {cell?.weight != null ? <Dot className="bg-muted-foreground" /> : null}
+                  {journalDates.has(key) ? <Dot className="bg-violet-400" /> : null}
                 </span>
               </button>
             );
@@ -142,6 +148,7 @@ export function FoodCalendar() {
           <Legend className="bg-sky-400" label="Water" />
           <Legend className="bg-accent" label="Injection" />
           <Legend className="bg-muted-foreground" label="Weight" />
+          <Legend className="bg-violet-400" label="Journal" />
         </div>
 
         <div className="mt-3">
@@ -172,6 +179,13 @@ const PART_LABEL: Record<PartKey, string> = {
 const PART_ICON: Record<PartKey, typeof Sunrise> = {
   morning: Sunrise, afternoon: Sun, evening: Moon, untimed: Clock,
 };
+/** Sensible default clock time when adding into a section (editable after). */
+const PART_TIME: Record<PartKey, string | null> = {
+  morning: "08:00", afternoon: "13:00", evening: "18:30", untimed: null,
+};
+const PART_MEAL: Record<PartKey, MealType> = {
+  morning: "breakfast", afternoon: "lunch", evening: "dinner", untimed: "snack",
+};
 
 /** Local hour from a logged_at timestamp, or null when it isn't usable. */
 function hourOf(loggedAt?: string | null): number | null {
@@ -197,10 +211,12 @@ const timeValue = (loggedAt?: string | null) => {
 function DaySheet({
   date, summary, onClose,
 }: { date: string | null; summary?: DayCell; onClose: () => void }) {
-  const { entries, loading } = useFoodEntries(date ?? todayISO());
+  const day = date ?? todayISO();
+  const { entries, loading } = useFoodEntries(day);
   const totals = useMemo(() => sumEntries(entries), [entries]);
   const [editing, setEditing] = useState<FoodEntry | null>(null);
   const [feelFor, setFeelFor] = useState<FoodEntry | null>(null);
+  const [logFor, setLogFor] = useState<{ time: string | null; meal: MealType } | null>(null);
 
   const grouped = useMemo(() => {
     const buckets: Record<PartKey, FoodEntry[]> = { morning: [], afternoon: [], evening: [], untimed: [] };
@@ -262,14 +278,25 @@ function DaySheet({
           </div>
         )}
 
+        <div className="mt-3 space-y-2">
+          <Button size="sm" className="w-full gap-1.5"
+                  onClick={() => setLogFor({ time: null, meal: "snack" })}>
+            <Plus className="h-4 w-4" /> Log food on this day
+          </Button>
+          <InlineAddFood
+            date={day}
+            time={null}
+            defaultMeal="snack"
+            label="Quick add to this day"
+            onMore={() => setLogFor({ time: null, meal: "snack" })}
+          />
+        </div>
+
         <div className="mt-4 space-y-4 pb-6">
           {loading ? (
             <div className="h-16 animate-pulse rounded-xl bg-muted/50" />
-          ) : entries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing logged this day.</p>
           ) : (["morning", "afternoon", "evening", "untimed"] as PartKey[]).map(pk => {
             const rows = grouped[pk];
-            if (rows.length === 0) return null;
             const Icon = PART_ICON[pk];
             const cals = rows.reduce((s, r) => s + r.calories, 0);
             return (
@@ -280,6 +307,9 @@ function DaySheet({
                   <span className="font-normal opacity-70 tabular-nums">· {Math.round(cals)} cal</span>
                 </p>
                 <ul className="space-y-1.5">
+                  {rows.length === 0 && (
+                    <li className="px-1 text-xs text-muted-foreground">Nothing logged yet.</li>
+                  )}
                   {rows.map(e => (
                     <li key={e.id} className="rounded-2xl border border-border/40 bg-card/50 px-3 py-2">
                       <p className="truncate text-sm font-medium">{e.food_name}</p>
@@ -317,9 +347,19 @@ function DaySheet({
                     </li>
                   ))}
                 </ul>
+                <InlineAddFood
+                  className="mt-2"
+                  date={day}
+                  time={PART_TIME[pk]}
+                  defaultMeal={PART_MEAL[pk]}
+                  label={`Add food to ${PART_LABEL[pk].toLowerCase()}`}
+                  onMore={() => setLogFor({ time: PART_TIME[pk], meal: PART_MEAL[pk] })}
+                />
               </section>
             );
           })}
+
+          <HealthJournalCard date={day} />
         </div>
 
         <EditFoodDialog
@@ -351,6 +391,14 @@ function DaySheet({
             });
             setEditing(null);
           }}
+        />
+
+        <LogFoodSheet
+          open={!!logFor}
+          onOpenChange={v => { if (!v) setLogFor(null); }}
+          date={day}
+          defaultTime={logFor?.time ?? null}
+          defaultMeal={logFor?.meal}
         />
 
         <FoodFeelSheet
