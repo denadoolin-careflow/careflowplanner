@@ -1,5 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchAIWithRetry } from "../_shared/ai-fetch.ts";
 
 interface DayDatum {
   date: string;
@@ -44,7 +45,7 @@ Deno.serve(async (req) => {
 
     const userPrompt = `Here is the data (JSON):\n${JSON.stringify(body, null, 2)}\n\nReturn JSON with this exact shape:\n{\n  "insights": [\n    { "title": "string", "body": "string (1-2 sentences)", "tag": "focus|cycle|moon|rest|pattern" }\n  ],\n  "summary": "string (one warm sentence)"\n}`;
 
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    const resp = await fetchAIWithRetry("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -63,8 +64,9 @@ Deno.serve(async (req) => {
     if (!resp.ok) {
       const errText = await resp.text();
       if (resp.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit — try again in a minute." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        // Return 200 so the client can show a gentle notice instead of crashing.
+        return new Response(JSON.stringify({ insights: [], summary: "Insights are busy right now — try again in a minute.", rateLimited: true }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (resp.status === 402) {
@@ -72,7 +74,8 @@ Deno.serve(async (req) => {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      return new Response(JSON.stringify({ error: "AI gateway error", detail: errText }), {
+      console.error("ai-rhythm-insights upstream", resp.status, errText.slice(0, 500));
+      return new Response(JSON.stringify({ error: "AI gateway error", detail: errText.slice(0, 500) }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 import { fetchUserStyleBlock } from "../_shared/user-style.ts";
+import { fetchAIWithRetry } from "../_shared/ai-fetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -118,7 +119,7 @@ Deno.serve(async (req) => {
 
     const styleBlock = await fetchUserStyleBlock(req);
 
-    const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
+    const aiResp = await fetchAIWithRetry("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -130,7 +131,10 @@ Deno.serve(async (req) => {
         ],
       }),
     });
-    if (aiResp.status === 429) return json({ error: "Carey is at her rate limit. Try again in a moment." }, 429);
+    // Rate limited even after retries: answer gracefully with 200 so the UI stays intact.
+    if (aiResp.status === 429) {
+      return json({ text: "I'm getting a lot of requests right now — give me a minute and ask again.", rateLimited: true }, 200);
+    }
     if (aiResp.status === 402) return json({ error: "AI credits exhausted." }, 402);
     if (!aiResp.ok) {
       console.error("carey-chat gateway error", aiResp.status, await aiResp.text());
