@@ -1,5 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchAIWithRetry } from "../_shared/ai-fetch.ts";
 
 interface DayDatum {
   date: string;
