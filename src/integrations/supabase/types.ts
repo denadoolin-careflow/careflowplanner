@@ -4670,18 +4670,24 @@ export type Database = {
         Row: {
           activities: Json
           ai_generated_at: string | null
+          capacity: string | null
           created_at: string
           cycle_notes: string | null
           cycle_phase_items: Json
+          focus_areas: Json
+          holiday_prefs: Json
           id: string
           intention: string | null
           month: string
           moon_notes: string | null
           moon_phase_items: Json
           outings: Json
+          prep_windows: Json
           priorities: Json
+          reset: Json
           season: string | null
           season_notes: string | null
+          suggestion_state: Json
           theme: string | null
           updated_at: string
           user_id: string
@@ -4690,18 +4696,24 @@ export type Database = {
         Insert: {
           activities?: Json
           ai_generated_at?: string | null
+          capacity?: string | null
           created_at?: string
           cycle_notes?: string | null
           cycle_phase_items?: Json
+          focus_areas?: Json
+          holiday_prefs?: Json
           id?: string
           intention?: string | null
           month: string
           moon_notes?: string | null
           moon_phase_items?: Json
           outings?: Json
+          prep_windows?: Json
           priorities?: Json
+          reset?: Json
           season?: string | null
           season_notes?: string | null
+          suggestion_state?: Json
           theme?: string | null
           updated_at?: string
           user_id: string
@@ -4710,18 +4722,24 @@ export type Database = {
         Update: {
           activities?: Json
           ai_generated_at?: string | null
+          capacity?: string | null
           created_at?: string
           cycle_notes?: string | null
           cycle_phase_items?: Json
+          focus_areas?: Json
+          holiday_prefs?: Json
           id?: string
           intention?: string | null
           month?: string
           moon_notes?: string | null
           moon_phase_items?: Json
           outings?: Json
+          prep_windows?: Json
           priorities?: Json
+          reset?: Json
           season?: string | null
           season_notes?: string | null
+          suggestion_state?: Json
           theme?: string | null
           updated_at?: string
           user_id?: string
