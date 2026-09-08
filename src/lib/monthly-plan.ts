@@ -31,6 +31,18 @@ export interface CyclePhaseItem {
   done?: boolean;
 }
 
+export interface PrepWindow { id: string; label: string; start?: string | null; end?: string | null; }
+export interface MonthReset {
+  worked?: string; heavy?: string; simplify?: string;
+  carry?: string; proud?: string; next?: string;
+}
+/** Per-holiday prep state, keyed by `${date}:${name}`. */
+export interface HolidayPrefs {
+  checks?: Record<string, string[]>;
+  hidden?: string[];
+}
+export interface SuggestionState { added?: string[]; dismissed?: string[]; }
+
 export interface MonthlyPlan {
   id: string;
   user_id: string;
@@ -48,6 +60,12 @@ export interface MonthlyPlan {
   moon_phase_items: MoonPhaseItem[];
   cycle_phase_items: CyclePhaseItem[];
   ai_generated_at: string | null;
+  capacity: string | null;
+  focus_areas: string[];
+  prep_windows: PrepWindow[];
+  suggestion_state: SuggestionState;
+  reset: MonthReset;
+  holiday_prefs: HolidayPrefs;
 }
 
 function uid() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`; }
@@ -76,6 +94,12 @@ function mapRow(r: any): MonthlyPlan {
     moon_phase_items: Array.isArray(r.moon_phase_items) ? r.moon_phase_items : [],
     cycle_phase_items: Array.isArray(r.cycle_phase_items) ? r.cycle_phase_items : [],
     ai_generated_at: r.ai_generated_at ?? null,
+    capacity: r.capacity ?? null,
+    focus_areas: Array.isArray(r.focus_areas) ? r.focus_areas : [],
+    prep_windows: Array.isArray(r.prep_windows) ? r.prep_windows : [],
+    suggestion_state: (r.suggestion_state && typeof r.suggestion_state === "object") ? r.suggestion_state : {},
+    reset: (r.reset && typeof r.reset === "object") ? r.reset : {},
+    holiday_prefs: (r.holiday_prefs && typeof r.holiday_prefs === "object") ? r.holiday_prefs : {},
   };
 }
 
@@ -112,6 +136,12 @@ export const monthlyPlans = {
       moon_phase_items: patch.moon_phase_items ?? existing?.moon_phase_items ?? [],
       cycle_phase_items: patch.cycle_phase_items ?? existing?.cycle_phase_items ?? [],
       ai_generated_at: patch.ai_generated_at ?? existing?.ai_generated_at ?? null,
+      capacity: patch.capacity ?? existing?.capacity ?? null,
+      focus_areas: patch.focus_areas ?? existing?.focus_areas ?? [],
+      prep_windows: patch.prep_windows ?? existing?.prep_windows ?? [],
+      suggestion_state: patch.suggestion_state ?? existing?.suggestion_state ?? {},
+      reset: patch.reset ?? existing?.reset ?? {},
+      holiday_prefs: patch.holiday_prefs ?? existing?.holiday_prefs ?? {},
     };
     const { data } = await supabase
       .from("monthly_plans" as any)
