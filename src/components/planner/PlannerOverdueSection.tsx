@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { AlertTriangle, CalendarClock, Check, ChevronDown, Clock3 } from "lucide-react";
 import { toast } from "sonner";
@@ -36,11 +36,18 @@ export function useOverdueTasks(reference: Date = new Date()): Task[] {
  * Overdue rescue: everything past due in one place, with one-tap reschedule,
  * snooze (park until a date) and complete.
  */
+const COLLAPSED_KEY = "careflow:planner:overdue-collapsed";
+
 export function PlannerOverdueSection({ date, className }: { date?: Date; className?: string }) {
   const { updateTask } = useStore() as any;
   const ref = date ?? new Date();
   const overdue = useOverdueTasks(ref);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return window.localStorage.getItem(COLLAPSED_KEY) === "1"; } catch { return true; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0"); } catch { /* noop */ }
+  }, [collapsed]);
 
   if (overdue.length === 0) return null;
 
