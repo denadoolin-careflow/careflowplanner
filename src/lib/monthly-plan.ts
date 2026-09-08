@@ -60,6 +60,12 @@ export interface MonthlyPlan {
   moon_phase_items: MoonPhaseItem[];
   cycle_phase_items: CyclePhaseItem[];
   ai_generated_at: string | null;
+  capacity: string | null;
+  focus_areas: string[];
+  prep_windows: PrepWindow[];
+  suggestion_state: SuggestionState;
+  reset: MonthReset;
+  holiday_prefs: HolidayPrefs;
 }
 
 function uid() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`; }
