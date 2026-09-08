@@ -9,26 +9,56 @@ import { useMemo, useState } from "react";
 import { Node as TiptapNode } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
-import { Check, Plus, ShoppingCart, Sparkles } from "lucide-react";
+import { Check, Plus, ShoppingCart, Sparkles, Tag, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { ShopMenu } from "@/components/meals/ShopMenu";
 import { cn } from "@/lib/utils";
+import { ItemPrice } from "@/components/meals/ItemPrice";
+import { useGroceryPrefs } from "@/lib/grocery-prefs";
+import { basketTotal, formatMoney, useGroceryPrices } from "@/lib/grocery-prices";
+import { RETAILER_LABEL } from "@/lib/retailer-links";
 
 function GroceryView({ node, updateAttributes, selected }: NodeViewProps) {
-  const { state, addGrocery, toggleGrocery } = useStore() as any;
+  const { state, addGrocery, toggleGrocery, updateGroceryItem } = useStore() as any;
+  const { prefs } = useGroceryPrefs();
+  const { overrides, setPrice } = useGroceryPrices();
+  const tags: string[] = Array.isArray(node.attrs.tags) ? node.attrs.tags : [];
+  const [tagDraft, setTagDraft] = useState("");
   const hideBought: boolean = node.attrs.hideBought !== false;
   const title: string = node.attrs.label ?? "Grocery list";
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
 
   const items = useMemo(() => {
-    const all = (state.grocery ?? []) as any[];
-    return hideBought ? all.filter(i => !i.bought) : all;
-  }, [state.grocery, hideBought]);
+    let all = (state.grocery ?? []) as any[];
+    if (hideBought) all = all.filter(i => !i.bought);
+    if (tags.length) {
+      all = all.filter(i => {
+        const t = ((i.tags ?? []) as string[]).map(x => x.toLowerCase());
+        return tags.some(tag => t.includes(tag.toLowerCase()));
+      });
+    }
+    return all;
+  }, [state.grocery, hideBought, tags]);
 
-  const names = items.filter(i => !i.bought).map(i => i.name);
+  const unbought = items.filter(i => !i.bought);
+  const names = unbought.map(i => i.name);
+  const total = basketTotal(unbought, prefs.preferred_store, overrides);
+
+  const addTag = () => {
+    const t = tagDraft.trim().replace(/^#/, "");
+    if (!t) return;
+    if (!tags.some(x => x.toLowerCase() === t.toLowerCase())) updateAttributes({ tags: [...tags, t] });
+    setTagDraft("");
+  };
+  const removeTag = (t: string) => updateAttributes({ tags: tags.filter(x => x !== t) });
+  const tagItem = (item: any, t: string) => {
+    const current: string[] = item.tags ?? [];
+    if (current.some(x => x.toLowerCase() === t.toLowerCase())) return;
+    void updateGroceryItem(item.id, { tags: [...current, t] });
+  };
 
   const add = async () => {
     const name = draft.trim();
@@ -78,8 +108,31 @@ function GroceryView({ node, updateAttributes, selected }: NodeViewProps) {
           {names.length > 0 && <ShopMenu items={names} size="xs" />}
         </div>
 
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border/60 px-3 py-1.5">
+          <Tag className="h-3 w-3 text-muted-foreground" aria-hidden />
+          {tags.length === 0 && <span className="text-[11px] text-muted-foreground">All items</span>}
+          {tags.map(t => (
+            <span key={t} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px]">
+              #{t}
+              <button type="button" aria-label={`Remove tag ${t}`} onClick={() => removeTag(t)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </span>
+          ))}
+          <input
+            aria-label="Filter by tag"
+            value={tagDraft}
+            onChange={e => setTagDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+            placeholder="Filter by tag…"
+            className="min-w-[6rem] flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/70"
+          />
+        </div>
+
         {items.length === 0 ? (
-          <p className="px-3 py-4 text-[12px] text-muted-foreground">Nothing on the list yet.</p>
+          <p className="px-3 py-4 text-[12px] text-muted-foreground">
+            {tags.length ? "No items with these tags." : "Nothing on the list yet."}
+          </p>
         ) : (
           <ul className="max-h-72 divide-y divide-border/30 overflow-auto">
             {items.map((i: any) => (
@@ -100,10 +153,36 @@ function GroceryView({ node, updateAttributes, selected }: NodeViewProps) {
                 <span className={cn("min-w-0 flex-1 truncate", i.bought && "line-through")}>
                   {i.name}{i.qty ? <span className="text-muted-foreground"> · {i.qty}</span> : null}
                 </span>
+                {(i.tags ?? []).slice(0, 2).map((t: string) => (
+                  <span key={t} className="hidden rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground sm:inline">#{t}</span>
+                ))}
+                {tags.length > 0 && !((i.tags ?? []) as string[]).some(x => x.toLowerCase() === tags[0].toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => tagItem(i, tags[0])}
+                    title={`Tag with #${tags[0]}`}
+                    className="rounded-md px-1 text-[10px] text-muted-foreground hover:bg-muted"
+                  >
+                    +#{tags[0]}
+                  </button>
+                )}
+                <ItemPrice name={i.name} qty={i.qty} store={prefs.preferred_store} overrides={overrides} onSave={setPrice} />
                 <ShopMenu items={i.name} size="xs" variant="ghost" compact className="h-6 px-1.5" />
               </li>
             ))}
           </ul>
+        )}
+
+        {unbought.length > 0 && (
+          <div className="flex items-baseline justify-between gap-2 border-t border-border/60 px-3 py-1.5 text-[11px]">
+            <span className="text-muted-foreground">
+              Total at {RETAILER_LABEL[prefs.preferred_store]}
+              {total.unknownCount > 0 && ` · ${total.unknownCount} need a price`}
+            </span>
+            <span className="font-semibold tabular-nums">
+              {total.estimatedCount > 0 ? "~" : ""}{formatMoney(total.cents)}
+            </span>
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-2 border-t border-border/60 px-3 py-1.5">
@@ -152,6 +231,14 @@ export const GroceryBlock = TiptapNode.create({
         default: "Grocery list",
         parseHTML: el => (el as HTMLElement).getAttribute("data-label") || "Grocery list",
         renderHTML: attrs => ({ "data-label": attrs.label ?? "Grocery list" }),
+      },
+      tags: {
+        default: [] as string[],
+        parseHTML: el => {
+          const raw = (el as HTMLElement).getAttribute("data-tags") || "";
+          return raw ? raw.split(",").map(t => t.trim()).filter(Boolean) : [];
+        },
+        renderHTML: attrs => ({ "data-tags": (attrs.tags ?? []).join(",") }),
       },
       hideBought: {
         default: true,
