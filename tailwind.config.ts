@@ -33,6 +33,12 @@ export default {
           foreground: "hsl(var(--accent-foreground))",
           soft: "hsl(var(--accent-soft))",
         },
+        element: {
+          fire: "hsl(var(--element-fire))",
+          earth: "hsl(var(--element-earth))",
+          air: "hsl(var(--element-air))",
+          water: "hsl(var(--element-water))",
+        },
         moon: {
           DEFAULT: "hsl(var(--moon))",
           foreground: "hsl(var(--moon-foreground))",
