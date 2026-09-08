@@ -41,14 +41,15 @@ export function NextMonthPreview({
 
       <ul className="space-y-1.5">
         {actions.map(a => (
-          <li key={a} className="flex items-center justify-between gap-2 rounded-lg bg-muted/30 px-2.5 py-1.5">
-            <span className="min-w-0 truncate text-xs">{a}</span>
-            <Button size="sm" variant="ghost" className="h-7 shrink-0 rounded-full px-2 text-[11px]" onClick={() => onAdd(a)}>
-              <Plus className="mr-1 h-3 w-3" /> Add
+          <li key={a} className="flex min-h-[44px] items-center justify-between gap-2 rounded-xl bg-muted/30 px-3 py-1.5">
+            <span className="min-w-0 text-sm leading-snug">{a}</span>
+            <Button size="sm" variant="ghost" className="h-9 shrink-0 rounded-full px-3 text-xs" onClick={() => onAdd(a)}>
+              <Plus className="mr-1 h-3.5 w-3.5" /> Add
             </Button>
           </li>
         ))}
       </ul>
+
     </div>
   );
 }

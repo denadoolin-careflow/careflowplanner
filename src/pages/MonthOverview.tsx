@@ -187,9 +187,12 @@ export default function MonthOverview() {
   const seasonMeta = SEASON_META[season] ?? SEASON_META.spring;
 
   const patch = async (p: Partial<MonthlyPlan>) => {
+    // optimistic: keep the UI responsive while the row is saved
+    setPlan(prev => (prev ? { ...prev, ...p } as MonthlyPlan : prev));
     const next = await monthlyPlans.upsert(month, p as any);
     if (next) setPlan(next);
   };
+
 
   const capacity = ((plan?.capacity as MomCapacity | null) ?? "full");
   const suggestions = useMemo(() => suggestionsForMonth({
@@ -407,18 +410,19 @@ export default function MonthOverview() {
           </p>
           <ul className="mt-2 space-y-1.5">
             {suggestions.map(s => (
-              <li key={s.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/30 px-2.5 py-1.5">
-                <span className="min-w-0">
-                  <span className="block truncate text-xs">{s.title}</span>
-                  <span className="block truncate text-[10px] text-muted-foreground">{s.reason}</span>
+              <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/30 px-3 py-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm leading-snug">{s.title}</span>
+                  <span className="block text-[11px] text-muted-foreground">{s.reason}</span>
                 </span>
                 <span className="flex shrink-0 gap-1">
-                  <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-[11px]" onClick={() => void addSeasonalTask(s.id, s.title)}>Add</Button>
-                  <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-[11px] text-muted-foreground" onClick={() => void dismissSuggestion(s.id)}>Not now</Button>
+                  <Button size="sm" variant="ghost" className="h-9 rounded-full px-3 text-xs" onClick={() => void addSeasonalTask(s.id, s.title)}>Add</Button>
+                  <Button size="sm" variant="ghost" className="h-9 rounded-full px-3 text-xs text-muted-foreground" onClick={() => void dismissSuggestion(s.id)}>Not now</Button>
                 </span>
               </li>
             ))}
           </ul>
+
         </SectionCard>
 
         <SectionCard title="🎃 Holiday runway" subtitle="What's coming, and how ready you are" accent="warm">

@@ -12,6 +12,9 @@ import { useCycleDots } from "@/lib/planner/day-rhythm";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewPills } from "@/components/layout/ViewPills";
 import { useTouchDrag } from "@/lib/planner/touch-drag";
+import { ELEMENT_CLASSES } from "@/lib/seasons/element-classes";
+import { seasonForDate } from "@/lib/seasons/zodiac-seasons";
+
 
 /** Mobile-only layout choices for the month grid. */
 type MobileMonthView = "dots" | "chips" | "list";
@@ -45,6 +48,8 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   const isMobile = useIsMobile();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const todayKey = format(today, "yyyy-MM-dd");
+  const seasonEl = ELEMENT_CLASSES[seasonForDate(date).element];
+
 
   const [mobileView, setMobileView] = useState<MobileMonthView>("dots");
   useEffect(() => {
@@ -132,13 +137,14 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   }
 
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+    <div className={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card/40", seasonEl.border)}>
       {isMobile && <MobileViewSwitch value={mobileView} onChange={pickMobileView} className="m-2 self-start" />}
-      <div className="sticky top-0 z-10 grid grid-cols-7 border-b border-border/60 bg-card/90 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur">
+      <div className={cn("sticky top-0 z-10 grid grid-cols-7 border-b border-border/60 text-[10px] uppercase tracking-wider backdrop-blur", seasonEl.bg, seasonEl.text)}>
         {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
           <div key={d} className={cn("py-1.5", isMobile ? "text-center" : "px-2")}>{isMobile ? d.slice(0, 1) : d}</div>
         ))}
       </div>
+
       <div className="grid flex-1 auto-rows-fr grid-cols-7">
         {days.map((d, i) => {
           const key = format(d, "yyyy-MM-dd");
@@ -163,7 +169,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
               onDrop={(e) => onDrop(key, e)}
               className={cn(
                 "flex flex-col border-b border-r border-border/40 text-left transition-colors",
-                isMobile ? "min-h-[62px] gap-0 p-1" : "min-h-[132px] gap-0.5 p-1.5",
+                isMobile ? "min-h-[68px] gap-0 p-1" : "min-h-[132px] gap-0.5 p-1.5",
                 dim && "bg-muted/20 text-muted-foreground/60",
                 allDone && !dim && "ring-1 ring-inset ring-emerald-500/40",
                 hasOverdue && !dim && "ring-1 ring-inset ring-amber-500/40",
@@ -180,8 +186,9 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                   className="flex items-center gap-1"
                 >
                   <span className={cn("grid place-items-center rounded-full hover:bg-muted",
-                    isMobile ? "h-6 w-6 text-[12px]" : "h-6 w-6 text-[11px]",
-                    isToday && "bg-primary font-semibold text-primary-foreground")}>{format(d, "d")}</span>
+                    isMobile ? "h-7 w-7 text-[13px]" : "h-6 w-6 text-[11px]",
+                    isToday && cn("bg-primary font-semibold text-primary-foreground ring-2", seasonEl.ring))}>{format(d, "d")}</span>
+
                   {cyc && (
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: cyc.color }} />
                   )}
