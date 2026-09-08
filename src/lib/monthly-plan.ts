@@ -31,6 +31,18 @@ export interface CyclePhaseItem {
   done?: boolean;
 }
 
+export interface PrepWindow { id: string; label: string; start?: string | null; end?: string | null; }
+export interface MonthReset {
+  worked?: string; heavy?: string; simplify?: string;
+  carry?: string; proud?: string; next?: string;
+}
+/** Per-holiday prep state, keyed by `${date}:${name}`. */
+export interface HolidayPrefs {
+  checks?: Record<string, string[]>;
+  hidden?: string[];
+}
+export interface SuggestionState { added?: string[]; dismissed?: string[]; }
+
 export interface MonthlyPlan {
   id: string;
   user_id: string;
