@@ -28,35 +28,38 @@ export function HolidayRunwayPanel({
         const done = checks[key] ?? [];
         const pct = Math.round((done.length / h.checklist.length) * 100);
         return (
-          <div key={key} className="rounded-xl border border-border bg-muted/20 p-3">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="truncate text-sm font-medium">{h.name}</p>
+          <div key={key} className="rounded-2xl border border-border bg-muted/20 p-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+              <p className="min-w-0 truncate text-sm font-medium">{h.name}</p>
               <span className="shrink-0 text-[11px] text-muted-foreground">
                 {format(new Date(`${h.date}T00:00:00`), "MMM d")} · {h.daysUntil}d away
               </span>
             </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
             </div>
             <p className="mt-1 text-[11px] text-muted-foreground">
               {pct}% ready{h.inRunway ? "" : ` · prep starts in ${h.startsIn} days`}
             </p>
-            <ul className="mt-2 space-y-1.5">
+            <ul className="mt-2 divide-y divide-border/50">
               {h.checklist.map(c => {
                 const on = done.includes(c.title);
                 return (
-                  <li key={c.title} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`${key}-${c.title}`}
-                      checked={on}
-                      onCheckedChange={v => toggle(key, c.title, !!v)}
-                    />
+                  <li key={c.title}>
                     <label
                       htmlFor={`${key}-${c.title}`}
-                      className={cn("cursor-pointer text-xs", on ? "text-muted-foreground opacity-60" : "")}
+                      className="flex min-h-[44px] cursor-pointer items-center gap-3 py-1.5"
                     >
-                      {c.title}
-                      <span className="ml-1 text-[10px] text-muted-foreground">({c.daysBefore}d before)</span>
+                      <Checkbox
+                        id={`${key}-${c.title}`}
+                        checked={on}
+                        onCheckedChange={v => toggle(key, c.title, !!v)}
+                        className="h-5 w-5 shrink-0"
+                      />
+                      <span className={cn("min-w-0 text-sm leading-snug", on && "text-muted-foreground line-through opacity-60")}>
+                        {c.title}
+                        <span className="ml-1 whitespace-nowrap text-[11px] text-muted-foreground">({c.daysBefore}d before)</span>
+                      </span>
                     </label>
                   </li>
                 );

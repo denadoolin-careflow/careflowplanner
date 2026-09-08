@@ -18,9 +18,10 @@ export function CapacitySelector({
             aria-checked={value === k}
             onClick={() => onChange(k)}
             className={cn(
-              "flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition-colors",
+              "min-h-[44px] flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
               value === k ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:bg-muted/40",
             )}
+
           >
             {CAPACITY_META[k].label}
           </button>
