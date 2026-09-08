@@ -13,6 +13,7 @@ import {
   saveWriteBody,
   type WriteBlockTarget,
 } from "@/lib/planner/write-blocks";
+import { clearDraft, draftDiffers, loadDraft, saveDraft } from "@/lib/notes/drafts";
 
 /**
  * Global host: listens for `openWriteBlock(...)` and slides in a writing
