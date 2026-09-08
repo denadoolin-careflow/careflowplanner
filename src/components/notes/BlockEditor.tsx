@@ -278,7 +278,8 @@ turndown.addRule("customMetadataBlock", {
 });
 // Formatting that markdown can't express (colour, highlight, underline, media)
 // is kept verbatim instead of being stripped.
-turndown.keep(["iframe", "video", "audio", "mark", "u", "kbd", "sup", "sub", "span[style]"]);
+turndown.keep(["iframe", "video", "audio", "mark", "u", "kbd", "sup", "sub"]);
+turndown.keep((node) => node.nodeName === "SPAN" && (node as HTMLElement).hasAttribute("style"));
 turndown.addRule("detailsToggle", {
   filter: (node) => node.nodeName === "DETAILS",
   replacement: (_content, node) => {
