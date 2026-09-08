@@ -15,6 +15,10 @@ import { PANTRY_TAG } from "@/lib/automations/engine";
 import type { GroceryItem } from "@/lib/types";
 import { DndContext, useDraggable, useDroppable, type DragEndEvent } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import { ItemPrice } from "@/components/meals/ItemPrice";
+import { basketTotal, formatMoney, useGroceryPrices } from "@/lib/grocery-prices";
+import { useGroceryPrefs } from "@/lib/grocery-prefs";
+import { RETAILER_LABEL } from "@/lib/retailer-links";
 
 const CAT_ORDER = ["Produce", "Protein", "Dairy", "Bakery", "Frozen", "Pantry", "Other"];
 
@@ -46,6 +50,8 @@ export function GroceryList() {
   const [highlightMealId, setHighlightMealId] = useState<string | null>(null);
   const [filter, setFilter] = usePersistedState<FilterMode>(LS.filter, "all");
   const [sortMode, setSortMode] = usePersistedState<SortMode>(LS.sort, "default");
+  const { prefs } = useGroceryPrefs();
+  const { overrides, setPrice } = useGroceryPrices();
   const [hideBought, setHideBought] = useState<boolean>(() => localStorage.getItem(LS.hideBought) === "1");
   useEffect(() => { localStorage.setItem(LS.hideBought, hideBought ? "1" : "0"); }, [hideBought]);
 
@@ -65,6 +71,14 @@ export function GroceryList() {
     }
     return a.name.localeCompare(b.name);
   });
+
+  const toBuy = state.grocery.filter(i => !i.bought);
+  const preferredTotal = basketTotal(toBuy, prefs.preferred_store, overrides);
+  const backupTotal = prefs.backup_store ? basketTotal(toBuy, prefs.backup_store, overrides) : null;
+  const cheaper = backupTotal
+    ? (backupTotal.cents < preferredTotal.cents ? "backup" : backupTotal.cents > preferredTotal.cents ? "preferred" : "same")
+    : null;
+  const diff = backupTotal ? Math.abs(backupTotal.cents - preferredTotal.cents) : 0;
 
   const groceryByCat = sorted.reduce<Record<string, GroceryItem[]>>((acc, item) => {
     const k = item.category ?? "Other";
@@ -204,6 +218,14 @@ export function GroceryList() {
                 </Badge>
               </button>
             )}
+            <ItemPrice
+              name={item.name}
+              qty={item.qty}
+              store={prefs.preferred_store}
+              overrides={overrides}
+              onSave={setPrice}
+              className="ml-1"
+            />
             <div className="ml-1 flex shrink-0 items-center gap-0.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-70">
               <ShopMenu items={item.name} size="xs" variant="ghost" compact className="h-7 px-1.5" />
               <button onPointerDown={(e) => e.stopPropagation()} onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"
@@ -238,6 +260,34 @@ export function GroceryList() {
       </form>
 
       <SavedListsDialog open={savedOpen} onOpenChange={setSavedOpen} />
+
+      {toBuy.length > 0 && (
+        <div className="mb-3 rounded-xl border border-border/50 bg-primary/5 px-3 py-2 text-xs">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <span className="text-muted-foreground">
+              Estimated trip total at <span className="font-medium text-foreground">{RETAILER_LABEL[prefs.preferred_store]}</span>
+            </span>
+            <span className="font-display text-base font-semibold tabular-nums">
+              {preferredTotal.estimatedCount > 0 ? "~" : ""}{formatMoney(preferredTotal.cents)}
+            </span>
+          </div>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            {toBuy.length} item{toBuy.length === 1 ? "" : "s"} ·{" "}
+            {preferredTotal.exactCount > 0
+              ? `${preferredTotal.exactCount} your price, ${preferredTotal.estimatedCount} estimated`
+              : "all estimated — tap a price to set the real one"}
+          </p>
+          {backupTotal && prefs.backup_store && (
+            <p className="mt-1 border-t border-border/40 pt-1 text-[11px] text-muted-foreground">
+              {RETAILER_LABEL[prefs.preferred_store]} ~{formatMoney(preferredTotal.cents)} ·{" "}
+              {RETAILER_LABEL[prefs.backup_store]} ~{formatMoney(backupTotal.cents)}
+              {cheaper === "same"
+                ? " — about the same"
+                : ` — ${RETAILER_LABEL[cheaper === "backup" ? prefs.backup_store : prefs.preferred_store]} is about ${formatMoney(diff)} less`}
+            </p>
+          )}
+        </div>
+      )}
 
       {state.grocery.length > 0 && (
         <div className="mb-3 space-y-2 rounded-xl border border-border/50 bg-muted/20 p-3 text-xs">

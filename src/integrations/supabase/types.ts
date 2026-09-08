@@ -3102,6 +3102,36 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_price_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          item_key: string
+          price_cents: number
+          store: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_key: string
+          price_cents: number
+          store: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_key?: string
+          price_cents?: number
+          store?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       habit_logs: {
         Row: {
           created_at: string
