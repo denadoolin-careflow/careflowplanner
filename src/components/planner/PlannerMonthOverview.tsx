@@ -10,6 +10,7 @@ import { startOfMonth, getDaysInMonth } from "date-fns";
 export function PlannerMonthOverview({ date, onJumpToDate }: { date: Date; onJumpToDate?: (d: Date) => void }) {
   return (
     <div className="space-y-3">
+      <SeasonBanner date={date} compact linkTo="/month/overview" />
       <PlannerTimeReview from={startOfMonth(date)} days={getDaysInMonth(date)} label="this month" />
       <MonthPlanningDashboard cursor={date} onJumpToDate={onJumpToDate} />
       <div className="flex justify-end">
