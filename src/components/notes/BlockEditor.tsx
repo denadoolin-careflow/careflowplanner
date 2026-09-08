@@ -159,6 +159,18 @@ function serializeGroceryBlock(el: HTMLElement): string {
   return `\n\n<div data-grocery-block data-label="${label}" data-hide-bought="${hide}"></div>\n\n`;
 }
 
+/** True when an element carries custom node metadata worth preserving as HTML. */
+function hasNodeMetadata(el: HTMLElement): boolean {
+  try {
+    if (el.querySelector?.("iframe, video, audio, img, canvas")) return true;
+    return Array.from(el.attributes ?? []).some(a => a.name.startsWith("data-"));
+  } catch {
+    return false;
+  }
+}
+
+
+
 const turndown = new TurndownService({
   headingStyle: "atx",
   bulletListMarker: "-",
