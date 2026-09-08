@@ -503,6 +503,38 @@ export default function NoteDetail() {
         </div>
       </header>
 
+      {recovery && (
+        <div className="mx-auto mt-2 flex w-full max-w-[760px] flex-wrap items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800">
+          <span className="flex-1">
+            We found unsaved writing from {format(new Date(recovery.savedAt), "MMM d, h:mm a")}.
+          </span>
+          <Button
+            size="sm"
+            className="h-7 rounded-full px-3 text-[11px]"
+            onClick={() => {
+              if (recovery.title !== undefined) setTitle(recovery.title);
+              if (recovery.body !== undefined) setBody(recovery.body);
+              save({
+                ...(recovery.title !== undefined ? { title: recovery.title } : {}),
+                ...(recovery.body !== undefined ? { body: recovery.body } : {}),
+              });
+              setRecovery(null);
+              toast.success("Restored your last draft");
+            }}
+          >
+            Restore
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 rounded-full px-3 text-[11px]"
+            onClick={() => { if (id) clearDraft(id); setRecovery(null); }}
+          >
+            Discard
+          </Button>
+        </div>
+      )}
+
       <input
         ref={coverInputRef}
         type="file"
