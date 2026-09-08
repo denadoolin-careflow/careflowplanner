@@ -365,6 +365,65 @@ export default function MonthOverview() {
         </div>
       </header>
 
+      {/* Seasonal planning */}
+      <SeasonBanner date={cursor} />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <SectionCard title="🧘 Mom capacity" subtitle="How much can this month hold?" accent="sage">
+          <CapacitySelector
+            value={capacity}
+            onChange={(v) => void patch({ capacity: v })}
+          />
+          <p className="mt-3 text-xs text-muted-foreground">
+            Showing {suggestions.length} suggestion{suggestions.length === 1 ? "" : "s"} this month.
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {suggestions.map(s => (
+              <li key={s.id} className="flex items-center justify-between gap-2 rounded-lg bg-muted/30 px-2.5 py-1.5">
+                <span className="min-w-0">
+                  <span className="block truncate text-xs">{s.title}</span>
+                  <span className="block truncate text-[10px] text-muted-foreground">{s.reason}</span>
+                </span>
+                <span className="flex shrink-0 gap-1">
+                  <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-[11px]" onClick={() => void addSeasonalTask(s.id, s.title)}>Add</Button>
+                  <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-[11px] text-muted-foreground" onClick={() => void dismissSuggestion(s.id)}>Not now</Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+
+        <SectionCard title="🎃 Holiday runway" subtitle="What's coming, and how ready you are" accent="warm">
+          <HolidayRunwayPanel
+            from={monthStart}
+            prefs={plan?.holiday_prefs ?? {}}
+            onChange={(next) => void patch({ holiday_prefs: next })}
+          />
+        </SectionCard>
+      </div>
+
+      <SectionCard title="3–2–1 this month" subtitle="3 priorities · 2 prep windows · 1 intention" accent="calm">
+        <ThreeTwoOneCard
+          priorities={plan?.priorities ?? []}
+          prepWindows={plan?.prep_windows ?? []}
+          intention={plan?.intention ?? ""}
+          newId={monthlyPlans.newItemId}
+          onChange={(p) => void patch(p)}
+        />
+      </SectionCard>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <SectionCard title="🌙 Monthly reset" subtitle="A gentle look back" accent="sage">
+          <MonthlyResetCard
+            value={plan?.reset ?? {}}
+            onChange={(next) => void patch({ reset: next })}
+          />
+        </SectionCard>
+        <SectionCard title="🔮 Coming next month" accent="warm">
+          <NextMonthPreview cursor={cursor} onAdd={(title) => void addSeasonalTask(`next:${title}`, title)} />
+        </SectionCard>
+      </div>
+
       {/* AI generator */}
       <SectionCard title="Seasonal AI planner" accent="calm" action={
         <Button size="sm" onClick={generate} disabled={generating} className="rounded-full">
