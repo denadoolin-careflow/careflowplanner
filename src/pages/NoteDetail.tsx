@@ -213,8 +213,34 @@ export default function NoteDetail() {
         void updateNote(n.id, { body: initialBody }).catch(() => {});
       }
       setNote(n); setTitle(n.title); setBody(initialBody); setTags(n.tags ?? []);
+      // Offer to restore work that never made it to the cloud.
+      const draft = loadDraft(n.id);
+      if (draftDiffers(draft, { title: n.title, body: initialBody })) setRecovery(draft);
+      else clearDraft(n.id);
+      pruneDrafts();
     });
   }, [id, nav]);
+
+  // Flush pending edits when the tab is hidden or closed, and retry when the
+  // connection comes back — nothing should sit unsaved.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden" && Object.keys(pendingRef.current).length) flush({});
+    };
+    const onOnline = () => { if (Object.keys(pendingRef.current).length) flush({}); };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (Object.keys(pendingRef.current).length) { e.preventDefault(); e.returnValue = ""; }
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Refresh backlinks (notes that link TO this one) whenever title changes
   useEffect(() => {
