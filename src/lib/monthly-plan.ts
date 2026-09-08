@@ -136,6 +136,12 @@ export const monthlyPlans = {
       moon_phase_items: patch.moon_phase_items ?? existing?.moon_phase_items ?? [],
       cycle_phase_items: patch.cycle_phase_items ?? existing?.cycle_phase_items ?? [],
       ai_generated_at: patch.ai_generated_at ?? existing?.ai_generated_at ?? null,
+      capacity: patch.capacity ?? existing?.capacity ?? null,
+      focus_areas: patch.focus_areas ?? existing?.focus_areas ?? [],
+      prep_windows: patch.prep_windows ?? existing?.prep_windows ?? [],
+      suggestion_state: patch.suggestion_state ?? existing?.suggestion_state ?? {},
+      reset: patch.reset ?? existing?.reset ?? {},
+      holiday_prefs: patch.holiday_prefs ?? existing?.holiday_prefs ?? {},
     };
     const { data } = await supabase
       .from("monthly_plans" as any)
