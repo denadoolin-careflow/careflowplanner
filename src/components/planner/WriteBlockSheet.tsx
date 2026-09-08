@@ -50,10 +50,14 @@ export function WriteBlockSheet() {
   const queueSave = useCallback((markdown: string) => {
     setBody(markdown);
     if (!target) return;
+    // Mirror locally so a crash or refresh mid-write loses nothing.
+    saveDraft(`write:${target.recordId}`, { body: markdown });
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     setSaving(true);
     saveTimer.current = window.setTimeout(() => {
-      void saveWriteBody(target, markdown).finally(() => { setSaving(false); setSavedAt(Date.now()); });
+      void saveWriteBody(target, markdown)
+        .then(() => clearDraft(`write:${target.recordId}`))
+        .finally(() => { setSaving(false); setSavedAt(Date.now()); });
     }, 700);
   }, [target]);
 
