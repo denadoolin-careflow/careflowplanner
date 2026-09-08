@@ -4,12 +4,14 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MonthPlanningDashboard } from "@/components/calendar/MonthPlanningDashboard";
 import { PlannerTimeReview } from "./PlannerTimeReview";
+import { SeasonBanner } from "@/components/seasons/SeasonBanner";
 import { startOfMonth, getDaysInMonth } from "date-fns";
 
 /** Month planning dashboard: goals, commitments and review for the month. */
 export function PlannerMonthOverview({ date, onJumpToDate }: { date: Date; onJumpToDate?: (d: Date) => void }) {
   return (
     <div className="space-y-3">
+      <SeasonBanner date={date} compact linkTo="/month/overview" />
       <PlannerTimeReview from={startOfMonth(date)} days={getDaysInMonth(date)} label="this month" />
       <MonthPlanningDashboard cursor={date} onJumpToDate={onJumpToDate} />
       <div className="flex justify-end">

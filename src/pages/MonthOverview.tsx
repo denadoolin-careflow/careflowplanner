@@ -191,6 +191,26 @@ export default function MonthOverview() {
     if (next) setPlan(next);
   };
 
+  const capacity = ((plan?.capacity as MomCapacity | null) ?? "full");
+  const suggestions = useMemo(() => suggestionsForMonth({
+    cursor,
+    capacity,
+    focusAreas: (plan?.focus_areas ?? []) as FocusArea[],
+    added: plan?.suggestion_state?.added ?? [],
+    dismissed: plan?.suggestion_state?.dismissed ?? [],
+  }), [cursor, capacity, plan?.focus_areas, plan?.suggestion_state]);
+
+  const addSeasonalTask = async (id: string, title: string) => {
+    await addTask({ title, area: "Personal", dueDate: format(monthStart, "yyyy-MM-dd") });
+    const state = plan?.suggestion_state ?? {};
+    await patch({ suggestion_state: { ...state, added: [...(state.added ?? []), id] } });
+    toast.success(`Added “${title}”`);
+  };
+  const dismissSuggestion = async (id: string) => {
+    const state = plan?.suggestion_state ?? {};
+    await patch({ suggestion_state: { ...state, dismissed: [...(state.dismissed ?? []), id] } });
+  };
+
   const generate = async () => {
     setGenerating(true);
     try {
