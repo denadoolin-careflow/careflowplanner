@@ -276,6 +276,7 @@ export function GroceryList() {
             {preferredTotal.exactCount > 0
               ? `${preferredTotal.exactCount} your price, ${preferredTotal.estimatedCount} estimated`
               : "all estimated — tap a price to set the real one"}
+            {preferredTotal.unknownCount > 0 && ` · ${preferredTotal.unknownCount} need a price`}
           </p>
           {backupTotal && prefs.backup_store && (
             <p className="mt-1 border-t border-border/40 pt-1 text-[11px] text-muted-foreground">

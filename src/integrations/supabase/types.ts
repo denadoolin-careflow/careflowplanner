@@ -3102,6 +3102,42 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_price_history: {
+        Row: {
+          created_at: string
+          id: string
+          item_key: string
+          item_name: string | null
+          price_cents: number
+          recorded_at: string
+          source: string
+          store: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_key: string
+          item_name?: string | null
+          price_cents: number
+          recorded_at?: string
+          source?: string
+          store: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_key?: string
+          item_name?: string | null
+          price_cents?: number
+          recorded_at?: string
+          source?: string
+          store?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       grocery_price_overrides: {
         Row: {
           created_at: string

@@ -3,6 +3,7 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { GroceryList } from "@/components/meals/GroceryList";
 import { useGroceryPrefs } from "@/lib/grocery-prefs";
 import { RETAILER_LABEL, retailerSearchUrl } from "@/lib/retailer-links";
+import { basketTotal, formatMoney, useGroceryPrices } from "@/lib/grocery-prices";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { ArrowLeft, ExternalLink, ShoppingCart, Sparkles } from "lucide-react";
@@ -15,6 +16,8 @@ export default function HomeGroceries() {
   const { state, user, reloadAll } = useStore();
   const [filling, setFilling] = useState(false);
   const unbought = state.grocery.filter(g => !g.bought);
+  const { overrides } = useGroceryPrices();
+  const total = basketTotal(unbought, prefs.preferred_store, overrides);
 
   const openInStore = () => {
     if (!unbought.length) return;
@@ -62,6 +65,14 @@ export default function HomeGroceries() {
               <p className="mt-1 max-w-xl text-sm text-muted-foreground">
                 Everything to pick up — pulled from low pantry, meal plan, and recurring household needs.
               </p>
+              {unbought.length > 0 && (
+                <p className="mt-2 text-sm font-medium">
+                  Running total at {RETAILER_LABEL[prefs.preferred_store]}:{" "}
+                  <span className="font-display text-lg tabular-nums">
+                    {total.estimatedCount > 0 ? "~" : ""}{formatMoney(total.cents)}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

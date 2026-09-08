@@ -156,8 +156,10 @@ function serializeQueryBlock(el: HTMLElement): string {
 function serializeGroceryBlock(el: HTMLElement): string {
   const label = (el.getAttribute("data-label") || "Grocery list").replace(/"/g, "&quot;");
   const hide = el.getAttribute("data-hide-bought") === "false" ? "false" : "true";
-  return `\n\n<div data-grocery-block data-label="${label}" data-hide-bought="${hide}"></div>\n\n`;
+  const tags = (el.getAttribute("data-tags") || "").replace(/"/g, "&quot;");
+  return `\n\n<div data-grocery-block data-label="${label}" data-hide-bought="${hide}" data-tags="${tags}"></div>\n\n`;
 }
+
 
 /** True when an element carries custom node metadata worth preserving as HTML. */
 function hasNodeMetadata(el: HTMLElement): boolean {

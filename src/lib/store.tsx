@@ -321,7 +321,7 @@ interface Ctx {
   toggleGrocery: (id: string) => Promise<void>;
   deleteGrocery: (id: string) => Promise<void>;
   setGroceryStock: (id: string, status: "in" | "low" | "out") => Promise<void>;
-  updateGroceryItem: (id: string, patch: { name?: string; qty?: string | null; category?: string | null }) => Promise<void>;
+  updateGroceryItem: (id: string, patch: { name?: string; qty?: string | null; category?: string | null; tags?: string[] }) => Promise<void>;
 
   addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<Appointment | null>;
   deleteAppointment: (id: string) => Promise<void>;
@@ -1034,11 +1034,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await supabase.from("grocery_items").update({ stock_status: status }).eq("id", id);
     },
     updateGroceryItem: async (id, patch) => {
-      setState(s => ({ ...s, grocery: s.grocery.map(g => g.id === id ? { ...g, ...(patch.name !== undefined ? { name: patch.name } : {}), ...(patch.qty !== undefined ? { qty: patch.qty ?? undefined } : {}), ...(patch.category !== undefined ? { category: patch.category ?? undefined } : {}) } : g) }));
+      setState(s => ({ ...s, grocery: s.grocery.map(g => g.id === id ? { ...g, ...(patch.name !== undefined ? { name: patch.name } : {}), ...(patch.qty !== undefined ? { qty: patch.qty ?? undefined } : {}), ...(patch.category !== undefined ? { category: patch.category ?? undefined } : {}), ...(patch.tags !== undefined ? { tags: patch.tags } : {}) } : g) }));
       const dbPatch: any = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.qty !== undefined) dbPatch.qty = patch.qty;
       if (patch.category !== undefined) dbPatch.category = patch.category;
+      if (patch.tags !== undefined) dbPatch.tags = patch.tags;
       await supabase.from("grocery_items").update(dbPatch).eq("id", id);
     },
 
