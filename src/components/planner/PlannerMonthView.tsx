@@ -12,6 +12,9 @@ import { useCycleDots } from "@/lib/planner/day-rhythm";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewPills } from "@/components/layout/ViewPills";
 import { useTouchDrag } from "@/lib/planner/touch-drag";
+import { ELEMENT_CLASSES } from "@/lib/seasons/element-classes";
+import { seasonForDate } from "@/lib/seasons/zodiac-seasons";
+
 
 /** Mobile-only layout choices for the month grid. */
 type MobileMonthView = "dots" | "chips" | "list";
@@ -45,6 +48,8 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   const isMobile = useIsMobile();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const todayKey = format(today, "yyyy-MM-dd");
+  const seasonEl = ELEMENT_CLASSES[seasonForDate(date).element];
+
 
   const [mobileView, setMobileView] = useState<MobileMonthView>("dots");
   useEffect(() => {
