@@ -159,12 +159,25 @@ function serializeGroceryBlock(el: HTMLElement): string {
   return `\n\n<div data-grocery-block data-label="${label}" data-hide-bought="${hide}"></div>\n\n`;
 }
 
+/** True when an element carries custom node metadata worth preserving as HTML. */
+function hasNodeMetadata(el: HTMLElement): boolean {
+  try {
+    if (el.querySelector?.("iframe, video, audio, img, canvas")) return true;
+    return Array.from(el.attributes ?? []).some(a => a.name.startsWith("data-"));
+  } catch {
+    return false;
+  }
+}
+
+
+
 const turndown = new TurndownService({
   headingStyle: "atx",
   bulletListMarker: "-",
   codeBlockStyle: "fenced",
-  // Empty embed containers (query / grocery blocks) are "blank" to turndown and
-  // would be dropped before any custom rule runs — serialize them here instead.
+  // Empty embed containers (query / grocery / any custom block) look "blank" to
+  // turndown and would be dropped before any custom rule runs — serialize them
+  // here instead so no block type can silently vanish on save.
   blankReplacement: (_content, node) => {
     const el = node as HTMLElement;
     if (el?.nodeType === 1) {
@@ -176,6 +189,9 @@ const turndown = new TurndownService({
         const mime = el.getAttribute("data-mime") || "";
         return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
       }
+      // Generic safety net: any element carrying node metadata (data-* attrs)
+      // or an embedded media/iframe child round-trips as raw HTML.
+      if (hasNodeMetadata(el)) return `\n\n${el.outerHTML}\n\n`;
     }
     return (node as any).isBlock ? "\n\n" : "";
   },
@@ -248,6 +264,22 @@ turndown.addRule("htmlTable", {
   filter: (node) => node.nodeName === "TABLE",
   replacement: (_content, node) => `\n\n${(node as HTMLElement).outerHTML}\n\n`,
 });
+// Any other custom block that carries node metadata (columns, callouts, future
+// embeds) round-trips as raw HTML rather than being flattened to plain text.
+turndown.addRule("customMetadataBlock", {
+  filter: (node) => {
+    if (node.nodeName !== "DIV") return false;
+    const el = node as HTMLElement;
+    if (el.hasAttribute("data-query-block") || el.hasAttribute("data-grocery-block") || el.hasAttribute("data-file-embed")) return false;
+    if (el.getAttribute("data-type") === "detailsContent") return false;
+    return Array.from(el.attributes).some(a => a.name.startsWith("data-"));
+  },
+  replacement: (_content, node) => `\n\n${(node as HTMLElement).outerHTML}\n\n`,
+});
+// Formatting that markdown can't express (colour, highlight, underline, media)
+// is kept verbatim instead of being stripped.
+turndown.keep(["iframe", "video", "audio", "mark", "u", "kbd", "sup", "sub"]);
+turndown.keep((node) => node.nodeName === "SPAN" && (node as HTMLElement).hasAttribute("style"));
 turndown.addRule("detailsToggle", {
   filter: (node) => node.nodeName === "DETAILS",
   replacement: (_content, node) => {

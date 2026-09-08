@@ -13,6 +13,7 @@ import {
   saveWriteBody,
   type WriteBlockTarget,
 } from "@/lib/planner/write-blocks";
+import { clearDraft, draftDiffers, loadDraft, saveDraft } from "@/lib/notes/drafts";
 
 /**
  * Global host: listens for `openWriteBlock(...)` and slides in a writing
@@ -39,7 +40,13 @@ export function WriteBlockSheet() {
       setBody("");
       setLoading(true);
       void loadWriteRecord(detail).then(rec => {
-        if (rec) { setTitle(rec.title); setBody(rec.body); }
+        if (rec) {
+          setTitle(rec.title);
+          const draft = loadDraft(`write:${detail.recordId}`);
+          const useDraft = draftDiffers(draft, { title: rec.title, body: rec.body });
+          setBody(useDraft && draft?.body !== undefined ? draft.body : rec.body);
+          if (!useDraft) clearDraft(`write:${detail.recordId}`);
+        }
         setLoading(false);
       });
     };
@@ -50,10 +57,14 @@ export function WriteBlockSheet() {
   const queueSave = useCallback((markdown: string) => {
     setBody(markdown);
     if (!target) return;
+    // Mirror locally so a crash or refresh mid-write loses nothing.
+    saveDraft(`write:${target.recordId}`, { body: markdown });
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     setSaving(true);
     saveTimer.current = window.setTimeout(() => {
-      void saveWriteBody(target, markdown).finally(() => { setSaving(false); setSavedAt(Date.now()); });
+      void saveWriteBody(target, markdown)
+        .then(() => clearDraft(`write:${target.recordId}`))
+        .finally(() => { setSaving(false); setSavedAt(Date.now()); });
     }, 700);
   }, [target]);
 

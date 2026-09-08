@@ -40,6 +40,8 @@ import { listNotes } from "@/lib/notes";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
 import { BacklinksSection } from "@/components/common/BacklinksSection";
+import { SaveStatus, type SaveState } from "@/components/notes/SaveStatus";
+import { clearDraft, draftDiffers, loadDraft, pruneDrafts, saveDraft, type NoteDraft } from "@/lib/notes/drafts";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -62,8 +64,10 @@ export default function NoteDetail() {
   const [tags, setTags] = useState<string[]>([]);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
   const saveTimer = useRef<number | null>(null);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const savedFlashTimer = useRef<number | null>(null);
+  const pendingRef = useRef<{ title?: string; body?: string }>({});
+  const [recovery, setRecovery] = useState<NoteDraft | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [repositioning, setRepositioning] = useState(false);
@@ -209,8 +213,34 @@ export default function NoteDetail() {
         void updateNote(n.id, { body: initialBody }).catch(() => {});
       }
       setNote(n); setTitle(n.title); setBody(initialBody); setTags(n.tags ?? []);
+      // Offer to restore work that never made it to the cloud.
+      const draft = loadDraft(n.id);
+      if (draftDiffers(draft, { title: n.title, body: initialBody })) setRecovery(draft);
+      else clearDraft(n.id);
+      pruneDrafts();
     });
   }, [id, nav]);
+
+  // Flush pending edits when the tab is hidden or closed, and retry when the
+  // connection comes back — nothing should sit unsaved.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden" && Object.keys(pendingRef.current).length) flush({});
+    };
+    const onOnline = () => { if (Object.keys(pendingRef.current).length) flush({}); };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (Object.keys(pendingRef.current).length) { e.preventDefault(); e.returnValue = ""; }
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Refresh backlinks (notes that link TO this one) whenever title changes
   useEffect(() => {
@@ -220,22 +250,34 @@ export default function NoteDetail() {
     void findBacklinksTo(t).then(arr => setBacklinks(arr.filter(n => n.id !== note.id)));
   }, [note, title]);
 
+  const flush = (next: { title?: string; body?: string }) => {
+    if (!id) return;
+    pendingRef.current = { ...pendingRef.current, ...next };
+    const payload = { ...pendingRef.current };
+    if (!navigator.onLine) { setSaveState("offline"); return; }
+    setSaveState("saving");
+    void updateNote(id, payload)
+      .then(() => {
+        pendingRef.current = {};
+        clearDraft(id);
+        setSaveState("saved");
+        if (savedFlashTimer.current) window.clearTimeout(savedFlashTimer.current);
+        savedFlashTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
+      })
+      .catch(() => {
+        // The local draft is still on disk, so nothing is lost.
+        setSaveState("error");
+      });
+  };
+
   const save = (next: { title?: string; body?: string }) => {
     if (!id) return;
+    // Mirror locally first — this survives a crash, refresh or failed request.
+    saveDraft(id, next);
+    pendingRef.current = { ...pendingRef.current, ...next };
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    setSaveState("saving");
-    saveTimer.current = window.setTimeout(() => {
-      void updateNote(id, next)
-        .then(() => {
-          setSaveState("saved");
-          if (savedFlashTimer.current) window.clearTimeout(savedFlashTimer.current);
-          savedFlashTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
-        })
-        .catch(() => {
-          setSaveState("idle");
-          toast.error("Save failed");
-        });
-    }, 400);
+    setSaveState("dirty");
+    saveTimer.current = window.setTimeout(() => flush({}), 400);
   };
 
   const togglePin = async () => {
@@ -378,18 +420,7 @@ export default function NoteDetail() {
         <Button variant="ghost" size="sm" onClick={() => nav("/notes")} className="gap-1.5">
           <ArrowLeft className="h-4 w-4" /> Notes
         </Button>
-        <span
-          className={cn(
-            "ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-opacity",
-            saveState === "saving" && "bg-amber-500/10 text-amber-700 opacity-100",
-            saveState === "saved" && "bg-emerald-500/10 text-emerald-700 opacity-100",
-            saveState === "idle" && "opacity-0",
-          )}
-          aria-live="polite"
-        >
-          {saveState === "saving" && (<><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" /> Saving…</>)}
-          {saveState === "saved" && (<><Check className="h-3 w-3" /> Saved</>)}
-        </span>
+        <SaveStatus state={saveState} className="ml-1" onRetry={() => flush({})} />
         <div className="ml-auto flex items-center gap-1">
           <Button
             variant="ghost"
@@ -471,6 +502,38 @@ export default function NoteDetail() {
           </DropdownMenu>
         </div>
       </header>
+
+      {recovery && (
+        <div className="mx-auto mt-2 flex w-full max-w-[760px] flex-wrap items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800">
+          <span className="flex-1">
+            We found unsaved writing from {format(new Date(recovery.savedAt), "MMM d, h:mm a")}.
+          </span>
+          <Button
+            size="sm"
+            className="h-7 rounded-full px-3 text-[11px]"
+            onClick={() => {
+              if (recovery.title !== undefined) setTitle(recovery.title);
+              if (recovery.body !== undefined) setBody(recovery.body);
+              save({
+                ...(recovery.title !== undefined ? { title: recovery.title } : {}),
+                ...(recovery.body !== undefined ? { body: recovery.body } : {}),
+              });
+              setRecovery(null);
+              toast.success("Restored your last draft");
+            }}
+          >
+            Restore
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 rounded-full px-3 text-[11px]"
+            onClick={() => { if (id) clearDraft(id); setRecovery(null); }}
+          >
+            Discard
+          </Button>
+        </div>
+      )}
 
       <input
         ref={coverInputRef}
