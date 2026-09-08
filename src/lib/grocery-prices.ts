@@ -269,6 +269,8 @@ export interface BasketTotal {
   cents: number;
   exactCount: number;
   estimatedCount: number;
+  /** Items with no saved price and no catalog match (a rough guess was used). */
+  unknownCount: number;
 }
 
 export function basketTotal(
@@ -276,13 +278,17 @@ export function basketTotal(
   store: Retailer,
   overrides?: Map<string, number>,
 ): BasketTotal {
-  let cents = 0, exactCount = 0, estimatedCount = 0;
+  let cents = 0, exactCount = 0, estimatedCount = 0, unknownCount = 0;
   for (const it of items) {
     const p = priceFor(it.name, it.qty, store, overrides);
     cents += p.cents;
-    if (p.exact) exactCount++; else estimatedCount++;
+    if (p.exact) exactCount++;
+    else {
+      estimatedCount++;
+      if (!p.matched) unknownCount++;
+    }
   }
-  return { cents, exactCount, estimatedCount };
+  return { cents, exactCount, estimatedCount, unknownCount };
 }
 
 export function formatMoney(cents: number): string {
