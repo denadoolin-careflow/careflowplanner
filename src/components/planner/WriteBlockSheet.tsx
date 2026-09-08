@@ -40,7 +40,13 @@ export function WriteBlockSheet() {
       setBody("");
       setLoading(true);
       void loadWriteRecord(detail).then(rec => {
-        if (rec) { setTitle(rec.title); setBody(rec.body); }
+        if (rec) {
+          setTitle(rec.title);
+          const draft = loadDraft(`write:${detail.recordId}`);
+          const useDraft = draftDiffers(draft, { title: rec.title, body: rec.body });
+          setBody(useDraft && draft?.body !== undefined ? draft.body : rec.body);
+          if (!useDraft) clearDraft(`write:${detail.recordId}`);
+        }
         setLoading(false);
       });
     };
