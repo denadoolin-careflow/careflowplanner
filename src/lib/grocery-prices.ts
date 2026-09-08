@@ -173,7 +173,7 @@ const CATALOG: PriceRow[] = [
 const FALLBACK_USD = 3.75;
 
 /** Rough store price positioning relative to the national average. */
-export const STORE_FACTOR: Record<Retailer, number> = {
+export const STORE_FACTOR: Record<string, number> = {
   walmart: 0.92,
   kroger: 1.0,
   meijer: 0.98,
@@ -190,7 +190,7 @@ export const STORE_FACTOR: Record<Retailer, number> = {
   heb: 0.95,
   wegmans: 1.05,
   trader_joes: 0.97,
-} as Record<Retailer, number>;
+};
 
 const factorFor = (store: Retailer) => STORE_FACTOR[store] ?? 1;
 
