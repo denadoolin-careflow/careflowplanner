@@ -40,6 +40,8 @@ import { listNotes } from "@/lib/notes";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
 import { BacklinksSection } from "@/components/common/BacklinksSection";
+import { SaveStatus, type SaveState } from "@/components/notes/SaveStatus";
+import { clearDraft, draftDiffers, loadDraft, pruneDrafts, saveDraft, type NoteDraft } from "@/lib/notes/drafts";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
