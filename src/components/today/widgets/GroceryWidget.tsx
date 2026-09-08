@@ -3,11 +3,18 @@ import { ShoppingBasket, ArrowRight, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/store";
+import { useGroceryPrefs } from "@/lib/grocery-prefs";
+import { basketTotal, formatMoney, useGroceryPrices } from "@/lib/grocery-prices";
+import { ItemPrice } from "@/components/meals/ItemPrice";
 
 /** Quick grocery list view for Today sidebar. */
 export function GroceryWidget() {
   const { state, addGrocery, toggleGrocery } = useStore();
-  const items = state.grocery.filter(g => !g.bought).slice(0, 6);
+  const unbought = state.grocery.filter(g => !g.bought);
+  const items = unbought.slice(0, 6);
+  const { prefs } = useGroceryPrefs();
+  const { overrides, setPrice } = useGroceryPrices();
+  const total = basketTotal(unbought, prefs.preferred_store, overrides);
   const [draft, setDraft] = useState("");
 
   const submit = async (e: React.FormEvent) => {
@@ -40,9 +47,15 @@ export function GroceryWidget() {
               <Checkbox checked={g.bought} onCheckedChange={() => void toggleGrocery(g.id)} />
               <span className="min-w-0 flex-1 truncate text-xs text-foreground">{g.name}</span>
               {g.qty && <span className="text-[10px] text-muted-foreground">{g.qty}</span>}
+              <ItemPrice name={g.name} qty={g.qty} store={prefs.preferred_store} overrides={overrides} onSave={setPrice} />
             </li>
           ))}
         </ul>
+      )}
+      {unbought.length > 0 && (
+        <p className="mt-1.5 text-right text-[10px] tabular-nums text-muted-foreground">
+          {total.estimatedCount > 0 ? "~" : ""}{formatMoney(total.cents)} estimated
+        </p>
       )}
       <form onSubmit={submit} className="mt-2 flex items-center gap-1 rounded-lg border border-dashed border-border/60 bg-background/50 px-2 py-1">
         <Plus className="h-3 w-3 shrink-0 text-muted-foreground" />
