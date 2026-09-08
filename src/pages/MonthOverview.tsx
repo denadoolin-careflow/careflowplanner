@@ -23,6 +23,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
 import { getRhythmForecast } from "@/lib/rhythm-forecast";
+import { SeasonBanner } from "@/components/seasons/SeasonBanner";
+import { CapacitySelector } from "@/components/seasons/CapacitySelector";
+import { HolidayRunwayPanel } from "@/components/seasons/HolidayRunwayPanel";
+import { ThreeTwoOneCard } from "@/components/seasons/ThreeTwoOneCard";
+import { MonthlyResetCard } from "@/components/seasons/MonthlyResetCard";
+import { NextMonthPreview } from "@/components/seasons/NextMonthPreview";
+import { suggestionsForMonth } from "@/lib/seasons/suggestions";
+import type { FocusArea, MomCapacity } from "@/lib/seasons/zodiac-seasons";
 
 const MOON_PROMPTS: Record<string, string> = {
   "New Moon": "What seed are you planting this cycle?",
