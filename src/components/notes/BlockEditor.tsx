@@ -163,8 +163,9 @@ const turndown = new TurndownService({
   headingStyle: "atx",
   bulletListMarker: "-",
   codeBlockStyle: "fenced",
-  // Empty embed containers (query / grocery blocks) are "blank" to turndown and
-  // would be dropped before any custom rule runs — serialize them here instead.
+  // Empty embed containers (query / grocery / any custom block) look "blank" to
+  // turndown and would be dropped before any custom rule runs — serialize them
+  // here instead so no block type can silently vanish on save.
   blankReplacement: (_content, node) => {
     const el = node as HTMLElement;
     if (el?.nodeType === 1) {
@@ -176,6 +177,9 @@ const turndown = new TurndownService({
         const mime = el.getAttribute("data-mime") || "";
         return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
       }
+      // Generic safety net: any element carrying node metadata (data-* attrs)
+      // or an embedded media/iframe child round-trips as raw HTML.
+      if (hasNodeMetadata(el)) return `\n\n${el.outerHTML}\n\n`;
     }
     return (node as any).isBlock ? "\n\n" : "";
   },
