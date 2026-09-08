@@ -332,8 +332,55 @@ export function useGroceryPrices() {
         { user_id: uid, item_key: key, store, price_cents: cents },
         { onConflict: "user_id,item_key,store" },
       );
+      await supabase.from("grocery_price_history").insert({
+        user_id: uid, item_key: key, item_name: name, store, price_cents: cents, source: "manual",
+      });
     }
   }, []);
 
   return { overrides, setPrice, loading, refresh };
 }
+
+/* --------------------------------------------------------------- history */
+
+export interface PricePoint {
+  id: string;
+  store: string;
+  price_cents: number;
+  recorded_at: string;
+  source: string;
+}
+
+/** Every price you've recorded for one item, newest first. */
+export async function fetchPriceHistory(name: string, limit = 20): Promise<PricePoint[]> {
+  const key = itemKey(name);
+  if (!key) return [];
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u.user?.id;
+  if (!uid) return [];
+  const { data } = await supabase
+    .from("grocery_price_history")
+    .select("id,store,price_cents,recorded_at,source")
+    .eq("user_id", uid)
+    .eq("item_key", key)
+    .order("recorded_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as PricePoint[];
+}
+
+/** Change between the oldest and newest recorded price, in cents. */
+export function priceTrend(points: PricePoint[]): { changeCents: number; pct: number } | null {
+  if (points.length < 2) return null;
+  const newest = points[0].price_cents;
+  const oldest = points[points.length - 1].price_cents;
+  if (!oldest) return null;
+  return { changeCents: newest - oldest, pct: Math.round(((newest - oldest) / oldest) * 100) };
+}
+
+/** True when the built-in catalog recognises the item name. */
+export function hasCatalogPrice(name: string): boolean {
+  return !!findRow(name);
+}
+
+/** A few sensible price choices for an item we don't recognise. */
+export const QUICK_PRICE_CENTS = [99, 199, 299, 499, 799, 1299];
