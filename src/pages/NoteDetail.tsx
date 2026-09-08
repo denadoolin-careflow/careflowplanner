@@ -64,8 +64,10 @@ export default function NoteDetail() {
   const [tags, setTags] = useState<string[]>([]);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
   const saveTimer = useRef<number | null>(null);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const savedFlashTimer = useRef<number | null>(null);
+  const pendingRef = useRef<{ title?: string; body?: string }>({});
+  const [recovery, setRecovery] = useState<NoteDraft | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [repositioning, setRepositioning] = useState(false);
