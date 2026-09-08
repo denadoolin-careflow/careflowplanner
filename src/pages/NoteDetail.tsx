@@ -222,22 +222,34 @@ export default function NoteDetail() {
     void findBacklinksTo(t).then(arr => setBacklinks(arr.filter(n => n.id !== note.id)));
   }, [note, title]);
 
+  const flush = (next: { title?: string; body?: string }) => {
+    if (!id) return;
+    pendingRef.current = { ...pendingRef.current, ...next };
+    const payload = { ...pendingRef.current };
+    if (!navigator.onLine) { setSaveState("offline"); return; }
+    setSaveState("saving");
+    void updateNote(id, payload)
+      .then(() => {
+        pendingRef.current = {};
+        clearDraft(id);
+        setSaveState("saved");
+        if (savedFlashTimer.current) window.clearTimeout(savedFlashTimer.current);
+        savedFlashTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
+      })
+      .catch(() => {
+        // The local draft is still on disk, so nothing is lost.
+        setSaveState("error");
+      });
+  };
+
   const save = (next: { title?: string; body?: string }) => {
     if (!id) return;
+    // Mirror locally first — this survives a crash, refresh or failed request.
+    saveDraft(id, next);
+    pendingRef.current = { ...pendingRef.current, ...next };
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    setSaveState("saving");
-    saveTimer.current = window.setTimeout(() => {
-      void updateNote(id, next)
-        .then(() => {
-          setSaveState("saved");
-          if (savedFlashTimer.current) window.clearTimeout(savedFlashTimer.current);
-          savedFlashTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
-        })
-        .catch(() => {
-          setSaveState("idle");
-          toast.error("Save failed");
-        });
-    }, 400);
+    setSaveState("dirty");
+    saveTimer.current = window.setTimeout(() => flush({}), 400);
   };
 
   const togglePin = async () => {
