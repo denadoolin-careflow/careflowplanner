@@ -94,6 +94,12 @@ function mapRow(r: any): MonthlyPlan {
     moon_phase_items: Array.isArray(r.moon_phase_items) ? r.moon_phase_items : [],
     cycle_phase_items: Array.isArray(r.cycle_phase_items) ? r.cycle_phase_items : [],
     ai_generated_at: r.ai_generated_at ?? null,
+    capacity: r.capacity ?? null,
+    focus_areas: Array.isArray(r.focus_areas) ? r.focus_areas : [],
+    prep_windows: Array.isArray(r.prep_windows) ? r.prep_windows : [],
+    suggestion_state: (r.suggestion_state && typeof r.suggestion_state === "object") ? r.suggestion_state : {},
+    reset: (r.reset && typeof r.reset === "object") ? r.reset : {},
+    holiday_prefs: (r.holiday_prefs && typeof r.holiday_prefs === "object") ? r.holiday_prefs : {},
   };
 }
 
