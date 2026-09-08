@@ -264,6 +264,21 @@ turndown.addRule("htmlTable", {
   filter: (node) => node.nodeName === "TABLE",
   replacement: (_content, node) => `\n\n${(node as HTMLElement).outerHTML}\n\n`,
 });
+// Any other custom block that carries node metadata (columns, callouts, future
+// embeds) round-trips as raw HTML rather than being flattened to plain text.
+turndown.addRule("customMetadataBlock", {
+  filter: (node) => {
+    if (node.nodeName !== "DIV") return false;
+    const el = node as HTMLElement;
+    if (el.hasAttribute("data-query-block") || el.hasAttribute("data-grocery-block") || el.hasAttribute("data-file-embed")) return false;
+    if (el.getAttribute("data-type") === "detailsContent") return false;
+    return Array.from(el.attributes).some(a => a.name.startsWith("data-"));
+  },
+  replacement: (_content, node) => `\n\n${(node as HTMLElement).outerHTML}\n\n`,
+});
+// Formatting that markdown can't express (colour, highlight, underline, media)
+// is kept verbatim instead of being stripped.
+turndown.keep(["iframe", "video", "audio", "mark", "u", "kbd", "sup", "sub", "span[style]"]);
 turndown.addRule("detailsToggle", {
   filter: (node) => node.nodeName === "DETAILS",
   replacement: (_content, node) => {
