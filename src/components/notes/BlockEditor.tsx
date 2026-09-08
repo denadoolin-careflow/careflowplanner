@@ -141,7 +141,45 @@ export function extractAllTags(source: string): string[] {
 /* ------------------------------------------------------------------ */
 /*  Markdown <-> HTML helpers (storage compat with existing notes)    */
 /* ------------------------------------------------------------------ */
-const turndown = new TurndownService({ headingStyle: "atx", bulletListMarker: "-", codeBlockStyle: "fenced" });
+/** Serialize a live query embed back to a raw HTML block (attrs preserved). */
+function serializeQueryBlock(el: HTMLElement): string {
+  const attrs = [...QUERY_BLOCK_ATTRS]
+    .map(k => {
+      const v = el.getAttribute(`data-${k}`);
+      return v ? ` data-${k}="${v.replace(/"/g, "&quot;")}"` : "";
+    })
+    .join("");
+  return `\n\n<div data-query-block${attrs}></div>\n\n`;
+}
+
+/** Serialize a grocery list embed back to a raw HTML block. */
+function serializeGroceryBlock(el: HTMLElement): string {
+  const label = (el.getAttribute("data-label") || "Grocery list").replace(/"/g, "&quot;");
+  const hide = el.getAttribute("data-hide-bought") === "false" ? "false" : "true";
+  return `\n\n<div data-grocery-block data-label="${label}" data-hide-bought="${hide}"></div>\n\n`;
+}
+
+const turndown = new TurndownService({
+  headingStyle: "atx",
+  bulletListMarker: "-",
+  codeBlockStyle: "fenced",
+  // Empty embed containers (query / grocery blocks) are "blank" to turndown and
+  // would be dropped before any custom rule runs — serialize them here instead.
+  blankReplacement: (_content, node) => {
+    const el = node as HTMLElement;
+    if (el?.nodeType === 1) {
+      if (el.hasAttribute?.("data-query-block")) return serializeQueryBlock(el);
+      if (el.hasAttribute?.("data-grocery-block")) return serializeGroceryBlock(el);
+      if (el.hasAttribute?.("data-file-embed")) {
+        const src = el.getAttribute("data-src") || "";
+        const name = el.getAttribute("data-name") || "file";
+        const mime = el.getAttribute("data-mime") || "";
+        return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
+      }
+    }
+    return (node as any).isBlock ? "\n\n" : "";
+  },
+});
 turndown.addRule("taskItem", {
   filter: (node) => node.nodeName === "LI" && (node as HTMLElement).getAttribute("data-type") === "taskItem",
   replacement: (content, node) => {
