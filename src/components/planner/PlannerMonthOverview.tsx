@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MonthPlanningDashboard } from "@/components/calendar/MonthPlanningDashboard";
 import { PlannerTimeReview } from "./PlannerTimeReview";
+import { SeasonBanner } from "@/components/seasons/SeasonBanner";
 import { startOfMonth, getDaysInMonth } from "date-fns";
 
 /** Month planning dashboard: goals, commitments and review for the month. */
