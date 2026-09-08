@@ -187,9 +187,12 @@ export default function MonthOverview() {
   const seasonMeta = SEASON_META[season] ?? SEASON_META.spring;
 
   const patch = async (p: Partial<MonthlyPlan>) => {
+    // optimistic: keep the UI responsive while the row is saved
+    setPlan(prev => (prev ? { ...prev, ...p } as MonthlyPlan : prev));
     const next = await monthlyPlans.upsert(month, p as any);
     if (next) setPlan(next);
   };
+
 
   const capacity = ((plan?.capacity as MomCapacity | null) ?? "full");
   const suggestions = useMemo(() => suggestionsForMonth({
