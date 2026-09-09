@@ -105,6 +105,12 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         ))}
       </div>
 
+      {/* Meals + tracked food */}
+      <PlannerWeekMealsRow
+        days={cols.map(d => format(d, "yyyy-MM-dd"))}
+        colTemplate={colTemplate}
+      />
+
       {/* All-day row */}
       <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>
         <div className="sticky left-0 z-30 flex items-center justify-end border-r border-border/50 bg-card/95 pr-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 backdrop-blur">
