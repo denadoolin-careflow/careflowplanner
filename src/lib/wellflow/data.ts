@@ -28,7 +28,7 @@ export function emitWellflow(ch: Channel) {
   listeners[ch]?.forEach((f) => f());
 }
 
-function useChannel(ch: Channel, fn: () => void) {
+export function useChannel(ch: Channel, fn: () => void) {
   const ref = useRef(fn);
   ref.current = fn;
   useEffect(() => {
