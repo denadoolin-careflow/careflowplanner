@@ -3,6 +3,7 @@ import { addDays, format, isSameDay } from "date-fns";
 import { Sparkles, Rows3 } from "lucide-react";
 import { PlannerTimeline } from "./PlannerTimeline";
 import { PlannerAllDayRow } from "./PlannerAllDayRow";
+import { PlannerWeekMealsRow } from "./PlannerWeekMealsRow";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { WeekDayHeader } from "./WeekDayHeader";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
