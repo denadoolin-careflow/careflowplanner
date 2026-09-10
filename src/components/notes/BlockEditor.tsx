@@ -1191,6 +1191,36 @@ function ColorPickerPopoverInner(editor: Editor, open: boolean, setOpen: (b: boo
 /* ------------------------------------------------------------------ */
 /*  Public component                                                  */
 /* ------------------------------------------------------------------ */
+/**
+ * Turn the list item under the cursor into a toggle block whose summary is the
+ * item text and whose body starts with an empty bullet. Shared by Tab and the
+ * bullet caret click.
+ */
+function convertListItemToDetails(editor: Editor): boolean {
+  const { $from } = editor.state.selection;
+  for (let d = $from.depth; d > 0; d--) {
+    const node = $from.node(d);
+    if (node.type.name !== "listItem" && node.type.name !== "taskItem") continue;
+    const text = (node.textContent || "").trim();
+    const itemStart = $from.before(d);
+    const itemEnd = itemStart + node.nodeSize;
+    const detailsJSON = {
+      type: "details",
+      attrs: { open: true },
+      content: [
+        { type: "detailsSummary", content: text ? [{ type: "text", text }] : [] },
+        {
+          type: "detailsContent",
+          content: [{ type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph" }] }] }],
+        },
+      ],
+    };
+    editor.chain().focus().insertContentAt({ from: itemStart, to: itemEnd }, detailsJSON).run();
+    return true;
+  }
+  return false;
+}
+
 export function BlockEditor({
   body,
   onChange,
