@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange, Salad, Droplets, Scale, Syringe } from "lucide-react";
+import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange, Salad, Droplets, Scale, Syringe, CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { CareyAvatar } from "@/components/carey/CareyAvatar";
-import { createNote, updateNote } from "@/lib/notes";
+import { createNote, updateNote, getOrCreateDailyNote } from "@/lib/notes";
 import { supabase } from "@/integrations/supabase/client";
+import { todayISO } from "@/lib/store";
 import type { Attachment } from "@/lib/types";
 import { toast } from "sonner";
 import { tray } from "@/lib/tray-store";
