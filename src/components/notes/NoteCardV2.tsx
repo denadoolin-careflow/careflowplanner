@@ -7,6 +7,7 @@ import { resolveNoteIcon, getLucideIcon, NOTE_ICONS } from "@/lib/note-icons";
 import { getNoteCoverCss } from "@/lib/note-covers";
 import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
+import { noteDisplayTitle } from "@/lib/notes/periods";
 import type { Tag } from "@/lib/tags";
 import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
 import { deleteNote, updateNote } from "@/lib/notes";
@@ -105,9 +106,7 @@ export function NoteCardV2({
   };
   const cancelInline = () => { setEditing(false); };
 
-  const title = note.kind === "daily" && note.date
-    ? format(parseISO(note.date), "EEEE, MMM d")
-    : (note.title || "Untitled");
+  const title = noteDisplayTitle(note, true);
   const resolvedIconName = resolveNoteIcon(note);
   const Icon = getLucideIcon(resolvedIconName);
   const iconEntry = NOTE_ICONS.find((e) => e.name === resolvedIconName);

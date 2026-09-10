@@ -1,7 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Attachment } from "@/lib/types";
 
-export type NoteKind = "note" | "daily";
+export type NoteKind = "note" | "daily" | "weekly" | "monthly";
+export type PeriodKind = Exclude<NoteKind, "note">;
+export const isPeriodKind = (k: string | null | undefined): k is PeriodKind =>
+  k === "daily" || k === "weekly" || k === "monthly";
 
 export interface Note {
   id: string;
@@ -134,26 +137,34 @@ export async function deleteNote(id: string): Promise<void> {
   try { window.dispatchEvent(new Event("careflow:notes:pinned-changed")); } catch {}
 }
 
-/** Get-or-create today's daily note. */
-export async function getOrCreateDailyNote(date: string): Promise<Note> {
+/**
+ * Get-or-create the note for a period. `date` is the period key:
+ * the day itself (daily), the Monday that starts the week (weekly),
+ * or the first of the month (monthly).
+ */
+export async function getOrCreatePeriodNote(kind: PeriodKind, date: string, title?: string): Promise<Note> {
   const { data: u } = await supabase.auth.getUser();
   if (!u?.user) throw new Error("not authenticated");
   const existing = await supabase
     .from("notes")
     .select("*")
     .eq("user_id", u.user.id)
-    .eq("kind", "daily")
+    .eq("kind", kind)
     .eq("date", date)
-    .maybeSingle();
-  if (existing.data) return fromRow(existing.data);
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  if (existing.data?.[0]) return fromRow(existing.data[0]);
   const { data, error } = await supabase
     .from("notes")
-    .insert({ user_id: u.user.id, kind: "daily", date, title: date, body: "" })
+    .insert({ user_id: u.user.id, kind, date, title: title ?? date, body: "" })
     .select()
     .single();
   if (error) throw error;
   return fromRow(data);
 }
+
+/** Get-or-create today's daily note. */
+export const getOrCreateDailyNote = (date: string) => getOrCreatePeriodNote("daily", date);
 
 /** Extract `[[Backlink Title]]` references from a body. */
 export function extractBacklinks(body: string): string[] {

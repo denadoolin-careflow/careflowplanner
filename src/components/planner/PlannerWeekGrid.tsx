@@ -14,8 +14,18 @@ import { PLANNER_START_H, PLANNER_END_H, HOUR_PX } from "@/lib/planner-metrics";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PeriodNoteDot } from "@/components/notes/PeriodNoteDot";
+import { usePeriodNoteMarks } from "@/lib/notes/daily";
+import { weekKeyFor } from "@/lib/notes/periods";
 
 const GUTTER_W = 56;
+
+/** Weekly-note indicator for the week starting at `start` (Monday). */
+function WeekNoteDot({ start }: { start: Date }) {
+  const key = weekKeyFor(start);
+  const marks = usePeriodNoteMarks("weekly", [key]);
+  return <PeriodNoteDot kind="weekly" keyISO={key} mark={marks.get(key)} size={13} />;
+}
 const LEGEND_KINDS: KindKey[] = ["task", "appt", "care", "meal", "bday", "hol", "gcal"];
 
 /** Multi-day hour grid with an all-day row fed by the shared planner feed. */
@@ -72,8 +82,11 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5">
-        <span className="truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-          {format(start, "MMM d")} – {format(addDays(start, days - 1), "MMM d")}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            {format(start, "MMM d")} – {format(addDays(start, days - 1), "MMM d")}
+          </span>
+          {days >= 7 && <WeekNoteDot start={start} />}
         </span>
         {!isMobile && <Button
           variant="ghost"
