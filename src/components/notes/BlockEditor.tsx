@@ -2329,34 +2329,44 @@ export function BlockEditor({
       openMediaLightbox({ src: img.src, name: img.alt || "Image", kind: "image" });
       return;
     }
-    // Click on a bullet/numbered marker collapses or expands its nested list
-    if (el.tagName === "LI") {
-      const li = el as HTMLLIElement;
-      const parentList = li.parentElement;
-      const isList =
-        parentList?.tagName === "UL" || parentList?.tagName === "OL";
+    // Click on a bullet's caret zone: fold nested lines, or turn a flat bullet
+    // into a toggle so text can be tucked under it.
+    const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+    const liEl = (el.tagName === "LI" ? el : el.closest("li")) as HTMLLIElement | null;
+    if (liEl && liEl.closest(".ProseMirror")) {
+      const parentList = liEl.parentElement;
+      const isList = parentList?.tagName === "UL" || parentList?.tagName === "OL";
       const isTaskList = parentList?.getAttribute("data-type") === "taskList";
-      const hasChildren = !!li.querySelector(":scope > ul, :scope > ol");
-      if (isList && !isTaskList && hasChildren) {
-        const rect = li.getBoundingClientRect();
-        // Marker sits in the left padding zone
-        if (e.clientX - rect.left < 24) {
+      if (isList && !isTaskList) {
+        const rect = liEl.getBoundingClientRect();
+        const dx = e.clientX - rect.left;
+        const zoneMin = coarse ? -56 : -46;
+        const inZone = dx >= zoneMin && dx < 0 && e.clientY - rect.top < 28;
+        if (inZone) {
           e.preventDefault();
-          const next = li.getAttribute("data-collapsed") !== "true";
-          if (!setFoldAttr(li, ["listItem"], next)) li.classList.toggle("cf-collapsed", next);
-          (next ? haptics.fold : haptics.unfold)();
+          const hasChildren = !!liEl.querySelector(":scope > ul, :scope > ol");
+          if (hasChildren) {
+            const next = liEl.getAttribute("data-collapsed") !== "true";
+            if (!setFoldAttr(liEl, ["listItem"], next)) liEl.classList.toggle("cf-collapsed", next);
+            (next ? haptics.fold : haptics.unfold)();
+          } else if (editorRef.current) {
+            try {
+              const pos = editorRef.current.view.posAtDOM(liEl, 0);
+              editorRef.current.chain().focus().setTextSelection(pos + 1).run();
+              convertListItemToDetailsRef.current?.();
+            } catch { /* best-effort */ }
+          }
           return;
         }
       }
     }
-    // Click gutter of a heading (H1/H2/H3) collapses the section below it.
+    // Click the caret of a heading (H1/H2/H3) collapses the section below it.
     if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
       const h = el as HTMLElement;
       const rect = h.getBoundingClientRect();
       const dx = e.clientX - rect.left;
-      // Gutter marker is now positioned at left: -56px with padding; keep the
-      // clickable zone in the gutter only so it doesn't overlap heading text.
-      if (dx >= -72 && dx <= -24) {
+      const zoneMin = coarse ? -56 : -40;
+      if (dx >= zoneMin && dx < 0) {
         e.preventDefault();
         const collapsed = h.getAttribute("data-collapsed") !== "true";
         setFoldAttr(h, ["heading"], collapsed);
