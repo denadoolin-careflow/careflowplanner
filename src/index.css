@@ -1132,25 +1132,56 @@
   }
   .block-editor .ProseMirror ul[data-type="taskList"] li > label { padding: 2px 6px 2px 0; }
 }
-/* Collapsible bullet/ordered list items — click the marker to fold */
+/* Collapsible bullet/ordered list items — every "-" is a toggle. A caret sits
+   just left of the marker: hover reveals it, collapsed keeps it visible. */
 .block-editor .ProseMirror li {
   cursor: text;
+  position: relative;
 }
 .block-editor .ProseMirror li::marker {
-  cursor: pointer;
   color: hsl(var(--muted-foreground));
   transition: color 140ms ease;
 }
-.block-editor .ProseMirror li:hover::marker { color: hsl(var(--primary)); }
+.block-editor .ProseMirror ul:not([data-type="taskList"]) > li::before,
+.block-editor .ProseMirror ol > li::before {
+  content: "";
+  position: absolute;
+  left: -2.35rem; top: 0.15em;
+  width: 12px; height: 12px;
+  padding: 4px;
+  box-sizing: content-box;
+  border-radius: 6px;
+  transform: rotate(90deg);
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 6 15 12 9 18'/></svg>") center/contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 6 15 12 9 18'/></svg>") center/contain no-repeat;
+  opacity: 0;
+  transition: opacity 160ms ease, transform 200ms cubic-bezier(.2,.8,.2,1);
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  pointer-events: none;
+}
+.block-editor .ProseMirror ul:not([data-type="taskList"]) > li:hover::before,
+.block-editor .ProseMirror ol > li:hover::before { opacity: 0.8; }
 .block-editor .ProseMirror li.cf-collapsed > ul,
 .block-editor .ProseMirror li.cf-collapsed > ol,
 .block-editor .ProseMirror li[data-collapsed="true"] > ul,
 .block-editor .ProseMirror li[data-collapsed="true"] > ol {
   display: none;
 }
+.block-editor .ProseMirror li.cf-collapsed::before,
+.block-editor .ProseMirror li[data-collapsed="true"]::before {
+  opacity: 1 !important;
+  transform: rotate(0deg);
+  color: hsl(var(--primary));
+}
 .block-editor .ProseMirror li.cf-collapsed::marker,
 .block-editor .ProseMirror li[data-collapsed="true"]::marker {
   color: hsl(var(--primary));
+}
+@media (pointer: coarse) {
+  .block-editor .ProseMirror ul:not([data-type="taskList"]) > li::before,
+  .block-editor .ProseMirror ol > li::before { opacity: 0.35; }
 }
 /* ----- Tables ------------------------------------------------------- */
 .block-editor .ProseMirror .cf-table,
