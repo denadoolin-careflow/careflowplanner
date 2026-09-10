@@ -2353,7 +2353,7 @@ export function BlockEditor({
             try {
               const pos = editorRef.current.view.posAtDOM(liEl, 0);
               editorRef.current.chain().focus().setTextSelection(pos + 1).run();
-              convertListItemToDetailsRef.current?.();
+              convertListItemToDetails(editorRef.current);
             } catch { /* best-effort */ }
           }
           return;
