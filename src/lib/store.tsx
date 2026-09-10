@@ -994,6 +994,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
       if (patch.kidSafe !== undefined) dbPatch.kid_safe = patch.kidSafe;
+      if (patch.prepMinutes !== undefined) dbPatch.prep_minutes = patch.prepMinutes ?? null;
+      if (patch.ingredients !== undefined) dbPatch.ingredients = patch.ingredients ?? [];
+      if (patch.steps !== undefined) dbPatch.steps = patch.steps ?? [];
+      if (patch.tags !== undefined) dbPatch.tags = patch.tags ?? [];
       await syncOp({ kind: "update", table: "meals", id, values: dbPatch, localTs });
     },
     deleteMeal: async (id) => {
