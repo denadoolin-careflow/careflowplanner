@@ -31,7 +31,7 @@ import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
-import { BookTemplate, Images, Type, IndentIncrease, Table2 } from "lucide-react";
+import { BookTemplate, Images, Type, IndentIncrease, Table2, NotebookPen } from "lucide-react";
 import { NotesOutlineView } from "@/components/notes/NotesOutlineView";
 import { NotesTableView } from "@/components/notes/NotesTableView";
 import { NotesNotebookView } from "@/components/notes/NotesNotebookView";
