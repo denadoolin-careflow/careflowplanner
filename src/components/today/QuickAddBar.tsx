@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles, Home, StickyNote, HeartHandshake, FileText } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { createNote, getOrCreateDailyNote } from "@/lib/notes";
+import { createNote } from "@/lib/notes";
+import { openDailyNoteWithTemplate, readDefaultDailyTemplate } from "@/lib/notes/daily";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
@@ -275,7 +276,7 @@ export function QuickAddBar({ date }: { date: Date }) {
         title="Open today's daily note"
         onClick={async () => {
           try {
-            const n = await getOrCreateDailyNote(iso);
+            const n = await openDailyNoteWithTemplate(iso, readDefaultDailyTemplate());
             navigate(`/notes/${n.id}`);
           } catch { toast.error("Couldn't open today's note"); }
         }}

@@ -6,6 +6,7 @@ import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { CareyAvatar } from "@/components/carey/CareyAvatar";
 import { createNote, updateNote, getOrCreateDailyNote } from "@/lib/notes";
+import { openDailyNoteWithTemplate, readDefaultDailyTemplate } from "@/lib/notes/daily";
 import { supabase } from "@/integrations/supabase/client";
 import { todayISO } from "@/lib/store";
 import type { Attachment } from "@/lib/types";
