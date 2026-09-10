@@ -2436,6 +2436,46 @@ export function BlockEditor({
     return () => root.removeEventListener("click", onClickCapture, true);
   }, [editor]);
 
+  // Does this task item already point at a real task? (chip link /tasks/:id)
+  const linkedTaskIdOf = (node: any): string | null => {
+    let found: string | null = null;
+    node.descendants((n: any) => {
+      if (found) return false;
+      const mark = (n.marks ?? []).find((m: any) => m.type.name === "link" && /^\/tasks\//.test(m.attrs?.href ?? ""));
+      if (mark) found = String(mark.attrs.href).slice("/tasks/".length);
+      return !found;
+    });
+    return found;
+  };
+
+  // Turn one task item (at absolute pos) into a real Task due on `dueDate`.
+  const promoteAt = useCallback(async (pos: number, node: any, dueDate?: string | null): Promise<string | null> => {
+    if (!editor) return null;
+    const title = (node.textContent || "").trim();
+    if (!title || linkedTaskIdOf(node)) return null;
+    const id = await addTask({
+      title,
+      done: !!node.attrs?.checked,
+      ...(dueDate ? { dueDate } : {}),
+      area: "Personal",
+    } as any);
+    if (!id) return null;
+    if (noteIdRef.current) void linkNote(noteIdRef.current, "task", id).catch(() => {});
+    // Mark the item text as a chip that carries the task id.
+    const fresh = editor.state.doc.nodeAt(pos);
+    if (fresh && fresh.type.name === "taskItem") {
+      const start = pos + 1;
+      const end = start + fresh.content.size;
+      editor.chain()
+        .setTextSelection({ from: start, to: end })
+        .setLink({ href: `/tasks/${id}`, class: "task-chip" } as any)
+        .setTextSelection(end)
+        .unsetMark("link")
+        .run();
+    }
+    return id;
+  }, [editor, addTask]);
+
   // Promote the currently focused task-list item into a real Task
   const promoteTaskItemToTask = useCallback(() => {
     if (!editor) return;
@@ -2445,30 +2485,79 @@ export function BlockEditor({
       if (node.type.name === "taskItem") {
         const title = (node.textContent || "").trim();
         if (!title) { toast.message("Add some text first"); return; }
-        // Get range of the task item so we can mark its text as a link
-        const start = $from.before(d) + 1; // inside taskItem
-        const end = start + node.content.size;
-        void addTask({ title }).then(() => {
-          if (noteIdRef.current && title) {
-            // best-effort: find the just-created task and link it to this note
-            // (handled by user via @ mention if needed)
-          }
+        if (linkedTaskIdOf(node)) { toast.message("Already a task"); return; }
+        const pos = $from.before(d);
+        const run = (due?: string | null) => promoteAt(pos, node, due).then(id => {
+          if (id) toast.success(due ? `Added to ${format(parseISO(due), "EEE, MMM d")}` : "Added to Tasks", { description: title });
         });
-        editor
-          .chain()
-          .focus()
-          .setTextSelection({ from: start, to: end })
-          .setLink({ href: "/anytime", class: "task-chip" } as any)
-          .setTextSelection(end)
-          .unsetMark("link")
-          .run();
-        toast.success("Added to Tasks", { description: title });
+        const dd = defaultDueDate;
+        if (typeof dd === "function") void dd().then(run);
+        else void run(dd ?? null);
         return;
       }
     }
     toast.message("Place cursor on a checkbox first");
-  }, [editor, addTask]);
+  }, [editor, promoteAt, defaultDueDate]);
   promoteRef.current = promoteTaskItemToTask;
+
+  // Send every unchecked, not-yet-linked checkbox in the note to the planner.
+  const promoteAllUnchecked = useCallback(async (dueDate?: string | null): Promise<number> => {
+    if (!editor) return 0;
+    const targets: { pos: number; node: any }[] = [];
+    editor.state.doc.descendants((n, pos) => {
+      if (n.type.name === "taskItem" && !n.attrs?.checked && (n.textContent || "").trim() && !linkedTaskIdOf(n)) targets.push({ pos, node: n });
+      return true;
+    });
+    // Promote from the bottom up so earlier positions stay valid.
+    let count = 0;
+    for (const t of targets.reverse()) {
+      const id = await promoteAt(t.pos, t.node, dueDate);
+      if (id) count++;
+    }
+    return count;
+  }, [editor, promoteAt]);
+
+  useEffect(() => {
+    if (!plannerApiRef) return;
+    plannerApiRef.current = { promoteAllUnchecked, promoteFocused: promoteTaskItemToTask };
+    return () => { plannerApiRef.current = null; };
+  }, [plannerApiRef, promoteAllUnchecked, promoteTaskItemToTask]);
+
+  // Keep task chips and planner tasks in step: checking a chip's box marks the
+  // task done, and a task done elsewhere checks the box here.
+  const syncingRef = useRef(false);
+  useEffect(() => {
+    if (!editor) return;
+    const onUpdate = () => {
+      if (syncingRef.current) return;
+      editor.state.doc.descendants((n) => {
+        if (n.type.name !== "taskItem") return true;
+        const id = linkedTaskIdOf(n);
+        if (!id) return false;
+        const task = (state.tasks ?? []).find((t: any) => t.id === id);
+        if (task && !!task.done !== !!n.attrs.checked) void updateTask(id, { done: !!n.attrs.checked } as any, { silent: true });
+        return false;
+      });
+    };
+    editor.on("update", onUpdate);
+    return () => { editor.off("update", onUpdate); };
+  }, [editor, state.tasks, updateTask]);
+  useEffect(() => {
+    if (!editor) return;
+    const changes: { pos: number; attrs: any }[] = [];
+    editor.state.doc.descendants((n, pos) => {
+      if (n.type.name !== "taskItem") return true;
+      const id = linkedTaskIdOf(n);
+      if (!id) return false;
+      const task = (state.tasks ?? []).find((t: any) => t.id === id);
+      if (task && !!task.done !== !!n.attrs.checked) changes.push({ pos, attrs: { ...n.attrs, checked: !!task.done } });
+      return false;
+    });
+    if (!changes.length) return;
+    syncingRef.current = true;
+    editor.chain().command(({ tr }) => { for (const c of changes) tr.setNodeMarkup(c.pos, undefined, c.attrs); return true; }).run();
+    syncingRef.current = false;
+  }, [editor, state.tasks]);
 
   // Slash-menu quick creators — used from the "/New note", "/New task",
   // "/New project" commands. Each inserts a chip and haptics.
