@@ -6,7 +6,8 @@ import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { CareyAvatar } from "@/components/carey/CareyAvatar";
 import { createNote, updateNote, getOrCreateDailyNote } from "@/lib/notes";
-import { openDailyNoteWithTemplate, readDefaultDailyTemplate } from "@/lib/notes/daily";
+import { openDailyNoteWithTemplate, readDefaultDailyTemplate, openPeriodNoteWithTemplate, readDefaultPeriodTemplate } from "@/lib/notes/daily";
+import { weekKeyFor, monthKeyFor } from "@/lib/notes/periods";
 import { supabase } from "@/integrations/supabase/client";
 import { todayISO } from "@/lib/store";
 import type { Attachment } from "@/lib/types";
@@ -108,6 +109,8 @@ export function CombinedFab() {
     { key: "planner", label: "Planner", icon: CalendarRange, onClick: () => navigate("/planner"), accent: true },
     { key: "note", label: "Note", icon: FileText, onClick: () => openNewNote() },
     { key: "daily", label: "Daily note", icon: CalendarDays, onClick: async () => { const n = await openDailyNoteWithTemplate(todayISO(), readDefaultDailyTemplate()); navigate(`/notes/${n.id}`); } },
+    { key: "weekly", label: "Weekly note", icon: CalendarDays, onClick: async () => { const n = await openPeriodNoteWithTemplate("weekly", weekKeyFor(new Date()), readDefaultPeriodTemplate("weekly")); navigate(`/notes/${n.id}`); } },
+    { key: "monthly", label: "Monthly note", icon: CalendarDays, onClick: async () => { const n = await openPeriodNoteWithTemplate("monthly", monthKeyFor(new Date()), readDefaultPeriodTemplate("monthly")); navigate(`/notes/${n.id}`); } },
     { key: "voice", label: "Voice", icon: Mic, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "voice", autoStart: true } })); } },
     { key: "journal", label: "Journal", icon: BookHeart, onClick: () => navigate("/journal") },
     { key: "checklist", label: "Checklist", icon: ListChecks, onClick: () => openNewNote("- [ ] \n- [ ] \n- [ ] ") },

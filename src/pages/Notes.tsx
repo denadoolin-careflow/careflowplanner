@@ -31,11 +31,14 @@ import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
-import { BookTemplate, Images, Type, IndentIncrease, Table2 } from "lucide-react";
+import { BookTemplate, Images, Type, IndentIncrease, Table2, NotebookPen } from "lucide-react";
 import { NotesOutlineView } from "@/components/notes/NotesOutlineView";
 import { NotesTableView } from "@/components/notes/NotesTableView";
+import { NotesNotebookView } from "@/components/notes/NotesNotebookView";
+import { noteDisplayTitle, weekKeyFor, monthKeyFor } from "@/lib/notes/periods";
+import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate } from "@/lib/notes/daily";
 
-type View = "outline" | "list" | "grid" | "board" | "table" | "timeline" | "calendar";
+type View = "notebook" | "outline" | "list" | "grid" | "board" | "table" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
 
 const VIEW_KEY = "careflow.notes.view";
@@ -43,6 +46,7 @@ const COLLECTION_KEY = "careflow.notes.collection";
 const SIDE_NAV_KEY = "careflow.notes.sidenav";
 
 const VIEW_TABS: { id: View; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "notebook",  label: "Notebook",  icon: NotebookPen },
   { id: "outline",   label: "Outline",   icon: IndentIncrease },
   { id: "list",      label: "All notes", icon: ListIcon },
   { id: "grid",      label: "Grid",      icon: LayoutGrid },
@@ -92,7 +96,7 @@ export default function Notes() {
   });
   useEffect(() => { localStorage.setItem("careflow.notes.previewLines", String(previewLines)); }, [previewLines]);
   const [pinnedOnly, setPinnedOnly] = useState(false);
-  const [kindFilter, setKindFilter] = useState<"all" | "note" | "daily">("all");
+  const [kindFilter, setKindFilter] = useState<"all" | "note" | "daily" | "weekly" | "monthly">("all");
   const [sideOpen, setSideOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem(SIDE_NAV_KEY) !== "0";
@@ -184,6 +188,14 @@ export default function Notes() {
     } catch { toast.error("Could not open today's note"); }
   };
 
+  const newPeriod = async (kind: "weekly" | "monthly") => {
+    try {
+      const key = kind === "weekly" ? weekKeyFor(new Date()) : monthKeyFor(new Date());
+      const n = await openPeriodNoteWithTemplate(kind, key, readDefaultPeriodTemplate(kind));
+      navigate(`/notes/${n.id}`);
+    } catch { toast.error("Could not open the note"); }
+  };
+
   const handleDeleteNote = async (id: string) => {
     if (!confirm("Delete this note?")) return;
     try {
@@ -256,7 +268,7 @@ export default function Notes() {
           <PopoverContent align="end" className="w-56 p-2 text-sm">
             <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Kind</div>
             <div className="grid grid-cols-3 gap-1 px-1 pb-2">
-              {(["all", "note", "daily"] as const).map(k => (
+              {(["all", "note", "daily", "weekly", "monthly"] as const).map(k => (
                 <button
                   key={k}
                   onClick={() => setKindFilter(k)}
@@ -335,6 +347,8 @@ export default function Notes() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={newNote}><Plus className="mr-2 h-3.5 w-3.5" /> New note</DropdownMenuItem>
             <DropdownMenuItem onClick={newDaily}><Sun className="mr-2 h-3.5 w-3.5" /> Today's daily note</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void newPeriod("weekly")}><NotebookPen className="mr-2 h-3.5 w-3.5" /> This week's note</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void newPeriod("monthly")}><NotebookPen className="mr-2 h-3.5 w-3.5" /> This month's note</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/journal")}><BookOpen className="mr-2 h-3.5 w-3.5" /> New journal entry</DropdownMenuItem>
             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTemplatesOpen(true); }}>
               <BookTemplate className="mr-2 h-3.5 w-3.5" /> From template…
@@ -442,6 +456,8 @@ export default function Notes() {
 
             {loading ? (
               <div className="rounded-2xl border border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">Loading…</div>
+            ) : view === "notebook" ? (
+              <NotesNotebookView notes={filtered} selectedId={noteParam} onSelect={selectNote} />
             ) : filtered.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">
                 <Sparkles className="mx-auto mb-2 h-5 w-5 opacity-60" />
@@ -516,9 +532,7 @@ function ListView({
     <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/60">
       {notes.map(n => {
         const Icon = getLucideIcon(resolveNoteIcon(n));
-        const title = n.kind === "daily" && n.date
-          ? format(parseISO(n.date), "EEEE, MMM d")
-          : (n.title || "Untitled");
+        const title = noteDisplayTitle(n, true);
         return (
           <NoteHoverPreview
             key={n.id}
@@ -722,7 +736,7 @@ function CalendarView({ notes, onSelectNote }: { notes: Note[]; onSelectNote: (i
                     className="block w-full truncate rounded-md bg-primary/10 px-1.5 py-0.5 text-left text-[11px] text-primary hover:bg-primary/20"
                     title={n.title || "Untitled"}
                   >
-                    {n.kind === "daily" ? "● " : ""}{n.title || "Untitled"}
+                    {n.kind !== "note" ? "● " : ""}{noteDisplayTitle(n, true)}
                   </button>
                 ))}
                 {items.length > 3 && (

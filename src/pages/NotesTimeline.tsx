@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { ArrowLeft, BookHeart, CalendarClock, CheckCircle2, FileText, Filter as FilterIcon } from "lucide-react";
 import { listNotes, type Note } from "@/lib/notes";
+import { noteDisplayTitle } from "@/lib/notes/periods";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -43,9 +44,10 @@ export default function NotesTimeline() {
           id: `note-${n.id}`,
           type: "note",
           date: n.updatedAt,
-          title: n.title || "Untitled note",
+          title: noteDisplayTitle(n),
           body: n.body?.slice(0, 240),
           href: `/notes/${n.id}`,
+          badge: n.kind === "daily" ? "daily" : n.kind === "weekly" ? "weekly" : n.kind === "monthly" ? "monthly" : undefined,
         });
       }
     }

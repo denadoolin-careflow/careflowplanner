@@ -9,7 +9,9 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
+import { deleteNote, extractBacklinks, findBacklinksTo, getNote, isPeriodKind, updateNote, type Note } from "@/lib/notes";
+import { noteDisplayTitle } from "@/lib/notes/periods";
+import { PeriodContextPanel } from "@/components/notes/PeriodContextPanel";
 import { uploadNoteImage } from "@/lib/note-images";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -378,7 +380,7 @@ export default function NoteDetail() {
   }
 
   const linkedOut = extractBacklinks(body);
-  const headerTitle = note.kind === "daily" && note.date ? format(parseISO(note.date), "EEEE, MMMM d, yyyy") : null;
+  const headerTitle = isPeriodKind(note.kind) && note.date ? noteDisplayTitle(note) : null;
   const resolvedIcon = resolveNoteIcon({ title, body, kind: note.kind, icon: note.icon ?? null });
   const IconEl = getLucideIcon(resolvedIcon);
   const gradientCss = getNoteCoverCss(note.coverGradient);
@@ -473,8 +475,8 @@ export default function NoteDetail() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem onSelect={async () => {
-                const headerText = note.kind === "daily" && note.date
-                  ? format(parseISO(note.date), "EEEE, MMMM d, yyyy")
+                const headerText = isPeriodKind(note.kind) && note.date
+                  ? noteDisplayTitle(note)
                   : (title || "Untitled");
                 const ok = await copyToClipboard(`${headerText}\n\n${body}`);
                 if (ok) toast.success("Copied to clipboard");
@@ -655,6 +657,10 @@ export default function NoteDetail() {
               }}
             />
           </div>
+        )}
+
+        {isPeriodKind(note.kind) && note.date && (
+          <PeriodContextPanel note={note} className="mt-4" />
         )}
 
         <div className="mt-6">
