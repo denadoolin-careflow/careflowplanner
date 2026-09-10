@@ -25,6 +25,7 @@ import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { getDailyEnergyGuidance } from "@/lib/daily-energy-guidance";
 import { getOrCreateDailyNote, createNote } from "@/lib/notes";
+import { openDailyNoteWithTemplate, readDefaultDailyTemplate } from "@/lib/notes/daily";
 import { useMealsLibrary } from "@/lib/meals-library";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -289,7 +290,7 @@ function EnergyPanel({ date }: { date: Date }) {
   const [busy, setBusy] = useState<null | "daily" | "new" | "save">(null);
 
   const openDailyNote = async () => {
-    try { setBusy("daily"); const n = await getOrCreateDailyNote(todayISO()); navigate(`/notes/${n.id}`); }
+    try { setBusy("daily"); const n = await openDailyNoteWithTemplate(todayISO(), readDefaultDailyTemplate()); navigate(`/notes/${n.id}`); }
     catch { toast.error("Couldn't open today's note"); } finally { setBusy(null); }
   };
   const newSeededNote = async () => {

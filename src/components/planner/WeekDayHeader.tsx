@@ -6,6 +6,8 @@ import { useCycleDot } from "@/lib/planner/day-rhythm";
 import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
 import type { WeatherCondition } from "@/lib/weather";
 import { cn } from "@/lib/utils";
+import { DailyNoteDot } from "@/components/notes/DailyNoteDot";
+import { useDailyNoteMarks } from "@/lib/notes/daily";
 
 const COND_ICON: Record<WeatherCondition, typeof Sun> = {
   "clear": Sun,
@@ -32,13 +34,17 @@ export function WeekDayHeader({ date, mode, onSelect }: {
   const [unit] = useTempUnit();
   const day = snap?.daily?.find(d => d.date === format(date, "yyyy-MM-dd"));
   const Icon = day ? COND_ICON[day.condition] ?? Cloud : null;
+  const iso = format(date, "yyyy-MM-dd");
+  const marks = useDailyNoteMarks([iso]);
   const isToday = isSameDay(date, new Date());
   const compact = mode === "compact";
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect?.(date)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect?.(date); } }}
       title={[format(date, "EEEE, MMMM d"), theme.moonLabel, `Moon in ${theme.sign}`, cycle?.text].filter(Boolean).join(" · ")}
       className={cn(
         "flex h-full w-full min-w-0 flex-col items-center gap-1 px-1.5 py-2 text-center transition-colors hover:bg-muted/40",
@@ -54,6 +60,8 @@ export function WeekDayHeader({ date, mode, onSelect }: {
       )}>
         {format(date, "d")}
       </span>
+
+      <DailyNoteDot date={date} mark={marks.get(iso)} size={13} />
 
       {Icon && (
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -101,6 +109,6 @@ export function WeekDayHeader({ date, mode, onSelect }: {
           </span>
         </>
       )}
-    </button>
+    </div>
   );
 }

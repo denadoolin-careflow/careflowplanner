@@ -14,6 +14,8 @@ import { ViewPills } from "@/components/layout/ViewPills";
 import { useTouchDrag } from "@/lib/planner/touch-drag";
 import { ELEMENT_CLASSES } from "@/lib/seasons/element-classes";
 import { seasonForDate } from "@/lib/seasons/zodiac-seasons";
+import { DailyNoteDot } from "@/components/notes/DailyNoteDot";
+import { useDailyNoteMarks } from "@/lib/notes/daily";
 
 
 /** Mobile-only layout choices for the month grid. */
@@ -45,6 +47,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = (it: PlannerFeedItem) => (onOpenItem ? onOpenItem(it) : openItem(it));
   const cycles = useCycleDots(days);
+  const noteMarks = useDailyNoteMarks(days.map(d => format(d, "yyyy-MM-dd")));
   const isMobile = useIsMobile();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const todayKey = format(today, "yyyy-MM-dd");
@@ -95,13 +98,16 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                    className={cn("rounded-2xl border border-border/60 bg-card/50 p-2",
                      isToday && "border-primary/60 bg-primary/5",
                      touch.overDay === key && "ring-1 ring-inset ring-primary/60")}>
+                <div className="flex w-full items-center justify-between gap-2">
                 <button type="button" onClick={() => onSelectDay(d)}
-                        className="flex w-full items-baseline justify-between gap-2 text-left">
+                        className="flex flex-1 items-baseline justify-between gap-2 text-left">
                   <span className="text-sm font-semibold">{format(d, "EEE d")}</span>
                   <span className="text-[11px] text-muted-foreground">
                     {items.length ? `${items.length} planned` : "Open"}
                   </span>
                 </button>
+                  <DailyNoteDot date={d} mark={noteMarks.get(key)} size={13} className="ml-auto" />
+                </div>
                 {items.length > 0 && (
                   <ul className="mt-1.5 space-y-1">
                     {items.map(it => {
@@ -193,6 +199,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: cyc.color }} />
                   )}
                 </button>
+                <DailyNoteDot date={d} mark={noteMarks.get(key)} size={12} />
                 {completable.length > 0 && !isMobile && (
                   <span
                     title={`${doneCount} of ${completable.length} complete`}

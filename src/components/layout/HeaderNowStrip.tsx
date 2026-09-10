@@ -27,7 +27,8 @@ import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidge
 import { Home as HomeIcon, Sparkles as CleaningIcon } from "lucide-react";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { Plus, BookHeart, FileText, StickyNote, Pencil } from "lucide-react";
-import { getOrCreateDailyNote, createNote } from "@/lib/notes";
+import { createNote } from "@/lib/notes";
+import { openDailyNoteWithTemplate, readDefaultDailyTemplate } from "@/lib/notes/daily";
 import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
 import { openTaskEditor } from "@/lib/open-task-editor";
@@ -465,7 +466,7 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
             type="button"
             onClick={async () => {
               try {
-                const n = await getOrCreateDailyNote(isoToday);
+                const n = await openDailyNoteWithTemplate(isoToday, readDefaultDailyTemplate());
                 navigate(`/notes/${n.id}`);
               } catch { toast.error("Couldn't open today's note"); }
             }}

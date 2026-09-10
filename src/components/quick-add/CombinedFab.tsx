@@ -6,6 +6,7 @@ import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { CareyAvatar } from "@/components/carey/CareyAvatar";
 import { createNote, updateNote, getOrCreateDailyNote } from "@/lib/notes";
+import { openDailyNoteWithTemplate, readDefaultDailyTemplate } from "@/lib/notes/daily";
 import { supabase } from "@/integrations/supabase/client";
 import { todayISO } from "@/lib/store";
 import type { Attachment } from "@/lib/types";
@@ -106,7 +107,7 @@ export function CombinedFab() {
     { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
     { key: "planner", label: "Planner", icon: CalendarRange, onClick: () => navigate("/planner"), accent: true },
     { key: "note", label: "Note", icon: FileText, onClick: () => openNewNote() },
-    { key: "daily", label: "Daily note", icon: CalendarDays, onClick: async () => { const n = await getOrCreateDailyNote(todayISO()); navigate(`/notes/${n.id}`); } },
+    { key: "daily", label: "Daily note", icon: CalendarDays, onClick: async () => { const n = await openDailyNoteWithTemplate(todayISO(), readDefaultDailyTemplate()); navigate(`/notes/${n.id}`); } },
     { key: "voice", label: "Voice", icon: Mic, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "voice", autoStart: true } })); } },
     { key: "journal", label: "Journal", icon: BookHeart, onClick: () => navigate("/journal") },
     { key: "checklist", label: "Checklist", icon: ListChecks, onClick: () => openNewNote("- [ ] \n- [ ] \n- [ ] ") },
