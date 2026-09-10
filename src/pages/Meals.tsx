@@ -169,7 +169,7 @@ export default function Meals() {
       if (!date) return;
       const opts = { mode: (calendarPanelOptions.getReplace() ? "replace" : "fill_empty") as "replace" | "fill_empty",
                      addGroceries: calendarPanelOptions.getAddGroceries() };
-      const r = await applyThemeToDate(theme, date, slot, opts);
+      const r = await applyThemeToDate(theme, date, slot as any, opts);
       await reloadAll();
       if (r.inserted === 0) toast.info("Slot taken — toggle Replace in the sidebar.");
       else toast.success(`${theme.emoji ?? "🍽️"} ${theme.name} → ${r.meal?.title ?? ""}`, {

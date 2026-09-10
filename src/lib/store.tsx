@@ -975,7 +975,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addMeal: async (m) => {
       if (!uid) return;
-      const { data } = await supabase.from("meals").insert({ user_id: uid, name: m.name, date: m.date, slot: m.slot, notes: m.notes ?? null, kid_safe: m.kidSafe ?? false }).select().single();
+      const { data } = await supabase.from("meals").insert({
+        user_id: uid, name: m.name, date: m.date, slot: m.slot,
+        notes: m.notes ?? null, kid_safe: m.kidSafe ?? false,
+        prep_minutes: m.prepMinutes ?? null,
+        ingredients: m.ingredients ?? [],
+        steps: m.steps ?? [],
+        tags: m.tags ?? [],
+      }).select().single();
       if (data) setState(s => ({ ...s, meals: [mealFrom(data), ...s.meals] }));
     },
     updateMeal: async (id, patch) => {
@@ -987,6 +994,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
       if (patch.kidSafe !== undefined) dbPatch.kid_safe = patch.kidSafe;
+      if (patch.prepMinutes !== undefined) dbPatch.prep_minutes = patch.prepMinutes ?? null;
+      if (patch.ingredients !== undefined) dbPatch.ingredients = patch.ingredients ?? [];
+      if (patch.steps !== undefined) dbPatch.steps = patch.steps ?? [];
+      if (patch.tags !== undefined) dbPatch.tags = patch.tags ?? [];
       await syncOp({ kind: "update", table: "meals", id, values: dbPatch, localTs });
     },
     deleteMeal: async (id) => {
