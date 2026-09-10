@@ -1191,6 +1191,36 @@ function ColorPickerPopoverInner(editor: Editor, open: boolean, setOpen: (b: boo
 /* ------------------------------------------------------------------ */
 /*  Public component                                                  */
 /* ------------------------------------------------------------------ */
+/**
+ * Turn the list item under the cursor into a toggle block whose summary is the
+ * item text and whose body starts with an empty bullet. Shared by Tab and the
+ * bullet caret click.
+ */
+function convertListItemToDetails(editor: Editor): boolean {
+  const { $from } = editor.state.selection;
+  for (let d = $from.depth; d > 0; d--) {
+    const node = $from.node(d);
+    if (node.type.name !== "listItem" && node.type.name !== "taskItem") continue;
+    const text = (node.textContent || "").trim();
+    const itemStart = $from.before(d);
+    const itemEnd = itemStart + node.nodeSize;
+    const detailsJSON = {
+      type: "details",
+      attrs: { open: true },
+      content: [
+        { type: "detailsSummary", content: text ? [{ type: "text", text }] : [] },
+        {
+          type: "detailsContent",
+          content: [{ type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph" }] }] }],
+        },
+      ],
+    };
+    editor.chain().focus().insertContentAt({ from: itemStart, to: itemEnd }, detailsJSON).run();
+    return true;
+  }
+  return false;
+}
+
 export function BlockEditor({
   body,
   onChange,
@@ -1202,6 +1232,8 @@ export function BlockEditor({
   minHeight,
   subtaskHost,
   toolbarPlacement = "bottom",
+  defaultDueDate,
+  plannerApiRef,
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
@@ -1215,8 +1247,12 @@ export function BlockEditor({
   subtaskHost?: { kind: "task" | "note" | "project"; id: string; title?: string };
   /** Where to anchor the formatting toolbar. Defaults to bottom (sticky). */
   toolbarPlacement?: "top" | "bottom";
+  /** Due date given to tasks promoted from checkboxes (ISO) — or a picker. */
+  defaultDueDate?: string | null | (() => Promise<string | null>);
+  /** Exposes checkbox → task helpers to the surrounding page. */
+  plannerApiRef?: React.MutableRefObject<BlockEditorPlannerApi | null>;
 }) {
-  const { state, addTask, addProject } = useStore();
+  const { state, addTask, addProject, updateTask } = useStore();
   const navigate = useNavigate();
   const [prefs, setPrefs] = useEditorPrefs();
   const isMobile = useIsMobile();
@@ -1625,37 +1661,7 @@ export function BlockEditor({
               if (editor.can().sinkListItem(node.type.name)) {
                 return editor.chain().focus().sinkListItem(node.type.name).run();
               }
-              // Top-level item -> convert into a toggle with bullet inside
-              const text = (node.textContent || "").trim();
-              const itemStart = $from.before(d);
-              const itemEnd = itemStart + node.nodeSize;
-              const summaryJSON = text
-                ? [{ type: "text", text }]
-                : [];
-              const detailsJSON = {
-                type: "details",
-                attrs: { open: true },
-                content: [
-                  { type: "detailsSummary", content: summaryJSON },
-                  {
-                    type: "detailsContent",
-                    content: [
-                      {
-                        type: "bulletList",
-                        content: [
-                          { type: "listItem", content: [{ type: "paragraph" }] },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              };
-              editor
-                .chain()
-                .focus()
-                .insertContentAt({ from: itemStart, to: itemEnd }, detailsJSON)
-                .run();
-              return true;
+              return convertListItemToDetails(editor as Editor);
             }
           }
           return false;
@@ -2329,34 +2335,44 @@ export function BlockEditor({
       openMediaLightbox({ src: img.src, name: img.alt || "Image", kind: "image" });
       return;
     }
-    // Click on a bullet/numbered marker collapses or expands its nested list
-    if (el.tagName === "LI") {
-      const li = el as HTMLLIElement;
-      const parentList = li.parentElement;
-      const isList =
-        parentList?.tagName === "UL" || parentList?.tagName === "OL";
+    // Click on a bullet's caret zone: fold nested lines, or turn a flat bullet
+    // into a toggle so text can be tucked under it.
+    const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+    const liEl = (el.tagName === "LI" ? el : el.closest("li")) as HTMLLIElement | null;
+    if (liEl && liEl.closest(".ProseMirror")) {
+      const parentList = liEl.parentElement;
+      const isList = parentList?.tagName === "UL" || parentList?.tagName === "OL";
       const isTaskList = parentList?.getAttribute("data-type") === "taskList";
-      const hasChildren = !!li.querySelector(":scope > ul, :scope > ol");
-      if (isList && !isTaskList && hasChildren) {
-        const rect = li.getBoundingClientRect();
-        // Marker sits in the left padding zone
-        if (e.clientX - rect.left < 24) {
+      if (isList && !isTaskList) {
+        const rect = liEl.getBoundingClientRect();
+        const dx = e.clientX - rect.left;
+        const zoneMin = coarse ? -56 : -46;
+        const inZone = dx >= zoneMin && dx < 0 && e.clientY - rect.top < 28;
+        if (inZone) {
           e.preventDefault();
-          const next = li.getAttribute("data-collapsed") !== "true";
-          if (!setFoldAttr(li, ["listItem"], next)) li.classList.toggle("cf-collapsed", next);
-          (next ? haptics.fold : haptics.unfold)();
+          const hasChildren = !!liEl.querySelector(":scope > ul, :scope > ol");
+          if (hasChildren) {
+            const next = liEl.getAttribute("data-collapsed") !== "true";
+            if (!setFoldAttr(liEl, ["listItem"], next)) liEl.classList.toggle("cf-collapsed", next);
+            (next ? haptics.fold : haptics.unfold)();
+          } else if (editorRef.current) {
+            try {
+              const pos = editorRef.current.view.posAtDOM(liEl, 0);
+              editorRef.current.chain().focus().setTextSelection(pos + 1).run();
+              convertListItemToDetails(editorRef.current);
+            } catch { /* best-effort */ }
+          }
           return;
         }
       }
     }
-    // Click gutter of a heading (H1/H2/H3) collapses the section below it.
+    // Click the caret of a heading (H1/H2/H3) collapses the section below it.
     if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
       const h = el as HTMLElement;
       const rect = h.getBoundingClientRect();
       const dx = e.clientX - rect.left;
-      // Gutter marker is now positioned at left: -56px with padding; keep the
-      // clickable zone in the gutter only so it doesn't overlap heading text.
-      if (dx >= -72 && dx <= -24) {
+      const zoneMin = coarse ? -56 : -40;
+      if (dx >= zoneMin && dx < 0) {
         e.preventDefault();
         const collapsed = h.getAttribute("data-collapsed") !== "true";
         setFoldAttr(h, ["heading"], collapsed);
@@ -2426,6 +2442,46 @@ export function BlockEditor({
     return () => root.removeEventListener("click", onClickCapture, true);
   }, [editor]);
 
+  // Does this task item already point at a real task? (chip link /tasks/:id)
+  const linkedTaskIdOf = (node: any): string | null => {
+    let found: string | null = null;
+    node.descendants((n: any) => {
+      if (found) return false;
+      const mark = (n.marks ?? []).find((m: any) => m.type.name === "link" && /^\/tasks\//.test(m.attrs?.href ?? ""));
+      if (mark) found = String(mark.attrs.href).slice("/tasks/".length);
+      return !found;
+    });
+    return found;
+  };
+
+  // Turn one task item (at absolute pos) into a real Task due on `dueDate`.
+  const promoteAt = useCallback(async (pos: number, node: any, dueDate?: string | null): Promise<string | null> => {
+    if (!editor) return null;
+    const title = (node.textContent || "").trim();
+    if (!title || linkedTaskIdOf(node)) return null;
+    const id = await addTask({
+      title,
+      done: !!node.attrs?.checked,
+      ...(dueDate ? { dueDate } : {}),
+      area: "Personal",
+    } as any);
+    if (!id) return null;
+    if (noteIdRef.current) void linkNote(noteIdRef.current, "task", id).catch(() => {});
+    // Mark the item text as a chip that carries the task id.
+    const fresh = editor.state.doc.nodeAt(pos);
+    if (fresh && fresh.type.name === "taskItem") {
+      const start = pos + 1;
+      const end = start + fresh.content.size;
+      editor.chain()
+        .setTextSelection({ from: start, to: end })
+        .setLink({ href: `/tasks/${id}`, class: "task-chip" } as any)
+        .setTextSelection(end)
+        .unsetMark("link")
+        .run();
+    }
+    return id;
+  }, [editor, addTask]);
+
   // Promote the currently focused task-list item into a real Task
   const promoteTaskItemToTask = useCallback(() => {
     if (!editor) return;
@@ -2435,30 +2491,79 @@ export function BlockEditor({
       if (node.type.name === "taskItem") {
         const title = (node.textContent || "").trim();
         if (!title) { toast.message("Add some text first"); return; }
-        // Get range of the task item so we can mark its text as a link
-        const start = $from.before(d) + 1; // inside taskItem
-        const end = start + node.content.size;
-        void addTask({ title }).then(() => {
-          if (noteIdRef.current && title) {
-            // best-effort: find the just-created task and link it to this note
-            // (handled by user via @ mention if needed)
-          }
+        if (linkedTaskIdOf(node)) { toast.message("Already a task"); return; }
+        const pos = $from.before(d);
+        const run = (due?: string | null) => promoteAt(pos, node, due).then(id => {
+          if (id) toast.success(due ? `Added to ${format(parseISO(due), "EEE, MMM d")}` : "Added to Tasks", { description: title });
         });
-        editor
-          .chain()
-          .focus()
-          .setTextSelection({ from: start, to: end })
-          .setLink({ href: "/anytime", class: "task-chip" } as any)
-          .setTextSelection(end)
-          .unsetMark("link")
-          .run();
-        toast.success("Added to Tasks", { description: title });
+        const dd = defaultDueDate;
+        if (typeof dd === "function") void dd().then(run);
+        else void run(dd ?? null);
         return;
       }
     }
     toast.message("Place cursor on a checkbox first");
-  }, [editor, addTask]);
+  }, [editor, promoteAt, defaultDueDate]);
   promoteRef.current = promoteTaskItemToTask;
+
+  // Send every unchecked, not-yet-linked checkbox in the note to the planner.
+  const promoteAllUnchecked = useCallback(async (dueDate?: string | null): Promise<number> => {
+    if (!editor) return 0;
+    const targets: { pos: number; node: any }[] = [];
+    editor.state.doc.descendants((n, pos) => {
+      if (n.type.name === "taskItem" && !n.attrs?.checked && (n.textContent || "").trim() && !linkedTaskIdOf(n)) targets.push({ pos, node: n });
+      return true;
+    });
+    // Promote from the bottom up so earlier positions stay valid.
+    let count = 0;
+    for (const t of targets.reverse()) {
+      const id = await promoteAt(t.pos, t.node, dueDate);
+      if (id) count++;
+    }
+    return count;
+  }, [editor, promoteAt]);
+
+  useEffect(() => {
+    if (!plannerApiRef) return;
+    plannerApiRef.current = { promoteAllUnchecked, promoteFocused: promoteTaskItemToTask };
+    return () => { plannerApiRef.current = null; };
+  }, [plannerApiRef, promoteAllUnchecked, promoteTaskItemToTask]);
+
+  // Keep task chips and planner tasks in step: checking a chip's box marks the
+  // task done, and a task done elsewhere checks the box here.
+  const syncingRef = useRef(false);
+  useEffect(() => {
+    if (!editor) return;
+    const onUpdate = () => {
+      if (syncingRef.current) return;
+      editor.state.doc.descendants((n) => {
+        if (n.type.name !== "taskItem") return true;
+        const id = linkedTaskIdOf(n);
+        if (!id) return false;
+        const task = (state.tasks ?? []).find((t: any) => t.id === id);
+        if (task && !!task.done !== !!n.attrs.checked) void updateTask(id, { done: !!n.attrs.checked } as any, { silent: true });
+        return false;
+      });
+    };
+    editor.on("update", onUpdate);
+    return () => { editor.off("update", onUpdate); };
+  }, [editor, state.tasks, updateTask]);
+  useEffect(() => {
+    if (!editor) return;
+    const changes: { pos: number; attrs: any }[] = [];
+    editor.state.doc.descendants((n, pos) => {
+      if (n.type.name !== "taskItem") return true;
+      const id = linkedTaskIdOf(n);
+      if (!id) return false;
+      const task = (state.tasks ?? []).find((t: any) => t.id === id);
+      if (task && !!task.done !== !!n.attrs.checked) changes.push({ pos, attrs: { ...n.attrs, checked: !!task.done } });
+      return false;
+    });
+    if (!changes.length) return;
+    syncingRef.current = true;
+    editor.chain().command(({ tr }) => { for (const c of changes) tr.setNodeMarkup(c.pos, undefined, c.attrs); return true; }).run();
+    syncingRef.current = false;
+  }, [editor, state.tasks]);
 
   // Slash-menu quick creators — used from the "/New note", "/New task",
   // "/New project" commands. Each inserts a chip and haptics.
