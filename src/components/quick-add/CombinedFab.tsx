@@ -106,6 +106,7 @@ export function CombinedFab() {
     { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
     { key: "planner", label: "Planner", icon: CalendarRange, onClick: () => navigate("/planner"), accent: true },
     { key: "note", label: "Note", icon: FileText, onClick: () => openNewNote() },
+    { key: "daily", label: "Daily note", icon: CalendarDays, onClick: async () => { const n = await getOrCreateDailyNote(todayISO()); navigate(`/notes/${n.id}`); } },
     { key: "voice", label: "Voice", icon: Mic, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "voice", autoStart: true } })); } },
     { key: "journal", label: "Journal", icon: BookHeart, onClick: () => navigate("/journal") },
     { key: "checklist", label: "Checklist", icon: ListChecks, onClick: () => openNewNote("- [ ] \n- [ ] \n- [ ] ") },
