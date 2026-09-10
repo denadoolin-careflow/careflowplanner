@@ -1625,37 +1625,7 @@ export function BlockEditor({
               if (editor.can().sinkListItem(node.type.name)) {
                 return editor.chain().focus().sinkListItem(node.type.name).run();
               }
-              // Top-level item -> convert into a toggle with bullet inside
-              const text = (node.textContent || "").trim();
-              const itemStart = $from.before(d);
-              const itemEnd = itemStart + node.nodeSize;
-              const summaryJSON = text
-                ? [{ type: "text", text }]
-                : [];
-              const detailsJSON = {
-                type: "details",
-                attrs: { open: true },
-                content: [
-                  { type: "detailsSummary", content: summaryJSON },
-                  {
-                    type: "detailsContent",
-                    content: [
-                      {
-                        type: "bulletList",
-                        content: [
-                          { type: "listItem", content: [{ type: "paragraph" }] },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              };
-              editor
-                .chain()
-                .focus()
-                .insertContentAt({ from: itemStart, to: itemEnd }, detailsJSON)
-                .run();
-              return true;
+              return convertListItemToDetails(editor as Editor);
             }
           }
           return false;
