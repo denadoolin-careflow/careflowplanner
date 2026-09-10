@@ -23,7 +23,7 @@ export function PeriodContextPanel({ note, className }: { note: Note; className?
   const key = note.date!;
   const navigate = useNavigate();
   const { state } = useStore();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(kind !== "monthly");
 
   const span = useMemo(() => spanFor(kind, key), [kind, key]);
   const dates = useMemo(() => spanDates(span), [span]);
