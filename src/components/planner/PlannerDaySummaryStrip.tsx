@@ -8,6 +8,8 @@ import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import type { PlannerFeedItem } from "@/lib/planner/feed";
 import { cn } from "@/lib/utils";
+import { DailyNoteDot } from "@/components/notes/DailyNoteDot";
+import { useDailyNoteMarks } from "@/lib/notes/daily";
 
 function hmToMin(v?: string | null): number | null {
   if (!v) return null;
@@ -28,6 +30,7 @@ export function PlannerDaySummaryStrip({ date, items, className }: {
   const iso = format(date, "yyyy-MM-dd");
   const { blocks } = useTimeBlocks(iso, iso);
   const { periods, settings } = useCycle();
+  const noteMarks = useDailyNoteMarks([iso]);
 
   const plannedMin = useMemo(() => {
     let total = 0;
@@ -68,7 +71,10 @@ export function PlannerDaySummaryStrip({ date, items, className }: {
         <span className="text-[10.5px] text-muted-foreground">
           <span className="font-medium text-foreground tabular-nums">{done}</span>/<span className="tabular-nums">{total}</span> done
         </span>
-        <span className={cn("text-[10px] font-medium", ratingTone)}>{rating}</span>
+        <span className="flex items-center gap-1">
+          <span className={cn("text-[10px] font-medium", ratingTone)}>{rating}</span>
+          <DailyNoteDot date={date} mark={noteMarks.get(iso)} size={12} />
+        </span>
       </div>
       <div
         className="h-1.5 overflow-hidden rounded-full bg-muted"
