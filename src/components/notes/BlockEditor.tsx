@@ -1232,6 +1232,8 @@ export function BlockEditor({
   minHeight,
   subtaskHost,
   toolbarPlacement = "bottom",
+  defaultDueDate,
+  plannerApiRef,
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
@@ -1245,8 +1247,12 @@ export function BlockEditor({
   subtaskHost?: { kind: "task" | "note" | "project"; id: string; title?: string };
   /** Where to anchor the formatting toolbar. Defaults to bottom (sticky). */
   toolbarPlacement?: "top" | "bottom";
+  /** Due date given to tasks promoted from checkboxes (ISO) — or a picker. */
+  defaultDueDate?: string | null | (() => Promise<string | null>);
+  /** Exposes checkbox → task helpers to the surrounding page. */
+  plannerApiRef?: React.MutableRefObject<BlockEditorPlannerApi | null>;
 }) {
-  const { state, addTask, addProject } = useStore();
+  const { state, addTask, addProject, updateTask } = useStore();
   const navigate = useNavigate();
   const [prefs, setPrefs] = useEditorPrefs();
   const isMobile = useIsMobile();
