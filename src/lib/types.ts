@@ -207,7 +207,7 @@ export interface JournalEntry {
 export interface Meal {
   id: string;
   date: string;
-  slot: "Breakfast" | "Lunch" | "Dinner" | "Snack";
+  slot: "Breakfast" | "Lunch" | "Dinner" | "Snack" | "Drink";
   name: string;
   notes?: string;
   kidSafe?: boolean;
