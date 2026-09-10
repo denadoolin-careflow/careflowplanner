@@ -456,6 +456,8 @@ export default function Notes() {
 
             {loading ? (
               <div className="rounded-2xl border border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">Loading…</div>
+            ) : view === "notebook" ? (
+              <NotesNotebookView notes={filtered} selectedId={noteParam} onSelect={selectNote} />
             ) : filtered.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">
                 <Sparkles className="mx-auto mb-2 h-5 w-5 opacity-60" />
@@ -467,8 +469,6 @@ export default function Notes() {
                 <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} previewLines={previewLines} />
                 ))}
               </div>
-            ) : view === "notebook" ? (
-              <NotesNotebookView notes={filtered} selectedId={noteParam} onSelect={selectNote} />
             ) : view === "outline" ? (
               <NotesOutlineView notes={filtered} selectedId={noteParam} onSelect={selectNote} term={q} />
             ) : view === "table" ? (
