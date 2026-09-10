@@ -975,7 +975,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addMeal: async (m) => {
       if (!uid) return;
-      const { data } = await supabase.from("meals").insert({ user_id: uid, name: m.name, date: m.date, slot: m.slot, notes: m.notes ?? null, kid_safe: m.kidSafe ?? false }).select().single();
+      const { data } = await supabase.from("meals").insert({
+        user_id: uid, name: m.name, date: m.date, slot: m.slot,
+        notes: m.notes ?? null, kid_safe: m.kidSafe ?? false,
+        prep_minutes: m.prepMinutes ?? null,
+        ingredients: m.ingredients ?? [],
+        steps: m.steps ?? [],
+        tags: m.tags ?? [],
+      }).select().single();
       if (data) setState(s => ({ ...s, meals: [mealFrom(data), ...s.meals] }));
     },
     updateMeal: async (id, patch) => {
