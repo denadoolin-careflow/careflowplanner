@@ -89,7 +89,7 @@ export function DailyNoteDot({ date, mark, className, size = 14 }: {
                   <span className="block truncate text-[10px] text-muted-foreground">{t.description}</span>
                 </span>
               </button>
-              <DefaultStar id={t.id} current={defaultId.value} onPick={defaultId.set} />
+              <DefaultStar id={t.id} current={defaultId} onPick={setDefaultId} />
             </div>
           ))}
         </div>
@@ -111,10 +111,4 @@ function DefaultStar({ id, current, onPick }: { id: string; current: string; onP
       {active ? "★" : "☆"}
     </button>
   );
-}
-
-/** small wrapper so the hook reads nicely above */
-function useState_safe() {
-  const [value, set] = useDefaultDailyTemplate();
-  return { value, set };
 }
