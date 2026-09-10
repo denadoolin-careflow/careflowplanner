@@ -6,6 +6,7 @@ import { useCycle } from "@/lib/cycle-store";
 import { getDailyEnergyGuidance } from "@/lib/daily-energy-guidance";
 import { useStore, todayISO } from "@/lib/store";
 import { createNote, getOrCreateDailyNote } from "@/lib/notes";
+import { openDailyNoteWithTemplate, readDefaultDailyTemplate } from "@/lib/notes/daily";
 import { Textarea } from "@/components/ui/textarea";
 import { JournalEntryDialog } from "@/components/journal/JournalEntryDialog";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
   const openDailyNote = async () => {
     try {
       setBusy("daily");
-      const n = await getOrCreateDailyNote(todayISO());
+      const n = await openDailyNoteWithTemplate(todayISO(), readDefaultDailyTemplate());
       navigate(`/notes/${n.id}`);
     } catch {
       toast.error("Couldn't open today's note");
