@@ -24,7 +24,7 @@ export function DailyNoteDot({ date, mark, className, size = 14 }: {
 }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [defaultId, setDefaultId] = useState_safe();
+  const [defaultId, setDefaultId] = useDefaultDailyTemplate();
   const iso = format(date, "yyyy-MM-dd");
   const written = !!mark?.written;
 
