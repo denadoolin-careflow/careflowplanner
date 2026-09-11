@@ -19,7 +19,12 @@ import { PeriodDayPlan } from "./PeriodDayPlan";
  * and what the planner has scheduled across the same span (tasks, events,
  * cosmic events). Shown on daily / weekly / monthly note pages.
  */
-export function PeriodContextPanel({ note, className }: { note: Note; className?: string }) {
+export function PeriodContextPanel({ note, className, onSendUnchecked }: {
+  note: Note;
+  className?: string;
+  /** Promotes every unchecked checkbox in the note into planner tasks. */
+  onSendUnchecked?: () => void;
+}) {
   const kind = note.kind as PeriodKind;
   const key = note.date!;
   const navigate = useNavigate();
