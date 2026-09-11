@@ -10,15 +10,21 @@ import {
   PERIOD_LABEL, childrenKeys, fromISO, parentsOf, periodTitle, spanDates, spanFor,
 } from "@/lib/notes/periods";
 import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate, usePeriodNoteMarks } from "@/lib/notes/daily";
-import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 import { plannerHref } from "@/lib/notes/date-refs";
+import { useDayPlans } from "@/lib/planner/day-plan";
+import { PeriodDayPlan } from "./PeriodDayPlan";
 
 /**
  * Where this note lives: its parent week/month, the days or weeks inside it,
  * and what the planner has scheduled across the same span (tasks, events,
  * cosmic events). Shown on daily / weekly / monthly note pages.
  */
-export function PeriodContextPanel({ note, className }: { note: Note; className?: string }) {
+export function PeriodContextPanel({ note, className, onSendUnchecked }: {
+  note: Note;
+  className?: string;
+  /** Promotes every unchecked checkbox in the note into planner tasks. */
+  onSendUnchecked?: () => void;
+}) {
   const kind = note.kind as PeriodKind;
   const key = note.date!;
   const navigate = useNavigate();
@@ -49,32 +55,17 @@ export function PeriodContextPanel({ note, className }: { note: Note; className?
     } catch (e: any) { toast.error(e?.message ?? "Could not open the note"); }
   };
 
-  // Planner context across the span, grouped by day.
-  const dateSet = useMemo(() => new Set(dates), [dates]);
-  const byDay = useMemo(() => {
-    const m = new Map<string, { tasks: any[]; events: any[]; cosmic: { id: string; label: string }[] }>();
-    const get = (iso: string) => { if (!m.has(iso)) m.set(iso, { tasks: [], events: [], cosmic: [] }); return m.get(iso)!; };
-    for (const t of state.tasks ?? []) {
-      const iso = (t as any).dueDate?.slice(0, 10);
-      if (iso && dateSet.has(iso)) get(iso).tasks.push(t);
-    }
-    for (const a of state.appointments ?? []) {
-      const iso = (a as any).date?.slice(0, 10);
-      if (iso && dateSet.has(iso)) get(iso).events.push(a);
-    }
-    const cosmic = buildCosmicCalendarIndex(span.from, span.days);
-    for (const [iso, list] of cosmic) get(iso).cosmic.push(...list.map(c => ({ id: c.id, label: c.label })));
-    return m;
-  }, [state.tasks, state.appointments, dateSet, span]);
+  // Planner context across the span, grouped by day and time of day.
+  const plans = useDayPlans(dates);
 
   const totals = useMemo(() => {
-    let tasks = 0, done = 0, events = 0, cosmic = 0;
-    for (const v of byDay.values()) {
-      tasks += v.tasks.length; done += v.tasks.filter((t: any) => t.done).length;
-      events += v.events.length; cosmic += v.cosmic.length;
+    let tasks = 0, done = 0, events = 0, cosmic = 0, meals = 0;
+    for (const v of plans.values()) {
+      tasks += v.tasks.length; done += v.tasks.filter(t => t.done).length;
+      events += v.events.length; cosmic += v.cosmic.length; meals += v.meals.length;
     }
-    return { tasks, done, events, cosmic };
-  }, [byDay]);
+    return { tasks, done, events, cosmic, meals };
+  }, [plans]);
 
   const today = new Date();
 
@@ -130,53 +121,34 @@ export function PeriodContextPanel({ note, className }: { note: Note; className?
         {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         On the planner
         <span className="ml-1 font-normal normal-case tracking-normal">
-          · {totals.done}/{totals.tasks} tasks · {totals.events} events{totals.cosmic ? ` · ${totals.cosmic} cosmic` : ""}
+          · {totals.done}/{totals.tasks} tasks · {totals.events} events{totals.meals ? ` · ${totals.meals} meals` : ""}{totals.cosmic ? ` · ${totals.cosmic} cosmic` : ""}
         </span>
       </button>
       {open && (
-        <ul className="mt-2 space-y-2">
+        <div className="mt-2 space-y-3">
+          {onSendUnchecked && (
+            <button type="button" onClick={onSendUnchecked}
+                    className="rounded-full border border-border/60 px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground">
+              Send unchecked boxes to planner
+            </button>
+          )}
           {dates.map(iso => {
-            const v = byDay.get(iso);
-            if (!v || (v.tasks.length === 0 && v.events.length === 0 && v.cosmic.length === 0)) return null;
+            const plan = plans.get(iso);
+            if (!plan) return null;
             const d = fromISO(iso);
             return (
-              <li key={iso}>
+              <div key={iso}>
                 {kind !== "daily" && (
                   <div className="mb-0.5 flex items-center gap-2 text-[11px] font-medium">
                     <span>{format(d, "EEE, MMM d")}</span>
                     {dayMarks.get(iso)?.written && <span className="text-[10px] text-primary">note ✓</span>}
                   </div>
                 )}
-                <ul className="space-y-0.5 pl-1">
-                  {v.events.map((a: any) => (
-                    <li key={a.id} className="flex items-center gap-1.5 text-[11.5px]">
-                      <CalendarClock className="h-3 w-3 shrink-0 text-violet-500" aria-hidden />
-                      <span className="truncate">{a.title}</span>
-                      {a.time && <span className="text-[10px] text-muted-foreground">{a.time}</span>}
-                    </li>
-                  ))}
-                  {v.tasks.map((t: any) => (
-                    <li key={t.id}>
-                      <Link to={`/tasks/${t.id}`} className="flex items-center gap-1.5 text-[11.5px] hover:underline">
-                        {t.done ? <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500" aria-hidden /> : <Circle className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />}
-                        <span className={cn("truncate", t.done && "text-muted-foreground")}>{t.title}</span>
-                      </Link>
-                    </li>
-                  ))}
-                  {v.cosmic.map(c => (
-                    <li key={c.id} className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-                      <Sparkles className="h-3 w-3 shrink-0 text-amber-500" aria-hidden />
-                      <span className="truncate">{c.label}</span>
-                    </li>
-                  ))}
-                </ul>
-              </li>
+                <PeriodDayPlan plan={plan} noteId={note.id} />
+              </div>
             );
           })}
-          {totals.tasks + totals.events + totals.cosmic === 0 && (
-            <li className="text-[11.5px] text-muted-foreground">Nothing scheduled across this span yet.</li>
-          )}
-        </ul>
+        </div>
       )}
     </section>
   );

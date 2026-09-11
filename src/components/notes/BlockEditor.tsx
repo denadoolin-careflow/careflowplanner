@@ -76,7 +76,13 @@ import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
 import { upcomingEvents } from "@/lib/cosmic/events";
-import { addDays, format as formatDate } from "date-fns";
+import { addDays, format as formatDate, parseISO } from "date-fns";
+
+/** Checkbox → task helpers exposed to the page hosting the editor. */
+export interface BlockEditorPlannerApi {
+  promoteAllUnchecked: (dueDate?: string | null) => Promise<number>;
+  promoteFocused: () => void;
+}
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 
@@ -2494,7 +2500,7 @@ export function BlockEditor({
         if (linkedTaskIdOf(node)) { toast.message("Already a task"); return; }
         const pos = $from.before(d);
         const run = (due?: string | null) => promoteAt(pos, node, due).then(id => {
-          if (id) toast.success(due ? `Added to ${format(parseISO(due), "EEE, MMM d")}` : "Added to Tasks", { description: title });
+          if (id) toast.success(due ? `Added to ${formatDate(parseISO(due), "EEE, MMM d")}` : "Added to Tasks", { description: title });
         });
         const dd = defaultDueDate;
         if (typeof dd === "function") void dd().then(run);
