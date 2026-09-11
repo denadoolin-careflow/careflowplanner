@@ -49,32 +49,17 @@ export function PeriodContextPanel({ note, className }: { note: Note; className?
     } catch (e: any) { toast.error(e?.message ?? "Could not open the note"); }
   };
 
-  // Planner context across the span, grouped by day.
-  const dateSet = useMemo(() => new Set(dates), [dates]);
-  const byDay = useMemo(() => {
-    const m = new Map<string, { tasks: any[]; events: any[]; cosmic: { id: string; label: string }[] }>();
-    const get = (iso: string) => { if (!m.has(iso)) m.set(iso, { tasks: [], events: [], cosmic: [] }); return m.get(iso)!; };
-    for (const t of state.tasks ?? []) {
-      const iso = (t as any).dueDate?.slice(0, 10);
-      if (iso && dateSet.has(iso)) get(iso).tasks.push(t);
-    }
-    for (const a of state.appointments ?? []) {
-      const iso = (a as any).date?.slice(0, 10);
-      if (iso && dateSet.has(iso)) get(iso).events.push(a);
-    }
-    const cosmic = buildCosmicCalendarIndex(span.from, span.days);
-    for (const [iso, list] of cosmic) get(iso).cosmic.push(...list.map(c => ({ id: c.id, label: c.label })));
-    return m;
-  }, [state.tasks, state.appointments, dateSet, span]);
+  // Planner context across the span, grouped by day and time of day.
+  const plans = useDayPlans(dates);
 
   const totals = useMemo(() => {
-    let tasks = 0, done = 0, events = 0, cosmic = 0;
-    for (const v of byDay.values()) {
-      tasks += v.tasks.length; done += v.tasks.filter((t: any) => t.done).length;
-      events += v.events.length; cosmic += v.cosmic.length;
+    let tasks = 0, done = 0, events = 0, cosmic = 0, meals = 0;
+    for (const v of plans.values()) {
+      tasks += v.tasks.length; done += v.tasks.filter(t => t.done).length;
+      events += v.events.length; cosmic += v.cosmic.length; meals += v.meals.length;
     }
-    return { tasks, done, events, cosmic };
-  }, [byDay]);
+    return { tasks, done, events, cosmic, meals };
+  }, [plans]);
 
   const today = new Date();
 
