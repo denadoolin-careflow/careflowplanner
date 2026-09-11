@@ -10,8 +10,9 @@ import {
   PERIOD_LABEL, childrenKeys, fromISO, parentsOf, periodTitle, spanDates, spanFor,
 } from "@/lib/notes/periods";
 import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate, usePeriodNoteMarks } from "@/lib/notes/daily";
-import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 import { plannerHref } from "@/lib/notes/date-refs";
+import { useDayPlans } from "@/lib/planner/day-plan";
+import { PeriodDayPlan } from "./PeriodDayPlan";
 
 /**
  * Where this note lives: its parent week/month, the days or weeks inside it,
