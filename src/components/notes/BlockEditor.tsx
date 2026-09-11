@@ -2500,7 +2500,7 @@ export function BlockEditor({
         if (linkedTaskIdOf(node)) { toast.message("Already a task"); return; }
         const pos = $from.before(d);
         const run = (due?: string | null) => promoteAt(pos, node, due).then(id => {
-          if (id) toast.success(due ? `Added to ${format(parseISO(due), "EEE, MMM d")}` : "Added to Tasks", { description: title });
+          if (id) toast.success(due ? `Added to ${formatDate(parseISO(due), "EEE, MMM d")}` : "Added to Tasks", { description: title });
         });
         const dd = defaultDueDate;
         if (typeof dd === "function") void dd().then(run);
