@@ -76,7 +76,13 @@ import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
 import { upcomingEvents } from "@/lib/cosmic/events";
-import { addDays, format as formatDate } from "date-fns";
+import { addDays, format as formatDate, parseISO } from "date-fns";
+
+/** Checkbox → task helpers exposed to the page hosting the editor. */
+export interface BlockEditorPlannerApi {
+  promoteAllUnchecked: (dueDate?: string | null) => Promise<number>;
+  promoteFocused: () => void;
+}
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 
