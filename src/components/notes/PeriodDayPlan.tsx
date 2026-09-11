@@ -5,7 +5,7 @@ import { CalendarClock, CheckCircle2, Circle, Plus, Sparkles, UtensilsCrossed } 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { linkNote } from "@/lib/notes";
+import { linkNote } from "@/lib/note-links";
 import { WeekMealDialog } from "@/components/planner/WeekMealDialog";
 import { BUCKET_DEFAULT_TIME, BUCKET_LABEL, taskTime, type DayPlan, type TimeBucket } from "@/lib/planner/day-plan";
 import { CosmicPeek, EventPeek, TaskPeek } from "./PlannerPeeks";
