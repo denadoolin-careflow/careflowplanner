@@ -92,7 +92,7 @@ export function InlineNoteEditor({ noteId, initial, onBodyChange }: {
         noteId={note.id}
         defaultDueDate={note.kind === "daily" ? note.date ?? null : null}
         showFooter={false}
-        minHeight="120px"
+        minHeight="min-h-[120px]"
         toolbarPlacement="top"
         onChange={(md) => { setBody(md); save(md); onBodyChange?.(md); }}
       />
