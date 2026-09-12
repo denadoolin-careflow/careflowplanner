@@ -2458,10 +2458,26 @@ export function BlockEditor({
         return;
       }
       (details.open ? haptics.fold : haptics.unfold)();
+      (details.open ? foldSound.fold : foldSound.unfold)();
       summary.animate(
         [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
         { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
       );
+      if (details.open) {
+        // Fold the body shut with motion, then flip the node's `open` attr ourselves.
+        e.preventDefault();
+        e.stopPropagation();
+        const content = details.querySelector<HTMLElement>(':scope > div[data-type="detailsContent"]');
+        void animateCollapse(content).then(() => {
+          try {
+            const pos = editor.view.posAtDOM(details, 0) - 1;
+            const node = editor.state.doc.nodeAt(pos);
+            if (node?.type.name === "details") {
+              editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, open: false }));
+            } else details.open = false;
+          } catch { details.open = false; }
+        });
+      }
     };
     root.addEventListener("click", onClickCapture, true);
     return () => root.removeEventListener("click", onClickCapture, true);
