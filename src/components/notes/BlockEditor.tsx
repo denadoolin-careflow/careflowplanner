@@ -77,7 +77,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
 import { upcomingEvents } from "@/lib/cosmic/events";
 import { addDays, format as formatDate, parseISO } from "date-fns";
-import { animateCollapse, foldSound } from "@/lib/fold-sound";
+import { animateCollapse, animateExpand, foldSound } from "@/lib/fold-sound";
 import { BUCKET_DEFAULT_TIME, type TimeBucket } from "@/lib/planner/day-plan";
 
 /** Checkbox → task helpers exposed to the page hosting the editor. */
@@ -2357,7 +2357,18 @@ export function BlockEditor({
           sib = sib.nextElementSibling as HTMLElement | null;
         }
         void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => setFoldAttr(h, ["heading"], true));
-      } else setFoldAttr(h, ["heading"], false);
+      } else {
+        setFoldAttr(h, ["heading"], false);
+        window.requestAnimationFrame(() => {
+          const level = parseInt(h.tagName[1], 10);
+          let sib = h.nextElementSibling as HTMLElement | null;
+          while (sib) {
+            if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
+            animateExpand(sib, 180);
+            sib = sib.nextElementSibling as HTMLElement | null;
+          }
+        });
+      }
     };
 
     // Click on a bullet's caret zone: fold nested lines, or turn a flat bullet
@@ -2384,7 +2395,12 @@ export function BlockEditor({
             if (next) {
               const nested = liEl.querySelector<HTMLElement>(":scope > ul, :scope > ol");
               void animateCollapse(nested).then(apply);
-            } else apply();
+            } else {
+              apply();
+              window.requestAnimationFrame(() => {
+                animateExpand(liEl.querySelector<HTMLElement>(":scope > ul, :scope > ol"));
+              });
+            }
           } else if (editorRef.current) {
             try {
               const pos = editorRef.current.view.posAtDOM(liEl, 0);
