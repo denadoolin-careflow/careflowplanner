@@ -657,7 +657,11 @@ export default function Planner() {
               <PlannerWeekTable weekStart={weekStart} />
             )}
             {nativeRange && view === "month" && monthMode === "calendar" && (
-              <PlannerMonthView date={day} onSelectDay={openDay} />
+              <div className="flex min-h-0 flex-col gap-2">
+                <SeasonBanner date={day} compact linkTo="/month/overview" />
+                <PeriodNoteCard kind="monthly" keyISO={monthKeyFor(day)} />
+                <PlannerMonthView date={day} onSelectDay={openDay} />
+              </div>
             )}
             {nativeRange && view === "month" && monthMode === "overview" && (
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
