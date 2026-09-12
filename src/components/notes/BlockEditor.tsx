@@ -2504,10 +2504,18 @@ export function BlockEditor({
         }
       });
     };
-    apply();
-    editor.on("update", apply);
-    editor.on("selectionUpdate", apply);
-    return () => { editor.off("update", apply); editor.off("selectionUpdate", apply); };
+    let frame = window.requestAnimationFrame(apply);
+    const scheduleApply = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(apply);
+    };
+    editor.on("update", scheduleApply);
+    editor.on("selectionUpdate", scheduleApply);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      editor.off("update", scheduleApply);
+      editor.off("selectionUpdate", scheduleApply);
+    };
   }, [editor]);
 
   // Craft-style toggle interaction: the chevron folds, the title takes the caret.
