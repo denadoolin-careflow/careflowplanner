@@ -682,13 +682,21 @@ export default function NoteDetail() {
         )}
 
         {isPeriodKind(note.kind) && note.date && (
-          <PeriodContextPanel note={note} className="mt-4" />
+          <PeriodContextPanel
+            note={note}
+            className="mt-4"
+            dueDate={promoteDate}
+            onDueDateChange={setPromoteDate}
+            onSendUnchecked={() => void sendUnchecked()}
+          />
         )}
 
         <div className="mt-6">
           <BlockEditor
             body={body}
             noteId={note.id}
+            defaultDueDate={promoteDate ?? note.date ?? null}
+            plannerApiRef={plannerApi}
             onChange={(markdown) => { setBody(markdown); save({ body: markdown }); }}
             goal={note.wordGoal}
             onGoalChange={(next) => {
