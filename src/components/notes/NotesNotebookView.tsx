@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronRight, ExternalLink, NotebookPen, Plus } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronRight, ChevronsDownUp, ChevronsUpDown, ExternalLink, NotebookPen, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -76,6 +76,27 @@ export function NotesNotebookView({ notes, selectedId, onSelect }: {
   }, [allNotes, prefs]);
 
   const rowKey = (kind: PeriodKind, k: string) => `${kind}:${k}`;
+  const noteRowId = (kind: PeriodKind, key: string, note?: Note) => note?.id ?? rowKey(kind, key);
+  const monthRowIds = (month: (typeof tree)[number]) => {
+    const ids: string[] = [];
+    if (prefs.kinds.includes("monthly")) ids.push(noteRowId("monthly", month.key, month.note));
+    month.weeks.forEach(week => {
+      if (prefs.kinds.includes("weekly")) ids.push(noteRowId("weekly", week.key, week.note));
+      week.days.forEach(day => ids.push(day.id));
+    });
+    return ids;
+  };
+  const visibleRowIds = tree.flatMap(monthRowIds);
+  const setRowsOpen = (ids: string[], open: boolean) => {
+    if (!ids.length) return;
+    setExpanded(current => {
+      const next = new Set(current);
+      ids.forEach(id => open ? next.add(id) : next.delete(id));
+      return next;
+    });
+    (open ? foldSound.unfold : foldSound.fold)();
+    (open ? haptics.unfold : haptics.fold)();
+  };
   const toggle = (id: string) => setExpanded(s => {
     const n = new Set(s); const opening = !n.has(id);
     opening ? n.add(id) : n.delete(id);
@@ -202,14 +223,42 @@ export function NotesNotebookView({ notes, selectedId, onSelect }: {
           {prefs.sort === "newest" ? <ArrowDownWideNarrow className="h-3 w-3" /> : <ArrowUpNarrowWide className="h-3 w-3" />}
           {prefs.sort === "newest" ? "Newest first" : "Oldest first"}
         </button>
+        <span className="mx-1 hidden h-4 w-px bg-border/70 sm:block" aria-hidden />
+        <button type="button" className={cn(chip(false), "inline-flex min-h-9 items-center gap-1.5")}
+                onClick={() => setRowsOpen(visibleRowIds, true)} disabled={!visibleRowIds.length}>
+          <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden />
+          Expand all
+        </button>
+        <button type="button" className={cn(chip(false), "inline-flex min-h-9 items-center gap-1.5")}
+                onClick={() => setRowsOpen(visibleRowIds, false)} disabled={!visibleRowIds.length}>
+          <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden />
+          Collapse all
+        </button>
       </div>
 
       {tree.length === 0 && (
         <p className="px-2 py-6 text-center text-sm text-muted-foreground">Nothing matches these filters.</p>
       )}
 
-      {tree.map(m => (
+      {tree.map(m => {
+        const sectionIds = monthRowIds(m);
+        const sectionOpen = sectionIds.length > 0 && sectionIds.every(id => expanded.has(id));
+        return (
         <section key={m.key} className="rounded-2xl border border-border/60 bg-card/60 p-2">
+          <div className="mb-1 flex min-h-9 items-center justify-end border-b border-border/40 pb-1">
+            <span className="mr-auto px-2 text-[10px] font-semibold uppercase text-muted-foreground">
+              {periodTitle("monthly", m.key)} section
+            </span>
+            <button
+              type="button"
+              onClick={() => setRowsOpen(sectionIds, !sectionOpen)}
+              aria-label={`${sectionOpen ? "Collapse" : "Expand"} ${periodTitle("monthly", m.key)} section`}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-md px-2 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              {sectionOpen ? <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden /> : <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden />}
+              {sectionOpen ? "Collapse section" : "Expand section"}
+            </button>
+          </div>
           {prefs.kinds.includes("monthly") && <Row kind="monthly" k={m.key} note={m.note} depth={0} />}
           <div className="mt-1 space-y-0.5">
             {m.weeks.map(w => (
@@ -220,7 +269,7 @@ export function NotesNotebookView({ notes, selectedId, onSelect }: {
             ))}
           </div>
         </section>
-      ))}
+      )})}
     </div>
   );
 }
