@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, GripHorizontal, Loader2 } from "lucide-react";
 import { getNote, updateNote, type Note } from "@/lib/notes";
 import { clearDraft, draftDiffers, loadDraft, saveDraft } from "@/lib/notes/drafts";
 import { notifyDailyNotesChanged } from "@/lib/notes/daily";
@@ -24,6 +24,27 @@ export function InlineNoteEditor({ noteId, initial, onBodyChange }: {
   const pendingRef = useRef<{ body?: string }>({});
   const timer = useRef<number | null>(null);
   const flashTimer = useRef<number | null>(null);
+  const heightKey = `careflow:notebook:note-height:${noteId}`;
+  const [height, setHeight] = useState(() => {
+    const saved = Number(localStorage.getItem(heightKey));
+    return Number.isFinite(saved) && saved >= 180 ? saved : 320;
+  });
+  const resizeStart = useRef<{ y: number; height: number } | null>(null);
+
+  const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    resizeStart.current = { y: event.clientY, height };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const resize = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!resizeStart.current) return;
+    setHeight(Math.max(180, Math.min(900, resizeStart.current.height + event.clientY - resizeStart.current.y)));
+  };
+  const finishResize = () => {
+    if (!resizeStart.current) return;
+    resizeStart.current = null;
+    try { localStorage.setItem(heightKey, String(height)); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -87,15 +108,31 @@ export function InlineNoteEditor({ noteId, initial, onBodyChange }: {
           Open full note <ExternalLink className="h-3 w-3" />
         </Link>
       </div>
-      <BlockEditor
-        body={body}
-        noteId={note.id}
-        defaultDueDate={note.kind === "daily" ? note.date ?? null : null}
-        showFooter={false}
-        minHeight="min-h-[120px]"
-        toolbarPlacement="top"
-        onChange={(md) => { setBody(md); save(md); onBodyChange?.(md); }}
-      />
+      <div className="overflow-auto" style={{ height }}>
+        <BlockEditor
+          body={body}
+          noteId={note.id}
+          defaultDueDate={note.kind === "daily" ? note.date ?? null : null}
+          showFooter={false}
+          minHeight="min-h-[120px]"
+          toolbarPlacement="top"
+          onChange={(md) => { setBody(md); save(md); onBodyChange?.(md); }}
+        />
+      </div>
+      <div
+        role="separator"
+        aria-label="Resize note"
+        aria-orientation="horizontal"
+        title="Drag to resize · double-click to reset"
+        onPointerDown={startResize}
+        onPointerMove={resize}
+        onPointerUp={finishResize}
+        onPointerCancel={finishResize}
+        onDoubleClick={() => { setHeight(320); try { localStorage.setItem(heightKey, "320"); } catch { /* ignore */ } }}
+        className="mt-1 flex h-6 touch-none cursor-ns-resize items-center justify-center rounded-md text-muted-foreground/50 hover:bg-muted hover:text-muted-foreground"
+      >
+        <GripHorizontal className="h-4 w-4" aria-hidden />
+      </div>
     </div>
   );
 }
