@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { linkNote } from "@/lib/note-links";
 import { WeekMealDialog } from "@/components/planner/WeekMealDialog";
-import { BUCKET_DEFAULT_TIME, BUCKET_LABEL, taskTime, type DayPlan, type TimeBucket } from "@/lib/planner/day-plan";
+import { BUCKET_DEFAULT_TIME, BUCKET_LABEL, fmt12, taskTime, type DayPlan, type TimeBucket } from "@/lib/planner/day-plan";
 import { CosmicPeek, EventPeek, TaskPeek } from "./PlannerPeeks";
 import type { Meal } from "@/lib/types";
 
@@ -70,7 +70,7 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
           <div className="flex items-center gap-1.5 text-[11.5px]">
             <CalendarClock className="h-3 w-3 shrink-0 text-violet-500" aria-hidden />
             <span className="truncate">{a.title}</span>
-            {a.time && <span className="text-[10px] text-muted-foreground">{a.time}</span>}
+            {a.time && <span className="text-[10px] text-muted-foreground">{fmt12(a.time)}</span>}
           </div>
         </EventPeek>
       ))}
@@ -94,7 +94,7 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
                       <Link to={`/tasks/${t.id}`} className={cn("min-w-0 flex-1 truncate hover:underline", t.done && "text-muted-foreground line-through")}>
                         {t.title}
                       </Link>
-                      {taskTime(t) && <span className="shrink-0 text-[10px] text-muted-foreground">{taskTime(t)}</span>}
+                      {taskTime(t) && <span className="shrink-0 text-[10px] text-muted-foreground">{fmt12(taskTime(t))}</span>}
                     </div>
                   </TaskPeek>
                 </li>
