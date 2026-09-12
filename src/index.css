@@ -2929,7 +2929,10 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 .block-editor .ProseMirror h4,
 .block-editor .ProseMirror h5,
 .block-editor .ProseMirror h6,
-.block-editor .ProseMirror [data-heading-fold-proxy="true"] { position: relative; }
+.block-editor .ProseMirror [data-heading-fold-proxy="true"] {
+  position: relative;
+  padding-left: 2rem;
+}
 .block-editor .ProseMirror h1::before,
 .block-editor .ProseMirror h2::before,
 .block-editor .ProseMirror h3::before,
@@ -2939,7 +2942,7 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 .block-editor .ProseMirror [data-heading-fold-proxy="true"]::before {
   content: "";
   position: absolute;
-  left: -1.85rem; top: 50%;
+  left: 0.15rem; top: 50%;
   width: 12px; height: 12px;
   padding: 6px;
   box-sizing: content-box;
@@ -3017,7 +3020,7 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
     width: 16px;
     height: 16px;
     padding: 12px;
-    left: -2.4rem;
+    left: -0.25rem;
     opacity: 0.32;
     -webkit-mask-size: 13px 13px;
     mask-size: 13px 13px;

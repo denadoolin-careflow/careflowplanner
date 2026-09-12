@@ -2388,13 +2388,13 @@ export function BlockEditor({
     const foldRoot = editorRef.current?.view.dom as HTMLElement | undefined;
     if (foldRoot) {
       const coarsePointer = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
-      const gutterMin = coarsePointer ? -56 : -40;
+      const gutterWidth = coarsePointer ? 44 : 32;
       const foldTargets = foldRoot.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6,[data-heading-fold-proxy='true']");
       for (const candidate of foldTargets) {
         const rect = candidate.getBoundingClientRect();
         const dx = e.clientX - rect.left;
         const withinRow = e.clientY >= rect.top && e.clientY <= rect.bottom;
-        if (!withinRow || dx < gutterMin || dx >= 0) continue;
+        if (!withinRow || dx < 0 || dx > gutterWidth) continue;
         const heading = /^H[1-6]$/.test(candidate.tagName)
           ? candidate
           : candidate.previousElementSibling as HTMLElement | null;
