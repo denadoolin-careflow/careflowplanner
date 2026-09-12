@@ -80,7 +80,7 @@ export default function NoteDetail() {
     if (note.kind === "daily") { setPromoteDate(note.date); return; }
     const today = format(new Date(), "yyyy-MM-dd");
     const s = spanFor(note.kind, note.date);
-    const startISO = format(s.start, "yyyy-MM-dd"), endISO = format(s.end, "yyyy-MM-dd");
+    const startISO = format(s.from, "yyyy-MM-dd"), endISO = format(s.to, "yyyy-MM-dd");
     setPromoteDate(today >= startISO && today <= endISO ? today : startISO);
   }, [note?.id, note?.kind, note?.date]);
   const sendUnchecked = async () => {
