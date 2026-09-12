@@ -2364,7 +2364,7 @@ export function BlockEditor({
     // into a toggle so text can be tucked under it.
     const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
     const liEl = (el.tagName === "LI" ? el : el.closest("li")) as HTMLLIElement | null;
-    if (liEl && liEl.closest(".ProseMirror")) {
+    if (liEl && liEl.getAttribute("data-heading-fold-proxy") !== "true" && liEl.closest(".ProseMirror")) {
       const parentList = liEl.parentElement;
       const isList = parentList?.tagName === "UL" || parentList?.tagName === "OL";
       const isTaskList = parentList?.getAttribute("data-type") === "taskList";
