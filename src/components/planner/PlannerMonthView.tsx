@@ -69,7 +69,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }
 
   if (isMobile && mobileView === "list") return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2"><PlannerMonthFilters /><ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={setMobileView} ariaLabel="Month layout" /></div>
+      <div className="flex items-center justify-between gap-2"><PlannerMonthFilters /><ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={value => setMobileView(value as MobileMonthView)} ariaLabel="Month layout" /></div>
       <div className="space-y-2">
         {days.filter(day => isSameMonth(day, date)).map(day => {
           const key = format(day, "yyyy-MM-dd"); const rows = byDay.get(key) ?? [];
@@ -86,7 +86,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }
   return (
     <div className="planner-month-canvas">
       <PlannerMonthSummary items={monthItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} />
-      <div className="flex flex-wrap items-center justify-between gap-2"><PlannerMonthFilters />{isMobile && <ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={setMobileView} ariaLabel="Month layout" />}</div>
+      <div className="flex flex-wrap items-center justify-between gap-2"><PlannerMonthFilters />{isMobile && <ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={value => setMobileView(value as MobileMonthView)} ariaLabel="Month layout" />}</div>
       <div className="planner-month-calendar">
         <div className="planner-month-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(label => <div key={label}>{isMobile ? label.slice(0, 1) : label}</div>)}</div>
         <div className="planner-month-grid">
