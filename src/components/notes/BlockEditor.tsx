@@ -2510,7 +2510,6 @@ export function BlockEditor({
     let bucket: TimeBucket | null = null;
     if (editor) {
       editor.state.doc.nodesBetween(0, pos, (n) => {
-        if (bucket) return false;
         if (n.type.name === "heading" || n.type.name === "detailsSummary") {
           const t = (n.textContent || "").toLowerCase();
           if (/\bmorning\b/.test(t)) bucket = "morning";
