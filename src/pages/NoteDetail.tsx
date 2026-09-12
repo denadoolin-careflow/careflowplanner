@@ -18,7 +18,8 @@ import { cn } from "@/lib/utils";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { CareyButton } from "@/components/carey/CareyButton";
-import { BlockEditor } from "@/components/notes/BlockEditor";
+import { BlockEditor, type BlockEditorPlannerApi } from "@/components/notes/BlockEditor";
+import { spanFor } from "@/lib/notes/periods";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
@@ -70,6 +71,27 @@ export default function NoteDetail() {
   const savedFlashTimer = useRef<number | null>(null);
   const pendingRef = useRef<{ title?: string; body?: string }>({});
   const [recovery, setRecovery] = useState<NoteDraft | null>(null);
+  // Checkbox → planner: which day promoted tasks land on. Follows the note's
+  // date (today for weekly/monthly notes when today falls inside the span).
+  const plannerApi = useRef<BlockEditorPlannerApi | null>(null);
+  const [promoteDate, setPromoteDate] = useState<string | null>(null);
+  useEffect(() => {
+    if (!note?.date || !isPeriodKind(note.kind)) { setPromoteDate(null); return; }
+    if (note.kind === "daily") { setPromoteDate(note.date); return; }
+    const today = format(new Date(), "yyyy-MM-dd");
+    const s = spanFor(note.kind, note.date);
+    const startISO = format(s.from, "yyyy-MM-dd"), endISO = format(s.to, "yyyy-MM-dd");
+    setPromoteDate(today >= startISO && today <= endISO ? today : startISO);
+  }, [note?.id, note?.kind, note?.date]);
+  const sendUnchecked = async () => {
+    const api = plannerApi.current;
+    if (!api) return;
+    const n = await api.promoteAllUnchecked(promoteDate);
+    if (n === 0) toast.message("No unchecked boxes to send");
+    else toast.success(`Sent ${n} ${n === 1 ? "task" : "tasks"} to the planner`, {
+      description: promoteDate ? format(parseISO(promoteDate), "EEEE, MMM d") : undefined,
+    });
+  };
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [repositioning, setRepositioning] = useState(false);
@@ -660,13 +682,21 @@ export default function NoteDetail() {
         )}
 
         {isPeriodKind(note.kind) && note.date && (
-          <PeriodContextPanel note={note} className="mt-4" />
+          <PeriodContextPanel
+            note={note}
+            className="mt-4"
+            dueDate={promoteDate}
+            onDueDateChange={setPromoteDate}
+            onSendUnchecked={() => void sendUnchecked()}
+          />
         )}
 
         <div className="mt-6">
           <BlockEditor
             body={body}
             noteId={note.id}
+            defaultDueDate={promoteDate ?? note.date ?? null}
+            plannerApiRef={plannerApi}
             onChange={(markdown) => { setBody(markdown); save({ body: markdown }); }}
             goal={note.wordGoal}
             onGoalChange={(next) => {

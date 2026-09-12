@@ -77,6 +77,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
 import { upcomingEvents } from "@/lib/cosmic/events";
 import { addDays, format as formatDate, parseISO } from "date-fns";
+import { animateCollapse, foldSound } from "@/lib/fold-sound";
+import { BUCKET_DEFAULT_TIME, type TimeBucket } from "@/lib/planner/day-plan";
 
 /** Checkbox → task helpers exposed to the page hosting the editor. */
 export interface BlockEditorPlannerApi {
@@ -2359,13 +2361,19 @@ export function BlockEditor({
           const hasChildren = !!liEl.querySelector(":scope > ul, :scope > ol");
           if (hasChildren) {
             const next = liEl.getAttribute("data-collapsed") !== "true";
-            if (!setFoldAttr(liEl, ["listItem"], next)) liEl.classList.toggle("cf-collapsed", next);
+            const apply = () => { if (!setFoldAttr(liEl, ["listItem"], next)) liEl.classList.toggle("cf-collapsed", next); };
             (next ? haptics.fold : haptics.unfold)();
+            (next ? foldSound.fold : foldSound.unfold)();
+            if (next) {
+              const nested = liEl.querySelector<HTMLElement>(":scope > ul, :scope > ol");
+              void animateCollapse(nested).then(apply);
+            } else apply();
           } else if (editorRef.current) {
             try {
               const pos = editorRef.current.view.posAtDOM(liEl, 0);
               editorRef.current.chain().focus().setTextSelection(pos + 1).run();
               convertListItemToDetails(editorRef.current);
+              foldSound.unfold();
             } catch { /* best-effort */ }
           }
           return;
@@ -2381,8 +2389,19 @@ export function BlockEditor({
       if (dx >= zoneMin && dx < 0) {
         e.preventDefault();
         const collapsed = h.getAttribute("data-collapsed") !== "true";
-        setFoldAttr(h, ["heading"], collapsed);
         (collapsed ? haptics.fold : haptics.unfold)();
+        (collapsed ? foldSound.fold : foldSound.unfold)();
+        if (collapsed) {
+          // Fade the section out before it disappears.
+          const level = parseInt(h.tagName[1], 10);
+          const sibs: HTMLElement[] = [];
+          let sib = h.nextElementSibling as HTMLElement | null;
+          while (sib) {
+            if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
+            sibs.push(sib); sib = sib.nextElementSibling as HTMLElement | null;
+          }
+          void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => setFoldAttr(h, ["heading"], true));
+        } else setFoldAttr(h, ["heading"], false);
         return;
       }
     }
@@ -2439,10 +2458,26 @@ export function BlockEditor({
         return;
       }
       (details.open ? haptics.fold : haptics.unfold)();
+      (details.open ? foldSound.fold : foldSound.unfold)();
       summary.animate(
         [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
         { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
       );
+      if (details.open) {
+        // Fold the body shut with motion, then flip the node's `open` attr ourselves.
+        e.preventDefault();
+        e.stopPropagation();
+        const content = details.querySelector<HTMLElement>(':scope > div[data-type="detailsContent"]');
+        void animateCollapse(content).then(() => {
+          try {
+            const pos = editor.view.posAtDOM(details, 0) - 1;
+            const node = editor.state.doc.nodeAt(pos);
+            if (node?.type.name === "details") {
+              editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, open: false }));
+            } else details.open = false;
+          } catch { details.open = false; }
+        });
+      }
     };
     root.addEventListener("click", onClickCapture, true);
     return () => root.removeEventListener("click", onClickCapture, true);
@@ -2460,6 +2495,35 @@ export function BlockEditor({
     return found;
   };
 
+  // Which part of the day does this checkbox belong to? Explicit time in the
+  // text wins; otherwise the nearest heading / toggle title above it
+  // ("Morning", "Afternoon", "Evening") decides; else all-day.
+  const inferTimeFor = (pos: number, title: string): { startTime?: string; allDay?: boolean } => {
+    const m = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i.exec(title) ?? /\b([01]?\d|2[0-3]):([0-5]\d)\b/.exec(title);
+    if (m) {
+      let h = Number(m[1]); const min = m[2] ? Number(m[2]) : 0;
+      const ap = (m[3] ?? "").toLowerCase();
+      if (ap === "pm" && h < 12) h += 12;
+      if (ap === "am" && h === 12) h = 0;
+      if (h < 24) return { startTime: `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}` };
+    }
+    let bucket: TimeBucket | null = null;
+    if (editor) {
+      editor.state.doc.nodesBetween(0, pos, (n) => {
+        if (n.type.name === "heading" || n.type.name === "detailsSummary") {
+          const t = (n.textContent || "").toLowerCase();
+          if (/\bmorning\b/.test(t)) bucket = "morning";
+          else if (/\bafternoon\b/.test(t)) bucket = "afternoon";
+          else if (/\bevening\b|\bnight\b/.test(t)) bucket = "evening";
+          else bucket = null;
+        }
+        return true;
+      });
+    }
+    const time = bucket ? BUCKET_DEFAULT_TIME[bucket] : null;
+    return time ? { startTime: time } : { allDay: true };
+  };
+
   // Turn one task item (at absolute pos) into a real Task due on `dueDate`.
   const promoteAt = useCallback(async (pos: number, node: any, dueDate?: string | null): Promise<string | null> => {
     if (!editor) return null;
@@ -2468,7 +2532,7 @@ export function BlockEditor({
     const id = await addTask({
       title,
       done: !!node.attrs?.checked,
-      ...(dueDate ? { dueDate } : {}),
+      ...(dueDate ? { dueDate, ...inferTimeFor(pos, title) } : {}),
       area: "Personal",
     } as any);
     if (!id) return null;
