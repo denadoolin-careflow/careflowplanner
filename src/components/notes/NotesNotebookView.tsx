@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronRight, ChevronsDownUp, ChevronsUpDown, ExternalLink, NotebookPen, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -16,9 +16,20 @@ import { InlineNoteEditor } from "./InlineNoteEditor";
 type Status = "all" | "written" | "blank";
 type Sort = "newest" | "oldest";
 const PREFS_KEY = "careflow:notebook:prefs:v1";
+const EXPANDED_KEY = "careflow:notebook:expanded:v1";
 const readPrefs = (): { status: Status; sort: Sort; kinds: PeriodKind[] } => {
   try { return { status: "all", sort: "newest", kinds: ["daily", "weekly", "monthly"], ...JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") }; }
   catch { return { status: "all", sort: "newest", kinds: ["daily", "weekly", "monthly"] }; }
+};
+const readExpanded = (selectedId?: string | null): Set<string> => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(EXPANDED_KEY) ?? "[]");
+    const ids = new Set<string>(Array.isArray(saved) ? saved.filter(id => typeof id === "string") : []);
+    if (selectedId) ids.add(selectedId);
+    return ids;
+  } catch {
+    return new Set(selectedId ? [selectedId] : []);
+  }
 };
 
 /**
@@ -38,7 +49,11 @@ export function NotesNotebookView({ notes, selectedId, onSelect }: {
   };
   // Notes created from this view before the parent list refreshes.
   const [created, setCreated] = useState<Record<string, Note>>({});
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(selectedId ? [selectedId] : []));
+  const [expanded, setExpanded] = useState<Set<string>>(() => readExpanded(selectedId));
+
+  useEffect(() => {
+    try { localStorage.setItem(EXPANDED_KEY, JSON.stringify(Array.from(expanded))); } catch { /* ignore */ }
+  }, [expanded]);
 
   const allNotes = useMemo(() => {
     const byId = new Map(notes.map(n => [n.id, n]));
