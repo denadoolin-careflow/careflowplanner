@@ -358,7 +358,7 @@
     font-feature-settings: "ss01", "cv11";
   }
   h1, h2, h3, h4, .font-display {
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-family: 'Lora', 'Fraunces', ui-serif, Georgia, serif;
     font-optical-sizing: auto;
     letter-spacing: -0.01em;
   }

@@ -17,9 +17,6 @@ import { PlannerWeekTable } from "@/components/planner/PlannerWeekTable";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { PlannerYearView } from "@/components/planner/PlannerYearView";
 import { PlannerMonthOverview } from "@/components/planner/PlannerMonthOverview";
-import { SeasonBanner } from "@/components/seasons/SeasonBanner";
-import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
-import { monthKeyFor } from "@/lib/notes/periods";
 import { PlannerKindFilter } from "@/components/planner/PlannerKindFilter";
 import { PlannerRangeModeTabs } from "@/components/planner/PlannerRangeModeTabs";
 import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
@@ -390,7 +387,7 @@ export default function Planner() {
               ]}
             />
           )}
-          <PlannerKindFilter className="shrink-0" />
+          {view !== "month" && <PlannerKindFilter className="shrink-0" />}
         </div>
         </div>
       ) : (

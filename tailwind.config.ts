@@ -8,7 +8,7 @@ export default {
     container: { center: true, padding: "1.5rem", screens: { "2xl": "1400px" } },
     extend: {
       fontFamily: {
-        display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        display: ['Lora', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
         sans: ['"Nunito Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         brand: ['"Nunito Sans"', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
       },
