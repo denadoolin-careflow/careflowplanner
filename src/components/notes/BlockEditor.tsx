@@ -2495,8 +2495,8 @@ export function BlockEditor({
   // re-derive the hidden siblings from the `collapsed` attribute after renders.
   useEffect(() => {
     if (!editor) return;
+    const root = editor.view.dom as HTMLElement;
     const apply = () => {
-      const root = editor.view.dom as HTMLElement;
       root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
       root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
       root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
