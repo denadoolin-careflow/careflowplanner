@@ -2399,7 +2399,7 @@ export function BlockEditor({
     }
     // Craft-style folding: the heading and its first line share the same fold.
     // Text remains editable; only the stable gutter target performs the action.
-    if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
+    if (/^H[1-6]$/.test(el.tagName) && el.closest(".ProseMirror")) {
       const h = el as HTMLElement;
       const rect = h.getBoundingClientRect();
       const dx = e.clientX - rect.left;
@@ -2417,7 +2417,7 @@ export function BlockEditor({
       const zoneMin = coarse ? -56 : -40;
       if (dx >= zoneMin && dx < 0) {
         const h = proxy.previousElementSibling as HTMLElement | null;
-        if (h && /^H[1-3]$/.test(h.tagName)) {
+        if (h && /^H[1-6]$/.test(h.tagName)) {
           e.preventDefault();
           toggleHeadingFold(h);
           return;

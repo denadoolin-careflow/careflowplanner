@@ -2924,10 +2924,16 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 .block-editor .ProseMirror h1,
 .block-editor .ProseMirror h2,
 .block-editor .ProseMirror h3,
+.block-editor .ProseMirror h4,
+.block-editor .ProseMirror h5,
+.block-editor .ProseMirror h6,
 .block-editor .ProseMirror [data-heading-fold-proxy="true"] { position: relative; }
 .block-editor .ProseMirror h1::before,
 .block-editor .ProseMirror h2::before,
 .block-editor .ProseMirror h3::before,
+.block-editor .ProseMirror h4::before,
+.block-editor .ProseMirror h5::before,
+.block-editor .ProseMirror h6::before,
 .block-editor .ProseMirror [data-heading-fold-proxy="true"]::before {
   content: "";
   position: absolute;
@@ -2949,6 +2955,9 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 .block-editor .ProseMirror h1:hover::before,
 .block-editor .ProseMirror h2:hover::before,
 .block-editor .ProseMirror h3:hover::before,
+.block-editor .ProseMirror h4:hover::before,
+.block-editor .ProseMirror h5:hover::before,
+.block-editor .ProseMirror h6:hover::before,
 .block-editor .ProseMirror [data-heading-fold-proxy="true"]:hover::before,
 .block-editor .ProseMirror:focus-within h1:has(.ProseMirror-selectednode)::before {
   opacity: 0.82;
@@ -2959,14 +2968,20 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 .block-editor .ProseMirror h3.cf-heading-collapsed::before,
 .block-editor .ProseMirror h1[data-collapsed="true"]::before,
 .block-editor .ProseMirror h2[data-collapsed="true"]::before,
-.block-editor .ProseMirror h3[data-collapsed="true"]::before {
+.block-editor .ProseMirror h3[data-collapsed="true"]::before,
+.block-editor .ProseMirror h4[data-collapsed="true"]::before,
+.block-editor .ProseMirror h5[data-collapsed="true"]::before,
+.block-editor .ProseMirror h6[data-collapsed="true"]::before {
   opacity: 1;
   color: hsl(var(--primary));
   transform: translateY(-50%) rotate(0deg);
 }
 .block-editor .ProseMirror h1[data-collapsed="true"]::after,
 .block-editor .ProseMirror h2[data-collapsed="true"]::after,
-.block-editor .ProseMirror h3[data-collapsed="true"]::after {
+.block-editor .ProseMirror h3[data-collapsed="true"]::after,
+.block-editor .ProseMirror h4[data-collapsed="true"]::after,
+.block-editor .ProseMirror h5[data-collapsed="true"]::after,
+.block-editor .ProseMirror h6[data-collapsed="true"]::after {
   content: "folded";
   display: inline-flex;
   vertical-align: middle;
@@ -2993,6 +3008,9 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
   .block-editor .ProseMirror h1::before,
   .block-editor .ProseMirror h2::before,
   .block-editor .ProseMirror h3::before,
+  .block-editor .ProseMirror h4::before,
+  .block-editor .ProseMirror h5::before,
+  .block-editor .ProseMirror h6::before,
   .block-editor .ProseMirror [data-heading-fold-proxy="true"]::before {
     width: 16px;
     height: 16px;
