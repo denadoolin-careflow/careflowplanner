@@ -1032,18 +1032,20 @@
   cursor: grab;
   border-radius: 6px;
   background-color: transparent;
-  /* Two-column dot grid, vertically centered to match the line-height of the adjacent text */
-  background-image: radial-gradient(circle, hsl(var(--muted-foreground) / 0.55) 1px, transparent 1.25px);
-  background-size: 4px 4px;
+  /* A single quiet grip replaces the former dotted hover decoration. */
+  color: hsl(var(--muted-foreground) / 0.58);
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 2px 12px;
   background-position: center center;
-  background-repeat: round;
-  /* Nudge the handle so its dots sit on the text baseline grid */
+  background-repeat: no-repeat;
+  /* Align the grip with the adjacent text baseline. */
   transform: translateY(0.35em);
 }
-.block-editor:hover .drag-handle { opacity: 0.45; }
+.block-editor:hover .drag-handle { opacity: 0.38; }
 .drag-handle:hover {
-  opacity: 0.95;
-  background-color: hsl(var(--muted) / 0.7);
+  opacity: 0.82;
+  color: hsl(var(--primary));
+  background-color: transparent;
   transform: translateY(0.35em) scale(1.06);
 }
 .drag-handle:active { cursor: grabbing; }
@@ -2920,7 +2922,7 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 :root[data-atmosphere="evergreen-hearth"]:not(.dark)    { --foreground: 145 42% 12%; --muted-foreground: 145 16% 32%; --border: 40 30% 82%; }
 :root[data-atmosphere="frosted-plum"]:not(.dark)        { --foreground: 280 36% 14%; --muted-foreground: 280 16% 36%; --border: 280 24% 83%; }
 
-/* --- Craft-style heading folds: heading + first line share a gutter control --- */
+/* --- Heading folds: a heading owns every block until its next peer/ancestor. --- */
 .block-editor .ProseMirror h1,
 .block-editor .ProseMirror h2,
 .block-editor .ProseMirror h3,
