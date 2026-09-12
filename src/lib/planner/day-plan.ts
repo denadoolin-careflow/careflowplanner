@@ -37,6 +37,16 @@ export function taskTime(t: Task): string | null {
   return (t as any).startTime ?? (t as any).dueTime ?? null;
 }
 
+/** "13:05" → "1:05 pm", "09:00" → "9 am". Leaves unparseable values alone. */
+export function fmt12(hm?: string | null): string {
+  const min = hmToMin(hm);
+  if (min == null) return hm ?? "";
+  const h24 = Math.floor(min / 60), m = min % 60;
+  const ap = h24 >= 12 ? "pm" : "am";
+  const h = h24 % 12 === 0 ? 12 : h24 % 12;
+  return m ? `${h}:${String(m).padStart(2, "0")} ${ap}` : `${h} ${ap}`;
+}
+
 export function bucketFor(t: Task): TimeBucket {
   if ((t as any).allDay) return "allDay";
   const min = hmToMin(taskTime(t));
