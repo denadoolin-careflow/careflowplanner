@@ -16,6 +16,9 @@ import { PlannerWeekTable } from "@/components/planner/PlannerWeekTable";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { PlannerYearView } from "@/components/planner/PlannerYearView";
 import { PlannerMonthOverview } from "@/components/planner/PlannerMonthOverview";
+import { SeasonBanner } from "@/components/seasons/SeasonBanner";
+import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
+import { monthKeyFor } from "@/lib/notes/periods";
 import { PlannerKindFilter } from "@/components/planner/PlannerKindFilter";
 import { PlannerRangeModeTabs } from "@/components/planner/PlannerRangeModeTabs";
 import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
@@ -657,7 +660,11 @@ export default function Planner() {
               <PlannerWeekTable weekStart={weekStart} />
             )}
             {nativeRange && view === "month" && monthMode === "calendar" && (
-              <PlannerMonthView date={day} onSelectDay={openDay} />
+              <div className="flex min-h-0 flex-col gap-2">
+                <SeasonBanner date={day} compact linkTo="/month/overview" />
+                <PeriodNoteCard kind="monthly" keyISO={monthKeyFor(day)} />
+                <PlannerMonthView date={day} onSelectDay={openDay} />
+              </div>
             )}
             {nativeRange && view === "month" && monthMode === "overview" && (
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
