@@ -2303,6 +2303,25 @@ export function BlockEditor({
         if (typeNames.includes(node.type.name)) {
           const nodePos = $pos.before(d);
           ed.view.dispatch(ed.state.tr.setNodeMarkup(nodePos, undefined, { ...node.attrs, collapsed: value }));
+          const sync = () => {
+            const root = ed.view.dom as HTMLElement;
+            root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
+            root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
+            root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(heading => {
+              const firstLine = heading.nextElementSibling as HTMLElement | null;
+              if (firstLine && !/^H[1-6]$/.test(firstLine.tagName)) firstLine.setAttribute("data-heading-fold-proxy", "true");
+              if (heading.getAttribute("data-collapsed") !== "true") return;
+              const level = parseInt(heading.tagName[1], 10);
+              let sibling = heading.nextElementSibling as HTMLElement | null;
+              while (sibling) {
+                if (/^H[1-6]$/.test(sibling.tagName) && parseInt(sibling.tagName[1], 10) <= level) break;
+                sibling.classList.add("cf-h-hidden");
+                sibling = sibling.nextElementSibling as HTMLElement | null;
+              }
+            });
+          };
+          window.requestAnimationFrame(sync);
+          window.setTimeout(sync, 80);
           return true;
         }
       }
@@ -2520,19 +2539,11 @@ export function BlockEditor({
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(apply);
     };
-    const observer = new MutationObserver(scheduleApply);
-    observer.observe(root, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ["data-collapsed"],
-    });
     editor.on("update", scheduleApply);
     editor.on("selectionUpdate", scheduleApply);
     return () => {
       window.cancelAnimationFrame(frame);
       startupTimers.forEach(timer => window.clearTimeout(timer));
-      observer.disconnect();
       editor.off("update", scheduleApply);
       editor.off("selectionUpdate", scheduleApply);
     };
