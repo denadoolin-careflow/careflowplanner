@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addDays, differenceInCalendarDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
-import { toast } from "sonner";
 import { Check, LayoutGrid, List, Rows3 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
@@ -12,365 +11,121 @@ import { useCycleDots } from "@/lib/planner/day-rhythm";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ViewPills } from "@/components/layout/ViewPills";
 import { useTouchDrag } from "@/lib/planner/touch-drag";
-import { ELEMENT_CLASSES } from "@/lib/seasons/element-classes";
-import { seasonForDate } from "@/lib/seasons/zodiac-seasons";
 import { DailyNoteDot } from "@/components/notes/DailyNoteDot";
 import { useDailyNoteMarks } from "@/lib/notes/daily";
+import { CapacityIndicator, PlannerMonthSummary } from "./PlannerMonthSummary";
+import { PlannerMonthFilters } from "./PlannerMonthFilters";
+import { dayLoad, useMonthMove } from "@/lib/planner/month-move";
+import { fmt12 } from "@/lib/planner/day-plan";
 
-
-/** Mobile-only layout choices for the month grid. */
-type MobileMonthView = "dots" | "chips" | "list";
-const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v1";
+export type MobileMonthView = "dots" | "chips" | "list";
+const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v2";
 const MOBILE_VIEW_ITEMS = [
   { value: "dots" as const, label: "Dots", icon: LayoutGrid },
   { value: "chips" as const, label: "Chips", icon: Rows3 },
   { value: "list" as const, label: "List", icon: List },
 ];
 
+function readMobileView(): MobileMonthView {
+  try { const value = localStorage.getItem(MOBILE_VIEW_KEY); return value === "chips" || value === "list" ? value : "dots"; } catch { return "dots"; }
+}
 
-/**
- * Month calendar built on the shared planner feed: real event chips per day,
- * "+N more" overflow, capacity shading and drag-to-another-day.
- */
-export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
+export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }: {
   date: Date;
+  selectedDate?: Date;
   onSelectDay: (d: Date) => void;
   onOpenItem?: (item: PlannerFeedItem) => void;
 }) {
-  const { updateTask, updateAppointment } = useStore() as any;
   const start = startOfWeek(startOfMonth(date), { weekStartsOn: 1 });
   const end = endOfWeek(endOfMonth(date), { weekStartsOn: 1 });
   const total = differenceInCalendarDays(end, start) + 1;
-  const days: Date[] = Array.from({ length: total }, (_, i) => addDays(start, i));
-  const today = new Date();
-  const { byDay } = usePlannerFeed(start, total);
+  const days = useMemo(() => Array.from({ length: total }, (_, index) => addDays(start, index)), [start.getTime(), total]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { items: monthItems, byDay } = usePlannerFeed(start, total);
+  const move = useMonthMove(byDay);
   const { open: openItem, dialogs } = usePlannerItemOpener();
-  const handleOpen = (it: PlannerFeedItem) => (onOpenItem ? onOpenItem(it) : openItem(it));
+  const handleOpen = (item: PlannerFeedItem) => onOpenItem ? onOpenItem(item) : openItem(item);
   const cycles = useCycleDots(days);
-  const noteMarks = useDailyNoteMarks(days.map(d => format(d, "yyyy-MM-dd")));
+  const noteMarks = useDailyNoteMarks(days.map(day => format(day, "yyyy-MM-dd")));
   const isMobile = useIsMobile();
+  const [mobileView, setMobileView] = useState<MobileMonthView>(readMobileView);
   const [dragOver, setDragOver] = useState<string | null>(null);
-  const todayKey = format(today, "yyyy-MM-dd");
-  const seasonEl = ELEMENT_CLASSES[seasonForDate(date).element];
+  const today = new Date();
+  const selectedKey = format(selectedDate ?? date, "yyyy-MM-dd");
+  const weekLoads = useMemo(() => Array.from({ length: Math.ceil(total / 7) }, (_, week) => {
+    const rows = days.slice(week * 7, week * 7 + 7).flatMap(day => byDay.get(format(day, "yyyy-MM-dd")) ?? []);
+    return Math.round(dayLoad(rows) / 7);
+  }), [byDay, days, total]);
+  const touch = useTouchDrag((payload, targetISO) => move.requestMove(payload.type, payload.id, targetISO));
 
+  useEffect(() => { try { localStorage.setItem(MOBILE_VIEW_KEY, mobileView); } catch { /* no-op */ } }, [mobileView]);
 
-  const [mobileView, setMobileView] = useState<MobileMonthView>("dots");
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem(MOBILE_VIEW_KEY);
-      if (v === "dots" || v === "chips" || v === "list") setMobileView(v);
-    } catch { /* ignore */ }
-  }, []);
-  const pickMobileView = (v: MobileMonthView) => {
-    setMobileView(v);
-    try { localStorage.setItem(MOBILE_VIEW_KEY, v); } catch { /* ignore */ }
+  const onDrop = (targetISO: string, event: React.DragEvent) => {
+    event.preventDefault(); setDragOver(null);
+    const raw = event.dataTransfer.getData("application/x-planner-item") || event.dataTransfer.getData("text/plain");
+    const split = raw.indexOf(":");
+    if (split < 1) return;
+    move.requestMove(raw.slice(0, split), raw.slice(split + 1), targetISO);
   };
 
-  const move = (type: string, id: string, targetISO: string) => {
-    if (type === "task") { updateTask(id, { dueDate: targetISO }); toast.success(`Moved to ${format(new Date(`${targetISO}T12:00:00`), "MMM d")}`); }
-    else if (type === "appointment") { updateAppointment(id, { date: targetISO }); toast.success("Appointment moved"); }
-  };
-
-  const touch = useTouchDrag((p, dayISO) => move(p.type, p.id, dayISO));
-
-  const onDrop = (targetISO: string, e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(null);
-    const raw = e.dataTransfer.getData("application/x-planner-item") || e.dataTransfer.getData("text/plain");
-    if (!raw) return;
-    const [type, id] = raw.split(":");
-    move(type, id, targetISO);
-  };
-
-  const ghost = touch.ghost;
-
-  if (isMobile && mobileView === "list") {
-    return (
-      <div className="flex min-h-0 flex-col gap-2">
-        <MobileViewSwitch value={mobileView} onChange={pickMobileView} />
-        <div className="space-y-1.5 overflow-y-auto">
-          {days.filter(d => isSameMonth(d, date)).map(d => {
-            const key = format(d, "yyyy-MM-dd");
-            const items = byDay.get(key) ?? [];
-            const isToday = isSameDay(d, today);
-            return (
-              <div key={key} data-drop-day={key}
-                   className={cn("rounded-2xl border border-border/60 bg-card/50 p-2",
-                     isToday && "border-primary/60 bg-primary/5",
-                     touch.overDay === key && "ring-1 ring-inset ring-primary/60")}>
-                <div className="flex w-full items-center justify-between gap-2">
-                <button type="button" onClick={() => onSelectDay(d)}
-                        className="flex flex-1 items-baseline justify-between gap-2 text-left">
-                  <span className="text-sm font-semibold">{format(d, "EEE d")}</span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {items.length ? `${items.length} planned` : "Open"}
-                  </span>
-                </button>
-                  <DailyNoteDot date={d} mark={noteMarks.get(key)} size={13} className="ml-auto" />
-                </div>
-                {items.length > 0 && (
-                  <ul className="mt-1.5 space-y-1">
-                    {items.map(it => {
-                      const Icon = KIND_ICONS[it.kind];
-                      return (
-                        <li key={it.id}>
-                          <button
-                            type="button"
-                            onClick={() => handleOpen(it)}
-                            {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
-                            className={cn("flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs",
-                              it.done && "opacity-55")}
-                            style={{ background: `${it.color}14`, color: it.color }}
-                          >
-                            <Icon className="h-3 w-3 shrink-0" />
-                            <span className="min-w-0 flex-1 truncate text-foreground">
-                              {it.time ? `${it.time} · ` : ""}{it.title}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {ghost && <DragGhost label={ghost.label} x={ghost.x} y={ghost.y} />}
-        {dialogs}
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card/40", seasonEl.border)}>
-      {isMobile && <MobileViewSwitch value={mobileView} onChange={pickMobileView} className="m-2 self-start" />}
-      <div className={cn("sticky top-0 z-10 grid grid-cols-7 border-b border-border/60 text-[10px] uppercase tracking-wider backdrop-blur", seasonEl.bg, seasonEl.text)}>
-        {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
-          <div key={d} className={cn("py-1.5", isMobile ? "text-center" : "px-2")}>{isMobile ? d.slice(0, 1) : d}</div>
-        ))}
-      </div>
-
-      <div className="grid flex-1 auto-rows-fr grid-cols-7">
-        {days.map((d, i) => {
-          const key = format(d, "yyyy-MM-dd");
-          const items = byDay.get(key) ?? [];
-          const dim = !isSameMonth(d, date);
-          const isToday = isSameDay(d, today);
-          const load = Math.min(1, items.length / 6);
-          const completable = items.filter(it => it.sourceRef.type === "task");
-          const doneCount = completable.filter(it => it.done).length;
-          const allDone = completable.length > 0 && doneCount === completable.length;
-          const isPast = key < todayKey;
-          const hasOverdue = isPast && completable.some(it => !it.done);
-          const cyc = cycles.get(key);
-          const visible = items.slice(0, 4);
-          const overflow = items.slice(4);
-          return (
-            <div
-              key={i}
-              data-drop-day={key}
-              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOver(key); }}
-              onDragLeave={() => setDragOver(cur => (cur === key ? null : cur))}
-              onDrop={(e) => onDrop(key, e)}
-              className={cn(
-                "flex flex-col border-b border-r border-border/40 text-left transition-colors",
-                isMobile ? "min-h-[68px] gap-0 p-1" : "min-h-[132px] gap-0.5 p-1.5",
-                dim && "bg-muted/20 text-muted-foreground/60",
-                allDone && !dim && "ring-1 ring-inset ring-emerald-500/40",
-                hasOverdue && !dim && "ring-1 ring-inset ring-amber-500/40",
-                (dragOver === key || touch.overDay === key) && "bg-primary/5 ring-1 ring-inset ring-primary/50",
-              )}
-              style={load > 0 && !dim ? { backgroundColor: `hsl(var(--primary) / ${0.04 + load * 0.06})` } : undefined}
-            >
-              <div className={cn("flex items-center gap-1", isMobile ? "justify-center" : "justify-between")}>
-                <button
-                  type="button"
-                  onClick={() => onSelectDay(d)}
-                  aria-label={[`Open ${format(d, "EEEE, MMMM d")}`, cyc?.text].filter(Boolean).join(" · ")}
-                  title={cyc?.text}
-                  className="flex items-center gap-1"
-                >
-                  <span className={cn("grid place-items-center rounded-full hover:bg-muted",
-                    isMobile ? "h-7 w-7 text-[13px]" : "h-6 w-6 text-[11px]",
-                    isToday && cn("bg-primary font-semibold text-primary-foreground ring-2", seasonEl.ring))}>{format(d, "d")}</span>
-
-                  {cyc && (
-                    <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: cyc.color }} />
-                  )}
-                </button>
-                <DailyNoteDot date={d} mark={noteMarks.get(key)} size={12} />
-                {completable.length > 0 && !isMobile && (
-                  <span
-                    title={`${doneCount} of ${completable.length} complete`}
-                    className={cn(
-                      "inline-flex items-center gap-0.5 rounded-full px-1.5 py-[1px] text-[9px] font-medium",
-                      allDone ? "bg-emerald-500/15 text-emerald-600"
-                        : hasOverdue ? "bg-amber-500/15 text-amber-700"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {allDone && <Check className="h-2.5 w-2.5" />}
-                    {doneCount}/{completable.length}
-                  </span>
-                )}
-              </div>
-              {isMobile && mobileView === "chips" ? (
-                <div className="flex min-h-0 flex-1 flex-col gap-[2px] pt-1">
-                  {items.slice(0, 3).map(it => (
-                    <button
-                      key={it.id}
-                      type="button"
-                      onClick={() => handleOpen(it)}
-                      {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
-                      className={cn("truncate rounded px-1 py-[1px] text-left text-[9px] leading-tight",
-                        it.done && "opacity-55")}
-                      style={{ background: `${it.color}1f`, color: it.color }}
-                    >
-                      {it.title}
-                    </button>
-                  ))}
-                  {items.length > 3 && (
-                    <button type="button" onClick={() => onSelectDay(d)}
-                            className="px-1 text-left text-[9px] text-muted-foreground">
-                      +{items.length - 3} more
-                    </button>
-                  )}
-                  {items.length === 0 && (
-                    <button type="button" onClick={() => onSelectDay(d)} aria-label={`Open ${format(d, "MMMM d")}`}
-                            className="min-h-[18px] flex-1" />
-                  )}
-                </div>
-              ) : isMobile ? (
-                <button
-                  type="button"
-                  onClick={() => onSelectDay(d)}
-                  aria-label={`Open ${format(d, "EEEE, MMMM d")}${items.length ? ` — ${items.length} planned` : ""}`}
-                  className="flex min-h-0 flex-1 flex-col items-center justify-start gap-1 pt-1"
-                >
-                  <span className="flex items-center justify-center gap-[3px]">
-                    {items.slice(0, 4).map(it => (
-                      <span
-                        key={it.id}
-                        aria-hidden
-                        className={cn("h-1.5 w-1.5 rounded-full", it.done && "opacity-40")}
-                        style={{ background: it.color }}
-                      />
-                    ))}
-                  </span>
-                  {items.length > 4 && (
-                    <span className="text-[9px] leading-none text-muted-foreground">+{items.length - 4}</span>
-                  )}
-                  {completable.length > 0 && (
-                    <span
-                      className={cn(
-                        "rounded-full px-1 text-[9px] font-medium leading-[14px]",
-                        allDone ? "bg-emerald-500/15 text-emerald-600"
-                          : hasOverdue ? "bg-amber-500/15 text-amber-700"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {doneCount}/{completable.length}
-                    </span>
-                  )}
-                </button>
-              ) : (
-              <div className="flex min-h-0 flex-col gap-0.5">
-                {visible.map(it => {
-                  const Icon = KIND_ICONS[it.kind];
-                  return (
-                    <button
-                      key={it.id}
-                      type="button"
-                      draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                      onClick={() => handleOpen(it)}
-                      {...touch.handlers({ type: it.sourceRef.type, id: it.sourceRef.id, label: it.title })}
-                      title={it.title}
-                      className={cn("flex w-full items-center gap-1 rounded px-1 py-[2px] text-left text-[10px] leading-tight",
-                        it.done && "opacity-55")}
-                      style={{ background: `${it.color}1f`, color: it.color }}
-                    >
-                      {it.done
-                        ? <Check className="h-2.5 w-2.5 shrink-0" style={{ color: it.color }} />
-                        : <Icon className="h-2.5 w-2.5 shrink-0" style={{ color: it.color }} />}
-                      <span className="line-clamp-2 [overflow-wrap:anywhere] whitespace-normal">{it.time ? `${it.time} ` : ""}{it.title}</span>
-                    </button>
-                  );
-                })}
-                {overflow.length > 0 && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="px-1 text-left text-[9px] text-muted-foreground hover:text-foreground"
-                      >
-                        +{overflow.length} more
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" className="w-56 space-y-1 p-2">
-                      <div className="px-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                        {format(d, "EEEE, MMM d")}
-                      </div>
-                      {overflow.map(it => {
-                        const Icon = KIND_ICONS[it.kind];
-                        return (
-                          <button
-                            key={it.id}
-                            type="button"
-                            onClick={() => handleOpen(it)}
-                            className={cn("flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-left text-[11px] hover:bg-muted",
-                              it.done && "opacity-55")}
-                          >
-                            <Icon className="h-3 w-3 shrink-0" style={{ color: it.color }} />
-                            <span className="line-clamp-2 [overflow-wrap:anywhere] whitespace-normal">{it.time ? `${it.time} ` : ""}{it.title}</span>
-                          </button>
-                        );
-                      })}
-                      <button
-                        type="button"
-                        onClick={() => onSelectDay(d)}
-                        className="w-full rounded-lg px-1.5 py-1 text-left text-[11px] text-primary hover:bg-muted"
-                      >
-                        Open day
-                      </button>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
-              )}
-            </div>
-          );
+  if (isMobile && mobileView === "list") return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2"><PlannerMonthFilters /><ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={value => setMobileView(value as MobileMonthView)} ariaLabel="Month layout" /></div>
+      <div className="space-y-2">
+        {days.filter(day => isSameMonth(day, date)).map(day => {
+          const key = format(day, "yyyy-MM-dd"); const rows = byDay.get(key) ?? [];
+          return <section key={key} data-drop-day={key} className={cn("planner-month-list-day", key === selectedKey && "planner-month-list-day--selected", touch.overDay === key && "ring-2 ring-primary/50")}>
+            <button type="button" onClick={() => onSelectDay(day)} className="flex min-h-11 w-full items-center justify-between gap-3 text-left"><span className="font-display text-base font-semibold">{format(day, "EEEE, MMM d")}</span><CapacityIndicator minutes={dayLoad(rows)} /></button>
+            {rows.length ? <div>{rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} handlers={touch.handlers({ type: item.sourceRef.type, id: item.sourceRef.id, label: item.title })} />)}</div> : <p className="pb-2 text-xs text-muted-foreground">Space to breathe.</p>}
+          </section>;
         })}
       </div>
-      {ghost && <DragGhost label={ghost.label} x={ghost.x} y={ghost.y} />}
-      {dialogs}
+      {touch.ghost && <DragGhost {...touch.ghost} />}{dialogs}<CapacityWarning pending={move.pending} onCancel={move.cancel} onConfirm={move.confirm} />
+    </div>
+  );
+
+  return (
+    <div className="planner-month-canvas">
+      <PlannerMonthSummary items={monthItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} />
+      <div className="flex flex-wrap items-center justify-between gap-2"><PlannerMonthFilters />{isMobile && <ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={value => setMobileView(value as MobileMonthView)} ariaLabel="Month layout" />}</div>
+      <div className="planner-month-calendar">
+        <div className="planner-month-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(label => <div key={label}>{isMobile ? label.slice(0, 1) : label}</div>)}</div>
+        <div className="planner-month-grid">
+          {days.map(day => {
+            const key = format(day, "yyyy-MM-dd");
+            const rows = byDay.get(key) ?? [];
+            const visible = rows.slice(0, 3);
+            const dim = !isSameMonth(day, date);
+            const current = isSameDay(day, today);
+            const selected = key === selectedKey;
+            const tasks = rows.filter(row => row.sourceRef.type === "task");
+            const completed = tasks.filter(row => row.done).length;
+            const cycle = cycles.get(key);
+            return <article key={key} data-drop-day={key} onDragOver={event => { event.preventDefault(); setDragOver(key); }} onDragLeave={() => setDragOver(value => value === key ? null : value)} onDrop={event => onDrop(key, event)} className={cn("planner-month-day", dim && "planner-month-day--dim", selected && "planner-month-day--selected", current && "planner-month-day--today", (dragOver === key || touch.overDay === key) && "planner-month-day--drop")}>
+              <button type="button" onClick={() => onSelectDay(day)} className="planner-month-day__header" aria-label={`Select ${format(day, "EEEE, MMMM d")}${rows.length ? `, ${rows.length} planned` : ""}`}>
+                <span className="planner-month-day__number">{format(day, "d")}</span>{current && <span className="planner-month-day__today-label">Today</span>}
+                <span className="ml-auto flex items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={11} />{cycle && <span className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>
+              </button>
+              <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact={!isMobile} />{!isMobile && tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>
+              {isMobile && mobileView === "dots" ? <button type="button" onClick={() => onSelectDay(day)} className="planner-month-day__dots">{rows.slice(0, 5).map(item => <span key={item.id} className={cn("h-1.5 w-1.5 rounded-full", item.done && "opacity-35")} style={{ backgroundColor: item.color }} />)}{rows.length > 5 && <span className="text-[8px] text-muted-foreground">+{rows.length - 5}</span>}</button> : <div className="planner-month-day__items">{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} compact={isMobile} handlers={touch.handlers({ type: item.sourceRef.type, id: item.sourceRef.id, label: item.title })} />)}{rows.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{rows.length - visible.length} more</button>}</div>}
+            </article>;
+          })}
+        </div>
+      </div>
+      {touch.ghost && <DragGhost {...touch.ghost} />}{dialogs}<CapacityWarning pending={move.pending} onCancel={move.cancel} onConfirm={move.confirm} />
     </div>
   );
 }
 
-/** Layout choices for the month grid on small screens. */
-function MobileViewSwitch({ value, onChange, className }: {
-  value: MobileMonthView; onChange: (v: MobileMonthView) => void; className?: string;
-}) {
-  return (
-    <ViewPills items={MOBILE_VIEW_ITEMS} value={value} onChange={onChange}
-               ariaLabel="Month layout" className={className} />
-  );
+function MonthItem({ item, onOpen, handlers, compact }: { item: PlannerFeedItem; onOpen: (item: PlannerFeedItem) => void; handlers: ReturnType<ReturnType<typeof useTouchDrag>["handlers"]>; compact?: boolean }) {
+  const Icon = KIND_ICONS[item.kind];
+  const draggable = ["task", "appointment", "meal"].includes(item.sourceRef.type);
+  return <button type="button" draggable={draggable} onDragStart={event => { event.dataTransfer.setData("application/x-planner-item", `${item.sourceRef.type}:${item.sourceRef.id}`); event.dataTransfer.effectAllowed = "move"; }} onClick={() => onOpen(item)} {...handlers} className={cn("planner-month-item", compact && "planner-month-item--compact", item.done && "opacity-50")}>
+    {item.done ? <Check className="h-3 w-3 shrink-0" /> : <Icon className="h-3 w-3 shrink-0" style={{ color: item.color }} />}<span className="truncate">{item.time ? `${fmt12(item.time)} ` : ""}{item.title}</span>
+  </button>;
 }
 
-/** Floating label that follows the finger during a long-press drag. */
-function DragGhost({ label, x, y }: { label: string; x: number; y: number }) {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed z-50 max-w-[60vw] truncate rounded-full border border-primary/50 bg-card px-3 py-1.5 text-xs shadow-lg"
-      style={{ left: x + 12, top: y - 14 }}
-    >
-      {label}
-    </div>
-  );
+function DragGhost({ label, x, y }: { label: string; x: number; y: number }) { return <div aria-hidden className="planner-drag-ghost" style={{ left: x + 14, top: y - 16 }}>{label}</div>; }
+
+function CapacityWarning({ pending, onCancel, onConfirm }: { pending: ReturnType<typeof useMonthMove>["pending"]; onCancel: () => void; onConfirm: () => void }) {
+  return <AlertDialog open={!!pending} onOpenChange={open => !open && onCancel()}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>This day is already quite full</AlertDialogTitle><AlertDialogDescription>{pending ? `${format(new Date(`${pending.targetISO}T12:00:00`), "EEEE, MMMM d")} is holding several commitments. You can still move “${pending.item.title}” here, or choose a lighter day.` : ""}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={onCancel}>Choose another day</AlertDialogCancel><AlertDialogAction onClick={onConfirm}>Move anyway</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>;
 }

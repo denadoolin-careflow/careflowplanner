@@ -23,6 +23,7 @@ export function useTouchDrag(onDrop: (payload: TouchDragPayload, dayISO: string)
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const start = useRef<{ x: number; y: number } | null>(null);
   const active = useRef(false);
+  const scrollFrame = useRef<number | null>(null);
 
   const dayAt = (x: number, y: number) => {
     const el = document.elementFromPoint(x, y) as HTMLElement | null;
@@ -36,6 +37,8 @@ export function useTouchDrag(onDrop: (payload: TouchDragPayload, dayISO: string)
     setDragging(null);
     setOverDay(null);
     setPoint(null);
+    if (scrollFrame.current != null) cancelAnimationFrame(scrollFrame.current);
+    scrollFrame.current = null;
   }, []);
 
   /** Spread onto a draggable chip: `{...handlers(payload)}`. */
@@ -62,6 +65,15 @@ export function useTouchDrag(onDrop: (payload: TouchDragPayload, dayISO: string)
       e.preventDefault();
       setPoint({ x: e.clientX, y: e.clientY });
       setOverDay(dayAt(e.clientX, e.clientY));
+      if (scrollFrame.current == null) {
+        const y = e.clientY;
+        scrollFrame.current = requestAnimationFrame(() => {
+          const edge = Math.min(88, window.innerHeight * 0.14);
+          const speed = y < edge ? -12 : y > window.innerHeight - edge ? 12 : 0;
+          if (speed) window.scrollBy({ top: speed, behavior: "auto" });
+          scrollFrame.current = null;
+        });
+      }
     },
     onPointerUp: (e: React.PointerEvent) => {
       if (timer.current) clearTimeout(timer.current);

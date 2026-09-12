@@ -8,7 +8,7 @@ export default {
     container: { center: true, padding: "1.5rem", screens: { "2xl": "1400px" } },
     extend: {
       fontFamily: {
-        display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        display: ['Lora', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
         sans: ['"Nunito Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         brand: ['"Nunito Sans"', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
       },
@@ -58,6 +58,14 @@ export default {
           "rhythm-soft": "hsl(var(--care-rhythm-soft))",
           exhale: "hsl(var(--care-exhale))",
           "exhale-soft": "hsl(var(--care-exhale-soft))",
+        },
+        calendar: {
+          event: "hsl(var(--calendar-event))",
+          task: "hsl(var(--calendar-task))",
+          meal: "hsl(var(--calendar-meal))",
+          care: "hsl(var(--calendar-care))",
+          finance: "hsl(var(--calendar-finance))",
+          cosmic: "hsl(var(--calendar-cosmic))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",

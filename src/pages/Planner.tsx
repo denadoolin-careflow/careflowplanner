@@ -8,7 +8,8 @@ import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
 import { PlannerQuickCapture, PLANNER_QUICK_ADD_EVENT } from "@/components/planner/PlannerQuickCapture";
-import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
+import { PlannerMonthExperience } from "@/components/planner/PlannerMonthExperience";
+import { PlannerNotebookNav } from "@/components/planner/PlannerNotebookNav";
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
 import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
 import { PlannerWeekList } from "@/components/planner/PlannerWeekList";
@@ -16,9 +17,6 @@ import { PlannerWeekTable } from "@/components/planner/PlannerWeekTable";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { PlannerYearView } from "@/components/planner/PlannerYearView";
 import { PlannerMonthOverview } from "@/components/planner/PlannerMonthOverview";
-import { SeasonBanner } from "@/components/seasons/SeasonBanner";
-import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
-import { monthKeyFor } from "@/lib/notes/periods";
 import { PlannerKindFilter } from "@/components/planner/PlannerKindFilter";
 import { PlannerRangeModeTabs } from "@/components/planner/PlannerRangeModeTabs";
 import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
@@ -278,6 +276,13 @@ export default function Planner() {
       }
     >
       <div ref={shellTopRef} aria-hidden className="h-0" />
+      <PlannerNotebookNav
+        view={view}
+        monthOverview={view === "month" && monthMode === "overview"}
+        onView={(next) => { setView(next); if (next === "month") setMonthMode("calendar"); }}
+        onOverview={() => { setView("month"); setMonthMode("overview"); }}
+        onNotes={() => navigate("/notes")}
+      />
       {isMobile ? (
         <div ref={mobileHeaderRef} className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
         <div className="flex items-center gap-1">
@@ -382,7 +387,7 @@ export default function Planner() {
               ]}
             />
           )}
-          <PlannerKindFilter className="shrink-0" />
+          {view !== "month" && <PlannerKindFilter className="shrink-0" />}
         </div>
         </div>
       ) : (
@@ -434,7 +439,7 @@ export default function Planner() {
                 ]}
               />
             )}
-            <PlannerKindFilter className="ml-auto" />
+            {view !== "month" && <PlannerKindFilter className="ml-auto" />}
             <TrayToggle />
             {(view === "day" || view === "3day" || view === "week" || view === "month" || view === "year") && (
               <Button
@@ -660,11 +665,7 @@ export default function Planner() {
               <PlannerWeekTable weekStart={weekStart} />
             )}
             {nativeRange && view === "month" && monthMode === "calendar" && (
-              <div className="flex min-h-0 flex-col gap-2">
-                <SeasonBanner date={day} compact linkTo="/month/overview" />
-                <PeriodNoteCard kind="monthly" keyISO={monthKeyFor(day)} />
-                <PlannerMonthView date={day} onSelectDay={openDay} />
-              </div>
+              <PlannerMonthExperience date={day} onOpenDay={openDay} onCapture={() => setCaptureOpen(true)} />
             )}
             {nativeRange && view === "month" && monthMode === "overview" && (
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />

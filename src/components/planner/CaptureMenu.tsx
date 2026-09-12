@@ -1,4 +1,4 @@
-import { Plus, ChevronDown, ListTodo, CalendarClock, StickyNote, NotebookPen, Heart, DollarSign, UtensilsCrossed } from "lucide-react";
+import { Plus, ChevronDown, ListTodo, CalendarClock, StickyNote, NotebookPen, Heart, DollarSign, UtensilsCrossed, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { createWriteBlock, openWriteBlock } from "@/lib/planner/write-blocks";
 
-type Kind = "task" | "event" | "note" | "journal" | "care" | "expense" | "meal";
+type Kind = "task" | "event" | "note" | "journal" | "care" | "expense" | "meal" | "idea";
 
 /** Next half-hour slot, used as the default landing time for writing blocks. */
 function nextSlot(): { start: string; end: string } {
@@ -40,6 +40,7 @@ export function CaptureMenu({ onCapture, writeDate }: { onCapture: (kind?: Kind)
     if (kind === "note" || kind === "journal") { void scheduleWrite(kind); return; }
     if (kind === "expense") { navigate("/moneyflow"); return; }
     if (kind === "meal") { navigate("/home?section=meals"); return; }
+    if (kind === "idea") { navigate("/ideas"); return; }
     onCapture(kind);
   };
   return (
@@ -66,6 +67,7 @@ export function CaptureMenu({ onCapture, writeDate }: { onCapture: (kind?: Kind)
           <DropdownMenuItem onSelect={() => pick("care")}><Heart className="mr-2 h-3.5 w-3.5" />Care item</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => pick("expense")}><DollarSign className="mr-2 h-3.5 w-3.5" />Expense</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => pick("meal")}><UtensilsCrossed className="mr-2 h-3.5 w-3.5" />Meal idea</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => pick("idea")}><Lightbulb className="mr-2 h-3.5 w-3.5" />Idea</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
