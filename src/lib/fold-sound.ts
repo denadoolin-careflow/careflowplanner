@@ -71,3 +71,15 @@ export function animateCollapse(el: HTMLElement | null | undefined, ms = 180): P
     anim.oncancel = () => { el.style.overflow = prevOverflow; res(); };
   });
 }
+
+/** Animate newly revealed fold content without leaving inline styles behind. */
+export function animateExpand(el: HTMLElement | null | undefined, ms = 200): void {
+  if (!el || !el.animate || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  el.animate(
+    [
+      { opacity: 0, transform: "translateY(-4px)" },
+      { opacity: 1, transform: "translateY(0)" },
+    ],
+    { duration: ms, easing: "cubic-bezier(.2,.8,.2,1)" },
+  );
+}
