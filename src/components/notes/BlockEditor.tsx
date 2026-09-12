@@ -77,6 +77,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
 import { upcomingEvents } from "@/lib/cosmic/events";
 import { addDays, format as formatDate, parseISO } from "date-fns";
+import { animateCollapse, foldSound } from "@/lib/fold-sound";
+import { BUCKET_DEFAULT_TIME, type TimeBucket } from "@/lib/planner/day-plan";
 
 /** Checkbox → task helpers exposed to the page hosting the editor. */
 export interface BlockEditorPlannerApi {
