@@ -2920,26 +2920,34 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 :root[data-atmosphere="evergreen-hearth"]:not(.dark)    { --foreground: 145 42% 12%; --muted-foreground: 145 16% 32%; --border: 40 30% 82%; }
 :root[data-atmosphere="frosted-plum"]:not(.dark)        { --foreground: 280 36% 14%; --muted-foreground: 280 16% 36%; --border: 280 24% 83%; }
 
-/* --- Heading collapse gutter marker + hidden section --- */
+/* --- Craft-style heading folds: heading + first line share a gutter control --- */
 .block-editor .ProseMirror h1,
 .block-editor .ProseMirror h2,
-.block-editor .ProseMirror h3 { position: relative; }
+.block-editor .ProseMirror h3,
+.block-editor .ProseMirror h4,
+.block-editor .ProseMirror h5,
+.block-editor .ProseMirror h6,
+.block-editor .ProseMirror [data-heading-fold-proxy="true"] { position: relative; }
 .block-editor .ProseMirror h1::before,
 .block-editor .ProseMirror h2::before,
-.block-editor .ProseMirror h3::before {
+.block-editor .ProseMirror h3::before,
+.block-editor .ProseMirror h4::before,
+.block-editor .ProseMirror h5::before,
+.block-editor .ProseMirror h6::before,
+.block-editor .ProseMirror [data-heading-fold-proxy="true"]::before {
   content: "";
   position: absolute;
-  left: -1.7rem; top: 50%;
-  width: 14px; height: 14px;
-  padding: 4px;
+  left: -1.85rem; top: 50%;
+  width: 12px; height: 12px;
+  padding: 6px;
   box-sizing: content-box;
   border-radius: 6px;
-  transform: translateY(-50%) rotate(0deg);
+  transform: translateY(-50%) rotate(90deg);
   background: currentColor;
-  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") center/contain no-repeat;
-          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") center/contain no-repeat;
+  -webkit-mask: var(--cf-chevron) no-repeat center / 11px 11px;
+          mask: var(--cf-chevron) no-repeat center / 11px 11px;
   opacity: 0;
-  transition: opacity 180ms ease, transform 220ms cubic-bezier(.2,.8,.2,1);
+  transition: opacity 160ms ease, transform 220ms cubic-bezier(.2,.8,.2,1), color 160ms ease, background-color 160ms ease;
   color: hsl(var(--muted-foreground));
   cursor: pointer;
   pointer-events: none;
@@ -2947,23 +2955,71 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 .block-editor .ProseMirror h1:hover::before,
 .block-editor .ProseMirror h2:hover::before,
 .block-editor .ProseMirror h3:hover::before,
+.block-editor .ProseMirror h4:hover::before,
+.block-editor .ProseMirror h5:hover::before,
+.block-editor .ProseMirror h6:hover::before,
+.block-editor .ProseMirror [data-heading-fold-proxy="true"]:hover::before,
 .block-editor .ProseMirror:focus-within h1:has(.ProseMirror-selectednode)::before {
-  opacity: 0.8;
+  opacity: 0.82;
+  color: hsl(var(--primary));
 }
 .block-editor .ProseMirror h1.cf-heading-collapsed::before,
 .block-editor .ProseMirror h2.cf-heading-collapsed::before,
 .block-editor .ProseMirror h3.cf-heading-collapsed::before,
 .block-editor .ProseMirror h1[data-collapsed="true"]::before,
 .block-editor .ProseMirror h2[data-collapsed="true"]::before,
-.block-editor .ProseMirror h3[data-collapsed="true"]::before {
+.block-editor .ProseMirror h3[data-collapsed="true"]::before,
+.block-editor .ProseMirror h4[data-collapsed="true"]::before,
+.block-editor .ProseMirror h5[data-collapsed="true"]::before,
+.block-editor .ProseMirror h6[data-collapsed="true"]::before {
   opacity: 1;
   color: hsl(var(--primary));
-  transform: translateY(-50%) rotate(-90deg);
+  transform: translateY(-50%) rotate(0deg);
+}
+.block-editor .ProseMirror h1[data-collapsed="true"]::after,
+.block-editor .ProseMirror h2[data-collapsed="true"]::after,
+.block-editor .ProseMirror h3[data-collapsed="true"]::after,
+.block-editor .ProseMirror h4[data-collapsed="true"]::after,
+.block-editor .ProseMirror h5[data-collapsed="true"]::after,
+.block-editor .ProseMirror h6[data-collapsed="true"]::after {
+  content: "folded";
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 0.65rem;
+  padding: 0.16rem 0.4rem;
+  border: 1px solid hsl(var(--border) / 0.75);
+  border-radius: 5px;
+  background: hsl(var(--muted) / 0.45);
+  color: hsl(var(--muted-foreground));
+  font-family: var(--atmo-font-body, ui-sans-serif, system-ui, sans-serif);
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.block-editor .ProseMirror [data-heading-fold-proxy="true"] {
+  border-left-color: hsl(var(--border) / 0.55);
+}
+.block-editor .ProseMirror [data-heading-fold-proxy="true"]:hover {
+  border-left-color: hsl(var(--primary) / 0.38);
 }
 @media (pointer: coarse) {
   .block-editor .ProseMirror h1::before,
   .block-editor .ProseMirror h2::before,
-  .block-editor .ProseMirror h3::before { opacity: 0.35; }
+  .block-editor .ProseMirror h3::before,
+  .block-editor .ProseMirror h4::before,
+  .block-editor .ProseMirror h5::before,
+  .block-editor .ProseMirror h6::before,
+  .block-editor .ProseMirror [data-heading-fold-proxy="true"]::before {
+    width: 16px;
+    height: 16px;
+    padding: 12px;
+    left: -2.4rem;
+    opacity: 0.32;
+    -webkit-mask-size: 13px 13px;
+    mask-size: 13px 13px;
+  }
 }
 .block-editor .ProseMirror .cf-h-hidden {
   display: none !important;

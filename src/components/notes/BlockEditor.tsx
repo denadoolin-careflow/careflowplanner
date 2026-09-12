@@ -2343,11 +2343,28 @@ export function BlockEditor({
       openMediaLightbox({ src: img.src, name: img.alt || "Image", kind: "image" });
       return;
     }
+    const toggleHeadingFold = (h: HTMLElement) => {
+      const collapsed = h.getAttribute("data-collapsed") !== "true";
+      (collapsed ? haptics.fold : haptics.unfold)();
+      (collapsed ? foldSound.fold : foldSound.unfold)();
+      if (collapsed) {
+        const level = parseInt(h.tagName[1], 10);
+        const sibs: HTMLElement[] = [];
+        let sib = h.nextElementSibling as HTMLElement | null;
+        while (sib) {
+          if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
+          sibs.push(sib);
+          sib = sib.nextElementSibling as HTMLElement | null;
+        }
+        void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => setFoldAttr(h, ["heading"], true));
+      } else setFoldAttr(h, ["heading"], false);
+    };
+
     // Click on a bullet's caret zone: fold nested lines, or turn a flat bullet
     // into a toggle so text can be tucked under it.
     const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
     const liEl = (el.tagName === "LI" ? el : el.closest("li")) as HTMLLIElement | null;
-    if (liEl && liEl.closest(".ProseMirror")) {
+    if (liEl && liEl.getAttribute("data-heading-fold-proxy") !== "true" && liEl.closest(".ProseMirror")) {
       const parentList = liEl.parentElement;
       const isList = parentList?.tagName === "UL" || parentList?.tagName === "OL";
       const isTaskList = parentList?.getAttribute("data-type") === "taskList";
@@ -2380,29 +2397,31 @@ export function BlockEditor({
         }
       }
     }
-    // Click the caret of a heading (H1/H2/H3) collapses the section below it.
-    if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
+    // Craft-style folding: the heading and its first line share the same fold.
+    // Text remains editable; only the stable gutter target performs the action.
+    if (/^H[1-6]$/.test(el.tagName) && el.closest(".ProseMirror")) {
       const h = el as HTMLElement;
       const rect = h.getBoundingClientRect();
       const dx = e.clientX - rect.left;
       const zoneMin = coarse ? -56 : -40;
       if (dx >= zoneMin && dx < 0) {
         e.preventDefault();
-        const collapsed = h.getAttribute("data-collapsed") !== "true";
-        (collapsed ? haptics.fold : haptics.unfold)();
-        (collapsed ? foldSound.fold : foldSound.unfold)();
-        if (collapsed) {
-          // Fade the section out before it disappears.
-          const level = parseInt(h.tagName[1], 10);
-          const sibs: HTMLElement[] = [];
-          let sib = h.nextElementSibling as HTMLElement | null;
-          while (sib) {
-            if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
-            sibs.push(sib); sib = sib.nextElementSibling as HTMLElement | null;
-          }
-          void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => setFoldAttr(h, ["heading"], true));
-        } else setFoldAttr(h, ["heading"], false);
+        toggleHeadingFold(h);
         return;
+      }
+    }
+    const proxy = el.closest<HTMLElement>("[data-heading-fold-proxy='true']");
+    if (proxy?.closest(".ProseMirror")) {
+      const rect = proxy.getBoundingClientRect();
+      const dx = e.clientX - rect.left;
+      const zoneMin = coarse ? -56 : -40;
+      if (dx >= zoneMin && dx < 0) {
+        const h = proxy.previousElementSibling as HTMLElement | null;
+        if (h && /^H[1-6]$/.test(h.tagName)) {
+          e.preventDefault();
+          toggleHeadingFold(h);
+          return;
+        }
       }
     }
     const target = el.closest("a") as HTMLAnchorElement | null;
@@ -2418,7 +2437,12 @@ export function BlockEditor({
     const apply = () => {
       const root = editor.view.dom as HTMLElement;
       root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
+      root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
       root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
+        const firstLine = h.nextElementSibling as HTMLElement | null;
+        if (firstLine && !/^H[1-6]$/.test(firstLine.tagName)) {
+          firstLine.setAttribute("data-heading-fold-proxy", "true");
+        }
         if (h.getAttribute("data-collapsed") !== "true") return;
         const level = parseInt(h.tagName[1], 10);
         let sib = h.nextElementSibling as HTMLElement | null;
