@@ -2518,13 +2518,21 @@ export function BlockEditor({
     const startupTimers = [50, 250].map(delay => window.setTimeout(apply, delay));
     const scheduleApply = () => {
       window.cancelAnimationFrame(frame);
-      startupTimers.forEach(timer => window.clearTimeout(timer));
       frame = window.requestAnimationFrame(apply);
     };
+    const observer = new MutationObserver(scheduleApply);
+    observer.observe(root, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["data-collapsed"],
+    });
     editor.on("update", scheduleApply);
     editor.on("selectionUpdate", scheduleApply);
     return () => {
       window.cancelAnimationFrame(frame);
+      startupTimers.forEach(timer => window.clearTimeout(timer));
+      observer.disconnect();
       editor.off("update", scheduleApply);
       editor.off("selectionUpdate", scheduleApply);
     };
