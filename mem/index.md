@@ -6,5 +6,6 @@ Bottom nav stays calm — no gradients/glow on active; use a small dot indicator
 Floating FAB is desktop-only (lg+); on mobile use InlineTaskComposer + bottom nav.
 RoutinesStrip defaults to collapsed.
 TaskRow on mobile: no leading status dot, no contextual icon — checkbox + title + one meta line.
+Note folding should feel like Craft Docs: restrained gutter chevrons, clear hierarchy, and editable text targets.
 
 ## Memories
