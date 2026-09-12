@@ -2382,6 +2382,30 @@ export function BlockEditor({
       }
     };
 
+    // Pseudo-element carets do not become event targets. Resolve gutter clicks
+    // by coordinates so the heading and its first visible line reliably share
+    // one fold control on every browser.
+    const foldRoot = editorRef.current?.view.dom as HTMLElement | undefined;
+    if (foldRoot) {
+      const coarsePointer = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+      const gutterMin = coarsePointer ? -56 : -40;
+      const foldTargets = foldRoot.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6,[data-heading-fold-proxy='true']");
+      for (const candidate of foldTargets) {
+        const rect = candidate.getBoundingClientRect();
+        const dx = e.clientX - rect.left;
+        const withinRow = e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!withinRow || dx < gutterMin || dx >= 0) continue;
+        const heading = /^H[1-6]$/.test(candidate.tagName)
+          ? candidate
+          : candidate.previousElementSibling as HTMLElement | null;
+        if (heading && /^H[1-6]$/.test(heading.tagName)) {
+          e.preventDefault();
+          toggleHeadingFold(heading);
+          return;
+        }
+      }
+    }
+
     // Click on a bullet's caret zone: fold nested lines, or turn a flat bullet
     // into a toggle so text can be tucked under it.
     const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
