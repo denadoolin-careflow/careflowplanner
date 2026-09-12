@@ -2367,8 +2367,18 @@ export function BlockEditor({
           sibs.push(sib);
           sib = sib.nextElementSibling as HTMLElement | null;
         }
-        void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => setFoldAttr(h, ["heading"], true));
+        void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => {
+          sibs.forEach(s => s.classList.add("cf-h-hidden"));
+          setFoldAttr(h, ["heading"], true);
+        });
       } else {
+        const level = parseInt(h.tagName[1], 10);
+        let visible = h.nextElementSibling as HTMLElement | null;
+        while (visible) {
+          if (/^H[1-6]$/.test(visible.tagName) && parseInt(visible.tagName[1], 10) <= level) break;
+          visible.classList.remove("cf-h-hidden");
+          visible = visible.nextElementSibling as HTMLElement | null;
+        }
         setFoldAttr(h, ["heading"], false);
         window.requestAnimationFrame(() => {
           const level = parseInt(h.tagName[1], 10);
@@ -2505,8 +2515,10 @@ export function BlockEditor({
       });
     };
     let frame = window.requestAnimationFrame(apply);
+    const startupTimers = [50, 250].map(delay => window.setTimeout(apply, delay));
     const scheduleApply = () => {
       window.cancelAnimationFrame(frame);
+      startupTimers.forEach(timer => window.clearTimeout(timer));
       frame = window.requestAnimationFrame(apply);
     };
     editor.on("update", scheduleApply);
