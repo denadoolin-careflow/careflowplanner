@@ -2303,6 +2303,25 @@ export function BlockEditor({
         if (typeNames.includes(node.type.name)) {
           const nodePos = $pos.before(d);
           ed.view.dispatch(ed.state.tr.setNodeMarkup(nodePos, undefined, { ...node.attrs, collapsed: value }));
+          const sync = () => {
+            const root = ed.view.dom as HTMLElement;
+            root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
+            root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
+            root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(heading => {
+              const firstLine = heading.nextElementSibling as HTMLElement | null;
+              if (firstLine && !/^H[1-6]$/.test(firstLine.tagName)) firstLine.setAttribute("data-heading-fold-proxy", "true");
+              if (heading.getAttribute("data-collapsed") !== "true") return;
+              const level = parseInt(heading.tagName[1], 10);
+              let sibling = heading.nextElementSibling as HTMLElement | null;
+              while (sibling) {
+                if (/^H[1-6]$/.test(sibling.tagName) && parseInt(sibling.tagName[1], 10) <= level) break;
+                sibling.classList.add("cf-h-hidden");
+                sibling = sibling.nextElementSibling as HTMLElement | null;
+              }
+            });
+          };
+          window.requestAnimationFrame(sync);
+          window.setTimeout(sync, 80);
           return true;
         }
       }
@@ -2367,8 +2386,18 @@ export function BlockEditor({
           sibs.push(sib);
           sib = sib.nextElementSibling as HTMLElement | null;
         }
-        void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => setFoldAttr(h, ["heading"], true));
+        void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => {
+          sibs.forEach(s => s.classList.add("cf-h-hidden"));
+          setFoldAttr(h, ["heading"], true);
+        });
       } else {
+        const level = parseInt(h.tagName[1], 10);
+        let visible = h.nextElementSibling as HTMLElement | null;
+        while (visible) {
+          if (/^H[1-6]$/.test(visible.tagName) && parseInt(visible.tagName[1], 10) <= level) break;
+          visible.classList.remove("cf-h-hidden");
+          visible = visible.nextElementSibling as HTMLElement | null;
+        }
         setFoldAttr(h, ["heading"], false);
         window.requestAnimationFrame(() => {
           const level = parseInt(h.tagName[1], 10);
@@ -2381,6 +2410,30 @@ export function BlockEditor({
         });
       }
     };
+
+    // Pseudo-element carets do not become event targets. Resolve gutter clicks
+    // by coordinates so the heading and its first visible line reliably share
+    // one fold control on every browser.
+    const foldRoot = editorRef.current?.view.dom as HTMLElement | undefined;
+    if (foldRoot) {
+      const coarsePointer = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+      const gutterWidth = coarsePointer ? 44 : 32;
+      const foldTargets = foldRoot.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6,[data-heading-fold-proxy='true']");
+      for (const candidate of foldTargets) {
+        const rect = candidate.getBoundingClientRect();
+        const dx = e.clientX - rect.left;
+        const withinRow = e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!withinRow || dx < 0 || dx > gutterWidth) continue;
+        const heading = /^H[1-6]$/.test(candidate.tagName)
+          ? candidate
+          : candidate.previousElementSibling as HTMLElement | null;
+        if (heading && /^H[1-6]$/.test(heading.tagName)) {
+          e.preventDefault();
+          toggleHeadingFold(heading);
+          return;
+        }
+      }
+    }
 
     // Click on a bullet's caret zone: fold nested lines, or turn a flat bullet
     // into a toggle so text can be tucked under it.
@@ -2461,8 +2514,8 @@ export function BlockEditor({
   // re-derive the hidden siblings from the `collapsed` attribute after renders.
   useEffect(() => {
     if (!editor) return;
+    const root = editor.view.dom as HTMLElement;
     const apply = () => {
-      const root = editor.view.dom as HTMLElement;
       root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
       root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
       root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
@@ -2480,10 +2533,20 @@ export function BlockEditor({
         }
       });
     };
-    apply();
-    editor.on("update", apply);
-    editor.on("selectionUpdate", apply);
-    return () => { editor.off("update", apply); editor.off("selectionUpdate", apply); };
+    let frame = window.requestAnimationFrame(apply);
+    const startupTimers = [50, 250].map(delay => window.setTimeout(apply, delay));
+    const scheduleApply = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(apply);
+    };
+    editor.on("update", scheduleApply);
+    editor.on("selectionUpdate", scheduleApply);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      startupTimers.forEach(timer => window.clearTimeout(timer));
+      editor.off("update", scheduleApply);
+      editor.off("selectionUpdate", scheduleApply);
+    };
   }, [editor]);
 
   // Craft-style toggle interaction: the chevron folds, the title takes the caret.
