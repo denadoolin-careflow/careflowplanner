@@ -2359,13 +2359,19 @@ export function BlockEditor({
           const hasChildren = !!liEl.querySelector(":scope > ul, :scope > ol");
           if (hasChildren) {
             const next = liEl.getAttribute("data-collapsed") !== "true";
-            if (!setFoldAttr(liEl, ["listItem"], next)) liEl.classList.toggle("cf-collapsed", next);
+            const apply = () => { if (!setFoldAttr(liEl, ["listItem"], next)) liEl.classList.toggle("cf-collapsed", next); };
             (next ? haptics.fold : haptics.unfold)();
+            (next ? foldSound.fold : foldSound.unfold)();
+            if (next) {
+              const nested = liEl.querySelector<HTMLElement>(":scope > ul, :scope > ol");
+              void animateCollapse(nested).then(apply);
+            } else apply();
           } else if (editorRef.current) {
             try {
               const pos = editorRef.current.view.posAtDOM(liEl, 0);
               editorRef.current.chain().focus().setTextSelection(pos + 1).run();
               convertListItemToDetails(editorRef.current);
+              foldSound.unfold();
             } catch { /* best-effort */ }
           }
           return;
@@ -2381,8 +2387,19 @@ export function BlockEditor({
       if (dx >= zoneMin && dx < 0) {
         e.preventDefault();
         const collapsed = h.getAttribute("data-collapsed") !== "true";
-        setFoldAttr(h, ["heading"], collapsed);
         (collapsed ? haptics.fold : haptics.unfold)();
+        (collapsed ? foldSound.fold : foldSound.unfold)();
+        if (collapsed) {
+          // Fade the section out before it disappears.
+          const level = parseInt(h.tagName[1], 10);
+          const sibs: HTMLElement[] = [];
+          let sib = h.nextElementSibling as HTMLElement | null;
+          while (sib) {
+            if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
+            sibs.push(sib); sib = sib.nextElementSibling as HTMLElement | null;
+          }
+          void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => setFoldAttr(h, ["heading"], true));
+        } else setFoldAttr(h, ["heading"], false);
         return;
       }
     }
