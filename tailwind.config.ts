@@ -59,6 +59,14 @@ export default {
           exhale: "hsl(var(--care-exhale))",
           "exhale-soft": "hsl(var(--care-exhale-soft))",
         },
+        calendar: {
+          event: "hsl(var(--calendar-event))",
+          task: "hsl(var(--calendar-task))",
+          meal: "hsl(var(--calendar-meal))",
+          care: "hsl(var(--calendar-care))",
+          finance: "hsl(var(--calendar-finance))",
+          cosmic: "hsl(var(--calendar-cosmic))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
