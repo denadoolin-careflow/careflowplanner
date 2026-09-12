@@ -302,6 +302,17 @@ turndown.addRule("detailsToggle", {
     return `\n\n<details class="cf-toggle"${open ? " open" : ""}><summary>${summaryHtml}</summary><div data-type="detailsContent">${contentHtml}</div></details>\n\n`;
   },
 });
+// Markdown cannot represent fold state. Keep collapsed headings and list items
+// as HTML so their data-collapsed attribute follows the note through cloud
+// saves, reloads, and another signed-in browser.
+turndown.addRule("collapsedHeading", {
+  filter: (node) => /^H[1-6]$/.test(node.nodeName) && (node as HTMLElement).getAttribute("data-collapsed") === "true",
+  replacement: (_content, node) => `\n\n${(node as HTMLElement).outerHTML}\n\n`,
+});
+turndown.addRule("collapsedListItem", {
+  filter: (node) => node.nodeName === "LI" && (node as HTMLElement).getAttribute("data-collapsed") === "true",
+  replacement: (_content, node) => `\n${(node as HTMLElement).outerHTML}\n`,
+});
 
 /**
  * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
