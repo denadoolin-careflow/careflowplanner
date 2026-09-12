@@ -48,7 +48,7 @@ export function NoteHoverPreview({
         side={side}
         align="start"
         sideOffset={10}
-        className="w-80 overflow-hidden rounded-2xl border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur"
+        className="max-h-[75vh] min-h-56 w-96 min-w-72 max-w-[calc(100vw-2rem)] resize overflow-auto rounded-2xl border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur"
       >
         {note.coverUrl ? (
           <div
@@ -70,8 +70,8 @@ export function NoteHoverPreview({
             {note.pinned && <Pin className="mt-1 h-3.5 w-3.5 shrink-0 fill-current text-amber-500" />}
           </div>
 
-          <div className="max-h-44 overflow-hidden text-[12.5px] leading-relaxed">
-            <NoteMarkdownPreview body={note.body || ""} maxChars={420} />
+          <div className="text-[12.5px] leading-relaxed">
+            <NoteMarkdownPreview body={note.body || ""} maxChars={1200} />
           </div>
 
           {note.tags && note.tags.length > 0 && (

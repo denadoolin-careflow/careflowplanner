@@ -1262,6 +1262,42 @@
   .block-editor .ProseMirror table th { padding: 7px 9px; font-size: 13px; }
 }
 
+/* Rich, read-only note previews (hover cards and notebook rows). */
+.note-md-preview table {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  margin: 0.65rem 0;
+  font-variant-numeric: tabular-nums;
+}
+.note-md-preview th,
+.note-md-preview td {
+  border: 1px solid hsl(var(--border) / 0.75);
+  padding: 0.4rem 0.55rem;
+  text-align: left;
+  vertical-align: top;
+}
+.note-md-preview th {
+  background: hsl(var(--muted) / 0.7);
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+.note-md-preview tr:nth-child(even) td { background: hsl(var(--muted) / 0.25); }
+.note-md-preview .note-preview-link { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
+.note-md-preview .note-preview-embed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.65rem 0;
+  border: 1px solid hsl(var(--primary) / 0.25);
+  border-left-width: 3px;
+  border-radius: 0.5rem;
+  background: hsl(var(--primary) / 0.07);
+  padding: 0.55rem 0.7rem;
+  color: hsl(var(--foreground));
+}
+.note-md-preview .note-preview-embed span { color: hsl(var(--muted-foreground)); font-size: 0.85em; }
+
 /* ----- Swipe-to-select (mobile) ----------------------------------- */
 .block-editor.cf-selecting {
   -webkit-user-select: text;

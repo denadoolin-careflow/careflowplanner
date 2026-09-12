@@ -122,10 +122,10 @@ export function NotesNotebookView({ notes, selectedId, onSelect }: {
                 {isToday && <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 text-[9px] font-semibold uppercase tracking-wider text-primary">Today</span>}
               </button>
             </HoverCardTrigger>
-            <HoverCardContent side="right" align="start" className="w-80 p-3">
+            <HoverCardContent side="right" align="start" className="max-h-[70vh] min-h-40 w-96 min-w-72 max-w-[calc(100vw-2rem)] resize overflow-auto p-3">
               <div className="mb-1 text-xs font-semibold">{periodTitle(kind, k)}</div>
               {written ? (
-                <NoteMarkdownPreview body={note!.body} className="max-h-56 overflow-hidden text-xs" />
+                <NoteMarkdownPreview body={note!.body} className="text-xs" maxChars={1200} />
               ) : (
                 <p className="text-xs text-muted-foreground">{note ? "Nothing written yet." : "No note yet — click to pick a layout."}</p>
               )}
