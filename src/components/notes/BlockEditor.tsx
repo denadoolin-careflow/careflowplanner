@@ -2495,6 +2495,36 @@ export function BlockEditor({
     return found;
   };
 
+  // Which part of the day does this checkbox belong to? Explicit time in the
+  // text wins; otherwise the nearest heading / toggle title above it
+  // ("Morning", "Afternoon", "Evening") decides; else all-day.
+  const inferTimeFor = (pos: number, title: string): { startTime?: string; allDay?: boolean } => {
+    const m = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i.exec(title) ?? /\b([01]?\d|2[0-3]):([0-5]\d)\b/.exec(title);
+    if (m) {
+      let h = Number(m[1]); const min = m[2] ? Number(m[2]) : 0;
+      const ap = (m[3] ?? "").toLowerCase();
+      if (ap === "pm" && h < 12) h += 12;
+      if (ap === "am" && h === 12) h = 0;
+      if (h < 24) return { startTime: `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}` };
+    }
+    let bucket: TimeBucket | null = null;
+    if (editor) {
+      editor.state.doc.nodesBetween(0, pos, (n) => {
+        if (bucket) return false;
+        if (n.type.name === "heading" || n.type.name === "detailsSummary") {
+          const t = (n.textContent || "").toLowerCase();
+          if (/\bmorning\b/.test(t)) bucket = "morning";
+          else if (/\bafternoon\b/.test(t)) bucket = "afternoon";
+          else if (/\bevening\b|\bnight\b/.test(t)) bucket = "evening";
+          else bucket = null;
+        }
+        return true;
+      });
+    }
+    const time = bucket ? BUCKET_DEFAULT_TIME[bucket] : null;
+    return time ? { startTime: time } : { allDay: true };
+  };
+
   // Turn one task item (at absolute pos) into a real Task due on `dueDate`.
   const promoteAt = useCallback(async (pos: number, node: any, dueDate?: string | null): Promise<string | null> => {
     if (!editor) return null;
@@ -2503,7 +2533,7 @@ export function BlockEditor({
     const id = await addTask({
       title,
       done: !!node.attrs?.checked,
-      ...(dueDate ? { dueDate } : {}),
+      ...(dueDate ? { dueDate, ...inferTimeFor(pos, title) } : {}),
       area: "Personal",
     } as any);
     if (!id) return null;
