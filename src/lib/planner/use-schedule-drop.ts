@@ -109,15 +109,52 @@ export function useScheduleDrop() {
     };
   }, [taskIds]);
 
-  /** Schedule a dragged item onto a day, optionally into a day part. */
-  const schedule = useCallback((
+  /** Rough minutes a day is already holding (mirrors the month view's load heuristic). */
+  const storeDayLoad = useCallback((dateISO: string, excludeId?: string) => {
+    let sum = 0;
+    for (const t of state.tasks ?? []) {
+      if (t.dueDate !== dateISO || t.done || t.id === excludeId || t.parentTaskId) continue;
+      sum += t.estMinutes ?? (t.startTime ? 45 : 20);
+    }
+    for (const a of state.appointments ?? []) {
+      if (a.date !== dateISO || a.id === excludeId) continue;
+      sum += a.durationMinutes ?? 45;
+    }
+    for (const m of state.meals ?? []) {
+      if (m.date !== dateISO || m.id === excludeId) continue;
+      sum += 30;
+    }
+    return sum;
+  }, [state.tasks, state.appointments, state.meals]);
+
+  const undoToast = useCallback((message: string, revert: () => void) => {
+    toast.success(message, { action: { label: "Undo", onClick: () => { revert(); toast.message("Moved back"); } } });
+  }, []);
+
+  /** Apply a move immediately — no capacity check. */
+  const commit = useCallback((
     item: { type: string; id: string },
     dateISO: string,
     part?: DayPartKey,
+    opts: ScheduleOpts = {},
   ) => {
+    const dayLabel = format(new Date(`${dateISO}T12:00:00`), "EEE, MMM d");
     if (item.type === "appointment") {
-      updateAppointment(item.id, { date: dateISO });
-      toast.success("Appointment moved");
+      const before = (state.appointments ?? []).find((a: any) => a.id === item.id);
+      if (!before) return;
+      const patch: any = { date: dateISO };
+      if (opts.time) patch.time = opts.time;
+      else if (part && (!before.time || partOfTime(before.time) !== part)) patch.time = suggestForDayPart(PART_LABEL[part], before.durationMinutes ?? 45, [], getSnapStep());
+      updateAppointment(item.id, patch);
+      undoToast(`Appointment moved to ${dayLabel}`, () => updateAppointment(item.id, { date: before.date, time: before.time }));
+      return;
+    }
+    if (item.type === "meal") {
+      const before = (state.meals ?? []).find((m: any) => m.id === item.id);
+      if (!before) return;
+      const slot = opts.slot ?? (part ? PART_MEAL[part] : before.slot);
+      updateMeal(item.id, { date: dateISO, slot });
+      undoToast(`${slot} moved to ${dayLabel}`, () => updateMeal(item.id, { date: before.date, slot: before.slot }));
       return;
     }
     if (item.type !== "task") {
@@ -126,17 +163,32 @@ export function useScheduleDrop() {
     }
     const task = (state.tasks ?? []).find((t: any) => t.id === item.id);
     if (!task) return;
+    const revert = () => updateTask(task.id, { dueDate: task.dueDate, startTime: task.startTime, dayPart: task.dayPart, inbox: task.inbox });
 
     const step = getSnapStep();
     const duration = Math.max(15, task.estMinutes ?? 30);
     const busy = busyForDay(dateISO, task.id);
-    const dayLabel = format(new Date(`${dateISO}T12:00:00`), "EEE, MMM d");
+
+    if (opts.time) {
+      const requested = toTime(snapMinutesTo(toMinutes(opts.time) ?? 9 * 60, step));
+      const clash = findConflicts(toMinutes(requested)!, duration, busy);
+      if (clash.length) { setPending(buildPending(task, dateISO, requested, duration, busy, clash)); return; }
+      updateTask(task.id, { dueDate: dateISO, startTime: requested, dayPart: dayPartLabel(partOfTime(requested)), inbox: false });
+      undoToast(`${requested} on ${dayLabel}`, revert);
+      return;
+    }
 
     if (!part) {
       // Day-level drop keeps whatever time the task already had (snapped).
       const keep = task.startTime ? toTime(snapMinutesTo(toMinutes(task.startTime) ?? 0, step)) : undefined;
-      updateTask(task.id, { dueDate: dateISO, ...(keep ? { startTime: keep } : {}) });
-      toast.success(`Moved to ${dayLabel}`);
+      updateTask(task.id, { dueDate: dateISO, inbox: false, ...(keep ? { startTime: keep } : {}) });
+      undoToast(`Moved to ${dayLabel}`, revert);
+      return;
+    }
+
+    if (opts.keepTime && task.startTime && partOfTime(task.startTime) === part) {
+      updateTask(task.id, { dueDate: dateISO, dayPart: PART_LABEL[part], inbox: false });
+      undoToast(`${PART_LABEL[part]} on ${dayLabel}`, revert);
       return;
     }
 
@@ -146,9 +198,34 @@ export function useScheduleDrop() {
       setPending(buildPending(task, dateISO, requested, duration, busy, clash));
       return;
     }
-    updateTask(task.id, { dueDate: dateISO, startTime: requested });
-    toast.success(`${PART_LABEL[part]} · ${requested} on ${dayLabel}`);
-  }, [state.tasks, updateTask, updateAppointment, busyForDay, buildPending]);
+    updateTask(task.id, { dueDate: dateISO, startTime: requested, dayPart: PART_LABEL[part], inbox: false });
+    undoToast(`${PART_LABEL[part]} · ${requested} on ${dayLabel}`, revert);
+  }, [state.tasks, state.appointments, state.meals, updateTask, updateAppointment, updateMeal, busyForDay, buildPending, undoToast]);
+
+  /**
+   * Schedule a dragged item onto a day, optionally into a day part or at an
+   * explicit time. Very full days ask for confirmation first.
+   */
+  const schedule = useCallback((
+    item: { type: string; id: string },
+    dateISO: string,
+    part?: DayPartKey,
+    opts: ScheduleOpts = {},
+  ) => {
+    const fromDate = itemDate(state, item);
+    if (!opts.skipCapacity && fromDate !== dateISO && storeDayLoad(dateISO, item.id) >= FULL_DAY_MINUTES) {
+      setCapacityPending({ item, dateISO, part, opts, title: itemTitle(state, item) });
+      return;
+    }
+    commit(item, dateISO, part, opts);
+  }, [state, storeDayLoad, commit]);
+
+  const confirmCapacity = useCallback(() => {
+    if (!capacityPending) return;
+    const { item, dateISO, part, opts } = capacityPending;
+    setCapacityPending(null);
+    commit(item, dateISO, part, opts);
+  }, [capacityPending, commit]);
 
   /**
    * Bulk move: place several tasks on a day (optionally into a day part or an
