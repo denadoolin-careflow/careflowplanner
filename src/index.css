@@ -365,11 +365,6 @@
 }
 
 @layer components {
-  .planner-notebook-nav {
-    @apply flex max-w-full items-center gap-1 overflow-x-auto border-b border-border/60 pb-2;
-  }
-  .planner-notebook-nav__item { @apply min-h-11 shrink-0 rounded-md px-3 text-xs text-muted-foreground; }
-  .planner-notebook-nav__item--active { @apply bg-primary-soft text-foreground shadow-sm; }
   .planner-month-experience { @apply space-y-3; }
   .planner-month-intro { @apply flex flex-col gap-3 border-b border-border/50 pb-3 sm:flex-row sm:items-end sm:justify-between; }
   .planner-month-season > a > div { @apply rounded-md; }
