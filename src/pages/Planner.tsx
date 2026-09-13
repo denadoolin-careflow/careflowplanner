@@ -9,7 +9,7 @@ import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
 import { PlannerQuickCapture, PLANNER_QUICK_ADD_EVENT } from "@/components/planner/PlannerQuickCapture";
 import { PlannerMonthExperience } from "@/components/planner/PlannerMonthExperience";
-import { PlannerNotebookNav } from "@/components/planner/PlannerNotebookNav";
+
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
 import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
 import { PlannerWeekList } from "@/components/planner/PlannerWeekList";
