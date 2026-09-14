@@ -66,7 +66,7 @@ function itemDate(state: any, item: { type: string; id: string }): string | unde
 function itemTitle(state: any, item: { type: string; id: string }): string {
   if (item.type === "task") return (state.tasks ?? []).find((t: any) => t.id === item.id)?.title ?? "Task";
   if (item.type === "appointment") return (state.appointments ?? []).find((a: any) => a.id === item.id)?.title ?? "Appointment";
-  if (item.type === "meal") { const m = (state.meals ?? []).find((m: any) => m.id === item.id); return m?.title ?? m?.slot ?? "Meal"; }
+  if (item.type === "meal") { const m = (state.meals ?? []).find((m: any) => m.id === item.id); return m?.name ?? m?.slot ?? "Meal"; }
   return "Item";
 }
 
