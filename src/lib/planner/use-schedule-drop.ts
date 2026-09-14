@@ -118,8 +118,9 @@ export type ConflictChoice =
   | { kind: "swap"; withId: string };
 
 export function useScheduleDrop() {
-  const { state, updateTask, updateAppointment } = useStore() as any;
+  const { state, updateTask, updateAppointment, updateMeal } = useStore() as any;
   const [pending, setPending] = useState<PendingConflict | null>(null);
+  const [capacityPending, setCapacityPending] = useState<PendingCapacity | null>(null);
 
   const busyForDay = useCallback((dateISO: string, excludeId?: string): BusyBlock[] => {
     const rows = [
