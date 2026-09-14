@@ -352,9 +352,11 @@ export function useScheduleDrop() {
     setPending(null);
   }, [pending, updateTask, state.tasks, busyForDay]);
 
+  const cancelCapacity = useCallback(() => setCapacityPending(null), []);
+
   return useMemo(
-    () => ({ schedule, scheduleMany, pending, setPending, resolve }),
-    [schedule, scheduleMany, pending, resolve],
+    () => ({ schedule, scheduleMany, pending, setPending, resolve, capacityPending, confirmCapacity, cancelCapacity }),
+    [schedule, scheduleMany, pending, resolve, capacityPending, confirmCapacity, cancelCapacity],
   );
 }
 
