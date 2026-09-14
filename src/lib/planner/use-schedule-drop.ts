@@ -16,9 +16,59 @@ import {
 
 export type DayPartKey = "morning" | "afternoon" | "evening";
 
-const PART_LABEL: Record<DayPartKey, string> = {
+const PART_LABEL: Record<DayPartKey, "Morning" | "Afternoon" | "Evening"> = {
   morning: "Morning", afternoon: "Afternoon", evening: "Evening",
 };
+
+const PART_MEAL: Record<DayPartKey, "Breakfast" | "Lunch" | "Dinner"> = {
+  morning: "Breakfast", afternoon: "Lunch", evening: "Dinner",
+};
+
+/** A day already holding this many minutes asks before accepting more. */
+export const FULL_DAY_MINUTES = 450;
+
+export interface ScheduleOpts {
+  /** Explicit "HH:MM" start (Schedule grid hour cells). */
+  time?: string;
+  /** Meal slot override (defaults from the day part when given). */
+  slot?: "Breakfast" | "Lunch" | "Dinner" | "Snack" | "Drink";
+  /** Keep the task's current time if it already falls in the target part. */
+  keepTime?: boolean;
+  /** Skip the very-full-day confirmation (used after the user confirms). */
+  skipCapacity?: boolean;
+}
+
+export interface PendingCapacity {
+  item: { type: string; id: string };
+  dateISO: string;
+  part?: DayPartKey;
+  opts: ScheduleOpts;
+  title: string;
+  load: number;
+}
+
+export function partOfTime(time?: string | null): DayPartKey {
+  const h = Number((time ?? "").split(":")[0]);
+  if (!Number.isFinite(h) || h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
+const dayPartLabel = (p: DayPartKey) => PART_LABEL[p];
+
+function itemDate(state: any, item: { type: string; id: string }): string | undefined {
+  if (item.type === "task") return (state.tasks ?? []).find((t: any) => t.id === item.id)?.dueDate;
+  if (item.type === "appointment") return (state.appointments ?? []).find((a: any) => a.id === item.id)?.date;
+  if (item.type === "meal") return (state.meals ?? []).find((m: any) => m.id === item.id)?.date;
+  return undefined;
+}
+
+function itemTitle(state: any, item: { type: string; id: string }): string {
+  if (item.type === "task") return (state.tasks ?? []).find((t: any) => t.id === item.id)?.title ?? "Task";
+  if (item.type === "appointment") return (state.appointments ?? []).find((a: any) => a.id === item.id)?.title ?? "Appointment";
+  if (item.type === "meal") { const m = (state.meals ?? []).find((m: any) => m.id === item.id); return m?.name ?? m?.slot ?? "Meal"; }
+  return "Item";
+}
 
 export const PLANNER_ITEM_MIME = "application/x-planner-item";
 
@@ -68,8 +118,9 @@ export type ConflictChoice =
   | { kind: "swap"; withId: string };
 
 export function useScheduleDrop() {
-  const { state, updateTask, updateAppointment } = useStore() as any;
+  const { state, updateTask, updateAppointment, updateMeal } = useStore() as any;
   const [pending, setPending] = useState<PendingConflict | null>(null);
+  const [capacityPending, setCapacityPending] = useState<PendingCapacity | null>(null);
 
   const busyForDay = useCallback((dateISO: string, excludeId?: string): BusyBlock[] => {
     const rows = [
@@ -213,8 +264,9 @@ export function useScheduleDrop() {
     opts: ScheduleOpts = {},
   ) => {
     const fromDate = itemDate(state, item);
-    if (!opts.skipCapacity && fromDate !== dateISO && storeDayLoad(dateISO, item.id) >= FULL_DAY_MINUTES) {
-      setCapacityPending({ item, dateISO, part, opts, title: itemTitle(state, item) });
+    const load = storeDayLoad(dateISO, item.id);
+    if (!opts.skipCapacity && fromDate !== dateISO && load >= FULL_DAY_MINUTES) {
+      setCapacityPending({ item, dateISO, part, opts, title: itemTitle(state, item), load });
       return;
     }
     commit(item, dateISO, part, opts);
@@ -300,9 +352,11 @@ export function useScheduleDrop() {
     setPending(null);
   }, [pending, updateTask, state.tasks, busyForDay]);
 
+  const cancelCapacity = useCallback(() => setCapacityPending(null), []);
+
   return useMemo(
-    () => ({ schedule, scheduleMany, pending, setPending, resolve }),
-    [schedule, scheduleMany, pending, resolve],
+    () => ({ schedule, scheduleMany, pending, setPending, resolve, capacityPending, confirmCapacity, cancelCapacity }),
+    [schedule, scheduleMany, pending, resolve, capacityPending, confirmCapacity, cancelCapacity],
   );
 }
 
