@@ -264,8 +264,9 @@ export function useScheduleDrop() {
     opts: ScheduleOpts = {},
   ) => {
     const fromDate = itemDate(state, item);
-    if (!opts.skipCapacity && fromDate !== dateISO && storeDayLoad(dateISO, item.id) >= FULL_DAY_MINUTES) {
-      setCapacityPending({ item, dateISO, part, opts, title: itemTitle(state, item) });
+    const load = storeDayLoad(dateISO, item.id);
+    if (!opts.skipCapacity && fromDate !== dateISO && load >= FULL_DAY_MINUTES) {
+      setCapacityPending({ item, dateISO, part, opts, title: itemTitle(state, item), load });
       return;
     }
     commit(item, dateISO, part, opts);
