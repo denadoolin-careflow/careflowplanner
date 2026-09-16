@@ -50,6 +50,8 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { tray, useTray } from "@/lib/tray-store";
+import { PlannerDndProvider } from "@/lib/planner/planner-dnd";
+
 
 const SEGMENTS = ["all", "morning", "afternoon", "evening"] as const;
 type Segment = (typeof SEGMENTS)[number];
