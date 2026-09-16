@@ -50,6 +50,8 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { tray, useTray } from "@/lib/tray-store";
+import { PlannerDndProvider } from "@/lib/planner/planner-dnd";
+
 
 const SEGMENTS = ["all", "morning", "afternoon", "evening"] as const;
 type Segment = (typeof SEGMENTS)[number];
@@ -267,6 +269,7 @@ export default function Planner() {
   }, []);
 
   return (
+    <PlannerDndProvider>
     <div
       ref={shellRef}
       className={
@@ -276,6 +279,7 @@ export default function Planner() {
       }
     >
       <div ref={shellTopRef} aria-hidden className="h-0" />
+
       {isMobile ? (
         <div ref={mobileHeaderRef} className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
         <div className="flex items-center gap-1">
@@ -721,5 +725,7 @@ export default function Planner() {
         onGoToday={() => go(new Date())}
       />
     </div>
+    </PlannerDndProvider>
+
   );
 }

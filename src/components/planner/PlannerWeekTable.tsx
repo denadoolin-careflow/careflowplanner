@@ -266,31 +266,13 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
               <tr><td colSpan={visibleColumns.length + 1} className="px-3 py-6 text-center text-muted-foreground">Nothing matches here.</td></tr>
             )}
             {rows.map(it => (
-              <tr
+              <DraggableRow
                 key={it.id}
-                draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
-                onDragStart={e => {
-                  e.dataTransfer.setData(PLANNER_ITEM_MIME, `${it.sourceRef.type}:${it.sourceRef.id}`);
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-                onDragOver={e => {
-                  if (Array.from(e.dataTransfer.types).includes(PLANNER_ITEM_MIME)) { e.preventDefault(); setDropRow(it.id); }
-                }}
-                onDragLeave={() => setDropRow(cur => (cur === it.id ? null : cur))}
-                onDrop={e => {
-                  e.preventDefault();
-                  setDropRow(null);
-                  const dragged = readDraggedItem(e);
-                  if (dragged) schedule(dragged, it.date);
-                }}
-                onClick={() => handleOpen(it)}
-                className={cn(
-                  "group/row cursor-pointer transition-colors hover:bg-muted/50",
-                  it.done && "opacity-55",
-                  dropRow === it.id && "bg-primary/5 outline outline-1 outline-primary/40",
-                )}
+                item={it}
+                onOpen={() => handleOpen(it)}
+                className={cn("group/row cursor-pointer transition-colors hover:bg-muted/50", it.done && "opacity-55")}
               >
-                <td className="w-9 px-2 py-2" onClick={e => e.stopPropagation()}>
+                <td className="w-9 px-2 py-2" onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
                   {it.sourceRef.type === "task" && (
                     <Checkbox
                       aria-label={`Select ${it.title}`}
@@ -304,8 +286,9 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
                     {cell(it, col)}
                   </td>
                 ))}
-              </tr>
+              </DraggableRow>
             ))}
+
           </tbody>
         </table>
       </div>
