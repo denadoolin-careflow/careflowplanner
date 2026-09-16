@@ -725,5 +725,7 @@ export default function Planner() {
         onGoToday={() => go(new Date())}
       />
     </div>
+    </PlannerDndProvider>
+
   );
 }
