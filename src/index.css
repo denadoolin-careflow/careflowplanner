@@ -404,6 +404,14 @@
   .planner-lighten-card { @apply flex gap-2 rounded-md border border-warm/70 bg-warm-soft p-3 text-warm-foreground; }
   .planner-drag-ghost { @apply pointer-events-none fixed z-50 max-w-[65vw] truncate rounded-md border border-primary/50 bg-card px-3 py-2 text-xs shadow-float; }
 
+  /* Shared Trello-style drag layer */
+  .planner-dnd-ghost { @apply pointer-events-none max-w-[70vw] cursor-grabbing truncate rounded-xl border border-l-[3px] border-primary/50 bg-card px-3 py-2 text-xs font-medium shadow-float; }
+  .planner-dnd-card { @apply cursor-grab; }
+  .planner-dnd-card--dragging { @apply opacity-40; }
+  .planner-dropzone { @apply transition-colors; }
+  .planner-dropzone--armed { @apply outline-dashed outline-1 -outline-offset-2 outline-primary/25; }
+  .planner-dropzone--active { @apply bg-primary-soft/60 outline-dashed outline-2 -outline-offset-2 outline-primary; }
+
   @media (max-width: 767px) {
     .planner-month-summary { @apply gap-2; }
     .planner-month-summary__stats { @apply min-w-0; }
@@ -413,12 +421,18 @@
     .planner-month-stat > span:last-child { @apply text-[9px]; }
     .planner-month-rhythm { @apply hidden; }
     .planner-month-calendar { @apply -mx-2 rounded-none border-x-0; }
-    .planner-month-day { @apply min-h-[74px] p-0.5; }
-    .planner-month-day__header { @apply min-h-9 justify-center; }
-    .planner-month-day__number { @apply h-8 w-8 text-xs; }
+    .planner-month-day { @apply min-h-[86px] p-0.5; }
+    .planner-month-day__header { @apply min-h-11 justify-center; }
+    .planner-month-day__number { @apply h-9 w-9 text-sm; }
     .planner-month-day__today-label { @apply absolute left-1/2 top-0 -translate-x-1/2 px-1 text-[7px]; }
     .planner-month-day__capacity { @apply justify-center; }
+    .planner-month-day__dots { @apply min-h-11 items-center pt-1; }
+    .planner-month-day__dots > span { @apply h-2.5 w-2.5; }
+    .planner-month-item { @apply min-h-7; }
+    .planner-month-day--drop { @apply scale-[1.02]; }
+    .planner-month-list-day { @apply px-3 py-1; }
   }
+
   .cozy-card {
     @apply rounded-2xl bg-card border border-border/60 shadow-[var(--shadow-soft)];
   }
