@@ -269,6 +269,7 @@ export default function Planner() {
   }, []);
 
   return (
+    <PlannerDndProvider>
     <div
       ref={shellRef}
       className={
@@ -278,6 +279,7 @@ export default function Planner() {
       }
     >
       <div ref={shellTopRef} aria-hidden className="h-0" />
+
       {isMobile ? (
         <div ref={mobileHeaderRef} className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
         <div className="flex items-center gap-1">
