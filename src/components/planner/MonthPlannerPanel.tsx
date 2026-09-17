@@ -97,7 +97,12 @@ export function MonthPlannerPanel({ selectedDate, onOpen, onAdd, onOpenDay, onMo
             {FILTERS.map(value => <Button key={value} size="sm" variant="ghost" onClick={() => setFilter(value)} aria-pressed={filter === value} className={cn("h-8 shrink-0 rounded-full px-2.5 text-[11px]", filter === value && "bg-primary text-primary-foreground")}>{value}</Button>)}
           </div>
           <div className="max-h-[55vh] space-y-3 overflow-y-auto py-2">
-            {groups.length ? groups.map(([date, rows]) => <section key={date}><div className="sticky top-0 z-10 bg-card/95 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(parseISO(date), "EEE, MMM d")}</div>{rows.map(item => <ScheduleRow key={item.id} item={item} onOpen={onOpen} onMove={onMove} />)}</section>) : <p className="py-10 text-center text-sm text-muted-foreground">No upcoming items in this view.</p>}
+            {groups.length ? groups.map(([date, rows]) => (
+              <PanelDropDay key={date} dateISO={date} id={`panel-upcoming:${date}`} className="rounded-xl">
+                <div className="sticky top-0 z-10 bg-card/95 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(parseISO(date), "EEE, MMM d")}</div>
+                {rows.map(item => <ScheduleRow key={item.id} item={item} onOpen={onOpen} onMove={onMove} />)}
+              </PanelDropDay>
+            )) : <p className="py-10 text-center text-sm text-muted-foreground">No upcoming items in this view.</p>}
           </div>
           <Button variant="ghost" size="sm" onClick={() => onOpenDay(addDays(selectedDate, 1))} className="mt-2 w-full">View the next day<ChevronRight className="ml-1 h-4 w-4" /></Button>
         </TabsContent>
