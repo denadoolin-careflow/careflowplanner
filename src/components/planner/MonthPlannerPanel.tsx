@@ -42,6 +42,16 @@ function ScheduleRow({ item, onOpen, onMove }: { item: PlannerFeedItem; onOpen: 
   );
 }
 
+/** A drop area for one date inside the side panel. */
+function PanelDropDay({ dateISO, id, className, children }: { dateISO: string; id: string; className?: string; children: React.ReactNode }) {
+  const zone = useDropZone({ dateISO }, { id });
+  return (
+    <div ref={zone.ref} {...zone.nativeProps} {...zone.dataProps} className={cn(className, zone.className)}>
+      {children}
+    </div>
+  );
+}
+
 export function MonthPlannerPanel({ selectedDate, onOpen, onAdd, onOpenDay, onMove }: {
   selectedDate: Date;
   onOpen: (item: PlannerFeedItem) => void;
