@@ -20,7 +20,8 @@ import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
 import { usePlannerSelection } from "@/lib/planner/selection";
 import { PlannerBulkBar } from "./PlannerBulkBar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME } from "@/lib/planner/use-schedule-drop";
+import { useScheduleDrop } from "@/lib/planner/use-schedule-drop";
+import { useDraggableCard, feedDragItem } from "@/lib/planner/planner-dnd";
 import { cn } from "@/lib/utils";
 
 const PRIO_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
