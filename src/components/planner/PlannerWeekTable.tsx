@@ -20,7 +20,8 @@ import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
 import { usePlannerSelection } from "@/lib/planner/selection";
 import { PlannerBulkBar } from "./PlannerBulkBar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME } from "@/lib/planner/use-schedule-drop";
+import { useScheduleDrop } from "@/lib/planner/use-schedule-drop";
+import { useDraggableCard, feedDragItem } from "@/lib/planner/planner-dnd";
 import { cn } from "@/lib/utils";
 
 const PRIO_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -44,6 +45,21 @@ function sortValue(it: PlannerFeedItem, col: TableColumnId): string | number {
     case "tags": return (it.tags?.join(",") ?? "zzz").toLowerCase();
     default: return `${it.date} ${it.time ?? "zz"}`;
   }
+}
+
+/** A table row that can be picked up with the shared planner drag layer. */
+function DraggableRow({ item, onOpen, className, children }: {
+  item: PlannerFeedItem;
+  onOpen: () => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const drag = useDraggableCard(feedDragItem(item), { idPrefix: "table" });
+  return (
+    <tr ref={drag.ref} {...drag.props} onClick={onOpen} className={cn(className, drag.className)}>
+      {children}
+    </tr>
+  );
 }
 
 /** Week as a configurable, sortable table — dense, scannable, good for review. */

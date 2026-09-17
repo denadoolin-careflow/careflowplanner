@@ -17,6 +17,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PeriodNoteDot } from "@/components/notes/PeriodNoteDot";
 import { usePeriodNoteMarks } from "@/lib/notes/daily";
 import { weekKeyFor } from "@/lib/notes/periods";
+import { useDropZone } from "@/lib/planner/planner-dnd";
 
 const GUTTER_W = 56;
 
@@ -27,6 +28,31 @@ function WeekNoteDot({ start }: { start: Date }) {
   return <PeriodNoteDot kind="weekly" keyISO={key} mark={marks.get(key)} size={13} />;
 }
 const LEGEND_KINDS: KindKey[] = ["task", "appt", "care", "meal", "bday", "hol", "gcal"];
+
+/** A day column in the hour grid: drops land on the hour the pointer is over. */
+function GridDayColumn({ date, className, children }: { date: Date; className?: string; children: React.ReactNode }) {
+  const dateISO = format(date, "yyyy-MM-dd");
+  const elRef = useRef<HTMLDivElement | null>(null);
+  const resolveTime = useCallback((clientY: number) => {
+    const rect = elRef.current?.getBoundingClientRect();
+    if (!rect) return undefined;
+    const mins = PLANNER_START_H * 60 + ((clientY - rect.top) / HOUR_PX) * 60;
+    const snapped = Math.min(23 * 60 + 45, Math.max(0, Math.round(mins / 15) * 15));
+    const h = Math.floor(snapped / 60), m = snapped % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }, []);
+  const zone = useDropZone({ dateISO, resolveTime }, { id: `weekgrid:${dateISO}` });
+  return (
+    <div
+      ref={node => { elRef.current = node; zone.ref(node); }}
+      {...zone.nativeProps}
+      {...zone.dataProps}
+      className={cn(className, zone.className)}
+    >
+      {children}
+    </div>
+  );
+}
 
 /** Multi-day hour grid with an all-day row fed by the shared planner feed. */
 export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCustomize }: {
@@ -166,9 +192,13 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
             )}
           </div>
           {cols.map((d, i) => (
-            <div key={format(d, "yyyy-MM-dd")} className={cn("relative min-w-0", i > 0 && "border-l border-border/40", isSameDay(d, today) && "bg-primary/[0.03]")}>
+            <GridDayColumn
+              key={format(d, "yyyy-MM-dd")}
+              date={d}
+              className={cn("relative min-w-0", i > 0 && "border-l border-border/40", isSameDay(d, today) && "bg-primary/[0.03]")}
+            >
               <PlannerTimeline date={d} bare gutterless noScroll compact taskFilter={taskFilter} />
-            </div>
+            </GridDayColumn>
           ))}
           {/* Now line across today's column */}
           {nowMin !== null && todayIdx >= 0 && (
