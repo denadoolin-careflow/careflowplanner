@@ -46,6 +46,21 @@ function sortValue(it: PlannerFeedItem, col: TableColumnId): string | number {
   }
 }
 
+/** A table row that can be picked up with the shared planner drag layer. */
+function DraggableRow({ item, onOpen, className, children }: {
+  item: PlannerFeedItem;
+  onOpen: () => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const drag = useDraggableCard(feedDragItem(item), { idPrefix: "table" });
+  return (
+    <tr ref={drag.ref} {...drag.props} onClick={onOpen} className={cn(className, drag.className)}>
+      {children}
+    </tr>
+  );
+}
+
 /** Week as a configurable, sortable table — dense, scannable, good for review. */
 export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "week" }: {
   weekStart: Date;
