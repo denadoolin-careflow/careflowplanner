@@ -17,6 +17,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { PeriodNoteDot } from "@/components/notes/PeriodNoteDot";
 import { usePeriodNoteMarks } from "@/lib/notes/daily";
 import { weekKeyFor } from "@/lib/notes/periods";
+import { useDropZone } from "@/lib/planner/planner-dnd";
 
 const GUTTER_W = 56;
 
@@ -191,9 +192,13 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
             )}
           </div>
           {cols.map((d, i) => (
-            <div key={format(d, "yyyy-MM-dd")} className={cn("relative min-w-0", i > 0 && "border-l border-border/40", isSameDay(d, today) && "bg-primary/[0.03]")}>
+            <GridDayColumn
+              key={format(d, "yyyy-MM-dd")}
+              date={d}
+              className={cn("relative min-w-0", i > 0 && "border-l border-border/40", isSameDay(d, today) && "bg-primary/[0.03]")}
+            >
               <PlannerTimeline date={d} bare gutterless noScroll compact taskFilter={taskFilter} />
-            </div>
+            </GridDayColumn>
           ))}
           {/* Now line across today's column */}
           {nowMin !== null && todayIdx >= 0 && (
