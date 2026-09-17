@@ -84,9 +84,9 @@ export function MonthPlannerPanel({ selectedDate, onOpen, onAdd, onOpenDay, onMo
             <h3 className="font-display text-2xl font-semibold">{format(selectedDate, "MMMM d")}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{load.label} day · {todayItems.length ? `${todayItems.length} things gently held` : "space is open"}</p>
           </div>
-          <div className="max-h-[48vh] overflow-y-auto">
-            {todayItems.length ? todayItems.map(item => <ScheduleRow key={item.id} item={item} onOpen={onOpen} onMove={onMove} />) : <div className="py-10 text-center"><CalendarClock className="mx-auto h-6 w-6 text-muted-foreground" /><p className="mt-2 text-sm">Nothing planned yet.</p><p className="text-xs text-muted-foreground">Leave room to exhale, or add one anchor.</p></div>}
-          </div>
+          <PanelDropDay dateISO={key} id={`panel-day:${key}`} className="max-h-[48vh] min-h-[88px] overflow-y-auto rounded-xl">
+            {todayItems.length ? todayItems.map(item => <ScheduleRow key={item.id} item={item} onOpen={onOpen} onMove={onMove} />) : <div className="py-10 text-center"><CalendarClock className="mx-auto h-6 w-6 text-muted-foreground" /><p className="mt-2 text-sm">Nothing planned yet.</p><p className="text-xs text-muted-foreground">Drop something here, or add one anchor.</p></div>}
+          </PanelDropDay>
           <div className="grid grid-cols-2 gap-2 border-t border-border/55 pt-3">
             <Button size="sm" onClick={onAdd} className="h-10"><Plus className="mr-1.5 h-4 w-4" />Add to this day</Button>
             <Button size="sm" variant="outline" onClick={() => onOpenDay(selectedDate)} className="h-10">Open day<ChevronRight className="ml-1 h-4 w-4" /></Button>
