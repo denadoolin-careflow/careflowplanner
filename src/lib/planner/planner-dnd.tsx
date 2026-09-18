@@ -43,6 +43,8 @@ export interface PlannerDropTarget {
   resolveTime?: (clientY: number) => string | undefined;
   /** Keep a task's current time when it already sits in `part`. */
   keepTime?: boolean;
+  /** Target only collects the item (e.g. Top Priorities) — never reschedules it. */
+  pinOnly?: boolean;
   /** Board reordering hook: called after the item lands in this target. */
   onLanded?: (item: PlannerDragItem) => void;
 }
@@ -67,6 +69,7 @@ export function PlannerDndProvider({ children }: { children: ReactNode }) {
   );
 
   const schedule = useCallback((item: { type: string; id: string }, target: PlannerDropTarget, clientY?: number) => {
+    if (target.pinOnly) return;
     const opts: ScheduleOpts = { slot: target.slot, keepTime: target.keepTime };
     if (target.resolveTime && clientY != null) {
       const t = target.resolveTime(clientY);

@@ -9,6 +9,7 @@ import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
 import { PlannerQuickCapture, PLANNER_QUICK_ADD_EVENT } from "@/components/planner/PlannerQuickCapture";
 import { PlannerMonthExperience } from "@/components/planner/PlannerMonthExperience";
+import { PlannerPriorityStrip } from "@/components/planner/PlannerPriorityStrip";
 
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
 import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
@@ -592,6 +593,13 @@ export default function Planner() {
               />
               <PlannerDayReferences date={day} />
             </div>
+          )}
+          {(view === "day" || view === "week" || view === "month") && (
+            <PlannerPriorityStrip
+              date={day}
+              scope={view === "day" ? "day" : view === "week" ? "week" : "month"}
+              className="mb-3 shrink-0"
+            />
           )}
           <div className="flex min-w-0 flex-col gap-3">
             {((view === "week" && activeWeekMode !== "overview") || altLayout) && (

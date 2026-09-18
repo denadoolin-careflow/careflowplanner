@@ -5640,6 +5640,42 @@ export type Database = {
         }
         Relationships: []
       }
+      planner_priorities: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_title: string
+          item_type: string
+          period_kind: string
+          period_start: string
+          position: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_title?: string
+          item_type?: string
+          period_kind: string
+          period_start: string
+          position?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_title?: string
+          item_type?: string
+          period_kind?: string
+          period_start?: string
+          position?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       planner_templates: {
         Row: {
           created_at: string
