@@ -43,6 +43,8 @@ export interface PlannerDropTarget {
   resolveTime?: (clientY: number) => string | undefined;
   /** Keep a task's current time when it already sits in `part`. */
   keepTime?: boolean;
+  /** Target only collects the item (e.g. Top Priorities) — never reschedules it. */
+  pinOnly?: boolean;
   /** Board reordering hook: called after the item lands in this target. */
   onLanded?: (item: PlannerDragItem) => void;
 }
