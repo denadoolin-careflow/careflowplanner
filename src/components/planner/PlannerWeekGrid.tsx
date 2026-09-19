@@ -83,6 +83,15 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const scrollRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const totalMin = (PLANNER_END_H - PLANNER_START_H) * 60;
+  const [careVisible, toggleCare] = useCareRowVisible();
+  const [mealsVisible, setMealsVisible] = useState(() => {
+    try { return localStorage.getItem(MEALS_ROW_KEY) !== "0"; } catch { return true; }
+  });
+  const toggleMeals = () => setMealsVisible(v => {
+    const next = !v;
+    try { localStorage.setItem(MEALS_ROW_KEY, next ? "1" : "0"); } catch { /* ignore */ }
+    return next;
+  });
   const todayIdx = cols.findIndex(d => isSameDay(d, today));
 
   useEffect(() => {
