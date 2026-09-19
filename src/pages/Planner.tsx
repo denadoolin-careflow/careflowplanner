@@ -379,7 +379,7 @@ export default function Planner() {
               className="shrink-0"
               value={rangeLayout} onChange={setRangeLayout}
               options={[
-                { id: "default", label: view === "month" ? "Month" : view === "year" ? "Year" : "Day" },
+                { id: "default", label: view === "month" ? "Month" : view === "year" ? "Year" : view === "3day" ? "3 Day" : "Day" },
                 { id: "list", label: "List" },
                 { id: "table", label: "Table" },
               ]}
@@ -431,7 +431,7 @@ export default function Planner() {
               <PlannerRangeModeTabs
                 value={rangeLayout} onChange={setRangeLayout}
                 options={[
-                  { id: "default", label: view === "month" ? "Month" : view === "year" ? "Year" : "Day" },
+                  { id: "default", label: view === "month" ? "Month" : view === "year" ? "Year" : view === "3day" ? "3 Day" : "Day" },
                   { id: "list", label: "List" },
                   { id: "table", label: "Table" },
                 ]}
