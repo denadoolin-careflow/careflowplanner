@@ -18,6 +18,10 @@ import { PeriodNoteDot } from "@/components/notes/PeriodNoteDot";
 import { usePeriodNoteMarks } from "@/lib/notes/daily";
 import { weekKeyFor } from "@/lib/notes/periods";
 import { useDropZone } from "@/lib/planner/planner-dnd";
+import { PlannerCareRow, useCareRowVisible } from "./PlannerCareRow";
+import { UtensilsCrossed, HeartHandshake } from "lucide-react";
+
+const MEALS_ROW_KEY = "careflow:planner:week-meals-visible";
 
 const GUTTER_W = 56;
 
@@ -146,10 +150,21 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Meals + tracked food */}
-      <PlannerWeekMealsRow
-        days={cols.map(d => format(d, "yyyy-MM-dd"))}
-        colTemplate={colTemplate}
-      />
+      {mealsVisible && (
+        <PlannerWeekMealsRow
+          days={cols.map(d => format(d, "yyyy-MM-dd"))}
+          colTemplate={colTemplate}
+        />
+      )}
+
+      {/* Caregiving · Home · Cleaning */}
+      {careVisible && (
+        <PlannerCareRow
+          days={cols.map(d => format(d, "yyyy-MM-dd"))}
+          colTemplate={colTemplate}
+          onToggle={toggleCare}
+        />
+      )}
 
       {/* All-day row */}
       <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>
