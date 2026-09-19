@@ -18,6 +18,10 @@ import { PeriodNoteDot } from "@/components/notes/PeriodNoteDot";
 import { usePeriodNoteMarks } from "@/lib/notes/daily";
 import { weekKeyFor } from "@/lib/notes/periods";
 import { useDropZone } from "@/lib/planner/planner-dnd";
+import { PlannerCareRow, useCareRowVisible } from "./PlannerCareRow";
+import { UtensilsCrossed, HeartHandshake } from "lucide-react";
+
+const MEALS_ROW_KEY = "careflow:planner:week-meals-visible";
 
 const GUTTER_W = 56;
 
@@ -79,6 +83,15 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const scrollRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const totalMin = (PLANNER_END_H - PLANNER_START_H) * 60;
+  const [careVisible, toggleCare] = useCareRowVisible();
+  const [mealsVisible, setMealsVisible] = useState(() => {
+    try { return localStorage.getItem(MEALS_ROW_KEY) !== "0"; } catch { return true; }
+  });
+  const toggleMeals = () => setMealsVisible(v => {
+    const next = !v;
+    try { localStorage.setItem(MEALS_ROW_KEY, next ? "1" : "0"); } catch { /* ignore */ }
+    return next;
+  });
   const todayIdx = cols.findIndex(d => isSameDay(d, today));
 
   useEffect(() => {
@@ -124,9 +137,30 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           {headerMode === "insight" ? <Rows3 className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
           {headerMode === "insight" ? "Compact" : "Full insight"}
         </Button>}
-        {isMobile && days > 3 && (
-          <span className="text-[10.5px] text-muted-foreground">Swipe sideways for more days</span>
-        )}
+        <span className="ml-auto flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7 rounded-full", !mealsVisible && "opacity-40")}
+            onClick={toggleMeals}
+            aria-pressed={mealsVisible}
+            aria-label={mealsVisible ? "Hide meals row" : "Show meals row"}
+            title={mealsVisible ? "Hide meals" : "Show meals"}
+          >
+            <UtensilsCrossed className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7 rounded-full", !careVisible && "opacity-40")}
+            onClick={toggleCare}
+            aria-pressed={careVisible}
+            aria-label={careVisible ? "Hide caregiving, home and cleaning row" : "Show caregiving, home and cleaning row"}
+            title={careVisible ? "Hide care · home · cleaning" : "Show care · home · cleaning"}
+          >
+            <HeartHandshake className="h-3.5 w-3.5" />
+          </Button>
+        </span>
       </div>
 
       {/* Horizontal scroller keeps columns legible on narrow screens */}
@@ -146,10 +180,21 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Meals + tracked food */}
-      <PlannerWeekMealsRow
-        days={cols.map(d => format(d, "yyyy-MM-dd"))}
-        colTemplate={colTemplate}
-      />
+      {mealsVisible && (
+        <PlannerWeekMealsRow
+          days={cols.map(d => format(d, "yyyy-MM-dd"))}
+          colTemplate={colTemplate}
+        />
+      )}
+
+      {/* Caregiving · Home · Cleaning */}
+      {careVisible && (
+        <PlannerCareRow
+          days={cols.map(d => format(d, "yyyy-MM-dd"))}
+          colTemplate={colTemplate}
+          onToggle={toggleCare}
+        />
+      )}
 
       {/* All-day row */}
       <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>

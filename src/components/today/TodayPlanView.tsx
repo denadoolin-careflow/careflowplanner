@@ -13,6 +13,7 @@ import { tray, useTray } from "@/lib/tray-store";
 import { PhaseHabitNudge } from "@/components/planner/PhaseHabitNudge";
 import { TodayInboxRail } from "@/components/today/TodayInboxRail";
 import { TodayPlannedRail } from "@/components/today/TodayPlannedRail";
+import { PlannerCareDayCard } from "@/components/planner/PlannerCareRow";
 
 /**
  * Today's planning surface — the same timeline engine the /planner page uses,
@@ -81,6 +82,7 @@ export function TodayPlanView({ date }: { date: Date }) {
         {actionRow}
         {capacityHints}
         <PlannerOverdueSection date={date} />
+        <PlannerCareDayCard date={date} />
         <PhaseHabitNudge date={date} />
 
         <div className="space-y-2">
@@ -129,6 +131,7 @@ export function TodayPlanView({ date }: { date: Date }) {
       </div>
 
       {capacityHints}
+      <PlannerCareDayCard date={date} />
       <PhaseHabitNudge date={date} />
       {period === "grid" && <TodayPlannedRail date={date} />}
       {period === "grid" && <TodayInboxRail date={date} />}
