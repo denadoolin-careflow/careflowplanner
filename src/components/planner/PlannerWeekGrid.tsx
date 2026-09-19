@@ -137,9 +137,30 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           {headerMode === "insight" ? <Rows3 className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
           {headerMode === "insight" ? "Compact" : "Full insight"}
         </Button>}
-        {isMobile && days > 3 && (
-          <span className="text-[10.5px] text-muted-foreground">Swipe sideways for more days</span>
-        )}
+        <span className="ml-auto flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7 rounded-full", !mealsVisible && "opacity-40")}
+            onClick={toggleMeals}
+            aria-pressed={mealsVisible}
+            aria-label={mealsVisible ? "Hide meals row" : "Show meals row"}
+            title={mealsVisible ? "Hide meals" : "Show meals"}
+          >
+            <UtensilsCrossed className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7 rounded-full", !careVisible && "opacity-40")}
+            onClick={toggleCare}
+            aria-pressed={careVisible}
+            aria-label={careVisible ? "Hide caregiving, home and cleaning row" : "Show caregiving, home and cleaning row"}
+            title={careVisible ? "Hide care · home · cleaning" : "Show care · home · cleaning"}
+          >
+            <HeartHandshake className="h-3.5 w-3.5" />
+          </Button>
+        </span>
       </div>
 
       {/* Horizontal scroller keeps columns legible on narrow screens */}
