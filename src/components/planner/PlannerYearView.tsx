@@ -4,7 +4,11 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 /** Twelve mini-months with load shading — a year at a glance. */
-export function PlannerYearView({ date, onSelectDay }: { date: Date; onSelectDay: (d: Date) => void }) {
+export function PlannerYearView({ date, onSelectDay, onSelectMonth }: {
+  date: Date;
+  onSelectDay: (d: Date) => void;
+  onSelectMonth?: (d: Date) => void;
+}) {
   const { state } = useStore() as any;
   const months = eachMonthOfInterval({ start: startOfYear(date), end: endOfYear(date) });
   const today = new Date();
@@ -37,7 +41,7 @@ export function PlannerYearView({ date, onSelectDay }: { date: Date; onSelectDay
           >
             <button
               type="button"
-              onClick={() => onSelectDay(mo)}
+               onClick={() => (onSelectMonth ?? onSelectDay)(mo)}
               className="mb-1 flex min-h-10 w-full items-center justify-between gap-1 text-left hover:text-primary"
             >
               <span className={cn("truncate font-display text-[13px] font-semibold sm:text-sm", isCurrentMonth && "text-primary")}>
