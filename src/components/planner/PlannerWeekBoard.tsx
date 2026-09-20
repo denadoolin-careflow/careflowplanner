@@ -52,7 +52,7 @@ function BoardCard({ item, onOpen, onToggle }: {
       onClick={() => onOpen(item)}
       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onOpen(item); } }}
       className={cn(
-        "group flex cursor-pointer items-start gap-2 rounded-xl border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[11px] leading-snug shadow-sm transition-all hover:bg-muted/50 hover:shadow-md",
+        "group flex min-h-11 cursor-pointer items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2.5 py-2 text-left text-[11px] leading-snug shadow-sm transition-all hover:bg-muted/50 hover:shadow-md",
         item.done && "opacity-50",
         drag.className,
       )}
@@ -138,7 +138,7 @@ function PartColumn({ day, iso, part, label, hours, slot, items, onOpen, onToggl
       {...zone.nativeProps}
       {...zone.dataProps}
       aria-label={`${label} on ${format(day, "EEEE")}`}
-      className={cn("flex min-h-[112px] flex-col rounded-xl border border-border/50 bg-card/40 p-2", zone.className)}
+      className={cn("flex min-h-[112px] flex-col rounded-lg border border-border/50 bg-card/40 p-2", zone.className)}
     >
       <div className="flex items-baseline justify-between gap-1">
         <div className="min-w-0">
@@ -151,7 +151,7 @@ function PartColumn({ day, iso, part, label, hours, slot, items, onOpen, onToggl
             type="button"
             onClick={() => onQuickAdd(iso, part)}
             aria-label={`Add to ${label} on ${format(day, "EEEE")}`}
-            className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+             className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
@@ -255,7 +255,7 @@ function DayRow({ day, iso, isToday, rows, groups, labels, onSelectDay, onOpen, 
 }) {
   const dayZone = useDropZone({ dateISO: iso }, { id: `weekboard-day:${iso}` });
   return (
-    <article className={cn("rounded-2xl border border-border/60 bg-card/30 p-2", isToday && "border-primary/50 bg-primary/[0.03]")}>
+     <article className={cn("rounded-lg border border-border/60 bg-card/30 p-2", isToday && "border-primary/50 bg-primary/[0.03]")}>
       <div
         ref={dayZone.ref}
         {...dayZone.nativeProps}
@@ -274,7 +274,7 @@ function DayRow({ day, iso, isToday, rows, groups, labels, onSelectDay, onOpen, 
           {groups.anytime.map(it => <BoardCard key={it.id} item={it} onOpen={onOpen} onToggle={onToggle} />)}
         </section>
       )}
-      <div className="mt-1.5 grid gap-2 sm:grid-cols-3">
+       <div className="mt-1.5 grid gap-2 md:grid-cols-3">
         {PARTS.map(p => (
           <PartColumn
             key={p.part}

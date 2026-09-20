@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { haptics } from "./haptics";
 
-const LONG_PRESS_MS = 250;
-const MOVE_CANCEL_PX = 6;
+const LONG_PRESS_MS = 300;
+const MOVE_CANCEL_PX = 10;
 
 export type PlannerDragPayload = { taskId: string; label: string };
 export type PlannerDropDetail = PlannerDragPayload & { clientX: number; clientY: number };
@@ -43,7 +43,7 @@ export function usePlannerPointerDrag(
 
   function highlightAt(x: number, y: number) {
     const el = document.elementFromPoint(x, y) as HTMLElement | null;
-    const grid = el?.closest("[data-planner-grid]") as HTMLElement | null;
+    const grid = el?.closest("[data-planner-grid], [data-drop-day]") as HTMLElement | null;
     document.querySelectorAll("[data-planner-drop-active]").forEach(n => {
       if (n !== grid) n.removeAttribute("data-planner-drop-active");
     });

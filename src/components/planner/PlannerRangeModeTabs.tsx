@@ -9,7 +9,7 @@ export function PlannerRangeModeTabs<T extends string>({ value, onChange, option
   className?: string;
 }) {
   return (
-    <div className={cn("inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5", className)}>
+    <div className={cn("inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-background/70 p-0.5", className)}>
       {options.map(o => {
         const active = o.id === value;
         return (
@@ -18,7 +18,7 @@ export function PlannerRangeModeTabs<T extends string>({ value, onChange, option
             size="sm"
             variant="ghost"
             aria-pressed={active}
-            className={cn("h-7 rounded-full px-3 text-xs",
+            className={cn("h-8 rounded-md px-3 text-xs max-sm:h-9",
               active && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
             onClick={() => { if (!active) onChange(o.id); }}
           >

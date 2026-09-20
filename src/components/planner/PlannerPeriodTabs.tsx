@@ -59,7 +59,7 @@ export function PlannerPeriodTabs({ value, onChange, className, hideGrid }: {
           <button key={o.id}
             onClick={() => onChange(o.id)}
             aria-pressed={active}
-            className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+            className={cn("inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
               active ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent hover:text-foreground",
             )}
           >

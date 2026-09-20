@@ -78,6 +78,30 @@ export function PlannerDndProvider({ children }: { children: ReactNode }) {
     drop.schedule(item, target.dateISO, target.part, opts);
   }, [drop]);
 
+  // Bridge the task sheet's long-press drag into the same targets used by
+  // Week, Board, List and Month. This keeps the sheet usable beyond Day grid.
+  useEffect(() => {
+    const onExternalDrop = (event: Event) => {
+      const detail = (event as CustomEvent<{ taskId?: string; clientX?: number; clientY?: number }>).detail;
+      if (!detail?.taskId || detail.clientX == null || detail.clientY == null) return;
+      const hit = document.elementFromPoint(detail.clientX, detail.clientY) as HTMLElement | null;
+      const zone = hit?.closest<HTMLElement>("[data-drop-day]");
+      const dateISO = zone?.dataset.dropDay;
+      if (!dateISO) return;
+      schedule(
+        { type: "task", id: detail.taskId },
+        {
+          dateISO,
+          part: zone.dataset.dropPart as DayPartKey | undefined,
+          slot: zone.dataset.dropSlot as ScheduleOpts["slot"] | undefined,
+        },
+        detail.clientY,
+      );
+    };
+    window.addEventListener("careflow:planner-drop", onExternalDrop as EventListener);
+    return () => window.removeEventListener("careflow:planner-drop", onExternalDrop as EventListener);
+  }, [schedule]);
+
   const onDragStart = (e: DragStartEvent) => {
     const item = e.active.data.current as PlannerDragItem | undefined;
     if (!item) return;
@@ -210,7 +234,12 @@ export function useDropZone(target: PlannerDropTarget, opts: { id?: string; disa
     armed: !!active,
     nativeProps,
     className: cn("planner-dropzone", !!active && "planner-dropzone--armed", over && "planner-dropzone--active"),
-    dataProps: { "data-drop-day": target.dateISO, "data-drop-active": over ? "true" : undefined },
+      dataProps: {
+        "data-drop-day": target.dateISO,
+        "data-drop-part": target.part,
+        "data-drop-slot": target.slot,
+        "data-drop-active": over ? "true" : undefined,
+      },
   };
 }
 

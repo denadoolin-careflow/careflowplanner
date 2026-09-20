@@ -38,10 +38,10 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture }: { date: D
 
   return <div className="planner-month-experience">
     <div className="planner-month-intro">
-      <div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Capture · Anchor · Rhythm · Exhale</p><h2 className="font-display text-2xl font-semibold sm:text-3xl">{format(date, "MMMM yyyy")}</h2><p className="mt-1 text-xs text-muted-foreground">A gentle view of what your family is carrying this month.</p></div>
+      <div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Capture · Anchor · Rhythm · Exhale</p><h2 className="font-display text-xl font-semibold sm:text-3xl">{format(date, "MMMM yyyy")}</h2><p className="mt-1 text-xs text-muted-foreground max-sm:hidden">A gentle view of what your family is carrying this month.</p></div>
       <div className="flex items-center gap-2"><CaptureMenu onCapture={() => onCapture()} writeDate={selectedDate} />{!isMobile && <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setPanel(!panelOpen)} aria-label={panelOpen ? "Hide day schedule" : "Show day schedule"}>{panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}</Button>}</div>
     </div>
-    <div className="planner-month-season"><SeasonBanner date={date} compact linkTo="/month/overview" /></div>
+    <div className="planner-month-season max-sm:hidden"><SeasonBanner date={date} compact linkTo="/month/overview" /></div>
     {(overdue.length > 0 || unscheduled > 0) && <section className="planner-needs-attention">
       <Button variant="ghost" onClick={() => setAttention(!attentionOpen)} aria-expanded={attentionOpen} className="h-auto min-h-11 w-full justify-start gap-2 px-3 py-2 text-left">
         <AlertTriangle className="h-4 w-4 shrink-0 text-warm-foreground" /><span className="min-w-0 flex-1"><span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Needs attention</span><span className="block text-xs font-medium">{overdue.length} need a new home · {unscheduled} can stay flexible</span></span>{attentionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
