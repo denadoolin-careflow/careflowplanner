@@ -265,16 +265,16 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/60 px-3 py-1.5 text-[10px] text-muted-foreground">
+      {/* Legend — single line that scrolls sideways so it never crowds the grid's scroll area */}
+      <div className="flex shrink-0 flex-nowrap items-center gap-x-3 overflow-x-auto overscroll-x-contain whitespace-nowrap border-t border-border/60 px-3 py-1.5 text-[10px] text-muted-foreground">
         {LEGEND_KINDS.map(k => (
-          <span key={k} className="inline-flex items-center gap-1">
+          <span key={k} className="inline-flex shrink-0 items-center gap-1">
             <span className="h-2 w-2 rounded-full" style={{ background: colorOf(k) }} aria-hidden />
             {KIND_LABEL[k]}
           </span>
         ))}
         {onCustomize && (
-          <button type="button" onClick={onCustomize} className="ml-auto rounded-full px-2 py-0.5 hover:text-foreground">
+          <button type="button" onClick={onCustomize} className="ml-auto shrink-0 rounded-full px-2 py-0.5 hover:text-foreground">
             Customize view
           </button>
         )}
