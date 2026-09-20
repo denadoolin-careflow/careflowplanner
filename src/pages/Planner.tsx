@@ -64,7 +64,7 @@ type Segment = (typeof SEGMENTS)[number];
  */
 const GRID_BOX = "h-[clamp(520px,78vh,1000px)] min-h-0";
 /** Phones: leave room for the sticky header, bottom nav and FAB. */
-const GRID_BOX_MOBILE = "h-[68vh] min-h-[440px]";
+const GRID_BOX_MOBILE = "h-[calc(100dvh-12.5rem)] min-h-[500px] max-h-[760px]";
 /** Sticky side columns scroll on their own without stretching the row. */
 const SIDE_COL = "sticky top-20 max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain";
 
@@ -275,18 +275,18 @@ export default function Planner() {
       ref={shellRef}
       className={
         isMobile
-          ? "planner-surface flex flex-col gap-2.5 pb-32"
+           ? "planner-surface flex flex-col gap-2 pb-[calc(7rem+env(safe-area-inset-bottom))]"
           : "planner-surface flex flex-col gap-3 pb-10"
       }
     >
       <div ref={shellTopRef} aria-hidden className="h-0" />
 
       {isMobile ? (
-        <div ref={mobileHeaderRef} className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
+         <div ref={mobileHeaderRef} className="sticky top-0 z-30 -mx-2 space-y-1 border-b border-border/50 bg-background/95 px-2 pb-1.5 pt-[max(.375rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
         <div className="flex items-center gap-1">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
             <SheetTrigger asChild>
-              <Button size="icon" variant="outline" className="h-8 w-8 shrink-0 rounded-full" aria-label="Show tasks">
+           <Button size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-full" aria-label="Show tasks">
                 <ListTodo className="h-4 w-4" />
               </Button>
             </SheetTrigger>
@@ -303,23 +303,23 @@ export default function Planner() {
               </div>
             </SheetContent>
           </Sheet>
-          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 rounded-full" onClick={() => step(-1)} aria-label="Previous period">
+           <Button size="icon" variant="ghost" className="h-10 w-10 shrink-0 rounded-full" onClick={() => step(-1)} aria-label="Previous period">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <button
             type="button"
             onClick={() => go(new Date())}
-            className="min-w-0 flex-1 truncate text-center font-display text-[15px] font-semibold"
+             className="min-h-10 min-w-0 flex-1 truncate rounded-md px-1 text-center font-display text-[15px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={`${format(day, "EEEE, MMMM d")} — tap for today`}
           >
             {view === "month" ? format(day, "MMMM yyyy") : view === "year" ? format(day, "yyyy") : format(day, "EEE, MMM d")}
           </button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 rounded-full" onClick={() => step(1)} aria-label="Next period">
+           <Button size="icon" variant="ghost" className="h-10 w-10 shrink-0 rounded-full" onClick={() => step(1)} aria-label="Next period">
             <ChevronRight className="h-4 w-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="outline" className="h-8 w-8 shrink-0 rounded-full" aria-label="Planner views and actions">
+               <Button size="icon" variant="outline" className="h-10 w-10 shrink-0 rounded-full" aria-label="Planner views and actions">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -366,15 +366,38 @@ export default function Planner() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <AutoScheduleSettings size="md" />
         </div>
         <div
-          className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+           className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ maskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)" }}
         >
           <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
-          {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
-          {view !== "week" && (
+         </div>
+         <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+           {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
+           {view === "week" && (
+             <PlannerRangeModeTabs
+               className="shrink-0"
+               value={activeWeekMode}
+               onChange={(next) => { setMobileWeekMode(next); setWeekMode(next); }}
+               options={[
+                 { id: "grid", label: "Schedule" },
+                 { id: "board", label: "Board" },
+                 { id: "overview", label: "Overview" },
+                 { id: "list", label: "List" },
+                 { id: "table", label: "Table" },
+               ]}
+             />
+           )}
+           {view === "month" && rangeLayout === "default" && (
+             <PlannerRangeModeTabs
+               className="shrink-0"
+               value={monthMode}
+               onChange={setMonthMode}
+               options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
+             />
+           )}
+           {view !== "week" && view !== "month" && (
             <PlannerRangeModeTabs
               className="shrink-0"
               value={rangeLayout} onChange={setRangeLayout}
@@ -386,6 +409,7 @@ export default function Planner() {
             />
           )}
           {view !== "month" && <PlannerKindFilter className="shrink-0" />}
+           <AutoScheduleSettings size="md" />
         </div>
         </div>
       ) : (
@@ -562,28 +586,34 @@ export default function Planner() {
           </>
         )}
         <div className="flex min-w-0 flex-col">
-          {!showTaskPanel && <PlannerOverdueSection date={day} className="mb-2" />}
+           {!showTaskPanel && !isMobile && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
-            <div className="mb-2 shrink-0 space-y-2">
-              <PlannerMoonInsight date={day} onSelectDate={openDay} />
-              <SolarSeasonGuide date={day} />
-              <CyclePlanningGuide date={day} />
+             <div className="mb-2 shrink-0 space-y-2">
               {isMobile ? (
                 <CollapsibleSection
-                  storageKey="planner.mobile.daycontext.collapsed"
-                  eyebrow="Day context"
-                  title="Capacity & assistant"
+                   storageKey="careflow:planner:mobile-day-context"
+                   eyebrow="Today at a glance"
+                   title="Rhythm, capacity & guidance"
                   defaultCollapsed
                 >
                   <div className="space-y-2 px-2 pb-2">
+                     <PlannerOverdueSection date={day} />
+                     <PlannerMoonInsight date={day} onSelectDate={openDay} />
+                     <SolarSeasonGuide date={day} />
+                     <CyclePlanningGuide date={day} />
                     <PlannerDayAssistant date={day} />
                     <PlannerCapacityBar date={day} />
+                     <PlannerDayReferences date={day} />
                   </div>
                 </CollapsibleSection>
               ) : (
                 <>
+                   <PlannerMoonInsight date={day} onSelectDate={openDay} />
+                   <SolarSeasonGuide date={day} />
+                   <CyclePlanningGuide date={day} />
                   <PlannerDayAssistant date={day} />
                   <PlannerCapacityBar date={day} />
+                   <PlannerDayReferences date={day} />
                 </>
               )}
               <PlannerEmptyDay
@@ -591,7 +621,6 @@ export default function Planner() {
                 onPlanMyDay={() => setPlanOpen(true)}
                 onAddTask={() => setCaptureOpen(true)}
               />
-              <PlannerDayReferences date={day} />
             </div>
           )}
           {(view === "day" || view === "week" || view === "month") && (
