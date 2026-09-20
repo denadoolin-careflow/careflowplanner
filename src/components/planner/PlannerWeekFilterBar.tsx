@@ -58,8 +58,8 @@ export function PlannerWeekFilterBar({
   const topTags = tags.slice(0, 24);
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <div className="relative min-w-0 flex-1 sm:max-w-xs">
+    <div className={cn("flex min-w-0 flex-wrap items-center gap-2", className)}>
+      <div className="relative min-w-[10rem] flex-1 sm:max-w-xs">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={filters.search}
@@ -80,7 +80,7 @@ export function PlannerWeekFilterBar({
         )}
       </div>
 
-      <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="order-3 flex w-full items-center gap-1 overflow-x-auto [scrollbar-width:none] sm:order-none sm:w-auto [&::-webkit-scrollbar]:hidden">
         {DUE.map(d => (
           <Chip key={d.id} on={filters.dueRange === d.id} onClick={() => patch({ dueRange: d.id })}>
             {d.label}

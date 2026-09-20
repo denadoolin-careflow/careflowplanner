@@ -413,7 +413,7 @@
   .planner-dropzone--active { @apply bg-primary-soft/60 outline-dashed outline-2 -outline-offset-2 outline-primary; }
 
   @media (max-width: 767px) {
-    .planner-surface { @apply min-w-0; }
+    .planner-surface { @apply min-w-0 overflow-x-clip; }
     .planner-surface [data-planner-scroll-region] { scroll-snap-type: x proximity; }
     .planner-surface [data-planner-scroll-region] > div { scroll-snap-align: start; }
     .planner-month-summary { @apply gap-2; }

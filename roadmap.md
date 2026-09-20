@@ -8,9 +8,9 @@
 
 # Mobile Planner Refresh
 
-- [ ] Simplify the sticky mobile header and expose active range layouts
-- [ ] Make Day, 3 Day, and Week schedules scroll-safe and immediately visible
-- [ ] Tighten Month, Year, and Overview for phone-sized scanning
-- [ ] Unify task-sheet touch drops with Week and Month drop targets
-- [ ] Verify mobile and desktop planner ranges, scrolling, and editing
-- [ ] Verify authenticated desktop and mobile experiences
+- [x] Simplify the sticky mobile header and expose active range layouts
+- [x] Make Day, 3 Day, and Week schedules scroll-safe and immediately visible
+- [x] Tighten Month, Year, and Overview for phone-sized scanning
+- [x] Unify task-sheet touch drops with Week and Month drop targets
+- [x] Verify mobile and desktop planner ranges, scrolling, and editing
+- [x] Verify authenticated desktop and mobile experiences
