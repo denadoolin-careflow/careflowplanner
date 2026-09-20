@@ -4,7 +4,11 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 /** Twelve mini-months with load shading — a year at a glance. */
-export function PlannerYearView({ date, onSelectDay }: { date: Date; onSelectDay: (d: Date) => void }) {
+export function PlannerYearView({ date, onSelectDay, onSelectMonth }: {
+  date: Date;
+  onSelectDay: (d: Date) => void;
+  onSelectMonth?: (d: Date) => void;
+}) {
   const { state } = useStore() as any;
   const months = eachMonthOfInterval({ start: startOfYear(date), end: endOfYear(date) });
   const today = new Date();
@@ -31,14 +35,14 @@ export function PlannerYearView({ date, onSelectDay }: { date: Date; onSelectDay
           <div
             key={format(mo, "yyyy-MM")}
             className={cn(
-              "rounded-2xl border border-border/60 bg-card/40 p-2",
+              "rounded-lg border border-border/60 bg-card/40 p-1.5 sm:p-2",
               isCurrentMonth && "border-primary/40 bg-primary/[0.04]",
             )}
           >
             <button
               type="button"
-              onClick={() => onSelectDay(mo)}
-              className="mb-1 flex w-full items-baseline justify-between gap-1 text-left hover:text-primary"
+               onClick={() => (onSelectMonth ?? onSelectDay)(mo)}
+              className="mb-1 flex min-h-10 w-full items-center justify-between gap-1 text-left hover:text-primary"
             >
               <span className={cn("truncate font-display text-[13px] font-semibold sm:text-sm", isCurrentMonth && "text-primary")}>
                 {format(mo, "MMM")}
@@ -62,7 +66,7 @@ export function PlannerYearView({ date, onSelectDay }: { date: Date; onSelectDay
                     onClick={() => onSelectDay(d)}
                     aria-label={`${format(d, "MMMM d")}${n ? ` — ${n} planned` : ""}`}
                     className={cn(
-                      "grid aspect-square min-h-[20px] place-items-center rounded-[5px] text-[10px] leading-none transition-colors hover:bg-muted",
+                       "grid aspect-square min-h-[22px] place-items-center rounded-[5px] text-[10px] leading-none transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       dim && "opacity-25",
                       isSameDay(d, today) && "bg-primary font-semibold text-primary-foreground",
                     )}

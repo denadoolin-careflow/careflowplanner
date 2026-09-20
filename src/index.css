@@ -413,6 +413,9 @@
   .planner-dropzone--active { @apply bg-primary-soft/60 outline-dashed outline-2 -outline-offset-2 outline-primary; }
 
   @media (max-width: 767px) {
+    .planner-surface { @apply min-w-0 overflow-x-clip; }
+    .planner-surface [data-planner-scroll-region] { scroll-snap-type: x proximity; }
+    .planner-surface [data-planner-scroll-region] > div { scroll-snap-align: start; }
     .planner-month-summary { @apply gap-2; }
     .planner-month-summary__stats { @apply min-w-0; }
     .planner-month-stat { @apply min-h-14 gap-1 p-2; }
@@ -420,17 +423,20 @@
     .planner-month-stat > span:nth-child(2) { @apply text-sm; }
     .planner-month-stat > span:last-child { @apply text-[9px]; }
     .planner-month-rhythm { @apply hidden; }
-    .planner-month-calendar { @apply -mx-2 rounded-none border-x-0; }
-    .planner-month-day { @apply min-h-[86px] p-0.5; }
+    .planner-month-experience { @apply space-y-2; }
+    .planner-month-intro { @apply flex-row items-center justify-between gap-2 pb-2; }
+    .planner-month-calendar { @apply -mx-2 rounded-none border-x-0 shadow-none; }
+    .planner-month-day { @apply min-h-[78px] p-0.5; }
     .planner-month-day__header { @apply min-h-11 justify-center; }
     .planner-month-day__number { @apply h-9 w-9 text-sm; }
     .planner-month-day__today-label { @apply absolute left-1/2 top-0 -translate-x-1/2 px-1 text-[7px]; }
     .planner-month-day__capacity { @apply justify-center; }
-    .planner-month-day__dots { @apply min-h-11 items-center pt-1; }
+    .planner-month-day__dots { @apply min-h-9 items-center pt-0.5; }
     .planner-month-day__dots > span { @apply h-2.5 w-2.5; }
     .planner-month-item { @apply min-h-7; }
     .planner-month-day--drop { @apply scale-[1.02]; }
     .planner-month-list-day { @apply px-3 py-1; }
+    .planner-dnd-card { touch-action: pan-y; }
   }
 
   .cozy-card {

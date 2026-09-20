@@ -5,4 +5,12 @@
 - [ ] Add selected-day schedule and upcoming panel for desktop/mobile
 - [ ] Unify month moves for tasks, appointments, and meals with capacity confirmation and undo
 - [ ] Refine mobile long-press dragging and responsive touch targets
-- [ ] Verify authenticated desktop and mobile experiences
+
+# Mobile Planner Refresh
+
+- [x] Simplify the sticky mobile header and expose active range layouts
+- [x] Make Day, 3 Day, and Week schedules scroll-safe and immediately visible
+- [x] Tighten Month, Year, and Overview for phone-sized scanning
+- [x] Unify task-sheet touch drops with Week and Month drop targets
+- [x] Verify mobile and desktop planner ranges, scrolling, and editing
+- [x] Verify authenticated desktop and mobile experiences

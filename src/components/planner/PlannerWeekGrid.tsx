@@ -77,7 +77,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const isMobile = useIsMobile();
   const effectiveHeaderMode = isMobile ? "compact" : headerMode;
   /** Phones can't fit 7 legible columns — scroll horizontally instead of collapsing. */
-  const minCol = isMobile ? (days > 3 ? 116 : 96) : 0;
+  const minCol = isMobile ? (days > 3 ? 132 : 120) : 0;
   const boardMinWidth = minCol ? GUTTER_W + days * minCol : undefined;
   const { colorOf } = useKindColors();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -118,7 +118,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
 
   const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(${minCol}px, 1fr))`;
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/40">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5">
         <span className="flex min-w-0 items-center gap-1.5">
@@ -164,7 +164,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Horizontal scroller keeps columns legible on narrow screens */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+      <div data-planner-scroll-region className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-auto [-webkit-overflow-scrolling:touch]">
       <div className="flex min-h-0 flex-1 flex-col" style={boardMinWidth ? { minWidth: boardMinWidth } : undefined}>
       {/* Day headers */}
       <div
@@ -212,7 +212,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Shared-gutter time grid */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-y-auto [-webkit-overflow-scrolling:touch]">
         <div className="relative grid" style={{ gridTemplateColumns: colTemplate }}>
           {/* Time gutter */}
           <div

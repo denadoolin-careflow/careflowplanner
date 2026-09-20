@@ -108,7 +108,7 @@ export function PlannerPriorityStrip({
       {...zone.nativeProps}
       {...zone.dataProps}
       className={cn(
-        "rounded-2xl border border-primary/20 bg-primary/5 p-2.5",
+        "rounded-lg border border-primary/20 bg-primary/5 p-2.5",
         zone.className,
         zone.isOver && "ring-2 ring-primary/40",
         className,
@@ -131,12 +131,12 @@ export function PlannerPriorityStrip({
           Nothing pinned yet — name up to three things that matter {scope === "day" ? "today" : `this ${scope}`}.
         </p>
       ) : (
-        <ol className="space-y-1">
+         <ol className="space-y-1 max-sm:flex max-sm:snap-x max-sm:gap-1.5 max-sm:space-y-0 max-sm:overflow-x-auto max-sm:pb-0.5">
           {rows.map((r, i) => (
             <li
               key={r.row.id}
               className={cn(
-                "group flex min-w-0 items-center gap-2 rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition hover:border-primary/30 hover:bg-card",
+                 "group flex min-w-0 items-center gap-2 rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition hover:border-primary/30 hover:bg-card max-sm:min-w-[82%] max-sm:snap-start",
                 r.done && "opacity-60",
               )}
             >
