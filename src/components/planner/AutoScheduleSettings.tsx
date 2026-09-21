@@ -198,6 +198,16 @@ export function AutoScheduleSettings(props: {
 
         <div className="space-y-2 border-t border-border/60 pt-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reminders</p>
+          <div className="grid grid-cols-3 gap-1">
+            <Button type="button" size="sm" variant={reminders.inAppEnabled ? "default" : "outline"} className="h-8 text-[10px]" onClick={() => setReminders({ inAppEnabled: !reminders.inAppEnabled })}>In-app</Button>
+            <Button type="button" size="sm" variant={reminders.deviceEnabled ? "default" : "outline"} className="h-8 text-[10px]" onClick={async () => { const next = !reminders.deviceEnabled; if (next) await requestNotificationPermission(); setReminders({ deviceEnabled: next }); }}>Device</Button>
+            <Button type="button" size="sm" variant={reminders.emailDigestEnabled ? "default" : "outline"} className="h-8 text-[10px]" onClick={() => setReminders({ emailDigestEnabled: !reminders.emailDigestEnabled })}>Email</Button>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            <Button type="button" size="sm" variant={reminders.moonEnabled ? "secondary" : "ghost"} className="h-8 text-[10px]" onClick={() => setReminders({ moonEnabled: !reminders.moonEnabled })}>Moon</Button>
+            <Button type="button" size="sm" variant={reminders.cycleEnabled ? "secondary" : "ghost"} className="h-8 text-[10px]" onClick={() => setReminders({ cycleEnabled: !reminders.cycleEnabled })}>Cycle</Button>
+            <Button type="button" size="sm" variant={reminders.journalPromptEnabled ? "secondary" : "ghost"} className="h-8 text-[10px]" onClick={() => setReminders({ journalPromptEnabled: !reminders.journalPromptEnabled })}>Prompts</Button>
+          </div>
           <div className="flex items-center justify-between rounded-lg px-1 py-1">
             <Label htmlFor="as-task-reminders" className="text-xs font-normal">Remind me about scheduled tasks</Label>
             <Switch id="as-task-reminders" checked={reminders.tasksEnabled}

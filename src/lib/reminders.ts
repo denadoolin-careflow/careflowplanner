@@ -19,6 +19,12 @@ export interface ReminderPrefs {
   quietEnabled: boolean;
   quietStart: string;
   quietEnd: string;
+  inAppEnabled: boolean;
+  deviceEnabled: boolean;
+  emailDigestEnabled: boolean;
+  moonEnabled: boolean;
+  cycleEnabled: boolean;
+  journalPromptEnabled: boolean;
 }
 
 export const DEFAULT_REMINDER_PREFS: ReminderPrefs = {
@@ -30,6 +36,12 @@ export const DEFAULT_REMINDER_PREFS: ReminderPrefs = {
   quietEnabled: false,
   quietStart: "21:00",
   quietEnd: "07:00",
+  inAppEnabled: true,
+  deviceEnabled: false,
+  emailDigestEnabled: false,
+  moonEnabled: true,
+  cycleEnabled: true,
+  journalPromptEnabled: true,
 };
 
 export const SNOOZE_CHOICES = [5, 15, 60] as const;
@@ -182,7 +194,7 @@ function notify(title: string, body: string, tag: string, task?: { id: string })
     if (task) snoozeReminder(task.id, 30);
     return;
   }
-  toast(`⏰ ${title}`, {
+  if (reminderPrefs.inAppEnabled) toast(`⏰ ${title}`, {
     description: body,
     duration: 15000,
     ...(task
@@ -199,7 +211,7 @@ function notify(title: string, body: string, tag: string, task?: { id: string })
       : {}),
   });
   try {
-    if (notifPermission === "granted") {
+    if (reminderPrefs.deviceEnabled && notifPermission === "granted") {
       const n = new Notification(title, { body, tag });
       if (task) n.onclick = () => { window.focus(); handlers.onOpen?.(task.id); };
     }

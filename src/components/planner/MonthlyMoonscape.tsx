@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns";
-import { BookHeart, ExternalLink, Moon, NotebookPen } from "lucide-react";
+import { BookHeart, ExternalLink, Moon, NotebookPen, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +15,7 @@ import { monthKeyFor } from "@/lib/notes/periods";
 import { logCosmicJournal } from "@/lib/cosmic/hooks";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 
 const TARGETS: { key: KeyPhase; age: number }[] = [
   { key: "sow", age: 0 }, { key: "grow", age: 29.53058867 / 4 },
@@ -42,6 +43,7 @@ export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month:
   const journalTitle = `${active.info.label} · ${format(active.date, "MMMM d, yyyy")}`;
   const existing = state.journal.find(entry => entry.title === journalTitle);
   const [reflection, setReflection] = useState(existing?.body ?? "");
+  const [cycleEditorOpen, setCycleEditorOpen] = useState(false);
   useEffect(() => { setReflection(existing?.body ?? ""); }, [journalTitle, existing?.body]);
   const cycleDays = days.map(day => ({ day, info: settings.enabled ? getPhaseInfo(day, periods, settings) : null }));
 
@@ -87,8 +89,9 @@ export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month:
       <div className="mt-2 flex flex-wrap gap-2"><Button size="sm" onClick={() => void saveJournal()}><BookHeart className="mr-1 h-3.5 w-3.5" />{existing ? "Update reflection" : "Save to Journal"}</Button><Button size="sm" variant="outline" onClick={() => void appendNote()}><NotebookPen className="mr-1 h-3.5 w-3.5" />Add to month note</Button></div>
     </div>
     <div className="planner-rhythm-rails mt-4 space-y-2">
-      <div className="grid grid-cols-[3.5rem_1fr] items-center gap-2"><span className="text-[10px] font-semibold uppercase text-muted-foreground">Moon</span><div className="grid grid-cols-[repeat(var(--month-days),minmax(5px,1fr))] gap-px" style={{ "--month-days": days.length } as CSSProperties}>{days.map(day => { const moment = moments.find(item => format(item.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")); return <button key={day.toISOString()} type="button" onClick={() => onSelectDate(day)} className={cn("h-4 rounded-sm bg-muted/50", moment && "bg-calendar-cosmic/70", format(day, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") && "ring-1 ring-primary")} title={moment ? moment.info.label : format(day, "MMM d")} aria-label={moment ? `${moment.info.label}, ${format(day, "MMMM d")}` : format(day, "MMMM d")} />; })}</div></div>
-      <div className="grid grid-cols-[3.5rem_1fr] items-center gap-2"><span className="text-[10px] font-semibold uppercase text-muted-foreground">Cycle</span>{loaded && settings.enabled && periods.length ? <div className="grid grid-cols-[repeat(var(--month-days),minmax(5px,1fr))] gap-px" style={{ "--month-days": days.length } as CSSProperties}>{cycleDays.map(({ day, info }) => <button key={day.toISOString()} type="button" onClick={() => onSelectDate(day)} className={cn("h-4 rounded-sm bg-muted/40", info?.phase === "menstrual" && "bg-rose-400/60", info?.phase === "follicular" && "bg-emerald-400/60", info?.phase === "ovulatory" && "bg-amber-400/60", info?.phase === "luteal" && "bg-violet-400/60", format(day, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") && "ring-1 ring-primary")} title={info ? `${PHASE_META[info.phase].label} · cycle day ${info.cycleDay}` : format(day, "MMM d")} aria-label={info ? `${format(day, "MMMM d")}, ${PHASE_META[info.phase].label}, cycle day ${info.cycleDay}` : format(day, "MMMM d")} />)}</div> : <Link to="/wellflow/cycle" className="text-xs text-muted-foreground underline-offset-4 hover:underline">Cycle tracking is private and off until you set it up.</Link>}</div>
+      <div className="grid grid-cols-[3.5rem_1fr] items-center gap-2"><span className="text-[10px] font-semibold uppercase text-muted-foreground">Moon</span><div className="grid grid-cols-[repeat(var(--month-days),minmax(5px,1fr))] gap-px" style={{ "--month-days": days.length } as CSSProperties}>{days.map(day => { const moment = moments.find(item => format(item.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")); return <button key={day.toISOString()} type="button" onClick={() => onSelectDate(day)} className={cn("grid h-5 place-items-center rounded-sm bg-muted/50 text-[8px]", moment && "bg-calendar-cosmic/70", format(day, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") && "ring-1 ring-primary")} title={moment ? `${moment.info.label} · ${format(day, "MMM d")}` : format(day, "MMM d")} aria-label={moment ? `${moment.info.label}, ${format(day, "MMMM d")}` : format(day, "MMMM d")}>{moment?.info.glyph}</button>; })}</div></div>
+      <div className="grid grid-cols-[3.5rem_1fr] items-center gap-2"><Button type="button" variant="ghost" size="sm" className="h-7 justify-start px-0 text-[10px] font-semibold uppercase text-muted-foreground" onClick={() => setCycleEditorOpen(true)}>Cycle <Pencil className="ml-1 h-3 w-3" /></Button>{loaded && settings.enabled && periods.length ? <div className="grid grid-cols-[repeat(var(--month-days),minmax(5px,1fr))] gap-px" style={{ "--month-days": days.length } as CSSProperties}>{cycleDays.map(({ day, info }, index) => { const prior = index > 0 ? cycleDays[index - 1].info?.phase : null; const phaseStart = info && prior !== info.phase; return <button key={day.toISOString()} type="button" onClick={() => { onSelectDate(day); setCycleEditorOpen(true); }} className={cn("grid h-5 place-items-center rounded-sm bg-muted/40 text-[8px]", info?.phase === "menstrual" && "bg-rose-400/60", info?.phase === "follicular" && "bg-emerald-400/60", info?.phase === "ovulatory" && "bg-amber-400/60", info?.phase === "luteal" && "bg-violet-400/60", format(day, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd") && "ring-1 ring-primary")} title={info ? `${PHASE_META[info.phase].glyph} ${PHASE_META[info.phase].label} · cycle day ${info.cycleDay}` : format(day, "MMM d")} aria-label={info ? `${format(day, "MMMM d")}, ${PHASE_META[info.phase].label}, cycle day ${info.cycleDay}` : format(day, "MMMM d")}>{phaseStart ? PHASE_META[info.phase].glyph : ""}</button>; })}</div> : <Link to="/wellflow/cycle" className="text-xs text-muted-foreground underline-offset-4 hover:underline">Cycle tracking is private and off until you set it up.</Link>}</div>
     </div>
+    <CycleLogSheet open={cycleEditorOpen} onOpenChange={setCycleEditorOpen} date={selectedDate} />
   </section>;
 }
