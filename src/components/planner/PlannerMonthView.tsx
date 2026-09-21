@@ -41,7 +41,7 @@ function DayDropZone({ dateISO, as = "article", className, children }: { dateISO
   return <Tag ref={zone.ref as any} {...zone.nativeProps} {...zone.dataProps} className={cn(className, zone.className, zone.isOver && "planner-month-day--drop")}>{children}</Tag>;
 }
 
-export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }: {
+export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSelectedDate, onCapture, onOpenItem }: {
   date: Date;
   selectedDate?: Date;
   onSelectDay: (d: Date) => void;
