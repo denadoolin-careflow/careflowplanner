@@ -31,3 +31,13 @@
 - [x] Add selected-day task, appointment, care, home, cleaning, and meal capture
 - [x] Improve Week and 3 Day card metadata without changing scroll ownership
 - [x] Verify phone and desktop planner behavior
+
+# Recurring Planner, Reminders, and Cycle Alignment
+
+- [ ] Add shared recurrence and exception data model
+- [ ] Project recurring tasks, appointments, meals, and caregiving into planner views
+- [ ] Add synchronized compact Month and Week filters
+- [ ] Add cross-device reminder preferences and in-app/device scheduling
+- [ ] Add moon emoji/dates and cycle phase indicators
+- [ ] Add editable cycle alignment view
+- [ ] Verify database security, types, and planner behavior
