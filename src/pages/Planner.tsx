@@ -64,7 +64,7 @@ type Segment = (typeof SEGMENTS)[number];
  */
 const GRID_BOX = "h-[clamp(520px,78vh,1000px)] min-h-0";
 /** Phones: leave room for the sticky header, bottom nav and FAB. */
-const GRID_BOX_MOBILE = "h-[calc(100dvh-17rem)] min-h-[360px] max-h-[620px]";
+const GRID_BOX_MOBILE = "h-[calc(100dvh-8rem)] min-h-[520px] max-h-[680px]";
 /** Sticky side columns scroll on their own without stretching the row. */
 const SIDE_COL = "sticky top-20 max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain";
 

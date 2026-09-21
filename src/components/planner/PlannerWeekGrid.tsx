@@ -130,7 +130,10 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
     if (!el || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
     const atTop = el.scrollTop <= 0 && event.deltaY < 0;
     const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1 && event.deltaY > 0;
-    if (atTop || atBottom) window.scrollBy({ top: event.deltaY });
+    if (atTop || atBottom) {
+      event.preventDefault();
+      window.scrollBy({ top: event.deltaY });
+    }
   };
 
   const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(${minCol}px, 1fr))`;

@@ -17,8 +17,8 @@
 
 # Mobile Month and Week Repair
 
-- [ ] Rebuild mobile Month around a selected-day agenda
-- [ ] Compact Month summaries, controls, and calendar cells
-- [ ] Repair Week Schedule horizontal and vertical scroll ownership
-- [ ] Add timeline boundary handoff and current-day positioning
-- [ ] Apply the selected mobile planner typography and verify phone/desktop layouts
+- [x] Rebuild mobile Month around a selected-day agenda
+- [x] Compact Month summaries, controls, and calendar cells
+- [x] Repair Week Schedule horizontal and vertical scroll ownership
+- [x] Add timeline boundary handoff and current-day positioning
+- [x] Apply the selected mobile planner typography and verify phone/desktop layouts
