@@ -608,8 +608,7 @@ export default function Planner() {
                     <PlannerDayAssistant date={day} />
                     <PlannerCapacityBar date={day} />
                      <PlannerRhythmCard date={day} />
-                     <PlannerRhythmCard date={day} />
-                  <PlannerDayReferences date={day} />
+                     <PlannerDayReferences date={day} />
                   </div>
                 </CollapsibleSection>
               ) : (
