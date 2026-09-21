@@ -102,7 +102,7 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
           if (!inWindow(occurrenceDate)) continue;
           items.push({
           kind, id: `task:${t.id}:${key}`, title: String(exception?.overridePayload.title ?? t.title), date: occurrenceDate,
-          time: t.startTime ?? null, endTime: t.endTime ?? null,
+          time: exception?.overrideTime ?? t.startTime ?? null, endTime: exception?.overrideEndTime ?? t.endTime ?? null,
           allDay: !t.startTime, color: colorOf(kind), done: !!t.done,
           priority: t.priority, area: t.area, energy: t.energy,
           estMinutes: t.estMinutes, projectId: t.projectId, tags: t.tags,
@@ -125,8 +125,8 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
           const occurrenceDate = exception?.overrideDate ?? key;
           items.push({
             kind: "appt", id: `appt:${a.id}:${key}`, title: String(exception?.overridePayload.title ?? a.title), date: occurrenceDate,
-            time: a.time ?? null,
-            endTime: a.endTime ?? null,
+            time: exception?.overrideTime ?? a.time ?? null,
+            endTime: exception?.overrideEndTime ?? a.endTime ?? null,
             allDay: !!a.allDay || !a.time,
             color: a.color || colorOf("appt"),
             location: a.location ?? null,

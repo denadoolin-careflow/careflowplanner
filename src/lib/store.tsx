@@ -565,6 +565,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addTask: async (t) => {
       if (!uid) return;
+      if (t.recurrenceType && t.recurrenceType !== "none" && !t.recurrenceSeriesId) t.recurrenceSeriesId = crypto.randomUUID();
       const { inferEnergyFromTitle } = await import("./task-energy");
       const enriched = { done: false, priority: "medium" as const, area: "Personal" as const, ...t };
       // Stamp the sky the task was planned under, so the planner can show
@@ -1071,6 +1072,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addAppointment: async (a) => {
       if (!uid) return null;
+      if (a.recurrenceRule && !a.recurrenceSeriesId) a.recurrenceSeriesId = crypto.randomUUID();
       // Supertags: area, color and a default duration can come from a tag.
       const apptTags = (a as any).tags as string[] | undefined;
       if (apptTags?.length) {

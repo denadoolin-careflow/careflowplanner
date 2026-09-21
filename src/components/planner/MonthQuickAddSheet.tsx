@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useStore } from "@/lib/store";
-import type { Area, Meal, Priority } from "@/lib/types";
+import type { Area, Meal, Priority, RecurrenceRule } from "@/lib/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RepeatSelector } from "@/components/calendar/RepeatSelector";
+import { caregivingChores } from "@/lib/caregiving-chores";
 
 type AddKind = "task" | "appointment" | "home" | "cleaning" | "caregiving" | "meal";
 const KINDS: { value: AddKind; label: string; icon: typeof CheckSquare }[] = [
@@ -26,24 +28,29 @@ export function MonthQuickAddSheet({ open, onOpenChange, date }: { open: boolean
   const [time, setTime] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [slot, setSlot] = useState<Meal["slot"]>("Dinner");
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | undefined>();
   const [saving, setSaving] = useState(false);
   const dateISO = format(date, "yyyy-MM-dd");
 
-  useEffect(() => { if (open) { setTitle(""); setTime(""); } }, [open, dateISO]);
+  useEffect(() => { if (open) { setTitle(""); setTime(""); setRecurrenceRule(undefined); } }, [open, dateISO]);
 
   const save = async () => {
     if (!title.trim() || saving) return;
     setSaving(true);
     try {
       if (kind === "appointment") {
-        await addAppointment({ title: title.trim(), date: dateISO, time: time || undefined });
+        await addAppointment({ title: title.trim(), date: dateISO, time: time || undefined, recurrenceRule, recurrenceSeriesId: recurrenceRule ? crypto.randomUUID() : undefined });
       } else if (kind === "meal") {
-        await addMeal({ name: title.trim(), date: dateISO, slot });
+        await addMeal({ name: title.trim(), date: dateISO, slot, recurrenceRule, recurrenceSeriesId: recurrenceRule ? crypto.randomUUID() : undefined });
+      } else if (kind === "caregiving") {
+        await caregivingChores.create({ title: title.trim(), start_date: dateISO, recurrence_rule: recurrenceRule ?? null, recurrence_series_id: recurrenceRule ? crypto.randomUUID() : null, cadence: recurrenceRule?.freq === "daily" || recurrenceRule?.freq === "weekly" || recurrenceRule?.freq === "monthly" ? recurrenceRule.freq : "as_needed" });
       } else {
-        const area: Area = kind === "caregiving" ? "Caregiving" : kind === "home" || kind === "cleaning" ? "Home" : "Personal";
+        const area: Area = kind === "home" || kind === "cleaning" ? "Home" : "Personal";
         await addTask({
           title: title.trim(), area, priority, dueDate: dateISO,
           startTime: time || undefined, tags: kind === "cleaning" ? ["cleaning"] : [], done: false, inbox: false,
+          recurrenceType: recurrenceRule?.freq ?? "none", recurrenceInterval: recurrenceRule?.interval ?? 1,
+          recurrenceDays: recurrenceRule?.byWeekday ?? [], recurrenceSeriesId: recurrenceRule ? crypto.randomUUID() : undefined,
         });
       }
       toast.success(`${KINDS.find(item => item.value === kind)?.label ?? "Item"} added to ${format(date, "MMM d")}`);
@@ -74,6 +81,7 @@ export function MonthQuickAddSheet({ open, onOpenChange, date }: { open: boolean
             <option value="low">Low priority</option><option value="medium">Medium priority</option><option value="high">High priority</option>
           </select> : <div />}
         </div>
+        <div className="rounded-md border border-border/60 p-3"><RepeatSelector value={recurrenceRule} onChange={setRecurrenceRule} /></div>
         <Button className="h-12 w-full" disabled={!title.trim() || saving} onClick={() => void save()}>{saving ? "Adding…" : `Add ${KINDS.find(item => item.value === kind)?.label ?? "item"}`}</Button>
       </div>
     </SheetContent>
