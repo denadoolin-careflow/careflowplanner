@@ -10,7 +10,10 @@ import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { useWeekFilters, filterFeedItems, matchesTaskFilter } from "@/lib/planner/week-filters";
 import { usePlannerWeekHeaderMode } from "@/lib/planner-prefs";
 import { useKindColors, KIND_LABEL, type KindKey } from "@/lib/calendar-colors";
-import { PLANNER_START_H, PLANNER_END_H, HOUR_PX } from "@/lib/planner-metrics";
+import { PLANNER_START_H, PLANNER_END_H, HOUR_PX as BASE_HOUR_PX } from "@/lib/planner-metrics";
+import { useTimelineZoom, MIN_ZOOM, MAX_ZOOM } from "@/lib/planner/use-timeline-zoom";
+import { PlannerRhythmRow, useRhythmRowVisible } from "./PlannerRhythmRow";
+import { Maximize2, Minimize2, Minus, Plus, Sprout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -85,6 +88,10 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const [nowMin, setNowMin] = useState<number | null>(null);
   const totalMin = (PLANNER_END_H - PLANNER_START_H) * 60;
   const [careVisible, toggleCare] = useCareRowVisible();
+  const [rhythmVisible, toggleRhythm] = useRhythmRowVisible();
+  const { zoom, zoomBy } = useTimelineZoom();
+  const HOUR_PX = BASE_HOUR_PX * zoom;
+  const [fullScreen, setFullScreen] = useState(false);
   const [mealsVisible, setMealsVisible] = useState(() => {
     try { return localStorage.getItem(MEALS_ROW_KEY) !== "0"; } catch { return true; }
   });
