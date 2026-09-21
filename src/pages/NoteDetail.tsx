@@ -45,6 +45,8 @@ import { haptics } from "@/lib/haptics";
 import { BacklinksSection } from "@/components/common/BacklinksSection";
 import { SaveStatus, type SaveState } from "@/components/notes/SaveStatus";
 import { clearDraft, draftDiffers, loadDraft, pruneDrafts, saveDraft, type NoteDraft } from "@/lib/notes/drafts";
+import { NoteHistorySheet } from "@/components/notes/NoteHistorySheet";
+import { snapshotNote } from "@/lib/notes/versions";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -284,6 +286,8 @@ export default function NoteDetail() {
       .then(() => {
         pendingRef.current = {};
         clearDraft(id);
+        // Keep a readable history of past versions.
+        void snapshotNote(id, payload.title ?? title, payload.body ?? body).catch(() => {});
         setSaveState("saved");
         if (savedFlashTimer.current) window.clearTimeout(savedFlashTimer.current);
         savedFlashTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
