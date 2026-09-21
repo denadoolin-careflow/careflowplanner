@@ -401,6 +401,7 @@
   .planner-month-list-day--selected { @apply border-primary/50 bg-primary-soft/30; }
   .month-planner-panel { @apply sticky top-20 space-y-3 rounded-md border border-border/70 bg-card/80 p-3 shadow-soft backdrop-blur; }
   .planner-lunar-card { @apply rounded-md border border-calendar-cosmic/25 bg-calendar-cosmic/5 p-3; }
+  .planner-moonscape { @apply rounded-md border border-calendar-cosmic/25 bg-calendar-cosmic/5 p-3; }
   .planner-lighten-card { @apply flex gap-2 rounded-md border border-warm/70 bg-warm-soft p-3 text-warm-foreground; }
   .planner-drag-ghost { @apply pointer-events-none fixed z-50 max-w-[65vw] truncate rounded-md border border-primary/50 bg-card px-3 py-2 text-xs shadow-float; }
 
@@ -425,7 +426,7 @@
     .planner-month-stat > span:nth-child(2) { @apply text-sm; }
     .planner-month-stat > span:last-child { @apply text-[9px]; }
     .planner-month-rhythm { @apply hidden; }
-    .planner-month-mobile-toolbar { @apply flex min-w-0 items-center justify-between gap-2; }
+    .planner-month-mobile-toolbar { @apply flex min-w-0 items-center justify-between gap-2 border-b border-border/40 pb-2; }
     .planner-month-mobile-toolbar > :first-child { @apply shrink-0; }
     .planner-month-mobile-toolbar .planner-month-filters { @apply max-w-[8.5rem]; }
     .planner-month-agenda { @apply min-w-0 space-y-2; }
@@ -443,14 +444,20 @@
     .planner-month-mobile-summary .planner-month-summary { @apply border-t border-border/50 p-2; }
     .planner-month-experience { @apply space-y-2; }
     .planner-month-intro { @apply flex-row items-center justify-between gap-2 pb-2; }
-    .planner-month-calendar { @apply -mx-2 rounded-none border-x-0 shadow-none; }
-    .planner-month-day { @apply min-h-[78px] p-0.5; }
-    .planner-month-day__header { @apply min-h-11 justify-center; }
-    .planner-month-day__number { @apply h-9 w-9 text-sm; }
-    .planner-month-day__today-label { @apply absolute left-1/2 top-0 -translate-x-1/2 px-1 text-[7px]; }
+    .planner-month-calendar { @apply overflow-hidden rounded-md border border-border/60 shadow-none; }
+    .planner-month-weekdays > div { @apply py-1.5 tracking-normal; }
+    .planner-month-day { @apply min-h-[62px] border-border/30 p-0.5; }
+    .planner-month-day__header { @apply min-h-8 justify-center; }
+    .planner-month-day__number { @apply h-7 w-7 text-xs; }
+    .planner-month-day__header > span:last-child { @apply hidden; }
+    .planner-month-day__today-label { @apply absolute left-1/2 top-0 -translate-x-1/2 px-1 text-[6px]; }
     .planner-month-day__capacity { @apply justify-center; }
-    .planner-month-day__dots { @apply min-h-9 items-center pt-0.5; }
-    .planner-month-day__dots > span { @apply h-2.5 w-2.5; }
+    .planner-month-day__dots { @apply flex min-h-6 items-center justify-center gap-1 p-0; }
+    .planner-month-day__count { @apply inline-grid h-4 min-w-4 place-items-center rounded-full bg-muted px-1 text-[8px] font-semibold text-muted-foreground; }
+    .planner-month-day__signals { @apply inline-flex items-center gap-0.5; }
+    .planner-month-season > a > div { @apply px-3 py-2; }
+    .planner-month-season p:last-of-type { @apply hidden; }
+    .planner-moonscape { @apply p-3; }
     .planner-month-item { @apply min-h-7; }
     .planner-month-day--drop { @apply scale-[1.02]; }
     .planner-month-list-day { @apply px-3 py-1; }
