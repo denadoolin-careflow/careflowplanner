@@ -38,6 +38,14 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
   const dates = useMemo(() => spanDates(span), [span]);
   const parents = useMemo(() => parentsOf(kind, key), [kind, key]);
   const children = useMemo(() => childrenKeys(kind, key), [kind, key]);
+  // A daily note has no children — show its week's days so tasks can be
+  // dragged onto any other day.
+  const dailyNeighbours = useMemo(() => {
+    if (kind !== "daily") return null;
+    const weekKey = parentsOf("daily", key).find(p => p.kind === "weekly")?.key;
+    if (!weekKey) return null;
+    return { kind: "daily" as PeriodKind, keys: spanDates(spanFor("weekly", weekKey)) };
+  }, [kind, key]);
   const today = new Date();
   const todayISO = toISO(today);
 
