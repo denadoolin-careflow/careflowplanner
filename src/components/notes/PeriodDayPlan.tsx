@@ -9,6 +9,9 @@ import { linkNote } from "@/lib/note-links";
 import { WeekMealDialog } from "@/components/planner/WeekMealDialog";
 import { BUCKET_DEFAULT_TIME, BUCKET_LABEL, fmt12, taskTime, type DayPlan, type TimeBucket } from "@/lib/planner/day-plan";
 import { CosmicPeek, EventPeek, TaskPeek } from "./PlannerPeeks";
+import { PriorityFlag } from "@/components/cards/PriorityFlag";
+import { ActivityChip } from "@/components/planner/ActivityChip";
+import { taskDragProps } from "@/lib/notes/task-drag";
 import type { Meal } from "@/lib/types";
 
 const AREA_TINT: Record<string, string> = {
