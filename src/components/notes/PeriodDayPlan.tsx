@@ -86,7 +86,11 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
               {g.tasks.map(t => (
                 <li key={t.id}>
                   <TaskPeek task={t}>
-                    <div className="group flex items-center gap-1.5 rounded-md px-1 py-0.5 text-[11.5px] hover:bg-muted/60">
+                    <div
+                      {...taskDragProps(t.id)}
+                      title="Drag to another day"
+                      className="group flex cursor-grab items-center gap-1.5 rounded-md px-1 py-0.5 text-[11.5px] hover:bg-muted/60 active:cursor-grabbing"
+                    >
                       <button type="button" aria-label={t.done ? "Mark not done" : "Mark done"}
                               onClick={() => void toggleTask(t.id)} className="shrink-0">
                         {t.done
@@ -94,9 +98,11 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
                           : <Circle className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />}
                       </button>
                       <span className={cn("h-2 w-2 shrink-0 rounded-full", AREA_TINT[t.area] ?? "bg-muted-foreground/40")} aria-hidden />
+                      <PriorityFlag task={t} className="h-3 w-3" />
                       <Link to={`/tasks/${t.id}`} className={cn("min-w-0 flex-1 truncate hover:underline", t.done && "text-muted-foreground line-through")}>
                         {t.title}
                       </Link>
+                      <ActivityChip task={t} className="shrink-0" />
                       {taskTime(t) && <span className="shrink-0 text-[10px] text-muted-foreground">{fmt12(taskTime(t))}</span>}
                     </div>
                   </TaskPeek>
