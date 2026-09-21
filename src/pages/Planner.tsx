@@ -618,6 +618,7 @@ export default function Planner() {
                    <CyclePlanningGuide date={day} />
                   <PlannerDayAssistant date={day} />
                   <PlannerCapacityBar date={day} />
+                  <PlannerRhythmCard date={day} />
                    <PlannerDayReferences date={day} />
                 </>
               )}
