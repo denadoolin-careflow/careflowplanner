@@ -413,6 +413,7 @@
   .planner-dropzone { @apply transition-colors; }
   .planner-dropzone--armed { @apply outline-dashed outline-1 -outline-offset-2 outline-primary/25; }
   .planner-dropzone--active { @apply bg-primary-soft/60 outline-dashed outline-2 -outline-offset-2 outline-primary; }
+  [data-cross-day-over="true"] { @apply bg-primary-soft/50 outline-dashed outline-2 -outline-offset-2 outline-primary; }
 
   @media (max-width: 767px) {
     .planner-surface--mobile { font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif; }
