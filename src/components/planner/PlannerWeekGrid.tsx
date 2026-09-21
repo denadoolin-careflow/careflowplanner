@@ -81,6 +81,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const boardMinWidth = minCol ? GUTTER_W + days * minCol : undefined;
   const { colorOf } = useKindColors();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const horizontalRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const totalMin = (PLANNER_END_H - PLANNER_START_H) * 60;
   const [careVisible, toggleCare] = useCareRowVisible();
@@ -115,6 +116,25 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
     }, 80);
     return () => window.clearTimeout(t);
   }, [format(start, "yyyy-MM-dd")]);
+
+  // Phones open with the current/selected day visible instead of an arbitrary edge.
+  useEffect(() => {
+    if (!isMobile || !horizontalRef.current || !minCol) return;
+    const selectedIndex = Math.max(0, cols.findIndex(d => isSameDay(d, today)));
+    const id = window.setTimeout(() => horizontalRef.current?.scrollTo({ left: selectedIndex * minCol, behavior: "smooth" }), 100);
+    return () => window.clearTimeout(id);
+  }, [isMobile, minCol, start.getTime(), days]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handoffWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const el = scrollRef.current;
+    if (!el || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+    const atTop = el.scrollTop <= 0 && event.deltaY < 0;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1 && event.deltaY > 0;
+    if (atTop || atBottom) {
+      event.preventDefault();
+      window.scrollBy({ top: event.deltaY });
+    }
+  };
 
   const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(${minCol}px, 1fr))`;
   return (
@@ -164,7 +184,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Horizontal scroller keeps columns legible on narrow screens */}
-      <div data-planner-scroll-region className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-auto [-webkit-overflow-scrolling:touch]">
+       <div ref={horizontalRef} data-planner-scroll-region className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
       <div className="flex min-h-0 flex-1 flex-col" style={boardMinWidth ? { minWidth: boardMinWidth } : undefined}>
       {/* Day headers */}
       <div
@@ -212,7 +232,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Shared-gutter time grid */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-y-auto [-webkit-overflow-scrolling:touch]">
+       <div ref={scrollRef} onWheel={handoffWheel} data-planner-timeline-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-y-auto [-webkit-overflow-scrolling:touch]">
         <div className="relative grid" style={{ gridTemplateColumns: colTemplate }}>
           {/* Time gutter */}
           <div

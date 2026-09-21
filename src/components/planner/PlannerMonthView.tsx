@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { addDays, differenceInCalendarDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
-import { Check, LayoutGrid, List, Rows3 } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, List, Plus, Rows3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { KIND_ICONS } from "./kindIcon";
@@ -16,16 +17,22 @@ import { dayLoad } from "@/lib/planner/month-move";
 import { useDraggableCard, useDropZone, feedDragItem } from "@/lib/planner/planner-dnd";
 import { fmt12 } from "@/lib/planner/day-plan";
 
-export type MobileMonthView = "dots" | "chips" | "list";
+export type MobileMonthView = "calendar" | "agenda" | "list";
 const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v2";
 const MOBILE_VIEW_ITEMS = [
-  { value: "dots" as const, label: "Dots", icon: LayoutGrid },
-  { value: "chips" as const, label: "Chips", icon: Rows3 },
+  { value: "calendar" as const, label: "Calendar", icon: CalendarDays },
+  { value: "agenda" as const, label: "Agenda", icon: Rows3 },
   { value: "list" as const, label: "List", icon: List },
 ];
 
 function readMobileView(): MobileMonthView {
-  try { const value = localStorage.getItem(MOBILE_VIEW_KEY); return value === "chips" || value === "list" ? value : "dots"; } catch { return "dots"; }
+  try {
+    const value = localStorage.getItem(MOBILE_VIEW_KEY);
+    if (value === "list") return "list";
+    if (value === "calendar") return "calendar";
+    if (value === "list") return "list";
+    return "agenda";
+  } catch { return "agenda"; }
 }
 
 /** Wraps a day cell/section so it accepts drops through the shared drag layer. */
@@ -35,10 +42,12 @@ function DayDropZone({ dateISO, as = "article", className, children }: { dateISO
   return <Tag ref={zone.ref as any} {...zone.nativeProps} {...zone.dataProps} className={cn(className, zone.className, zone.isOver && "planner-month-day--drop")}>{children}</Tag>;
 }
 
-export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }: {
+export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSelectedDate, onCapture, onOpenItem }: {
   date: Date;
   selectedDate?: Date;
   onSelectDay: (d: Date) => void;
+  onChangeSelectedDate?: (d: Date) => void;
+  onCapture?: () => void;
   onOpenItem?: (item: PlannerFeedItem) => void;
 }) {
   const start = startOfWeek(startOfMonth(date), { weekStartsOn: 1 });
@@ -54,6 +63,10 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }
   const [mobileView, setMobileView] = useState<MobileMonthView>(readMobileView);
   const today = new Date();
   const selectedKey = format(selectedDate ?? date, "yyyy-MM-dd");
+  const activeDate = selectedDate ?? date;
+  const activeRows = byDay.get(selectedKey) ?? [];
+  const activeWeekStart = startOfWeek(activeDate, { weekStartsOn: 1 });
+  const activeWeekDays = Array.from({ length: 7 }, (_, index) => addDays(activeWeekStart, index));
   const weekLoads = useMemo(() => Array.from({ length: Math.ceil(total / 7) }, (_, week) => {
     const rows = days.slice(week * 7, week * 7 + 7).flatMap(day => byDay.get(format(day, "yyyy-MM-dd")) ?? []);
     return Math.round(dayLoad(rows) / 7);
@@ -61,9 +74,47 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }
 
   useEffect(() => { try { localStorage.setItem(MOBILE_VIEW_KEY, mobileView); } catch { /* no-op */ } }, [mobileView]);
 
+  const mobileToolbar = (
+    <div className="planner-month-mobile-toolbar">
+      <ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={value => setMobileView(value as MobileMonthView)} ariaLabel="Month layout" />
+      <div className="flex items-center gap-1">
+        <PlannerMonthFilters />
+        {onCapture && <Button size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={onCapture} aria-label="Add to this month"><Plus className="h-4 w-4" /></Button>}
+      </div>
+    </div>
+  );
+
+  if (isMobile && mobileView === "agenda") return (
+    <div className="planner-month-agenda">
+      {mobileToolbar}
+      <div className="planner-month-week-strip" aria-label="Choose a day this week">
+        {activeWeekDays.map(dayOption => {
+          const key = format(dayOption, "yyyy-MM-dd");
+          const selected = key === selectedKey;
+          const count = (byDay.get(key) ?? []).length;
+          return <button key={key} type="button" onClick={() => onChangeSelectedDate?.(dayOption)} aria-pressed={selected} className={cn("planner-month-week-day", selected && "planner-month-week-day--selected")}>
+            <span>{format(dayOption, "EEEEE")}</span><strong>{format(dayOption, "d")}</strong>{count > 0 && <i aria-label={`${count} planned`} />}
+          </button>;
+        })}
+      </div>
+      <DayDropZone dateISO={selectedKey} as="section" className="planner-month-agenda-day">
+        <div className="flex items-start justify-between gap-3 border-b border-border/50 pb-3">
+          <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(activeDate, "EEEE")}</p><h3 className="font-display text-xl font-semibold">{format(activeDate, "MMMM d")}</h3><p className="mt-0.5 text-xs text-muted-foreground">{activeRows.length ? `${activeRows.length} plans held here` : "Space to breathe"}</p></div>
+          <div className="flex items-center gap-2"><DailyNoteDot date={activeDate} mark={noteMarks.get(selectedKey)} size={13} /><CapacityIndicator minutes={dayLoad(activeRows)} /></div>
+        </div>
+        <div className="py-2">
+          {activeRows.length ? activeRows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />) : <p className="py-8 text-center text-sm text-muted-foreground">Nothing planned. Drop something here or add a gentle anchor.</p>}
+        </div>
+        <Button variant="outline" className="h-11 w-full" onClick={() => onSelectDay(activeDate)}>Day details <ChevronRight className="ml-1 h-4 w-4" /></Button>
+      </DayDropZone>
+      <details className="planner-month-mobile-summary"><summary>Month at a glance</summary><PlannerMonthSummary items={monthItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} /></details>
+      {dialogs}
+    </div>
+  );
+
   if (isMobile && mobileView === "list") return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2"><PlannerMonthFilters /><ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={value => setMobileView(value as MobileMonthView)} ariaLabel="Month layout" /></div>
+       {mobileToolbar}
       <div className="space-y-2">
         {days.filter(day => isSameMonth(day, date)).map(day => {
           const key = format(day, "yyyy-MM-dd"); const rows = byDay.get(key) ?? [];
@@ -79,8 +130,8 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }
 
   return (
     <div className="planner-month-canvas">
-      <PlannerMonthSummary items={monthItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} />
-      <div className="flex flex-wrap items-center justify-between gap-2"><PlannerMonthFilters />{isMobile && <ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={value => setMobileView(value as MobileMonthView)} ariaLabel="Month layout" />}</div>
+      {!isMobile && <PlannerMonthSummary items={monthItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} />}
+      {isMobile ? mobileToolbar : <div className="flex flex-wrap items-center justify-between gap-2"><PlannerMonthFilters /></div>}
       <div className="planner-month-calendar">
         <div className="planner-month-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(label => <div key={label}>{isMobile ? label.slice(0, 1) : label}</div>)}</div>
         <div className="planner-month-grid">
@@ -100,7 +151,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onOpenItem }
                 <span className="ml-auto flex items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={11} />{cycle && <span className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>
               </button>
               <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact={!isMobile} />{!isMobile && tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>
-              {isMobile && mobileView === "dots" ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.slice(0, 5).map(item => <span key={item.id} className={cn("h-2 w-2 rounded-full", item.done && "opacity-35")} style={{ backgroundColor: item.color }} />)}{rows.length > 5 && <span className="text-[9px] text-muted-foreground">+{rows.length - 5}</span>}</button> : <div className="planner-month-day__items">{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} compact={isMobile} />)}{rows.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{rows.length - visible.length} more</button>}</div>}
+              {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.slice(0, 4).map(item => <span key={item.id} className={cn("h-2 w-2 rounded-full", item.done && "opacity-35")} style={{ backgroundColor: item.color }} />)}{rows.length > 4 && <span className="text-[9px] text-muted-foreground">+{rows.length - 4}</span>}</button> : <div className="planner-month-day__items">{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{rows.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{rows.length - visible.length} more</button>}</div>}
             </DayDropZone>;
           })}
         </div>
