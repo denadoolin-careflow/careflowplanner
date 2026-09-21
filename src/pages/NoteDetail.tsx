@@ -477,6 +477,14 @@ export default function NoteDetail() {
               { label: "Find what's missing", prompt: `What's missing or unclear in this note? Ask me clarifying questions.\n\nTitle: ${title}\n\n${body}` },
             ]}
           />
+          {id && (
+            <NoteHistorySheet
+              noteId={id}
+              currentTitle={title}
+              currentBody={body}
+              onRestore={(v) => { setTitle(v.title); setBody(v.body); save({ title: v.title, body: v.body }); }}
+            />
+          )}
           <EditorPrefsMenu />
           <NoteIconPicker
             value={note.icon ?? null}
