@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { RecurrenceRule } from "./types";
 
 export type ChoreCadence = "daily" | "weekly" | "monthly" | "as_needed";
 
@@ -24,6 +25,10 @@ export interface CaregivingChore {
   done: boolean;
   last_done_at: string | null;
   linked_task_id: string | null;
+  start_date: string | null;
+  recurrence_rule: RecurrenceRule | null;
+  recurrence_series_id: string | null;
+  reminder_minutes_before: number | null;
 }
 
 let cache: CaregivingChore[] = [];
@@ -46,6 +51,10 @@ function mapRow(r: any): CaregivingChore {
     done: !!r.done,
     last_done_at: r.last_done_at ?? null,
     linked_task_id: r.linked_task_id ?? null,
+    start_date: r.start_date ?? null,
+    recurrence_rule: r.recurrence_rule ?? null,
+    recurrence_series_id: r.recurrence_series_id ?? null,
+    reminder_minutes_before: r.reminder_minutes_before ?? null,
   };
 }
 
@@ -88,6 +97,10 @@ export const caregivingChores = {
       assigned_to: patch.assigned_to ?? null,
       notes: patch.notes ?? null,
       est_minutes: patch.est_minutes ?? null,
+      start_date: patch.start_date ?? new Date().toISOString().slice(0, 10),
+      recurrence_rule: patch.recurrence_rule ?? cadenceRule(patch.cadence ?? "weekly"),
+      recurrence_series_id: patch.recurrence_series_id ?? crypto.randomUUID(),
+      reminder_minutes_before: patch.reminder_minutes_before ?? null,
     } as any).select().single();
     if (data) { cache = [...cache, mapRow(data)]; emit(); }
   },
@@ -141,6 +154,11 @@ export function useCaregivingChores() {
     return () => { listeners.delete(setList); };
   }, []);
   return list;
+}
+
+function cadenceRule(cadence: ChoreCadence): RecurrenceRule | null {
+  if (cadence === "as_needed") return null;
+  return { freq: cadence, interval: 1 };
 }
 
 if (typeof window !== "undefined") {

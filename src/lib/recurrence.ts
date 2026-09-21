@@ -1,5 +1,5 @@
 import { addDays, addMonths, addWeeks, addYears, format, isAfter, isBefore, parseISO } from "date-fns";
-import type { Appointment, RecurrenceRule } from "./types";
+import type { Appointment, RecurrenceRule, Task } from "./types";
 
 function iso(d: Date) { return format(d, "yyyy-MM-dd"); }
 
@@ -62,6 +62,15 @@ export function expandAppointments(appts: Appointment[], rangeStart: Date, range
     }
   }
   return out;
+}
+
+export function taskRecurrenceRule(task: Task): RecurrenceRule | null {
+  if (!task.recurrenceType || task.recurrenceType === "none" || task.recurrenceType === "custom") return null;
+  return {
+    freq: task.recurrenceType,
+    interval: Math.max(1, task.recurrenceInterval ?? 1),
+    byWeekday: task.recurrenceType === "weekly" && task.recurrenceDays?.length ? task.recurrenceDays : undefined,
+  };
 }
 
 export function describeRule(rule?: RecurrenceRule): string {

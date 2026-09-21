@@ -82,7 +82,7 @@ export const PHASE_META: Record<CyclePhase, PhaseStatic> = {
   follicular: {
     archetype: "maiden",
     label: "Follicular",
-    glyph: "🌷",
+    glyph: "🌸",
     invitation: "Begin. Sketch something rough — it doesn't have to be perfect.",
     affirmation: "Curiosity is a kind of energy.",
     tokenVar: "--phase-follicular",

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Settings2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import { useReminderPrefs, requestNotificationPermission, SNOOZE_CHOICES } from 
 import { usePomodoroSyncPrefs } from "@/lib/pomodoro-tracking";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { usePlannerReminderPreferences } from "@/lib/planner/reminder-preferences";
 
 const BANDS: { id: BandId; label: string }[] = [
   { id: "morning", label: "Morning" },
@@ -84,10 +86,47 @@ export function AutoScheduleSettings(props: {
   const big = props.size === "md";
   const [bandColors, setBandColors, resetBands] = useBandColors();
   const [reminders, setReminders] = useReminderPrefs();
+  const cloudReminders = usePlannerReminderPreferences();
   const [pomoSync, setPomoSync] = usePomodoroSyncPrefs();
 
+  useEffect(() => {
+    if (!cloudReminders.loaded) return;
+    setReminders({
+      inAppEnabled: cloudReminders.prefs.inAppEnabled,
+      deviceEnabled: cloudReminders.prefs.deviceEnabled,
+      emailDigestEnabled: cloudReminders.prefs.emailDigestEnabled,
+      tasksEnabled: cloudReminders.prefs.plannerEnabled,
+      taskLeadMinutes: cloudReminders.prefs.defaultLeadMinutes,
+      snoozeMinutes: cloudReminders.prefs.snoozeMinutes,
+      quietEnabled: cloudReminders.prefs.quietEnabled,
+      quietStart: cloudReminders.prefs.quietStart,
+      quietEnd: cloudReminders.prefs.quietEnd,
+      moonEnabled: cloudReminders.prefs.moonEnabled,
+      cycleEnabled: cloudReminders.prefs.cycleEnabled,
+      journalPromptEnabled: cloudReminders.prefs.journalPromptEnabled,
+    });
+  }, [cloudReminders.loaded]);
+
+  const updateReminders = (patch: Partial<typeof reminders>) => {
+    setReminders(patch);
+    const cloudPatch: Record<string, unknown> = {};
+    if (patch.inAppEnabled !== undefined) cloudPatch.inAppEnabled = patch.inAppEnabled;
+    if (patch.deviceEnabled !== undefined) cloudPatch.deviceEnabled = patch.deviceEnabled;
+    if (patch.emailDigestEnabled !== undefined) cloudPatch.emailDigestEnabled = patch.emailDigestEnabled;
+    if (patch.tasksEnabled !== undefined) cloudPatch.plannerEnabled = patch.tasksEnabled;
+    if (patch.taskLeadMinutes !== undefined) cloudPatch.defaultLeadMinutes = patch.taskLeadMinutes;
+    if (patch.snoozeMinutes !== undefined) cloudPatch.snoozeMinutes = patch.snoozeMinutes;
+    if (patch.quietEnabled !== undefined) cloudPatch.quietEnabled = patch.quietEnabled;
+    if (patch.quietStart !== undefined) cloudPatch.quietStart = patch.quietStart;
+    if (patch.quietEnd !== undefined) cloudPatch.quietEnd = patch.quietEnd;
+    if (patch.moonEnabled !== undefined) cloudPatch.moonEnabled = patch.moonEnabled;
+    if (patch.cycleEnabled !== undefined) cloudPatch.cycleEnabled = patch.cycleEnabled;
+    if (patch.journalPromptEnabled !== undefined) cloudPatch.journalPromptEnabled = patch.journalPromptEnabled;
+    void cloudReminders.update(cloudPatch);
+  };
+
   const toggleTaskReminders = async (on: boolean) => {
-    setReminders({ tasksEnabled: on });
+    updateReminders({ tasksEnabled: on });
     if (!on) return;
     const p = await requestNotificationPermission();
     if (p === "denied") toast.info("Reminders will show in-app — notifications are blocked in your browser.");
@@ -198,6 +237,16 @@ export function AutoScheduleSettings(props: {
 
         <div className="space-y-2 border-t border-border/60 pt-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reminders</p>
+          <div className="grid grid-cols-3 gap-1">
+            <Button type="button" size="sm" variant={reminders.inAppEnabled ? "default" : "outline"} className="h-8 text-[10px]" onClick={() => updateReminders({ inAppEnabled: !reminders.inAppEnabled })}>In-app</Button>
+            <Button type="button" size="sm" variant={reminders.deviceEnabled ? "default" : "outline"} className="h-8 text-[10px]" onClick={async () => { const next = !reminders.deviceEnabled; if (next) await requestNotificationPermission(); updateReminders({ deviceEnabled: next }); }}>Device</Button>
+            <Button type="button" size="sm" variant={reminders.emailDigestEnabled ? "default" : "outline"} className="h-8 text-[10px]" onClick={() => updateReminders({ emailDigestEnabled: !reminders.emailDigestEnabled })}>Email</Button>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            <Button type="button" size="sm" variant={reminders.moonEnabled ? "secondary" : "ghost"} className="h-8 text-[10px]" onClick={() => updateReminders({ moonEnabled: !reminders.moonEnabled })}>Moon</Button>
+            <Button type="button" size="sm" variant={reminders.cycleEnabled ? "secondary" : "ghost"} className="h-8 text-[10px]" onClick={() => updateReminders({ cycleEnabled: !reminders.cycleEnabled })}>Cycle</Button>
+            <Button type="button" size="sm" variant={reminders.journalPromptEnabled ? "secondary" : "ghost"} className="h-8 text-[10px]" onClick={() => updateReminders({ journalPromptEnabled: !reminders.journalPromptEnabled })}>Prompts</Button>
+          </div>
           <div className="flex items-center justify-between rounded-lg px-1 py-1">
             <Label htmlFor="as-task-reminders" className="text-xs font-normal">Remind me about scheduled tasks</Label>
             <Switch id="as-task-reminders" checked={reminders.tasksEnabled}
@@ -208,7 +257,7 @@ export function AutoScheduleSettings(props: {
             <Input id="as-lead" type="number" min={0} max={120} step={5} className="h-8 text-xs"
               value={reminders.taskLeadMinutes}
               disabled={!reminders.tasksEnabled}
-              onChange={(e) => setReminders({ taskLeadMinutes: Math.max(0, Math.min(120, Number(e.target.value) || 0)) })} />
+               onChange={(e) => updateReminders({ taskLeadMinutes: Math.max(0, Math.min(120, Number(e.target.value) || 0)) })} />
           </div>
 
           <div className="flex items-center justify-between rounded-lg px-1 py-1">
@@ -229,7 +278,7 @@ export function AutoScheduleSettings(props: {
             <div className="flex gap-1">
               {SNOOZE_CHOICES.map(m => (
                 <Button key={m} type="button" size="sm" variant={reminders.snoozeMinutes === m ? "default" : "outline"}
-                  className="h-7 flex-1 text-[11px]" onClick={() => setReminders({ snoozeMinutes: m })}>
+                   className="h-7 flex-1 text-[11px]" onClick={() => updateReminders({ snoozeMinutes: m })}>
                   {m >= 60 ? `${m / 60}h` : `${m}m`}
                 </Button>
               ))}
@@ -239,17 +288,17 @@ export function AutoScheduleSettings(props: {
           <div className="flex items-center justify-between rounded-lg px-1 py-1">
             <Label htmlFor="as-quiet" className="text-xs font-normal">Quiet hours</Label>
             <Switch id="as-quiet" checked={reminders.quietEnabled}
-              onCheckedChange={(v) => setReminders({ quietEnabled: !!v })} />
+               onCheckedChange={(v) => updateReminders({ quietEnabled: !!v })} />
           </div>
           {reminders.quietEnabled && (
             <div className="flex items-center gap-2">
               <Input type="time" className="h-8 text-xs" value={reminders.quietStart}
                 aria-label="Quiet hours start"
-                onChange={(e) => setReminders({ quietStart: e.target.value || "21:00" })} />
+                 onChange={(e) => updateReminders({ quietStart: e.target.value || "21:00" })} />
               <span className="text-[11px] text-muted-foreground">to</span>
               <Input type="time" className="h-8 text-xs" value={reminders.quietEnd}
                 aria-label="Quiet hours end"
-                onChange={(e) => setReminders({ quietEnd: e.target.value || "07:00" })} />
+                 onChange={(e) => updateReminders({ quietEnd: e.target.value || "07:00" })} />
             </div>
           )}
         </div>

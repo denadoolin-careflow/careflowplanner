@@ -5,15 +5,18 @@
  * list of items keyed by ISO day, honouring the calendar kind filters/colors.
  */
 import { useMemo } from "react";
-import { addDays, format } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { useStore } from "@/lib/store";
 import { useCalendarPrefs, type CalendarKind } from "@/lib/calendar-prefs";
 import { useKindColors, type KindKey } from "@/lib/calendar-colors";
 import { useGCalEvents } from "@/lib/google-calendar";
 import { apptOccursOn } from "@/lib/appointment-range";
 import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
+import { expandRecurrence, taskRecurrenceRule } from "@/lib/recurrence";
+import { useCaregivingChores } from "@/lib/caregiving-chores";
+import { exceptionFor, usePlannerRecurrenceExceptions } from "./recurrence-exceptions";
 
-export type FeedSource = "task" | "appointment" | "meal" | "birthday" | "holiday" | "gcal" | "cosmic";
+export type FeedSource = "task" | "appointment" | "meal" | "care" | "birthday" | "holiday" | "gcal" | "cosmic";
 
 export interface PlannerFeedItem {
   kind: KindKey;
@@ -35,6 +38,8 @@ export interface PlannerFeedItem {
   estMinutes?: number;
   projectId?: string;
   tags?: string[];
+  recurrenceSeriesId?: string;
+  occurrenceDate?: string;
   /** Points back at the record so callers can open or mutate the original. */
   sourceRef: { type: FeedSource; id: string };
 }
@@ -60,9 +65,11 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
   const { state } = useStore() as any;
   const { prefs } = useCalendarPrefs();
   const { colorOf } = useKindColors();
+  const caregiving = useCaregivingChores();
 
   const startISO = iso(from);
   const endISO = iso(addDays(from, Math.max(0, days - 1)));
+  const recurrenceExceptions = usePlannerRecurrenceExceptions(startISO, endISO);
 
   const { events: gEvents, connected: gcalConnected, refresh: refreshGcal } = useGCalEvents(
     new Date(`${startISO}T00:00:00`).toISOString(),
@@ -82,34 +89,48 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
     // Tasks (meals area folds into the meal kind so colors stay consistent).
     if (on("task") || on("meal")) {
       for (const t of state.tasks ?? []) {
-        const key = t.dueDate;
-        if (!key || !inWindow(key)) continue;
+        const baseKey = t.dueDate;
+        if (!baseKey) continue;
         const kind: KindKey = t.area === "Meals" ? "meal" : "task";
         if (!on(kind)) continue;
-        items.push({
-          kind, id: `task:${t.id}`, title: t.title, date: key,
-          time: t.startTime ?? null, endTime: t.endTime ?? null,
+        const rule = t.recurrenceSeriesId ? taskRecurrenceRule(t) : null;
+        const dates = rule ? expandRecurrence(baseKey, rule, parseISO(startISO), parseISO(endISO)) : (inWindow(baseKey) ? [baseKey] : []);
+        for (const key of dates) {
+          const exception = exceptionFor(recurrenceExceptions, t.recurrenceSeriesId, key);
+          if (exception?.action === "skip") continue;
+          const occurrenceDate = exception?.overrideDate ?? key;
+          if (!inWindow(occurrenceDate)) continue;
+          items.push({
+          kind, id: `task:${t.id}:${key}`, title: String(exception?.overridePayload.title ?? t.title), date: occurrenceDate,
+          time: exception?.overrideTime ?? t.startTime ?? null, endTime: exception?.overrideEndTime ?? t.endTime ?? null,
           allDay: !t.startTime, color: colorOf(kind), done: !!t.done,
           priority: t.priority, area: t.area, energy: t.energy,
           estMinutes: t.estMinutes, projectId: t.projectId, tags: t.tags,
+          recurrenceSeriesId: t.recurrenceSeriesId, occurrenceDate: key,
           sourceRef: { type: "task", id: t.id },
-
         });
+        }
       }
     }
 
     // Appointments (may span multiple days).
     if (on("appt")) {
       for (const a of state.appointments ?? []) {
-        for (const key of dayList) {
-          if (!apptOccursOn(a, key)) continue;
+        const dates = a.recurrenceRule ? expandRecurrence(a.date, a.recurrenceRule, parseISO(startISO), parseISO(endISO)) : dayList;
+        for (const key of dates) {
+          const occurrence = a.recurrenceRule ? { ...a, date: key, endDate: undefined } : a;
+          if (!apptOccursOn(occurrence, key)) continue;
+          const exception = exceptionFor(recurrenceExceptions, a.recurrenceSeriesId, key);
+          if (exception?.action === "skip") continue;
+          const occurrenceDate = exception?.overrideDate ?? key;
           items.push({
-            kind: "appt", id: `appt:${a.id}:${key}`, title: a.title, date: key,
-            time: key === a.date ? a.time ?? null : null,
-            endTime: a.endTime ?? null,
+            kind: "appt", id: `appt:${a.id}:${key}`, title: String(exception?.overridePayload.title ?? a.title), date: occurrenceDate,
+            time: exception?.overrideTime ?? a.time ?? null,
+            endTime: exception?.overrideEndTime ?? a.endTime ?? null,
             allDay: !!a.allDay || !a.time,
             color: a.color || colorOf("appt"),
             location: a.location ?? null,
+            recurrenceSeriesId: a.recurrenceSeriesId, occurrenceDate: key,
             sourceRef: { type: "appointment", id: a.id },
           });
         }
@@ -119,12 +140,34 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
     // Planned meals.
     if (on("meal")) {
       for (const m of state.meals ?? []) {
-        if (!m.date || !inWindow(m.date)) continue;
+        if (!m.date) continue;
+        const dates = m.recurrenceRule ? expandRecurrence(m.date, m.recurrenceRule, parseISO(startISO), parseISO(endISO)) : (inWindow(m.date) ? [m.date] : []);
+        for (const key of dates) {
+        const exception = exceptionFor(recurrenceExceptions, m.recurrenceSeriesId, key);
+        if (exception?.action === "skip") continue;
+        const occurrenceDate = exception?.overrideDate ?? key;
         items.push({
-          kind: "meal", id: `meal:${m.id}`, title: `${m.slot}: ${m.name}`, date: m.date,
+          kind: "meal", id: `meal:${m.id}:${key}`, title: `${m.slot}: ${String(exception?.overridePayload.name ?? m.name)}`, date: occurrenceDate,
           allDay: true, color: colorOf("meal"),
+          recurrenceSeriesId: m.recurrenceSeriesId, occurrenceDate: key,
           sourceRef: { type: "meal", id: m.id },
         });
+        }
+      }
+    }
+
+    if (on("care")) {
+      for (const chore of caregiving) {
+        const base = chore.start_date;
+        if (!base) continue;
+        const dates = chore.recurrence_rule ? expandRecurrence(base, chore.recurrence_rule, parseISO(startISO), parseISO(endISO)) : (inWindow(base) ? [base] : []);
+        for (const key of dates) {
+          const exception = exceptionFor(recurrenceExceptions, chore.recurrence_series_id ?? undefined, key);
+          if (exception?.action === "skip") continue;
+          items.push({ kind: "care", id: `care:${chore.id}:${key}`, title: chore.title, date: exception?.overrideDate ?? key,
+            allDay: true, color: colorOf("care"), done: chore.done, area: "Caregiving", estMinutes: chore.est_minutes ?? undefined,
+            recurrenceSeriesId: chore.recurrence_series_id ?? undefined, occurrenceDate: key, sourceRef: { type: "care", id: chore.id } });
+        }
       }
     }
 
@@ -193,5 +236,5 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
 
     return { items, byDay, days: dayList, gcalConnected, refreshGcal };
   }, [state.tasks, state.appointments, state.meals, state.birthdays, state.holidays,
-      gEvents, gcalConnected, refreshGcal, from, days, startISO, endISO, colorOf, allowed, applyFilters]); // eslint-disable-line react-hooks/exhaustive-deps
+      caregiving, recurrenceExceptions, gEvents, gcalConnected, refreshGcal, from, days, startISO, endISO, colorOf, allowed, applyFilters]); // eslint-disable-line react-hooks/exhaustive-deps
 }

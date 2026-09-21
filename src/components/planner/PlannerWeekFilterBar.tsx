@@ -143,7 +143,14 @@ export function PlannerWeekFilterBar({
 
           <FieldFilterRows />
 
-          <Chip on={filters.hideDone} onClick={() => patch({ hideDone: !filters.hideDone })}>Hide completed</Chip>
+          <div>
+            <p className="mb-1 text-[11px] font-medium">Status</p>
+            <div className="flex gap-1">
+              <Chip on={!filters.hideDone && !filters.completedOnly} onClick={() => patch({ hideDone: false, completedOnly: false })}>All</Chip>
+              <Chip on={filters.hideDone} onClick={() => patch({ hideDone: true, completedOnly: false })}>Open</Chip>
+              <Chip on={filters.completedOnly} onClick={() => patch({ completedOnly: true, hideDone: false })}>Done</Chip>
+            </div>
+          </div>
 
         </PopoverContent>
       </Popover>
