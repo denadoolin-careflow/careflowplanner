@@ -17,6 +17,12 @@ import { dayLoad } from "@/lib/planner/month-move";
 import { useDraggableCard, useDropZone, feedDragItem } from "@/lib/planner/planner-dnd";
 import { fmt12 } from "@/lib/planner/day-plan";
 import { filterFeedItems, useWeekFilters } from "@/lib/planner/week-filters";
+import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { getMoonSign } from "@/lib/zodiac";
+import { useStore } from "@/lib/store";
+import { habitProgress } from "./PlannerRhythmRow";
+
+const KEY_MOON_PHASES = ["new", "first-quarter", "full", "last-quarter"];
 
 export type MobileMonthView = "calendar" | "agenda" | "list";
 const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v2";
