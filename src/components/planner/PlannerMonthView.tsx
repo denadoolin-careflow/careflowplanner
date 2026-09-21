@@ -29,8 +29,9 @@ function readMobileView(): MobileMonthView {
   try {
     const value = localStorage.getItem(MOBILE_VIEW_KEY);
     if (value === "list") return "list";
-    if (value === "chips" || value === "agenda") return "agenda";
-    return "calendar";
+    if (value === "calendar") return "calendar";
+    if (value === "list") return "list";
+    return "agenda";
   } catch { return "agenda"; }
 }
 
