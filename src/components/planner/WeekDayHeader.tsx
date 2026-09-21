@@ -71,9 +71,11 @@ export function WeekDayHeader({ date, mode, onSelect }: {
       )}
 
       {compact ? (
-        <span className="mt-0.5 flex items-center gap-1 opacity-80">
+        <span className="mt-0.5 flex max-w-full flex-nowrap items-center justify-center gap-1 whitespace-nowrap text-[9.5px] leading-none text-muted-foreground">
           <MoonSVG fraction={theme.fraction} size={14} />
-          {cycle && <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: cycle.color }} />}
+          <span aria-hidden>{theme.signSymbol}</span>
+          <span className="truncate">{theme.sign.slice(0, 3)}</span>
+          {cycle && <span aria-hidden title={cycle.label}>{cycle.glyph}</span>}
         </span>
       ) : (
         <>
