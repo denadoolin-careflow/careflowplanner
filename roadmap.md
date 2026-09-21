@@ -3,3 +3,5 @@
 - [x] Add priority and activity indicators to schedule grid and task editor activity selection/inference
 - [x] Make grid medication clicks check off and add meds/meals check-off section outside grid
 - [x] Add descriptive astrology and energy guidance when hovering cosmic events
+- [x] Make crowded notes-calendar days reveal all hidden notes with hover previews
+- [x] Show resolved note icons in calendar note entries

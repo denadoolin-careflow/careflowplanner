@@ -687,6 +687,7 @@ function CalendarView({ notes, onSelectNote, tagsByName }: {
   tagsByName: Map<string, Tag>;
 }) {
   const [anchor, setAnchor] = useState(new Date());
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const monthStart = startOfMonth(anchor);
   const monthEnd = endOfMonth(anchor);
   const days = eachDayOfInterval({
@@ -734,24 +735,48 @@ function CalendarView({ notes, onSelectNote, tagsByName }: {
               </div>
               <div className="space-y-1">
                 {items.slice(0, 3).map(n => (
-                  <NoteHoverPreview
+                  <CalendarNoteItem
                     key={n.id}
                     note={n}
                     tagsByName={tagsByName}
-                    side="right"
-                    onOpen={onSelectNote}
-                  >
-                    <button
-                      onClick={() => onSelectNote(n.id)}
-                      className="block w-full truncate rounded-md bg-primary/10 px-1.5 py-0.5 text-left text-[11px] text-primary hover:bg-primary/20"
-                      title={n.title || "Untitled"}
-                    >
-                      {n.kind !== "note" ? "● " : ""}{noteDisplayTitle(n, true)}
-                    </button>
-                  </NoteHoverPreview>
+                    onSelect={onSelectNote}
+                  />
                 ))}
                 {items.length > 3 && (
-                  <div className="px-1 text-[10px] text-muted-foreground">+{items.length - 3} more</div>
+                  <Popover
+                    open={expandedDay === key}
+                    onOpenChange={(open) => setExpandedDay(open ? key : null)}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-full justify-start px-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        +{items.length - 3} more
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" side="right" collisionPadding={12} className="w-72 p-2">
+                      <div className="mb-1.5 flex items-center justify-between px-1">
+                        <span className="text-xs font-semibold">{format(d, "EEEE, MMMM d")}</span>
+                        <span className="text-[10px] text-muted-foreground">{items.length} notes</span>
+                      </div>
+                      <div className="max-h-72 space-y-1 overflow-y-auto overscroll-contain pr-1">
+                        {items.slice(3).map(n => (
+                          <CalendarNoteItem
+                            key={n.id}
+                            note={n}
+                            tagsByName={tagsByName}
+                            onSelect={(id) => {
+                              setExpandedDay(null);
+                              onSelectNote(id);
+                            }}
+                            roomy
+                          />
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
             </div>
@@ -759,5 +784,36 @@ function CalendarView({ notes, onSelectNote, tagsByName }: {
         })}
       </div>
     </div>
+  );
+}
+
+function CalendarNoteItem({ note, tagsByName, onSelect, roomy = false }: {
+  note: Note;
+  tagsByName: Map<string, Tag>;
+  onSelect: (id: string) => void;
+  roomy?: boolean;
+}) {
+  const Icon = getLucideIcon(resolveNoteIcon(note));
+  return (
+    <NoteHoverPreview
+      note={note}
+      tagsByName={tagsByName}
+      side="right"
+      onOpen={onSelect}
+    >
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onSelect(note.id)}
+        className={cn(
+          "w-full justify-start gap-1.5 bg-primary/10 px-1.5 text-left text-primary hover:bg-primary/20",
+          roomy ? "h-8 text-xs" : "h-5 text-[11px]",
+        )}
+        title={note.title || "Untitled"}
+      >
+        <Icon className="h-3 w-3 shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{noteDisplayTitle(note, true)}</span>
+      </Button>
+    </NoteHoverPreview>
   );
 }
