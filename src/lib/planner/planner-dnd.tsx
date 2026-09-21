@@ -23,6 +23,8 @@ import { ScheduleConflictDialog } from "@/components/planner/ScheduleConflictDia
 import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME, type DayPartKey, type ScheduleOpts } from "./use-schedule-drop";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
+import { saveOccurrenceOverride } from "./recurrence-exceptions";
+import { toast } from "sonner";
 
 export type PlannerDragKind = "task" | "appointment" | "meal";
 export const DRAGGABLE_TYPES: string[] = ["task", "appointment", "meal"];
@@ -33,6 +35,8 @@ export interface PlannerDragItem {
   label: string;
   color?: string;
   time?: string | null;
+  recurrenceSeriesId?: string;
+  occurrenceDate?: string;
 }
 
 export interface PlannerDropTarget {
@@ -62,6 +66,7 @@ export function PlannerDndProvider({ children }: { children: ReactNode }) {
   const drop = useScheduleDrop();
   const [active, setActive] = useState<PlannerDragItem | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [scopePending, setScopePending] = useState<{ item: PlannerDragItem; target: PlannerDropTarget; clientY?: number } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -77,6 +82,38 @@ export function PlannerDndProvider({ children }: { children: ReactNode }) {
     }
     drop.schedule(item, target.dateISO, target.part, opts);
   }, [drop]);
+
+  const requestSchedule = useCallback((item: PlannerDragItem, target: PlannerDropTarget, clientY?: number) => {
+    if (item.recurrenceSeriesId && item.occurrenceDate) {
+      setScopePending({ item, target, clientY });
+      return;
+    }
+    schedule(item, target, clientY);
+  }, [schedule]);
+
+  const moveOccurrence = useCallback(async () => {
+    if (!scopePending) return;
+    const { item, target, clientY } = scopePending;
+    let time = item.time ?? null;
+    if (target.resolveTime && clientY != null) time = target.resolveTime(clientY) ?? time;
+    else if (target.part) time = target.part === "morning" ? "09:00" : target.part === "afternoon" ? "13:00" : "18:00";
+    const ok = await saveOccurrenceOverride({
+      seriesId: item.recurrenceSeriesId as string,
+      occurrenceDate: item.occurrenceDate as string,
+      overrideDate: target.dateISO,
+      overrideTime: time,
+      overridePayload: target.slot ? { slot: target.slot } : {},
+    });
+    setScopePending(null);
+    if (ok) toast.success("This occurrence was moved");
+    else toast.error("This occurrence could not be moved");
+  }, [scopePending]);
+
+  const moveSeries = useCallback(() => {
+    if (!scopePending) return;
+    schedule(scopePending.item, scopePending.target, scopePending.clientY);
+    setScopePending(null);
+  }, [scopePending, schedule]);
 
   // Bridge the task sheet's long-press drag into the same targets used by
   // Week, Board, List and Month. This keeps the sheet usable beyond Day grid.
@@ -132,13 +169,13 @@ export function PlannerDndProvider({ children }: { children: ReactNode }) {
     else if (act && "touches" in act && act.touches?.[0]) startY = act.touches[0].clientY;
     const clientY = startY != null ? startY + e.delta.y : undefined;
     haptics.drop();
-    schedule(item, target, clientY);
+    requestSchedule(item, target, clientY);
     target.onLanded?.(item);
   };
 
   useEffect(() => () => document.body.classList.remove("planner-dragging"), []);
 
-  const ctx = useMemo<Ctx>(() => ({ active, schedule }), [active, schedule]);
+  const ctx = useMemo<Ctx>(() => ({ active, schedule: requestSchedule }), [active, requestSchedule]);
   const cap = drop.capacityPending;
 
   return (
@@ -166,6 +203,19 @@ export function PlannerDndProvider({ children }: { children: ReactNode }) {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={drop.cancelCapacity}>Choose another day</AlertDialogCancel>
             <AlertDialogAction onClick={drop.confirmCapacity}>Move anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!scopePending} onOpenChange={open => !open && setScopePending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Move repeating item</AlertDialogTitle>
+            <AlertDialogDescription>Choose whether to move only this date or shift the repeating series.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button variant="outline" onClick={() => void moveOccurrence()}>This occurrence</Button>
+            <AlertDialogAction onClick={moveSeries}>Whole series</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -244,6 +294,6 @@ export function useDropZone(target: PlannerDropTarget, opts: { id?: string; disa
 }
 
 /** Drag payload helpers for feed items. */
-export function feedDragItem(it: { sourceRef: { type: string; id: string }; title: string; color?: string; time?: string | null }): PlannerDragItem {
-  return { type: it.sourceRef.type, id: it.sourceRef.id, label: it.title, color: it.color, time: it.time };
+export function feedDragItem(it: { sourceRef: { type: string; id: string }; title: string; color?: string; time?: string | null; recurrenceSeriesId?: string; occurrenceDate?: string }): PlannerDragItem {
+  return { type: it.sourceRef.type, id: it.sourceRef.id, label: it.title, color: it.color, time: it.time, recurrenceSeriesId: it.recurrenceSeriesId, occurrenceDate: it.occurrenceDate };
 }
