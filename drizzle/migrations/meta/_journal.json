@@ -15,6 +15,13 @@
       "when": 1789953819878,
       "tag": "0001_planner_recurrence_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789955067363,
+      "tag": "0002_planner_reminder_instances",
+      "breakpoints": true
     }
   ]
 }
