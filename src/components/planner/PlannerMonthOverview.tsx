@@ -9,6 +9,7 @@ import { startOfMonth, getDaysInMonth } from "date-fns";
 import { PeriodNoteDot } from "@/components/notes/PeriodNoteDot";
 import { usePeriodNoteMarks } from "@/lib/notes/daily";
 import { monthKeyFor } from "@/lib/notes/periods";
+import { PlannerGoalsFocus } from "./PlannerGoalsFocus";
 
 /** Month planning dashboard: goals, commitments and review for the month. */
 export function PlannerMonthOverview({ date, onJumpToDate }: { date: Date; onJumpToDate?: (d: Date) => void }) {
@@ -21,6 +22,7 @@ export function PlannerMonthOverview({ date, onJumpToDate }: { date: Date; onJum
         <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{format(date, "MMMM yyyy")}</span>
         <PeriodNoteDot kind="monthly" keyISO={monthKey} mark={monthMarks.get(monthKey)} showLabel />
       </div>
+      <PlannerGoalsFocus />
       <PlannerTimeReview from={startOfMonth(date)} days={getDaysInMonth(date)} label="this month" />
       <MonthPlanningDashboard cursor={date} onJumpToDate={onJumpToDate} />
       <div className="flex justify-end">

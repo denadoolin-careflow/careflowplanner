@@ -40,6 +40,8 @@ import { PlannerCapacityView } from "@/components/planner/PlannerCapacityView";
 import { PlannerDayReferences } from "@/components/planner/PlannerDayReferences";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
+import { ReminderCenter } from "@/components/planner/ReminderCenter";
+import { PlannerRhythmCard } from "@/components/planner/PlannerRhythmRow";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMobileWeekMode, usePlannerMonthMode, usePlannerRangeLayout, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
 import { PlannerWeekFilterBar } from "@/components/planner/PlannerWeekFilterBar";
@@ -409,6 +411,7 @@ export default function Planner() {
             />
           )}
           {view !== "month" && <PlannerKindFilter className="shrink-0" />}
+           <ReminderCenter />
            <AutoScheduleSettings size="md" />
         </div>
         </div>
@@ -499,7 +502,8 @@ export default function Planner() {
                 {panel.context ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
               </Button>
             )}
-            <AutoScheduleSettings size="md" />
+            <ReminderCenter />
+           <AutoScheduleSettings size="md" />
             <Button
               size="icon"
               variant="ghost"
@@ -603,6 +607,7 @@ export default function Planner() {
                      <CyclePlanningGuide date={day} />
                     <PlannerDayAssistant date={day} />
                     <PlannerCapacityBar date={day} />
+                     <PlannerRhythmCard date={day} />
                      <PlannerDayReferences date={day} />
                   </div>
                 </CollapsibleSection>
@@ -613,6 +618,7 @@ export default function Planner() {
                    <CyclePlanningGuide date={day} />
                   <PlannerDayAssistant date={day} />
                   <PlannerCapacityBar date={day} />
+                  <PlannerRhythmCard date={day} />
                    <PlannerDayReferences date={day} />
                 </>
               )}

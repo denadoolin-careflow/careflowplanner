@@ -17,6 +17,12 @@ import { dayLoad } from "@/lib/planner/month-move";
 import { useDraggableCard, useDropZone, feedDragItem } from "@/lib/planner/planner-dnd";
 import { fmt12 } from "@/lib/planner/day-plan";
 import { filterFeedItems, useWeekFilters } from "@/lib/planner/week-filters";
+import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { getMoonSign } from "@/lib/zodiac";
+import { useStore } from "@/lib/store";
+import { habitProgress } from "./PlannerRhythmRow";
+
+const KEY_MOON_PHASES = ["new", "first-quarter", "full", "last-quarter"];
 
 export type MobileMonthView = "calendar" | "agenda" | "list";
 const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v2";
@@ -67,6 +73,27 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = (item: PlannerFeedItem) => onOpenItem ? onOpenItem(item) : openItem(item);
   const cycles = useCycleDots(days);
+  const { state } = useStore() as any;
+  /** Moon glyph on key phase days, moon sign, and the cycle emoji where a phase begins. */
+  const rhythmMarks = useMemo(() => {
+    const map = new Map<string, { moon?: string; sign: string; cycleGlyph?: string; title: string }>();
+    let prevPhase: string | null = null;
+    for (const day of days) {
+      const key = format(day, "yyyy-MM-dd");
+      const phase = getMoonPhase(day);
+      const sign = getMoonSign(day);
+      const dot = cycles.get(key);
+      const cycleStart = dot && dot.phase !== prevPhase;
+      prevPhase = dot ? dot.phase : null;
+      map.set(key, {
+        moon: KEY_MOON_PHASES.includes(phase) ? MOON_INFO[phase].glyph : undefined,
+        sign: sign.name.slice(0, 3),
+        cycleGlyph: cycleStart ? dot!.glyph : undefined,
+        title: [MOON_INFO[phase].label, `Moon in ${sign.name}`, cycleStart ? `${dot!.label} phase begins` : null].filter(Boolean).join(" · "),
+      });
+    }
+    return map;
+  }, [days, cycles]);
   const noteMarks = useDailyNoteMarks(days.map(day => format(day, "yyyy-MM-dd")));
   const isMobile = useIsMobile();
   const [mobileView, setMobileView] = useState<MobileMonthView>(readMobileView);
@@ -147,18 +174,21 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
           {days.map(day => {
             const key = format(day, "yyyy-MM-dd");
              const rows = filteredByDay.get(key) ?? [];
-             const visible = rows.slice(0, 3);
-            const dim = !isSameMonth(day, date);
-            const current = isSameDay(day, today);
-            const selected = key === selectedKey;
-            const tasks = rows.filter(row => row.sourceRef.type === "task");
-            const completed = tasks.filter(row => row.done).length;
-            const cycle = cycles.get(key);
+             const visible = rows.slice(0, isMobile ? 3 : 5);
+             const dim = !isSameMonth(day, date);
+             const current = isSameDay(day, today);
+             const selected = key === selectedKey;
+             const tasks = rows.filter(row => row.sourceRef.type === "task");
+             const completed = tasks.filter(row => row.done).length;
+             const cycle = cycles.get(key);
+             const rhythm = rhythmMarks.get(key);
+             const habits = habitProgress((state.habits ?? []) as any, day);
             return <DayDropZone key={key} dateISO={key} className={cn("planner-month-day", dim && "planner-month-day--dim", selected && "planner-month-day--selected", current && "planner-month-day--today")}>
               <button type="button" onClick={() => onSelectDay(day)} className="planner-month-day__header" aria-label={`Select ${format(day, "EEEE, MMMM d")}${rows.length ? `, ${rows.length} planned` : ""}`}>
                 <span className="planner-month-day__number">{format(day, "d")}</span>{current && <span className="planner-month-day__today-label">Today</span>}
                 <span className="ml-auto flex items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={11} />{cycle && <span className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>
               </button>
+              {rhythm && <span className="planner-month-day__rhythm" title={rhythm.title}>{rhythm.moon && <span aria-hidden>{rhythm.moon}</span>}<span aria-hidden className="opacity-70">{rhythm.sign}</span>{rhythm.cycleGlyph && <span aria-hidden>{rhythm.cycleGlyph}</span>}{!isMobile && habits.total > 0 && <span className="ml-auto opacity-70">🌱 {habits.done}/{habits.total}</span>}</span>}
                {!isMobile && <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact />{tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>}
                {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.length > 0 && <span className="planner-month-day__count">{rows.length}</span>}<span className="planner-month-day__signals"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={9} />{cycle && <i className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span></button> : <div className="planner-month-day__items">{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{rows.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{rows.length - visible.length} more</button>}</div>}
             </DayDropZone>;

@@ -5742,6 +5742,48 @@ export type Database = {
         }
         Relationships: []
       }
+      planner_reminder_instances: {
+        Row: {
+          created_at: string
+          fire_at: string | null
+          handled_at: string | null
+          id: string
+          occurrence_key: string
+          snoozed_until: string | null
+          source_id: string
+          source_kind: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fire_at?: string | null
+          handled_at?: string | null
+          id?: string
+          occurrence_key: string
+          snoozed_until?: string | null
+          source_id: string
+          source_kind: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          fire_at?: string | null
+          handled_at?: string | null
+          id?: string
+          occurrence_key?: string
+          snoozed_until?: string | null
+          source_id?: string
+          source_kind?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       planner_reminder_preferences: {
         Row: {
           cycle_enabled: boolean

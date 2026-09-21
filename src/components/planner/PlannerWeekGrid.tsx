@@ -10,7 +10,10 @@ import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { useWeekFilters, filterFeedItems, matchesTaskFilter } from "@/lib/planner/week-filters";
 import { usePlannerWeekHeaderMode } from "@/lib/planner-prefs";
 import { useKindColors, KIND_LABEL, type KindKey } from "@/lib/calendar-colors";
-import { PLANNER_START_H, PLANNER_END_H, HOUR_PX } from "@/lib/planner-metrics";
+import { PLANNER_START_H, PLANNER_END_H, HOUR_PX as BASE_HOUR_PX } from "@/lib/planner-metrics";
+import { useTimelineZoom, MIN_ZOOM, MAX_ZOOM } from "@/lib/planner/use-timeline-zoom";
+import { PlannerRhythmRow, useRhythmRowVisible } from "./PlannerRhythmRow";
+import { Maximize2, Minimize2, Minus, Plus, Sprout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -34,17 +37,17 @@ function WeekNoteDot({ start }: { start: Date }) {
 const LEGEND_KINDS: KindKey[] = ["task", "appt", "care", "meal", "bday", "hol", "gcal"];
 
 /** A day column in the hour grid: drops land on the hour the pointer is over. */
-function GridDayColumn({ date, className, children }: { date: Date; className?: string; children: React.ReactNode }) {
+function GridDayColumn({ date, className, hourPx, children }: { date: Date; className?: string; hourPx: number; children: React.ReactNode }) {
   const dateISO = format(date, "yyyy-MM-dd");
   const elRef = useRef<HTMLDivElement | null>(null);
   const resolveTime = useCallback((clientY: number) => {
     const rect = elRef.current?.getBoundingClientRect();
     if (!rect) return undefined;
-    const mins = PLANNER_START_H * 60 + ((clientY - rect.top) / HOUR_PX) * 60;
+    const mins = PLANNER_START_H * 60 + ((clientY - rect.top) / hourPx) * 60;
     const snapped = Math.min(23 * 60 + 45, Math.max(0, Math.round(mins / 15) * 15));
     const h = Math.floor(snapped / 60), m = snapped % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  }, []);
+  }, [hourPx]);
   const zone = useDropZone({ dateISO, resolveTime }, { id: `weekgrid:${dateISO}` });
   return (
     <div
@@ -85,6 +88,10 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const [nowMin, setNowMin] = useState<number | null>(null);
   const totalMin = (PLANNER_END_H - PLANNER_START_H) * 60;
   const [careVisible, toggleCare] = useCareRowVisible();
+  const [rhythmVisible, toggleRhythm] = useRhythmRowVisible();
+  const { zoom, zoomBy } = useTimelineZoom();
+  const HOUR_PX = BASE_HOUR_PX * zoom;
+  const [fullScreen, setFullScreen] = useState(false);
   const [mealsVisible, setMealsVisible] = useState(() => {
     try { return localStorage.getItem(MEALS_ROW_KEY) !== "0"; } catch { return true; }
   });
@@ -138,7 +145,10 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
 
   const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(${minCol}px, 1fr))`;
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/40">
+    <div className={cn(
+      "flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/40",
+      fullScreen && "fixed inset-0 z-50 h-[100dvh] rounded-none bg-background",
+    )}>
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5">
         <span className="flex min-w-0 items-center gap-1.5">
@@ -180,8 +190,42 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           >
             <HeartHandshake className="h-3.5 w-3.5" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7 rounded-full", !rhythmVisible && "opacity-40")}
+            onClick={toggleRhythm}
+            aria-pressed={rhythmVisible}
+            aria-label={rhythmVisible ? "Hide habits and routines row" : "Show habits and routines row"}
+            title={rhythmVisible ? "Hide habits · routines" : "Show habits · routines"}
+          >
+            <Sprout className="h-3.5 w-3.5" />
+          </Button>
+          <span className="ml-1 inline-flex items-center rounded-full border border-border/60">
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" disabled={zoom <= MIN_ZOOM + 0.001}
+              onClick={() => zoomBy(1 / 1.25)} aria-label="Smaller grid">
+              <Minus className="h-3.5 w-3.5" />
+            </Button>
+            <span className="px-1 text-[10px] tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" disabled={zoom >= MAX_ZOOM - 0.001}
+              onClick={() => zoomBy(1.25)} aria-label="Bigger grid">
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full"
+            onClick={() => setFullScreen(v => !v)}
+            aria-pressed={fullScreen}
+            aria-label={fullScreen ? "Exit full screen grid" : "Full screen grid"}
+            title={fullScreen ? "Exit full screen" : "Full screen grid"}
+          >
+            {fullScreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          </Button>
         </span>
       </div>
+
 
       {/* Horizontal scroller keeps columns legible on narrow screens */}
        <div ref={horizontalRef} data-planner-scroll-region className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
@@ -215,6 +259,12 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           onToggle={toggleCare}
         />
       )}
+
+      {/* Habits · Routines */}
+      {rhythmVisible && (
+        <PlannerRhythmRow days={cols.map(d => format(d, "yyyy-MM-dd"))} colTemplate={colTemplate} />
+      )}
+
 
       {/* All-day row */}
       <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>
@@ -260,6 +310,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
             <GridDayColumn
               key={format(d, "yyyy-MM-dd")}
               date={d}
+              hourPx={HOUR_PX}
               className={cn("relative min-w-0", i > 0 && "border-l border-border/40", isSameDay(d, today) && "bg-primary/[0.03]")}
             >
               <PlannerTimeline date={d} bare gutterless noScroll compact taskFilter={taskFilter} />
