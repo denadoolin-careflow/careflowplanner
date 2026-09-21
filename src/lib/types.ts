@@ -58,6 +58,8 @@ export interface Task {
   nextDueDate?: string;
   lastCompletedAt?: string;
   autoReset?: boolean;
+  recurrenceSeriesId?: string;
+  reminderMinutesBefore?: number;
   projectId?: string;
   parentTaskId?: string;
   inbox?: boolean;
@@ -215,6 +217,9 @@ export interface Meal {
   ingredients?: string[];
   steps?: string[];
   tags?: string[];
+  recurrenceRule?: RecurrenceRule;
+  recurrenceSeriesId?: string;
+  reminderMinutesBefore?: number;
   updatedAt?: string;
 }
 
@@ -253,6 +258,7 @@ export interface Appointment {
   recurrenceRule?: RecurrenceRule;
   /** Fire a browser reminder N minutes before the appointment starts. */
   reminderMinutesBefore?: number;
+  recurrenceSeriesId?: string;
   updatedAt?: string;
 }
 
