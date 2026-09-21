@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 export function PlannerGoalsFocus({ className, limit = 3 }: { className?: string; limit?: number }) {
   const { state } = useStore() as any;
   const goals = ((state.goals ?? []) as Goal[])
-    .filter(goal => goal.status !== "completed" && goal.status !== "archived")
+    .filter(goal => goal.status === "active")
     .slice(0, limit);
 
   if (!goals.length) return null;
