@@ -96,7 +96,7 @@ export function useReminderCenter(horizonDays = 8) {
       out.push({ ...row, at, group, snoozedUntil, key: instanceKey(row.sourceKind, row.sourceId, row.occurrenceKey) });
     };
 
-    if (prefs.plannerEnabled !== false) {
+    if (prefs.tasksEnabled !== false) {
       for (const item of items) {
         if (item.done) continue;
         const kind: ReminderSourceKind | null =

@@ -50,7 +50,7 @@ function routineOnDate(routine: Routine, date: Date): boolean {
 
 function RhythmChips({ date }: { date: Date }) {
   const { state, toggleHabit } = useStore() as any;
-  const routines = useRoutines();
+  const { routines } = useRoutines();
   const iso = format(date, "yyyy-MM-dd");
   const habits: Habit[] = useMemo(
     () => ((state.habits ?? []) as Habit[]).filter(h => habitOnDate(h, date)),
