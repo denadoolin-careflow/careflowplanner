@@ -145,7 +145,10 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
 
   const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(${minCol}px, 1fr))`;
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/40">
+    <div className={cn(
+      "flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/40",
+      fullScreen && "fixed inset-0 z-50 h-[100dvh] rounded-none bg-background",
+    )}>
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5">
         <span className="flex min-w-0 items-center gap-1.5">
