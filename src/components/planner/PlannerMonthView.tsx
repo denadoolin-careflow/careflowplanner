@@ -174,13 +174,15 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
           {days.map(day => {
             const key = format(day, "yyyy-MM-dd");
              const rows = filteredByDay.get(key) ?? [];
-             const visible = rows.slice(0, 3);
-            const dim = !isSameMonth(day, date);
-            const current = isSameDay(day, today);
-            const selected = key === selectedKey;
-            const tasks = rows.filter(row => row.sourceRef.type === "task");
-            const completed = tasks.filter(row => row.done).length;
-            const cycle = cycles.get(key);
+             const visible = rows.slice(0, isMobile ? 3 : 5);
+             const dim = !isSameMonth(day, date);
+             const current = isSameDay(day, today);
+             const selected = key === selectedKey;
+             const tasks = rows.filter(row => row.sourceRef.type === "task");
+             const completed = tasks.filter(row => row.done).length;
+             const cycle = cycles.get(key);
+             const rhythm = rhythmMarks.get(key);
+             const habits = habitProgress((state.habits ?? []) as any, day);
             return <DayDropZone key={key} dateISO={key} className={cn("planner-month-day", dim && "planner-month-day--dim", selected && "planner-month-day--selected", current && "planner-month-day--today")}>
               <button type="button" onClick={() => onSelectDay(day)} className="planner-month-day__header" aria-label={`Select ${format(day, "EEEE, MMMM d")}${rows.length ? `, ${rows.length} planned` : ""}`}>
                 <span className="planner-month-day__number">{format(day, "d")}</span>{current && <span className="planner-month-day__today-label">Today</span>}
