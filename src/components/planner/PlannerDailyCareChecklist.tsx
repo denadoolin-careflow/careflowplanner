@@ -19,7 +19,9 @@ export function PlannerDailyCareChecklist({ iso, compact = false, className }: {
   const { done: mealsDone, toggle: toggleMeal } = useMealCompletion();
   const meds = useMemo(() => doseSlots(medications), [medications]);
   const meals = useMemo(() => state.meals.filter(meal => meal.date === iso), [state.meals, iso]);
-  if (!meds.length && !meals.length) return null;
+  if (!meds.length && !meals.length) {
+    return compact ? <div className={cn("min-w-0 p-2", className)} aria-label="No meds or meals planned" /> : null;
+  }
 
   return (
     <section className={cn("rounded-lg border border-border/60 bg-card/45 p-2", compact && "min-w-0 rounded-none border-0", className)} aria-label="Meds and meals checklist">
