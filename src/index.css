@@ -383,7 +383,8 @@
   .planner-month-weekdays { @apply grid grid-cols-7 border-b border-border/60 bg-primary-soft/60 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground; }
   .planner-month-weekdays > div { @apply py-2; }
   .planner-month-grid { @apply grid grid-cols-7; }
-  .planner-month-day { @apply relative flex min-h-[132px] min-w-0 flex-col border-b border-r border-border/45 bg-background/40 p-1.5 transition-all; }
+  .planner-month-day { @apply relative flex min-h-[168px] min-w-0 flex-col border-b border-r border-border/45 bg-background/40 p-1.5 transition-all; }
+  .planner-month-day__rhythm { @apply flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden whitespace-nowrap text-[9.5px] leading-none text-muted-foreground; }
   .planner-month-day--dim { @apply bg-muted/20 text-muted-foreground/50; }
   .planner-month-day--selected { @apply bg-primary-soft/40 ring-2 ring-inset ring-primary/35; }
   .planner-month-day--today { @apply z-[1] bg-accent-soft/60 ring-2 ring-inset ring-accent/70 shadow-soft; }
@@ -447,6 +448,7 @@
     .planner-month-calendar { @apply overflow-hidden rounded-md border border-border/60 shadow-none; }
     .planner-month-weekdays > div { @apply py-1.5 tracking-normal; }
     .planner-month-day { @apply min-h-[62px] border-border/30 p-0.5; }
+    .planner-month-day__rhythm { @apply justify-center gap-0.5 text-[8px]; }
     .planner-month-day__header { @apply min-h-8 justify-center; }
     .planner-month-day__number { @apply h-7 w-7 text-xs; }
     .planner-month-day__header > span:last-child { @apply hidden; }
