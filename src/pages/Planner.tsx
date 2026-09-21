@@ -60,11 +60,8 @@ import { PlannerDndProvider } from "@/lib/planner/planner-dnd";
 const SEGMENTS = ["all", "morning", "afternoon", "evening"] as const;
 type Segment = (typeof SEGMENTS)[number];
 
-/**
- * Grid-style views keep their own hour scroll but stay bounded so the page
- * itself is always scrollable past them — no viewport-filling boxes.
- * Timed grids get real breathing room; the month calendar sizes to its rows.
- */
+/** Day view keeps a focused internal hour scroll. Multi-day grids expand to
+ * their full schedule height below so the page can reveal every hour. */
 const GRID_BOX = "h-[clamp(520px,78vh,1000px)] min-h-0";
 /** Phones: leave room for the sticky header, bottom nav and FAB. */
 const GRID_BOX_MOBILE = "h-[calc(100dvh-8rem)] min-h-[520px] max-h-[680px]";
@@ -263,6 +260,7 @@ export default function Planner() {
   const altLayout = view !== "week" && rangeLayout !== "default";
   const nativeRange = view === "week" || rangeLayout === "default";
   const gridBox = isMobile ? GRID_BOX_MOBILE : GRID_BOX;
+  const expandedScheduleBox = "min-h-0 pb-[calc(1rem+env(safe-area-inset-bottom))]";
   const openDay = (d: Date) => { setView("day"); go(d); };
 
   const onResizeKey = useCallback((e: React.KeyboardEvent) => {
@@ -682,13 +680,13 @@ export default function Planner() {
               <PlannerPeriodList date={day} period={segment} />
             )}
             {nativeRange && view === "3day" && (
-              <div className={gridBox}>
-                <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
+              <div className={expandedScheduleBox}>
+                <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} expandHeight />
               </div>
             )}
             {view === "week" && activeWeekMode === "grid" && (
-              <div className={gridBox}>
-                <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} />
+              <div className={expandedScheduleBox}>
+                <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} expandHeight />
               </div>
             )}
             {view === "week" && activeWeekMode === "board" && (

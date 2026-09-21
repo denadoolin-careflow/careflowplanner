@@ -63,12 +63,14 @@ function GridDayColumn({ date, className, hourPx, children }: { date: Date; clas
 }
 
 /** Multi-day hour grid with an all-day row fed by the shared planner feed. */
-export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCustomize }: {
+export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCustomize, expandHeight = false }: {
   start: Date;
   days?: number;
   onOpenItem?: (item: PlannerFeedItem) => void;
   onSelectDay?: (d: Date) => void;
   onCustomize?: () => void;
+  /** Show the complete day and let the page own vertical scrolling. */
+  expandHeight?: boolean;
 }) {
   const cols = Array.from({ length: days }, (_, i) => addDays(start, i));
   const today = new Date();
@@ -147,7 +149,8 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(${minCol}px, 1fr))`;
   return (
     <div className={cn(
-      "flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/40",
+      "flex min-h-0 flex-col rounded-lg border border-border/60 bg-card/40",
+      expandHeight ? "h-auto overflow-visible" : "h-full overflow-hidden",
       fullScreen && "fixed inset-0 z-50 h-[100dvh] rounded-none bg-background",
     )}>
       {/* Toolbar */}
@@ -229,8 +232,8 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
 
 
       {/* Horizontal scroller keeps columns legible on narrow screens */}
-       <div ref={horizontalRef} data-planner-scroll-region className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
-      <div className="flex min-h-0 flex-1 flex-col" style={boardMinWidth ? { minWidth: boardMinWidth } : undefined}>
+       <div ref={horizontalRef} data-planner-scroll-region className={cn("flex min-h-0 flex-col overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]", expandHeight ? "flex-none" : "flex-1")}>
+      <div className={cn("flex min-h-0 flex-col", expandHeight ? "flex-none" : "flex-1")} style={boardMinWidth ? { minWidth: boardMinWidth } : undefined}>
       {/* Day headers */}
       <div
         className="grid border-b border-border/60 bg-card/70 backdrop-blur"
@@ -289,7 +292,16 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Shared-gutter time grid */}
-       <div ref={scrollRef} onWheel={handoffWheel} data-planner-timeline-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-y-auto [-webkit-overflow-scrolling:touch]">
+       <div
+         ref={scrollRef}
+         onWheel={expandHeight ? undefined : handoffWheel}
+         data-planner-timeline-scroll
+         className={cn(
+           "min-h-0 [-webkit-overflow-scrolling:touch]",
+           expandHeight ? "flex-none overflow-y-visible" : "flex-1 overflow-y-auto overscroll-y-auto",
+         )}
+         style={expandHeight ? { height: totalMin * (HOUR_PX / 60) } : undefined}
+       >
         <div className="relative grid" style={{ gridTemplateColumns: colTemplate }}>
           {/* Time gutter */}
           <div
