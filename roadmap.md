@@ -37,7 +37,7 @@
 - [x] Add shared recurrence and exception data model
 - [x] Project recurring tasks, appointments, meals, and caregiving into planner views
 - [x] Add synchronized compact Month and Week filters
-- [ ] Add cross-device reminder preferences and in-app/device scheduling
+- [x] Add cross-device reminder preferences and in-app/device scheduling
 - [x] Add moon emoji/dates and cycle phase indicators
 - [x] Add editable cycle alignment view
-- [ ] Verify database security, types, and planner behavior
+- [x] Verify database security, types, and planner behavior
