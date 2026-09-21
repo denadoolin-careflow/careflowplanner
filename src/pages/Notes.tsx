@@ -480,7 +480,7 @@ export default function Notes() {
             ) : view === "timeline" ? (
               <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} onChanged={refresh} />
             ) : (
-              <CalendarView notes={filtered} onSelectNote={selectNote} />
+              <CalendarView notes={filtered} onSelectNote={selectNote} tagsByName={tagsByName} />
             )}
           </section>
         </div>
@@ -681,7 +681,11 @@ function TimelineView({
 
 /* -------------------- calendar view -------------------- */
 
-function CalendarView({ notes, onSelectNote }: { notes: Note[]; onSelectNote: (id: string) => void }) {
+function CalendarView({ notes, onSelectNote, tagsByName }: {
+  notes: Note[];
+  onSelectNote: (id: string) => void;
+  tagsByName: Map<string, Tag>;
+}) {
   const [anchor, setAnchor] = useState(new Date());
   const monthStart = startOfMonth(anchor);
   const monthEnd = endOfMonth(anchor);
