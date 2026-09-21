@@ -328,7 +328,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       tasks: [{
         taskId,
         before: { dueDate: task?.dueDate, startTime: task?.startTime ?? null, estMinutes: task?.estMinutes ?? dur, inbox: task?.inbox ?? false },
-        after: { dueDate: iso, startTime: startHM, estMinutes: dur, inbox: false },
+        after: { dueDate: dayISO, startTime: startHM, estMinutes: dur, inbox: false },
       }],
       blocks: [],
     };
@@ -339,11 +339,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       entry.blocks!.push({
         blockId: existingBlock.id,
         before: { startTime: existingBlock.startTime, endTime: existingBlock.endTime, date: existingBlock.date },
-        after: { startTime: startHM, endTime: endHM, date: iso },
+        after: { startTime: startHM, endTime: endHM, date: dayISO },
       });
-      await updateBlock(existingBlock.id, { startTime: startHM, endTime: endHM, date: iso });
+      await updateBlock(existingBlock.id, { startTime: startHM, endTime: endHM, date: dayISO });
     }
-    await updateTask(taskId, { dueDate: iso, startTime: startHM, inbox: false, estMinutes: dur });
+    await updateTask(taskId, { dueDate: dayISO, startTime: startHM, inbox: false, estMinutes: dur });
     history.push(entry);
     haptics.drop();
     setAnnouncement(`${task?.title ?? "Task"} scheduled at ${minTo12(absMin)}`);
