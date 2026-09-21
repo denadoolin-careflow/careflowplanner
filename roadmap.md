@@ -30,4 +30,4 @@
 - [x] Add monthly moonscape, journal/note saves, Cosmic Flow link, and cycle rails
 - [x] Add selected-day task, appointment, care, home, cleaning, and meal capture
 - [x] Improve Week and 3 Day card metadata without changing scroll ownership
-- [ ] Verify phone and desktop planner behavior
+- [x] Verify phone and desktop planner behavior
