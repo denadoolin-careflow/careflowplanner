@@ -65,6 +65,26 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
 
   const plans = useDayPlans(dates);
 
+  // Drag a task from one day (or week) onto another.
+  const { updateTask } = useStore();
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const moveTaskTo = async (taskId: string, iso: string, label: string) => {
+    try {
+      await updateTask(taskId, { dueDate: iso } as any);
+      toast.success(`Moved to ${label}`);
+    } catch { toast.error("Could not move that task"); }
+  };
+  const dropProps = (iso: string, label: string) => ({
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropTarget(iso); },
+    onDragLeave: () => setDropTarget(t => (t === iso ? null : t)),
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      setDropTarget(null);
+      const taskId = readDraggedTaskId(e);
+      if (taskId) void moveTaskTo(taskId, iso, label);
+    },
+  });
+
   const totals = useMemo(() => {
     let tasks = 0, done = 0, events = 0, cosmic = 0, meals = 0;
     for (const v of plans.values()) {
