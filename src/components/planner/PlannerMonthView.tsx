@@ -73,6 +73,27 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = (item: PlannerFeedItem) => onOpenItem ? onOpenItem(item) : openItem(item);
   const cycles = useCycleDots(days);
+  const { state } = useStore() as any;
+  /** Moon glyph on key phase days, moon sign, and the cycle emoji where a phase begins. */
+  const rhythmMarks = useMemo(() => {
+    const map = new Map<string, { moon?: string; sign: string; cycleGlyph?: string; title: string }>();
+    let prevPhase: string | null = null;
+    for (const day of days) {
+      const key = format(day, "yyyy-MM-dd");
+      const phase = getMoonPhase(day);
+      const sign = getMoonSign(day);
+      const dot = cycles.get(key);
+      const cycleStart = dot && dot.phase !== prevPhase;
+      prevPhase = dot ? dot.phase : null;
+      map.set(key, {
+        moon: KEY_MOON_PHASES.includes(phase) ? MOON_INFO[phase].glyph : undefined,
+        sign: sign.name.slice(0, 3),
+        cycleGlyph: cycleStart ? dot!.glyph : undefined,
+        title: [MOON_INFO[phase].label, `Moon in ${sign.name}`, cycleStart ? `${dot!.label} phase begins` : null].filter(Boolean).join(" · "),
+      });
+    }
+    return map;
+  }, [days, cycles]);
   const noteMarks = useDailyNoteMarks(days.map(day => format(day, "yyyy-MM-dd")));
   const isMobile = useIsMobile();
   const [mobileView, setMobileView] = useState<MobileMonthView>(readMobileView);
