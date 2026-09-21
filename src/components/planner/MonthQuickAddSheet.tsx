@@ -49,7 +49,7 @@ export function MonthQuickAddSheet({ open, onOpenChange, date }: { open: boolean
         await addTask({
           title: title.trim(), area, priority, dueDate: dateISO,
           startTime: time || undefined, tags: kind === "cleaning" ? ["cleaning"] : [], done: false, inbox: false,
-          recurrenceType: recurrenceRule?.freq ?? "none", recurrenceInterval: recurrenceRule?.interval ?? 1,
+          recurrenceType: recurrenceRule?.freq === "yearly" ? "custom" : recurrenceRule?.freq ?? "none", recurrenceInterval: recurrenceRule?.interval ?? 1,
           recurrenceDays: recurrenceRule?.byWeekday ?? [], recurrenceSeriesId: recurrenceRule ? crypto.randomUUID() : undefined,
         });
       }
