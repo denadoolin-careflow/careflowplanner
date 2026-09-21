@@ -119,22 +119,29 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
         <Link to={plannerHref(key)} className="ml-auto text-muted-foreground hover:text-foreground">Open in planner →</Link>
       </nav>
 
-      {/* Children: days of the week, or weeks of the month */}
-      {children && (
+      {/* Children (days of the week / weeks of the month), or — on a daily
+          note — the surrounding week. Drop a task here to move it. */}
+      {(children ?? dailyNeighbours) && (
         <div className="mt-2 flex flex-wrap gap-1">
-          {children.keys.map(k => {
-            const mk = markFor(children.kind, k);
+          {(children ?? dailyNeighbours)!.keys.map(k => {
+            const ck = (children ?? dailyNeighbours)!.kind;
+            const mk = markFor(ck, k);
             const d = fromISO(k);
-            const isToday = children.kind === "daily" && isSameDay(d, today);
+            const isToday = ck === "daily" && isSameDay(d, today);
+            const isSelf = ck === kind && k === key;
+            const label = ck === "daily" ? format(d, "EEE, MMM d") : `week of ${format(d, "MMM d")}`;
             return (
-              <button key={k} type="button" onClick={() => void openPeriod(children.kind, k)}
+              <button key={k} type="button" onClick={() => void openPeriod(ck, k)}
+                      {...dropProps(k, label)}
                       className={cn(
                         "rounded-full border px-2 py-1 text-[11px] transition",
                         mk?.written ? "border-primary/40 bg-primary/10 text-foreground" : "border-border/60 text-muted-foreground hover:bg-muted",
                         isToday && "ring-1 ring-primary/60",
+                        isSelf && "font-medium text-foreground",
+                        dropTarget === k && "border-primary bg-primary/20 text-foreground",
                       )}
-                      title={mk?.written ? "Open note" : "Start a note"}>
-                {children.kind === "daily" ? format(d, "EEE d") : `Wk of ${format(d, "MMM d")}`}
+                      title={`${mk?.written ? "Open note" : "Start a note"} · drop a task to move it here`}>
+                {ck === "daily" ? format(d, "EEE d") : `Wk of ${format(d, "MMM d")}`}
               </button>
             );
           })}
