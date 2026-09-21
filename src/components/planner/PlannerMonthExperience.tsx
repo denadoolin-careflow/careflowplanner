@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { differenceInCalendarDays, endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from "date-fns";
 import { AlertTriangle, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { useOverdueTasks } from "./PlannerOverdueSection";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { MonthlyMoonscape } from "./MonthlyMoonscape";
+import { MonthQuickAddSheet } from "./MonthQuickAddSheet";
 
 const PANEL_KEY = "careflow:planner:month-panel:v1";
 const ATTENTION_KEY = "careflow:planner:month-attention:v1";
@@ -22,6 +24,7 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture }: { date: D
   const isMobile = useIsMobile();
   const [selectedDate, setSelectedDate] = useState(date);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(() => { try { return localStorage.getItem(PANEL_KEY) !== "0"; } catch { return true; } });
   const [attentionOpen, setAttentionOpen] = useState(() => { try { return localStorage.getItem(ATTENTION_KEY) === "1"; } catch { return false; } });
   const { open: openItem, dialogs } = usePlannerItemOpener();
@@ -31,7 +34,8 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture }: { date: D
   const total = differenceInCalendarDays(end, start) + 1;
   const { items } = usePlannerFeed(start, total);
   const unscheduled = useMemo(() => items.filter(item => item.kind === "task" && !item.time).length, [items]);
-  const selectDay = (next: Date) => { setSelectedDate(next); if (isMobile) setMobilePanelOpen(true); };
+  useEffect(() => { setSelectedDate(date); }, [date]);
+  const selectDay = (next: Date) => { setSelectedDate(next); if (!isMobile) onOpenDay(next); };
   const selectAgendaDay = (next: Date) => setSelectedDate(next);
   const setPanel = (open: boolean) => { setPanelOpen(open); try { localStorage.setItem(PANEL_KEY, open ? "1" : "0"); } catch { /* no-op */ } };
   const setAttention = (open: boolean) => { setAttentionOpen(open); try { localStorage.setItem(ATTENTION_KEY, open ? "1" : "0"); } catch { /* no-op */ } };
@@ -42,7 +46,9 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture }: { date: D
       <div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Capture · Anchor · Rhythm · Exhale</p><h2 className="font-display text-xl font-semibold sm:text-3xl">{format(date, "MMMM yyyy")}</h2><p className="mt-1 text-xs text-muted-foreground max-sm:hidden">A gentle view of what your family is carrying this month.</p></div>
       <div className="flex items-center gap-2"><CaptureMenu onCapture={() => onCapture()} writeDate={selectedDate} />{!isMobile && <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setPanel(!panelOpen)} aria-label={panelOpen ? "Hide day schedule" : "Show day schedule"}>{panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}</Button>}</div>
     </div>
-    <div className="planner-month-season max-sm:hidden"><SeasonBanner date={date} compact linkTo="/month/overview" /></div>
+    <div className="planner-month-season"><SeasonBanner date={date} compact linkTo="/month/overview" /></div>
+    <PeriodNoteCard kind="monthly" keyISO={monthKeyFor(date)} defaultOpen={isMobile} />
+    <MonthlyMoonscape month={date} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
     {(overdue.length > 0 || unscheduled > 0) && <section className="planner-needs-attention">
       <Button variant="ghost" onClick={() => setAttention(!attentionOpen)} aria-expanded={attentionOpen} className="h-auto min-h-11 w-full justify-start gap-2 px-3 py-2 text-left">
         <AlertTriangle className="h-4 w-4 shrink-0 text-warm-foreground" /><span className="min-w-0 flex-1"><span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Needs attention</span><span className="block text-xs font-medium">{overdue.length} need a new home · {unscheduled} can stay flexible</span></span>{attentionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -50,10 +56,11 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture }: { date: D
       {attentionOpen && <div className="grid gap-2 border-t border-border/50 p-3 sm:grid-cols-2"><div className="rounded-md bg-background/60 p-3"><p className="text-sm font-semibold">{overdue.length} overdue</p><p className="text-xs text-muted-foreground">Review when you have space—nothing is failing.</p></div><div className="rounded-md bg-background/60 p-3"><p className="text-sm font-semibold">{unscheduled} without a time</p><p className="text-xs text-muted-foreground">They can remain flexible or become an anchor.</p></div></div>}
     </section>}
     <div className={cn("planner-month-layout", !panelOpen && "planner-month-layout--panel-closed")}>
-      <div className="min-w-0"><PlannerMonthView date={date} selectedDate={selectedDate} onSelectDay={selectDay} onChangeSelectedDate={selectAgendaDay} onCapture={onCapture} onOpenItem={openItem} /><div className="mt-3"><PeriodNoteCard kind="monthly" keyISO={monthKeyFor(date)} /></div></div>
+       <div className="min-w-0"><PlannerMonthView date={date} selectedDate={selectedDate} onSelectDay={selectDay} onChangeSelectedDate={selectAgendaDay} onCapture={() => isMobile ? setQuickAddOpen(true) : onCapture()} onOpenItem={openItem} /></div>
       {panelOpen && !isMobile && panel}
     </div>
     <Sheet open={mobilePanelOpen} onOpenChange={setMobilePanelOpen}><SheetContent side="bottom" className="max-h-[88dvh] overflow-y-auto rounded-t-2xl p-4"><SheetHeader className="sr-only"><SheetTitle>Day schedule</SheetTitle><SheetDescription>Schedule and upcoming plans for the selected date.</SheetDescription></SheetHeader>{panel}</SheetContent></Sheet>
+    <MonthQuickAddSheet open={quickAddOpen} onOpenChange={setQuickAddOpen} date={selectedDate} />
     {dialogs}
   </div>;
 }

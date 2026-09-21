@@ -79,7 +79,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
       <ViewPills items={MOBILE_VIEW_ITEMS} value={mobileView} onChange={value => setMobileView(value as MobileMonthView)} ariaLabel="Month layout" />
       <div className="flex items-center gap-1">
         <PlannerMonthFilters />
-        {onCapture && <Button size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={onCapture} aria-label="Add to this month"><Plus className="h-4 w-4" /></Button>}
+        {onCapture && <Button size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={onCapture} aria-label={`Add to ${format(activeDate, "MMMM d")}`}><Plus className="h-4 w-4" /></Button>}
       </div>
     </div>
   );
@@ -105,7 +105,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
         <div className="py-2">
           {activeRows.length ? activeRows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />) : <p className="py-8 text-center text-sm text-muted-foreground">Nothing planned. Drop something here or add a gentle anchor.</p>}
         </div>
-        <Button variant="outline" className="h-11 w-full" onClick={() => onSelectDay(activeDate)}>Day details <ChevronRight className="ml-1 h-4 w-4" /></Button>
+        <div className="grid grid-cols-2 gap-2"><Button className="h-11" onClick={onCapture}><Plus className="mr-1 h-4 w-4" />Add here</Button><Button variant="outline" className="h-11" onClick={() => onSelectDay(activeDate)}>Day details <ChevronRight className="ml-1 h-4 w-4" /></Button></div>
       </DayDropZone>
       <details className="planner-month-mobile-summary"><summary>Month at a glance</summary><PlannerMonthSummary items={monthItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} /></details>
       {dialogs}
@@ -138,7 +138,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
           {days.map(day => {
             const key = format(day, "yyyy-MM-dd");
             const rows = byDay.get(key) ?? [];
-            const visible = rows.slice(0, isMobile ? 2 : 3);
+             const visible = rows.slice(0, 3);
             const dim = !isSameMonth(day, date);
             const current = isSameDay(day, today);
             const selected = key === selectedKey;
@@ -150,8 +150,8 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
                 <span className="planner-month-day__number">{format(day, "d")}</span>{current && <span className="planner-month-day__today-label">Today</span>}
                 <span className="ml-auto flex items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={11} />{cycle && <span className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>
               </button>
-              <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact={!isMobile} />{!isMobile && tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>
-              {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.slice(0, 4).map(item => <span key={item.id} className={cn("h-2 w-2 rounded-full", item.done && "opacity-35")} style={{ backgroundColor: item.color }} />)}{rows.length > 4 && <span className="text-[9px] text-muted-foreground">+{rows.length - 4}</span>}</button> : <div className="planner-month-day__items">{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{rows.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{rows.length - visible.length} more</button>}</div>}
+               {!isMobile && <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact />{tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>}
+               {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.length > 0 && <span className="planner-month-day__count">{rows.length}</span>}<span className="planner-month-day__signals"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={9} />{cycle && <i className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span></button> : <div className="planner-month-day__items">{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{rows.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{rows.length - visible.length} more</button>}</div>}
             </DayDropZone>;
           })}
         </div>

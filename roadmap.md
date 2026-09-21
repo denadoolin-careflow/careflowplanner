@@ -22,3 +22,12 @@
 - [x] Repair Week Schedule horizontal and vertical scroll ownership
 - [x] Add timeline boundary handoff and current-day positioning
 - [x] Apply the selected mobile planner typography and verify phone/desktop layouts
+
+# Mobile Month Moonscape
+
+- [x] Simplify mobile Month controls and calendar cells
+- [x] Move zodiac season and monthly note above the calendar
+- [x] Add monthly moonscape, journal/note saves, Cosmic Flow link, and cycle rails
+- [x] Add selected-day task, appointment, care, home, cleaning, and meal capture
+- [x] Improve Week and 3 Day card metadata without changing scroll ownership
+- [x] Verify phone and desktop planner behavior

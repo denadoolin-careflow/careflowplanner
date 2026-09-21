@@ -73,6 +73,7 @@ interface ScheduledItem {
   done?: boolean;
   color?: string;
   task?: Task;
+  priority?: Task["priority"];
   /** For writing blocks: what record the block points at. */
   write?: { kind: "note" | "journal"; recordId: string; blockId: string };
 }
@@ -264,7 +265,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       const s = hmToMin(startFromBlock ?? t.startTime); if (s === null) continue;
       const startRel = s - START_H * 60;
       if (startRel < 0 || startRel > (END_H - START_H) * 60) continue;
-      out.push({ id: t.id, kind: "task", title: t.title, startMin: startRel, durMin: t.estMinutes ?? 30, area: t.area, done: t.done, task: t });
+       out.push({ id: t.id, kind: "task", title: t.title, startMin: startRel, durMin: t.estMinutes ?? 30, area: t.area, priority: t.priority, done: t.done, task: t });
     }
     // Time blocks without a matching task (standalone events)
     for (const b of blocks) {
@@ -1437,15 +1438,12 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                         ? <NotebookPen className="h-3 w-3 shrink-0" />
                         : <StickyNote className="h-3 w-3 shrink-0" />)}
                       <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && "line-through")}>{it.title}</span>
-                      <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
+                      <span className="shrink-0 font-mono text-[9px] font-semibold opacity-80">{minTo12(it.startMin + START_H * 60)}</span>
                       {conflictNode}
                     </div>
                   ) : (
                     <div className={cn("flex h-full min-w-0 flex-col gap-0.5", short && "gap-0")}>
-                      <div className={cn(
-                        "flex min-w-0 items-center gap-1 font-mono text-[9px] leading-none opacity-75",
-                        short && "order-2 mt-auto",
-                      )}>
+                       <div className="order-1 flex min-w-0 items-center gap-1 font-mono text-[9px] font-semibold leading-none opacity-80">
                         {it.kind === "task" ? (
                           <DurationEditor
                             durMin={it.durMin}
@@ -1457,12 +1455,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                           <span className="truncate">{timeLabel}</span>
                         )}
                         {conflictNode}
-                        {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
+                         {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                       </div>
-                      {it.task && !short && <ActivityChip task={it.task} className="self-start" />}
                       <div className={cn(
                         "flex min-w-0 items-start gap-1 font-medium leading-[1.25]",
-                        short ? "order-1 shrink-0" : "flex-1",
+                         "order-2 flex-1",
                       )}>
                         {it.kind === "task" && (
                           <BlockCheckbox
@@ -1483,6 +1480,12 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                           {it.title}
                         </span>
                       </div>
+                       {!short && <div className="order-3 flex min-w-0 items-center gap-1 text-[8.5px] leading-none text-foreground/70">
+                         {it.area && <span className="truncate">{it.area}</span>}
+                         {it.priority === "high" && <span className="shrink-0 rounded-full bg-destructive/15 px-1 font-semibold text-destructive">High</span>}
+                         {it.priority === "medium" && <span className="shrink-0 rounded-full bg-primary/12 px-1 text-primary">Medium</span>}
+                         {it.task && <ActivityChip task={it.task} className="ml-auto shrink-0" />}
+                       </div>}
                     </div>
                   )}
                   {it.kind === "task" && (trackedByTask.get(it.id) ?? 0) > 0 && (() => {
