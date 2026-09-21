@@ -205,7 +205,16 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
             const done = plan.tasks.filter(t => t.done).length;
             const isToday = iso === todayISO;
             return (
-              <div key={iso} className={cn("rounded-xl border border-border/50", expanded && "bg-background/50", isToday && "border-primary/40")}>
+              <div
+                key={iso}
+                {...dropProps(iso, format(d, "EEE, MMM d"))}
+                className={cn(
+                  "rounded-xl border border-border/50",
+                  expanded && "bg-background/50",
+                  isToday && "border-primary/40",
+                  dropTarget === iso && "border-primary bg-primary/10",
+                )}
+              >
                 <button type="button" onClick={() => toggleDay(iso)} aria-expanded={expanded}
                         className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-[11.5px] hover:bg-muted/50">
                   <ChevronRight className={cn("h-3 w-3 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-90")} aria-hidden />
