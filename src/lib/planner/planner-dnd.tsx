@@ -20,6 +20,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ScheduleConflictDialog } from "@/components/planner/ScheduleConflictDialog";
+import { Button } from "@/components/ui/button";
 import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME, type DayPartKey, type ScheduleOpts } from "./use-schedule-drop";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";

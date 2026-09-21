@@ -57,7 +57,7 @@ export async function saveOccurrenceOverride(input: {
     override_date: input.overrideDate ?? null,
     override_time: input.overrideTime ?? null,
     override_end_time: input.overrideEndTime ?? null,
-    override_payload: input.overridePayload ?? {},
+    override_payload: (input.overridePayload ?? {}) as any,
   }, { onConflict: "user_id,series_id,occurrence_date" });
   if (!error) window.dispatchEvent(new Event(EXCEPTIONS_CHANGED));
   return !error;
