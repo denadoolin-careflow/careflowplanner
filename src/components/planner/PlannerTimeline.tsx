@@ -393,23 +393,39 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       const delta = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
       return clamp(moving.startMin + delta);
     };
+    /** Which day column the pointer is over (week / 3 day grids), if any. */
+    const dayUnder = (x: number, y: number): string | null => {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null;
+      const zone = el?.closest?.("[data-drop-day]") as HTMLElement | null;
+      return zone?.dataset.dropDay || null;
+    };
+    const highlight = (dayISO: string | null) => {
+      document.querySelectorAll<HTMLElement>("[data-cross-day-over]").forEach(n => { delete n.dataset.crossDayOver; });
+      if (!dayISO || dayISO === iso) return;
+      const zone = document.querySelector<HTMLElement>(`[data-drop-day="${dayISO}"]`);
+      if (zone) zone.dataset.crossDayOver = "true";
+    };
     const onMove = (e: PointerEvent) => {
       e.preventDefault();
       const next = calc(e.clientY);
       setMovePreview(next);
       const el = document.getElementById(`plnr-block-${moving.id}`);
       if (el) el.style.top = `${next * (HOUR_PX / 60)}px`;
+      highlight(dayUnder(e.clientX, e.clientY));
     };
     const onUp = async (e: PointerEvent) => {
       const next = calc(e.clientY);
       const held = moving.id;
-      const unmoved = next === moving.startMin;
+      const targetDay = dayUnder(e.clientX, e.clientY);
+      highlight(null);
+      const crossed = !!targetDay && targetDay !== iso;
+      const unmoved = next === moving.startMin && !crossed;
       setMoving(null);
       setMovePreview(null);
       if (!unmoved) {
         suppressClickRef.current = true;
         setTimeout(() => { suppressClickRef.current = false; }, 250);
-        await scheduleTaskAt(held, next + START_H * 60);
+        await scheduleTaskAt(held, next + START_H * 60, crossed ? targetDay! : undefined);
         return;
       }
       // Long-press then release without dragging → mobile quick-action menu.
