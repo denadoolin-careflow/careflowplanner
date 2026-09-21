@@ -8,6 +8,13 @@
       "when": 1789690047280,
       "tag": "0000_create_planner_priorities",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789953819878,
+      "tag": "0001_planner_recurrence_reminders",
+      "breakpoints": true
     }
   ]
 }

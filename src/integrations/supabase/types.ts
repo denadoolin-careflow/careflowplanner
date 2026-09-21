@@ -97,6 +97,7 @@ export type Database = {
           project_id: string | null
           recipient_id: string | null
           recurrence_rule: Json | null
+          recurrence_series_id: string | null
           reminder_minutes_before: number | null
           sync_to_google: boolean
           time: string | null
@@ -126,6 +127,7 @@ export type Database = {
           project_id?: string | null
           recipient_id?: string | null
           recurrence_rule?: Json | null
+          recurrence_series_id?: string | null
           reminder_minutes_before?: number | null
           sync_to_google?: boolean
           time?: string | null
@@ -155,6 +157,7 @@ export type Database = {
           project_id?: string | null
           recipient_id?: string | null
           recurrence_rule?: Json | null
+          recurrence_series_id?: string | null
           reminder_minutes_before?: number | null
           sync_to_google?: boolean
           time?: string | null
@@ -930,6 +933,10 @@ export type Database = {
           linked_task_id: string | null
           notes: string | null
           recipient_id: string | null
+          recurrence_rule: Json | null
+          recurrence_series_id: string | null
+          reminder_minutes_before: number | null
+          start_date: string | null
           title: string
           updated_at: string
           user_id: string
@@ -947,6 +954,10 @@ export type Database = {
           linked_task_id?: string | null
           notes?: string | null
           recipient_id?: string | null
+          recurrence_rule?: Json | null
+          recurrence_series_id?: string | null
+          reminder_minutes_before?: number | null
+          start_date?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -964,6 +975,10 @@ export type Database = {
           linked_task_id?: string | null
           notes?: string | null
           recipient_id?: string | null
+          recurrence_rule?: Json | null
+          recurrence_series_id?: string | null
+          reminder_minutes_before?: number | null
+          start_date?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -4129,6 +4144,9 @@ export type Database = {
           name: string
           notes: string | null
           prep_minutes: number | null
+          recurrence_rule: Json | null
+          recurrence_series_id: string | null
+          reminder_minutes_before: number | null
           slot: string
           steps: Json
           tags: string[]
@@ -4145,6 +4163,9 @@ export type Database = {
           name: string
           notes?: string | null
           prep_minutes?: number | null
+          recurrence_rule?: Json | null
+          recurrence_series_id?: string | null
+          reminder_minutes_before?: number | null
           slot: string
           steps?: Json
           tags?: string[]
@@ -4161,6 +4182,9 @@ export type Database = {
           name?: string
           notes?: string | null
           prep_minutes?: number | null
+          recurrence_rule?: Json | null
+          recurrence_series_id?: string | null
+          reminder_minutes_before?: number | null
           slot?: string
           steps?: Json
           tags?: string[]
@@ -5672,6 +5696,138 @@ export type Database = {
           period_kind?: string
           period_start?: string
           position?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      planner_recurrence_exceptions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          occurrence_date: string
+          override_date: string | null
+          override_end_time: string | null
+          override_payload: Json
+          override_time: string | null
+          series_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          id?: string
+          occurrence_date: string
+          override_date?: string | null
+          override_end_time?: string | null
+          override_payload?: Json
+          override_time?: string | null
+          series_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          occurrence_date?: string
+          override_date?: string | null
+          override_end_time?: string | null
+          override_payload?: Json
+          override_time?: string | null
+          series_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      planner_reminder_preferences: {
+        Row: {
+          cycle_enabled: boolean
+          default_lead_minutes: number
+          device_enabled: boolean
+          email_digest_enabled: boolean
+          email_digest_time: string
+          id: string
+          in_app_enabled: boolean
+          journal_prompt_enabled: boolean
+          moon_enabled: boolean
+          planner_enabled: boolean
+          quiet_enabled: boolean
+          quiet_end: string
+          quiet_start: string
+          snooze_minutes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cycle_enabled?: boolean
+          default_lead_minutes?: number
+          device_enabled?: boolean
+          email_digest_enabled?: boolean
+          email_digest_time?: string
+          id?: string
+          in_app_enabled?: boolean
+          journal_prompt_enabled?: boolean
+          moon_enabled?: boolean
+          planner_enabled?: boolean
+          quiet_enabled?: boolean
+          quiet_end?: string
+          quiet_start?: string
+          snooze_minutes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cycle_enabled?: boolean
+          default_lead_minutes?: number
+          device_enabled?: boolean
+          email_digest_enabled?: boolean
+          email_digest_time?: string
+          id?: string
+          in_app_enabled?: boolean
+          journal_prompt_enabled?: boolean
+          moon_enabled?: boolean
+          planner_enabled?: boolean
+          quiet_enabled?: boolean
+          quiet_end?: string
+          quiet_start?: string
+          snooze_minutes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      planner_saved_prompt_reminders: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          prompt: string
+          remind_at: string
+          source_date: string | null
+          source_kind: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          prompt: string
+          remind_at: string
+          source_date?: string | null
+          source_kind?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          prompt?: string
+          remind_at?: string
+          source_date?: string | null
+          source_kind?: string
           user_id?: string
         }
         Relationships: []
@@ -7194,7 +7350,9 @@ export type Database = {
           recipient_id: string | null
           recurrence_days: number[]
           recurrence_interval: number
+          recurrence_series_id: string | null
           recurrence_type: string
+          reminder_minutes_before: number | null
           reset_item_id: string | null
           section_id: string | null
           snoozed_until: string | null
@@ -7241,7 +7399,9 @@ export type Database = {
           recipient_id?: string | null
           recurrence_days?: number[]
           recurrence_interval?: number
+          recurrence_series_id?: string | null
           recurrence_type?: string
+          reminder_minutes_before?: number | null
           reset_item_id?: string | null
           section_id?: string | null
           snoozed_until?: string | null
@@ -7288,7 +7448,9 @@ export type Database = {
           recipient_id?: string | null
           recurrence_days?: number[]
           recurrence_interval?: number
+          recurrence_series_id?: string | null
           recurrence_type?: string
+          reminder_minutes_before?: number | null
           reset_item_id?: string | null
           section_id?: string | null
           snoozed_until?: string | null
