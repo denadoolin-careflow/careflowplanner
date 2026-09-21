@@ -316,7 +316,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     return Math.round(raw / SNAP_MIN) * SNAP_MIN;
   };
 
-  const scheduleTaskAt = async (taskId: string, absMin: number) => {
+  /** Schedule a task at a time — on this day, or on `targetISO` when dragged
+   *  sideways onto another day column in the week grid. */
+  const scheduleTaskAt = async (taskId: string, absMin: number, targetISO?: string) => {
+    const iso = targetISO ?? isoProp;
     const task = state.tasks.find(t => t.id === taskId);
     const dur = task?.estMinutes ?? 30;
     const startHM = minToHM(absMin);
