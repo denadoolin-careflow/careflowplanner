@@ -12,6 +12,8 @@ import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate, usePeriodNoteMar
 import { plannerHref } from "@/lib/notes/date-refs";
 import { useDayPlans } from "@/lib/planner/day-plan";
 import { PeriodDayPlan } from "./PeriodDayPlan";
+import { useStore } from "@/lib/store";
+import { readDraggedTaskId } from "@/lib/notes/task-drag";
 
 /**
  * Where this note lives: its parent week/month, the days or weeks inside it,
@@ -36,6 +38,14 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
   const dates = useMemo(() => spanDates(span), [span]);
   const parents = useMemo(() => parentsOf(kind, key), [kind, key]);
   const children = useMemo(() => childrenKeys(kind, key), [kind, key]);
+  // A daily note has no children — show its week's days so tasks can be
+  // dragged onto any other day.
+  const dailyNeighbours = useMemo(() => {
+    if (kind !== "daily") return null;
+    const weekKey = parentsOf("daily", key).find(p => p.kind === "weekly")?.key;
+    if (!weekKey) return null;
+    return { kind: "daily" as PeriodKind, keys: spanDates(spanFor("weekly", weekKey)) };
+  }, [kind, key]);
   const today = new Date();
   const todayISO = toISO(today);
 
@@ -62,6 +72,26 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
   };
 
   const plans = useDayPlans(dates);
+
+  // Drag a task from one day (or week) onto another.
+  const { updateTask } = useStore();
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const moveTaskTo = async (taskId: string, iso: string, label: string) => {
+    try {
+      await updateTask(taskId, { dueDate: iso } as any);
+      toast.success(`Moved to ${label}`);
+    } catch { toast.error("Could not move that task"); }
+  };
+  const dropProps = (iso: string, label: string) => ({
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropTarget(iso); },
+    onDragLeave: () => setDropTarget(t => (t === iso ? null : t)),
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      setDropTarget(null);
+      const taskId = readDraggedTaskId(e);
+      if (taskId) void moveTaskTo(taskId, iso, label);
+    },
+  });
 
   const totals = useMemo(() => {
     let tasks = 0, done = 0, events = 0, cosmic = 0, meals = 0;
@@ -97,22 +127,29 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
         <Link to={plannerHref(key)} className="ml-auto text-muted-foreground hover:text-foreground">Open in planner →</Link>
       </nav>
 
-      {/* Children: days of the week, or weeks of the month */}
-      {children && (
+      {/* Children (days of the week / weeks of the month), or — on a daily
+          note — the surrounding week. Drop a task here to move it. */}
+      {(children ?? dailyNeighbours) && (
         <div className="mt-2 flex flex-wrap gap-1">
-          {children.keys.map(k => {
-            const mk = markFor(children.kind, k);
+          {(children ?? dailyNeighbours)!.keys.map(k => {
+            const ck = (children ?? dailyNeighbours)!.kind;
+            const mk = markFor(ck, k);
             const d = fromISO(k);
-            const isToday = children.kind === "daily" && isSameDay(d, today);
+            const isToday = ck === "daily" && isSameDay(d, today);
+            const isSelf = ck === kind && k === key;
+            const label = ck === "daily" ? format(d, "EEE, MMM d") : `week of ${format(d, "MMM d")}`;
             return (
-              <button key={k} type="button" onClick={() => void openPeriod(children.kind, k)}
+              <button key={k} type="button" onClick={() => void openPeriod(ck, k)}
+                      {...dropProps(k, label)}
                       className={cn(
                         "rounded-full border px-2 py-1 text-[11px] transition",
                         mk?.written ? "border-primary/40 bg-primary/10 text-foreground" : "border-border/60 text-muted-foreground hover:bg-muted",
                         isToday && "ring-1 ring-primary/60",
+                        isSelf && "font-medium text-foreground",
+                        dropTarget === k && "border-primary bg-primary/20 text-foreground",
                       )}
-                      title={mk?.written ? "Open note" : "Start a note"}>
-                {children.kind === "daily" ? format(d, "EEE d") : `Wk of ${format(d, "MMM d")}`}
+                      title={`${mk?.written ? "Open note" : "Start a note"} · drop a task to move it here`}>
+                {ck === "daily" ? format(d, "EEE d") : `Wk of ${format(d, "MMM d")}`}
               </button>
             );
           })}
@@ -168,7 +205,16 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
             const done = plan.tasks.filter(t => t.done).length;
             const isToday = iso === todayISO;
             return (
-              <div key={iso} className={cn("rounded-xl border border-border/50", expanded && "bg-background/50", isToday && "border-primary/40")}>
+              <div
+                key={iso}
+                {...dropProps(iso, format(d, "EEE, MMM d"))}
+                className={cn(
+                  "rounded-xl border border-border/50",
+                  expanded && "bg-background/50",
+                  isToday && "border-primary/40",
+                  dropTarget === iso && "border-primary bg-primary/10",
+                )}
+              >
                 <button type="button" onClick={() => toggleDay(iso)} aria-expanded={expanded}
                         className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-[11.5px] hover:bg-muted/50">
                   <ChevronRight className={cn("h-3 w-3 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-90")} aria-hidden />

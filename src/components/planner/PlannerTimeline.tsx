@@ -316,7 +316,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     return Math.round(raw / SNAP_MIN) * SNAP_MIN;
   };
 
-  const scheduleTaskAt = async (taskId: string, absMin: number) => {
+  /** Schedule a task at a time — on this day, or on `targetISO` when dragged
+   *  sideways onto another day column in the week grid. */
+  const scheduleTaskAt = async (taskId: string, absMin: number, targetISO?: string) => {
+    const dayISO = targetISO ?? iso;
     const task = state.tasks.find(t => t.id === taskId);
     const dur = task?.estMinutes ?? 30;
     const startHM = minToHM(absMin);
@@ -325,7 +328,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       tasks: [{
         taskId,
         before: { dueDate: task?.dueDate, startTime: task?.startTime ?? null, estMinutes: task?.estMinutes ?? dur, inbox: task?.inbox ?? false },
-        after: { dueDate: iso, startTime: startHM, estMinutes: dur, inbox: false },
+        after: { dueDate: dayISO, startTime: startHM, estMinutes: dur, inbox: false },
       }],
       blocks: [],
     };
@@ -336,15 +339,17 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       entry.blocks!.push({
         blockId: existingBlock.id,
         before: { startTime: existingBlock.startTime, endTime: existingBlock.endTime, date: existingBlock.date },
-        after: { startTime: startHM, endTime: endHM, date: iso },
+        after: { startTime: startHM, endTime: endHM, date: dayISO },
       });
-      await updateBlock(existingBlock.id, { startTime: startHM, endTime: endHM, date: iso });
+      await updateBlock(existingBlock.id, { startTime: startHM, endTime: endHM, date: dayISO });
     }
-    await updateTask(taskId, { dueDate: iso, startTime: startHM, inbox: false, estMinutes: dur });
+    await updateTask(taskId, { dueDate: dayISO, startTime: startHM, inbox: false, estMinutes: dur });
     history.push(entry);
     haptics.drop();
     setAnnouncement(`${task?.title ?? "Task"} scheduled at ${minTo12(absMin)}`);
-    toast.success(`Scheduled ${minTo12(absMin)}`, {
+    toast.success(dayISO === iso
+      ? `Scheduled ${minTo12(absMin)}`
+      : `Moved to ${format(new Date(`${dayISO}T12:00:00`), "EEE, MMM d")} at ${minTo12(absMin)}`, {
       action: { label: "Undo", onClick: () => { void runUndo(); } },
     });
   };
@@ -388,23 +393,39 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       const delta = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
       return clamp(moving.startMin + delta);
     };
+    /** Which day column the pointer is over (week / 3 day grids), if any. */
+    const dayUnder = (x: number, y: number): string | null => {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null;
+      const zone = el?.closest?.("[data-drop-day]") as HTMLElement | null;
+      return zone?.dataset.dropDay || null;
+    };
+    const highlight = (dayISO: string | null) => {
+      document.querySelectorAll<HTMLElement>("[data-cross-day-over]").forEach(n => { delete n.dataset.crossDayOver; });
+      if (!dayISO || dayISO === iso) return;
+      const zone = document.querySelector<HTMLElement>(`[data-drop-day="${dayISO}"]`);
+      if (zone) zone.dataset.crossDayOver = "true";
+    };
     const onMove = (e: PointerEvent) => {
       e.preventDefault();
       const next = calc(e.clientY);
       setMovePreview(next);
       const el = document.getElementById(`plnr-block-${moving.id}`);
       if (el) el.style.top = `${next * (HOUR_PX / 60)}px`;
+      highlight(dayUnder(e.clientX, e.clientY));
     };
     const onUp = async (e: PointerEvent) => {
       const next = calc(e.clientY);
       const held = moving.id;
-      const unmoved = next === moving.startMin;
+      const targetDay = dayUnder(e.clientX, e.clientY);
+      highlight(null);
+      const crossed = !!targetDay && targetDay !== iso;
+      const unmoved = next === moving.startMin && !crossed;
       setMoving(null);
       setMovePreview(null);
       if (!unmoved) {
         suppressClickRef.current = true;
         setTimeout(() => { suppressClickRef.current = false; }, 250);
-        await scheduleTaskAt(held, next + START_H * 60);
+        await scheduleTaskAt(held, next + START_H * 60, crossed ? targetDay! : undefined);
         return;
       }
       // Long-press then release without dragging → mobile quick-action menu.

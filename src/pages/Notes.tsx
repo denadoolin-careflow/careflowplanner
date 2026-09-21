@@ -480,7 +480,7 @@ export default function Notes() {
             ) : view === "timeline" ? (
               <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} onChanged={refresh} />
             ) : (
-              <CalendarView notes={filtered} onSelectNote={selectNote} />
+              <CalendarView notes={filtered} onSelectNote={selectNote} tagsByName={tagsByName} />
             )}
           </section>
         </div>
@@ -681,7 +681,11 @@ function TimelineView({
 
 /* -------------------- calendar view -------------------- */
 
-function CalendarView({ notes, onSelectNote }: { notes: Note[]; onSelectNote: (id: string) => void }) {
+function CalendarView({ notes, onSelectNote, tagsByName }: {
+  notes: Note[];
+  onSelectNote: (id: string) => void;
+  tagsByName: Map<string, Tag>;
+}) {
   const [anchor, setAnchor] = useState(new Date());
   const monthStart = startOfMonth(anchor);
   const monthEnd = endOfMonth(anchor);
@@ -730,14 +734,21 @@ function CalendarView({ notes, onSelectNote }: { notes: Note[]; onSelectNote: (i
               </div>
               <div className="space-y-1">
                 {items.slice(0, 3).map(n => (
-                  <button
+                  <NoteHoverPreview
                     key={n.id}
-                    onClick={() => onSelectNote(n.id)}
-                    className="block w-full truncate rounded-md bg-primary/10 px-1.5 py-0.5 text-left text-[11px] text-primary hover:bg-primary/20"
-                    title={n.title || "Untitled"}
+                    note={n}
+                    tagsByName={tagsByName}
+                    side="right"
+                    onOpen={onSelectNote}
                   >
-                    {n.kind !== "note" ? "● " : ""}{noteDisplayTitle(n, true)}
-                  </button>
+                    <button
+                      onClick={() => onSelectNote(n.id)}
+                      className="block w-full truncate rounded-md bg-primary/10 px-1.5 py-0.5 text-left text-[11px] text-primary hover:bg-primary/20"
+                      title={n.title || "Untitled"}
+                    >
+                      {n.kind !== "note" ? "● " : ""}{noteDisplayTitle(n, true)}
+                    </button>
+                  </NoteHoverPreview>
                 ))}
                 {items.length > 3 && (
                   <div className="px-1 text-[10px] text-muted-foreground">+{items.length - 3} more</div>
