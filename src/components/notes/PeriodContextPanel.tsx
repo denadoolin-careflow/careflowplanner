@@ -12,6 +12,8 @@ import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate, usePeriodNoteMar
 import { plannerHref } from "@/lib/notes/date-refs";
 import { useDayPlans } from "@/lib/planner/day-plan";
 import { PeriodDayPlan } from "./PeriodDayPlan";
+import { useStore } from "@/lib/store";
+import { readDraggedTaskId } from "@/lib/notes/task-drag";
 
 /**
  * Where this note lives: its parent week/month, the days or weeks inside it,
