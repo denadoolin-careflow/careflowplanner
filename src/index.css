@@ -413,6 +413,8 @@
   .planner-dropzone--active { @apply bg-primary-soft/60 outline-dashed outline-2 -outline-offset-2 outline-primary; }
 
   @media (max-width: 767px) {
+    .planner-surface--mobile { font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif; }
+    .planner-surface--mobile :is(h1, h2, h3, h4, .font-display) { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; letter-spacing: 0; }
     .planner-surface { @apply min-w-0 overflow-x-clip; }
     .planner-surface [data-planner-scroll-region] { scroll-snap-type: x proximity; }
     .planner-surface [data-planner-scroll-region] > div { scroll-snap-align: start; }
@@ -423,6 +425,22 @@
     .planner-month-stat > span:nth-child(2) { @apply text-sm; }
     .planner-month-stat > span:last-child { @apply text-[9px]; }
     .planner-month-rhythm { @apply hidden; }
+    .planner-month-mobile-toolbar { @apply flex min-w-0 items-center justify-between gap-2; }
+    .planner-month-mobile-toolbar > :first-child { @apply shrink-0; }
+    .planner-month-mobile-toolbar .planner-month-filters { @apply max-w-[8.5rem]; }
+    .planner-month-agenda { @apply min-w-0 space-y-2; }
+    .planner-month-week-strip { @apply grid grid-cols-7 rounded-md border border-border/60 bg-card/60 p-1; }
+    .planner-month-week-day { @apply relative flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-md text-[10px] text-muted-foreground transition-colors; }
+    .planner-month-week-day strong { @apply text-sm font-semibold text-foreground; }
+    .planner-month-week-day i { @apply h-1.5 w-1.5 rounded-full bg-accent; }
+    .planner-month-week-day--selected { @apply bg-primary text-primary-foreground shadow-sm; }
+    .planner-month-week-day--selected strong { @apply text-primary-foreground; }
+    .planner-month-week-day--selected i { @apply bg-primary-foreground; }
+    .planner-month-agenda-day { @apply rounded-md border border-border/60 bg-card/70 p-3 shadow-soft; }
+    .planner-month-agenda-day .planner-month-item { @apply min-h-11 rounded-md border-l-[3px] bg-background/75 px-2.5 text-xs; }
+    .planner-month-mobile-summary { @apply rounded-md border border-border/60 bg-card/50; }
+    .planner-month-mobile-summary > summary { @apply cursor-pointer list-none px-3 py-3 text-xs font-semibold; }
+    .planner-month-mobile-summary .planner-month-summary { @apply border-t border-border/50 p-2; }
     .planner-month-experience { @apply space-y-2; }
     .planner-month-intro { @apply flex-row items-center justify-between gap-2 pb-2; }
     .planner-month-calendar { @apply -mx-2 rounded-none border-x-0 shadow-none; }
@@ -437,6 +455,8 @@
     .planner-month-day--drop { @apply scale-[1.02]; }
     .planner-month-list-day { @apply px-3 py-1; }
     .planner-dnd-card { touch-action: pan-y; }
+    .planner-surface [data-planner-scroll-region] { touch-action: pan-x pan-y; }
+    .planner-surface [data-planner-timeline-scroll] { overscroll-behavior-y: auto; touch-action: pan-y; }
   }
 
   .cozy-card {

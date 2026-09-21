@@ -32,12 +32,13 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture }: { date: D
   const { items } = usePlannerFeed(start, total);
   const unscheduled = useMemo(() => items.filter(item => item.kind === "task" && !item.time).length, [items]);
   const selectDay = (next: Date) => { setSelectedDate(next); if (isMobile) setMobilePanelOpen(true); };
+  const selectAgendaDay = (next: Date) => setSelectedDate(next);
   const setPanel = (open: boolean) => { setPanelOpen(open); try { localStorage.setItem(PANEL_KEY, open ? "1" : "0"); } catch { /* no-op */ } };
   const setAttention = (open: boolean) => { setAttentionOpen(open); try { localStorage.setItem(ATTENTION_KEY, open ? "1" : "0"); } catch { /* no-op */ } };
   const panel = <MonthPlannerPanel selectedDate={selectedDate} onOpen={openItem} onAdd={onCapture} onOpenDay={onOpenDay} />;
 
   return <div className="planner-month-experience">
-    <div className="planner-month-intro">
+    <div className="planner-month-intro max-sm:hidden">
       <div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Capture · Anchor · Rhythm · Exhale</p><h2 className="font-display text-xl font-semibold sm:text-3xl">{format(date, "MMMM yyyy")}</h2><p className="mt-1 text-xs text-muted-foreground max-sm:hidden">A gentle view of what your family is carrying this month.</p></div>
       <div className="flex items-center gap-2"><CaptureMenu onCapture={() => onCapture()} writeDate={selectedDate} />{!isMobile && <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setPanel(!panelOpen)} aria-label={panelOpen ? "Hide day schedule" : "Show day schedule"}>{panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}</Button>}</div>
     </div>
@@ -49,7 +50,7 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture }: { date: D
       {attentionOpen && <div className="grid gap-2 border-t border-border/50 p-3 sm:grid-cols-2"><div className="rounded-md bg-background/60 p-3"><p className="text-sm font-semibold">{overdue.length} overdue</p><p className="text-xs text-muted-foreground">Review when you have space—nothing is failing.</p></div><div className="rounded-md bg-background/60 p-3"><p className="text-sm font-semibold">{unscheduled} without a time</p><p className="text-xs text-muted-foreground">They can remain flexible or become an anchor.</p></div></div>}
     </section>}
     <div className={cn("planner-month-layout", !panelOpen && "planner-month-layout--panel-closed")}>
-      <div className="min-w-0"><PlannerMonthView date={date} selectedDate={selectedDate} onSelectDay={selectDay} onOpenItem={openItem} /><div className="mt-3"><PeriodNoteCard kind="monthly" keyISO={monthKeyFor(date)} /></div></div>
+      <div className="min-w-0"><PlannerMonthView date={date} selectedDate={selectedDate} onSelectDay={selectDay} onChangeSelectedDate={selectAgendaDay} onCapture={onCapture} onOpenItem={openItem} /><div className="mt-3"><PeriodNoteCard kind="monthly" keyISO={monthKeyFor(date)} /></div></div>
       {panelOpen && !isMobile && panel}
     </div>
     <Sheet open={mobilePanelOpen} onOpenChange={setMobilePanelOpen}><SheetContent side="bottom" className="max-h-[88dvh] overflow-y-auto rounded-t-2xl p-4"><SheetHeader className="sr-only"><SheetTitle>Day schedule</SheetTitle><SheetDescription>Schedule and upcoming plans for the selected date.</SheetDescription></SheetHeader>{panel}</SheetContent></Sheet>

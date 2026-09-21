@@ -64,7 +64,7 @@ type Segment = (typeof SEGMENTS)[number];
  */
 const GRID_BOX = "h-[clamp(520px,78vh,1000px)] min-h-0";
 /** Phones: leave room for the sticky header, bottom nav and FAB. */
-const GRID_BOX_MOBILE = "h-[calc(100dvh-12.5rem)] min-h-[500px] max-h-[760px]";
+const GRID_BOX_MOBILE = "h-[calc(100dvh-17rem)] min-h-[360px] max-h-[620px]";
 /** Sticky side columns scroll on their own without stretching the row. */
 const SIDE_COL = "sticky top-20 max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain";
 
@@ -275,7 +275,7 @@ export default function Planner() {
       ref={shellRef}
       className={
         isMobile
-           ? "planner-surface flex flex-col gap-2 pb-[calc(7rem+env(safe-area-inset-bottom))]"
+           ? "planner-surface planner-surface--mobile flex flex-col gap-2 pb-[calc(7rem+env(safe-area-inset-bottom))]"
           : "planner-surface flex flex-col gap-3 pb-10"
       }
     >
