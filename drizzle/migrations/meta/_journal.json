@@ -22,6 +22,13 @@
       "when": 1789955067363,
       "tag": "0002_planner_reminder_instances",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790027119004,
+      "tag": "0003_create_note_versions",
+      "breakpoints": true
     }
   ]
 }
