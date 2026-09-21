@@ -991,7 +991,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ingredients: m.ingredients ?? [],
         steps: m.steps ?? [],
         tags: m.tags ?? [],
-        recurrence_rule: m.recurrenceRule ?? null,
+        recurrence_rule: (m.recurrenceRule ?? null) as any,
         recurrence_series_id: m.recurrenceSeriesId ?? null,
         reminder_minutes_before: m.reminderMinutesBefore ?? null,
       }).select().single();
