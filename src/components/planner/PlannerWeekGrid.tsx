@@ -187,8 +187,42 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           >
             <HeartHandshake className="h-3.5 w-3.5" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7 rounded-full", !rhythmVisible && "opacity-40")}
+            onClick={toggleRhythm}
+            aria-pressed={rhythmVisible}
+            aria-label={rhythmVisible ? "Hide habits and routines row" : "Show habits and routines row"}
+            title={rhythmVisible ? "Hide habits · routines" : "Show habits · routines"}
+          >
+            <Sprout className="h-3.5 w-3.5" />
+          </Button>
+          <span className="ml-1 inline-flex items-center rounded-full border border-border/60">
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" disabled={zoom <= MIN_ZOOM + 0.001}
+              onClick={() => zoomBy(1 / 1.25)} aria-label="Smaller grid">
+              <Minus className="h-3.5 w-3.5" />
+            </Button>
+            <span className="px-1 text-[10px] tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" disabled={zoom >= MAX_ZOOM - 0.001}
+              onClick={() => zoomBy(1.25)} aria-label="Bigger grid">
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full"
+            onClick={() => setFullScreen(v => !v)}
+            aria-pressed={fullScreen}
+            aria-label={fullScreen ? "Exit full screen grid" : "Full screen grid"}
+            title={fullScreen ? "Exit full screen" : "Full screen grid"}
+          >
+            {fullScreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          </Button>
         </span>
       </div>
+
 
       {/* Horizontal scroller keeps columns legible on narrow screens */}
        <div ref={horizontalRef} data-planner-scroll-region className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
@@ -267,6 +301,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
             <GridDayColumn
               key={format(d, "yyyy-MM-dd")}
               date={d}
+              hourPx={HOUR_PX}
               className={cn("relative min-w-0", i > 0 && "border-l border-border/40", isSameDay(d, today) && "bg-primary/[0.03]")}
             >
               <PlannerTimeline date={d} bare gutterless noScroll compact taskFilter={taskFilter} />
