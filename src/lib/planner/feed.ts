@@ -118,13 +118,14 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
       for (const a of state.appointments ?? []) {
         const dates = a.recurrenceRule ? expandRecurrence(a.date, a.recurrenceRule, parseISO(startISO), parseISO(endISO)) : dayList;
         for (const key of dates) {
-          if (!apptOccursOn(a, key)) continue;
+          const occurrence = a.recurrenceRule ? { ...a, date: key, endDate: undefined } : a;
+          if (!apptOccursOn(occurrence, key)) continue;
           const exception = exceptionFor(recurrenceExceptions, a.recurrenceSeriesId, key);
           if (exception?.action === "skip") continue;
           const occurrenceDate = exception?.overrideDate ?? key;
           items.push({
             kind: "appt", id: `appt:${a.id}:${key}`, title: String(exception?.overridePayload.title ?? a.title), date: occurrenceDate,
-            time: key === a.date ? a.time ?? null : null,
+            time: a.time ?? null,
             endTime: a.endTime ?? null,
             allDay: !!a.allDay || !a.time,
             color: a.color || colorOf("appt"),

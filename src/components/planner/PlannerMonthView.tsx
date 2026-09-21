@@ -16,6 +16,7 @@ import { PlannerMonthFilters } from "./PlannerMonthFilters";
 import { dayLoad } from "@/lib/planner/month-move";
 import { useDraggableCard, useDropZone, feedDragItem } from "@/lib/planner/planner-dnd";
 import { fmt12 } from "@/lib/planner/day-plan";
+import { filterFeedItems, useWeekFilters } from "@/lib/planner/week-filters";
 
 export type MobileMonthView = "calendar" | "agenda" | "list";
 const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v2";
@@ -55,6 +56,14 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
   const total = differenceInCalendarDays(end, start) + 1;
   const days = useMemo(() => Array.from({ length: total }, (_, index) => addDays(start, index)), [start.getTime(), total]); // eslint-disable-line react-hooks/exhaustive-deps
   const { items: monthItems, byDay } = usePlannerFeed(start, total);
+  const { filters } = useWeekFilters();
+  const filteredItems = useMemo(() => filterFeedItems(monthItems, filters), [monthItems, filters]);
+  const filteredByDay = useMemo(() => {
+    const index = new Map<string, PlannerFeedItem[]>();
+    days.forEach(day => index.set(format(day, "yyyy-MM-dd"), []));
+    filteredItems.forEach(item => index.get(item.date)?.push(item));
+    return index;
+  }, [days, filteredItems]);
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = (item: PlannerFeedItem) => onOpenItem ? onOpenItem(item) : openItem(item);
   const cycles = useCycleDots(days);
@@ -64,13 +73,13 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
   const today = new Date();
   const selectedKey = format(selectedDate ?? date, "yyyy-MM-dd");
   const activeDate = selectedDate ?? date;
-  const activeRows = byDay.get(selectedKey) ?? [];
+   const activeRows = filteredByDay.get(selectedKey) ?? [];
   const activeWeekStart = startOfWeek(activeDate, { weekStartsOn: 1 });
   const activeWeekDays = Array.from({ length: 7 }, (_, index) => addDays(activeWeekStart, index));
   const weekLoads = useMemo(() => Array.from({ length: Math.ceil(total / 7) }, (_, week) => {
-    const rows = days.slice(week * 7, week * 7 + 7).flatMap(day => byDay.get(format(day, "yyyy-MM-dd")) ?? []);
+     const rows = days.slice(week * 7, week * 7 + 7).flatMap(day => filteredByDay.get(format(day, "yyyy-MM-dd")) ?? []);
     return Math.round(dayLoad(rows) / 7);
-  }), [byDay, days, total]);
+   }), [filteredByDay, days, total]);
 
   useEffect(() => { try { localStorage.setItem(MOBILE_VIEW_KEY, mobileView); } catch { /* no-op */ } }, [mobileView]);
 
@@ -91,7 +100,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
         {activeWeekDays.map(dayOption => {
           const key = format(dayOption, "yyyy-MM-dd");
           const selected = key === selectedKey;
-          const count = (byDay.get(key) ?? []).length;
+           const count = (filteredByDay.get(key) ?? []).length;
           return <button key={key} type="button" onClick={() => onChangeSelectedDate?.(dayOption)} aria-pressed={selected} className={cn("planner-month-week-day", selected && "planner-month-week-day--selected")}>
             <span>{format(dayOption, "EEEEE")}</span><strong>{format(dayOption, "d")}</strong>{count > 0 && <i aria-label={`${count} planned`} />}
           </button>;
@@ -117,7 +126,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
        {mobileToolbar}
       <div className="space-y-2">
         {days.filter(day => isSameMonth(day, date)).map(day => {
-          const key = format(day, "yyyy-MM-dd"); const rows = byDay.get(key) ?? [];
+           const key = format(day, "yyyy-MM-dd"); const rows = filteredByDay.get(key) ?? [];
           return <DayDropZone key={key} dateISO={key} as="section" className={cn("planner-month-list-day", key === selectedKey && "planner-month-list-day--selected")}>
             <button type="button" onClick={() => onSelectDay(day)} className="flex min-h-12 w-full items-center justify-between gap-3 text-left"><span className="font-display text-base font-semibold">{format(day, "EEEE, MMM d")}</span><CapacityIndicator minutes={dayLoad(rows)} /></button>
             {rows.length ? <div className="space-y-1 pb-2">{rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}</div> : <p className="pb-2 text-xs text-muted-foreground">Space to breathe.</p>}
@@ -130,14 +139,14 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
 
   return (
     <div className="planner-month-canvas">
-      {!isMobile && <PlannerMonthSummary items={monthItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} />}
+       {!isMobile && <PlannerMonthSummary items={filteredItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} />}
       {isMobile ? mobileToolbar : <div className="flex flex-wrap items-center justify-between gap-2"><PlannerMonthFilters /></div>}
       <div className="planner-month-calendar">
         <div className="planner-month-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(label => <div key={label}>{isMobile ? label.slice(0, 1) : label}</div>)}</div>
         <div className="planner-month-grid">
           {days.map(day => {
             const key = format(day, "yyyy-MM-dd");
-            const rows = byDay.get(key) ?? [];
+             const rows = filteredByDay.get(key) ?? [];
              const visible = rows.slice(0, 3);
             const dim = !isSameMonth(day, date);
             const current = isSameDay(day, today);

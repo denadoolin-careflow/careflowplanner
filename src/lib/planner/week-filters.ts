@@ -21,6 +21,8 @@ export interface WeekFilterState {
   tags: string[];
   /** Hide items that are already done. */
   hideDone: boolean;
+  /** Show only completed items. */
+  completedOnly: boolean;
   /** Predicates over tag-scoped custom fields (see `field-filters.ts`). */
   fieldFilters: FieldFilter[];
 }
@@ -33,6 +35,7 @@ export const EMPTY_WEEK_FILTERS: WeekFilterState = {
   dueRange: "any",
   tags: [],
   hideDone: false,
+  completedOnly: false,
   fieldFilters: [],
 };
 
@@ -85,6 +88,7 @@ export function countActive(f: WeekFilterState): number {
     f.areas.length + f.priorities.length + f.energies.length + f.tags.length +
     (f.dueRange !== "any" ? 1 : 0) +
     (f.hideDone ? 1 : 0) +
+    (f.completedOnly ? 1 : 0) +
     (f.fieldFilters?.length ?? 0)
   );
 }
@@ -98,6 +102,7 @@ export function filterFeedItems(items: PlannerFeedItem[], f: WeekFilterState): P
 
   return items.filter(it => {
     if (f.hideDone && it.done) return false;
+    if (f.completedOnly && !it.done) return false;
     if (q && !it.title.toLowerCase().includes(q)) return false;
 
     if (hasAttrFilter) {
@@ -131,6 +136,7 @@ export function matchesTaskFilter(
 ): boolean {
   const q = f.search.trim().toLowerCase();
   if (f.hideDone && t.done) return false;
+  if (f.completedOnly && !t.done) return false;
   if (q && !t.title.toLowerCase().includes(q)) return false;
   if (f.areas.length && (!t.area || !f.areas.includes(t.area))) return false;
   if (f.priorities.length && (!t.priority || !f.priorities.includes(t.priority))) return false;
