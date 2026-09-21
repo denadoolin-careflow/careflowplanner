@@ -12,7 +12,7 @@ function timeLabel(value: string) {
   return `${hour}${minutes ? `:${String(minutes).padStart(2, "0")}` : ""}${hours < 12 ? "a" : "p"}`;
 }
 
-export function PlannerDailyCareChecklist({ iso, compact = false }: { iso: string; compact?: boolean }) {
+export function PlannerDailyCareChecklist({ iso, compact = false, className }: { iso: string; compact?: boolean; className?: string }) {
   const { medications } = useMedications();
   const { statusOf, setStatus } = useMedicationLogs(iso);
   const { state } = useStore();
@@ -22,7 +22,7 @@ export function PlannerDailyCareChecklist({ iso, compact = false }: { iso: strin
   if (!meds.length && !meals.length) return null;
 
   return (
-    <section className={cn("rounded-lg border border-border/60 bg-card/45 p-2", compact && "rounded-none border-x-0 border-t-0")} aria-label="Meds and meals checklist">
+    <section className={cn("rounded-lg border border-border/60 bg-card/45 p-2", compact && "min-w-0 rounded-none border-0", className)} aria-label="Meds and meals checklist">
       {!compact && <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Meds &amp; meals</p>}
       <div className={cn("flex gap-1.5", compact ? "flex-wrap" : "flex-wrap")}>
         {meds.map(slot => {

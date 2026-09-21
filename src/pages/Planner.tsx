@@ -10,6 +10,7 @@ import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
 import { PlannerQuickCapture, PLANNER_QUICK_ADD_EVENT } from "@/components/planner/PlannerQuickCapture";
 import { PlannerMonthExperience } from "@/components/planner/PlannerMonthExperience";
 import { PlannerPriorityStrip } from "@/components/planner/PlannerPriorityStrip";
+import { PlannerDailyCareChecklist } from "@/components/planner/PlannerDailyCareChecklist";
 
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
 import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
@@ -661,7 +662,10 @@ export default function Planner() {
               <PlannerWeekTable weekStart={rangeStart} days={rangeDays} scope={tableScope} />
             )}
             {nativeRange && view === "day" && period === "grid" && (
-              <div className={gridBox}><PlannerTimeline date={day} /></div>
+              <div className={gridBox}>
+                <PlannerDailyCareChecklist iso={format(day, "yyyy-MM-dd")} />
+                <PlannerTimeline date={day} />
+              </div>
             )}
             {nativeRange && view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
             {nativeRange && view === "day" && period === "capacity" && (
