@@ -14,3 +14,11 @@
 - [x] Unify task-sheet touch drops with Week and Month drop targets
 - [x] Verify mobile and desktop planner ranges, scrolling, and editing
 - [x] Verify authenticated desktop and mobile experiences
+
+# Mobile Month and Week Repair
+
+- [ ] Rebuild mobile Month around a selected-day agenda
+- [ ] Compact Month summaries, controls, and calendar cells
+- [ ] Repair Week Schedule horizontal and vertical scroll ownership
+- [ ] Add timeline boundary handoff and current-day positioning
+- [ ] Apply the selected mobile planner typography and verify phone/desktop layouts
