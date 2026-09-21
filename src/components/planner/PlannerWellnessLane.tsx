@@ -1,7 +1,7 @@
 /**
  * Wellness lane on the planner day grid — the dose times you entered, your
- * movement plan slot, and a symptom check-in marker. Tapping a chip opens
- * WellFlow. Nothing here changes a medication dose.
+ * movement plan slot, and a symptom check-in marker. Medicine taps check the
+ * dose off directly; the other markers open WellFlow.
  */
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,8 @@ interface Chip {
   icon: typeof Pill;
   done: boolean;
   to: string;
+  medId?: string;
+  medTime?: string;
 }
 
 const toMin = (hhmm: string) => {
@@ -29,7 +31,7 @@ export function PlannerWellnessLane({
 }: { iso: string; topFor: (absMin: number) => number | null }) {
   const navigate = useNavigate();
   const { medications } = useMedications();
-  const { statusOf } = useMedicationLogs(iso);
+  const { statusOf, setStatus } = useMedicationLogs(iso);
   const { settings } = useWellflowReminders();
 
   const weekday = useMemo(() => new Date(`${iso}T12:00:00`).getDay(), [iso]);
@@ -42,6 +44,8 @@ export function PlannerWellnessLane({
       icon: Pill,
       done: statusOf(s.med.id, s.time) === "taken",
       to: "/wellflow",
+      medId: s.med.id,
+      medTime: s.time,
     }));
 
     if (settings.movement_enabled && settings.movement_days.includes(weekday)) {
@@ -79,9 +83,9 @@ export function PlannerWellnessLane({
           <button
             key={c.key}
             type="button"
-            onClick={() => navigate(c.to)}
+            onClick={() => c.medId && c.medTime ? void setStatus(c.medId, c.medTime, c.done ? null : "taken") : navigate(c.to)}
             style={{ top: top + 2 }}
-            aria-label={`${c.label} at ${Math.floor(c.atMin / 60)}:${String(c.atMin % 60).padStart(2, "0")}. Open WellFlow`}
+            aria-label={`${c.done ? "Uncheck" : "Check off"} ${c.label} at ${Math.floor(c.atMin / 60)}:${String(c.atMin % 60).padStart(2, "0")}`}
             className={cn(
               "absolute left-1 z-10 flex max-w-[42%] items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] shadow-sm backdrop-blur",
               c.done

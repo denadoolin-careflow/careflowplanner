@@ -22,6 +22,7 @@ import { haptics } from "@/lib/haptics";
 import { BlockQuickActions } from "./BlockQuickActions";
 import { BlockCheckbox } from "./BlockCheckbox";
 import { ActivityChip } from "./ActivityChip";
+import { PriorityFlag } from "@/components/cards/PriorityFlag";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { usePlannerDropListener } from "@/lib/planner-touch-drag";
 import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
@@ -1433,6 +1434,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                           onToggle={() => toggleWithUndo(it.id, it.title, !!it.done)}
                         />
                       )}
+                      {it.task && <PriorityFlag task={it.task} className="h-3 w-3" />}
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
                       {it.kind === "write" && (it.write?.kind === "journal"
                         ? <NotebookPen className="h-3 w-3 shrink-0" />
@@ -1469,6 +1471,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                             onToggle={() => toggleWithUndo(it.id, it.title, !!it.done)}
                           />
                         )}
+                        {it.task && <PriorityFlag task={it.task} className="mt-[1px] h-3 w-3" />}
                         {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
                         {it.kind === "write" && (it.write?.kind === "journal"
                           ? <NotebookPen className="mt-[1px] h-3 w-3 shrink-0" />
@@ -1484,7 +1487,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                          {it.area && <span className="truncate">{it.area}</span>}
                          {it.priority === "high" && <span className="shrink-0 rounded-full bg-destructive/15 px-1 font-semibold text-destructive">High</span>}
                          {it.priority === "medium" && <span className="shrink-0 rounded-full bg-primary/12 px-1 text-primary">Medium</span>}
-                         {it.task && <ActivityChip task={it.task} className="ml-auto shrink-0" />}
+                         {it.task && <ActivityChip task={it.task} showLabel className="ml-auto shrink-0" />}
                        </div>}
                     </div>
                   )}

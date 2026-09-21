@@ -46,6 +46,7 @@ import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
 import { FollowUpPopover } from "@/components/tasks/FollowUpPopover";
 import { useTaskEditorStyle } from "@/lib/task-editor-style";
 import { BacklinksSection } from "@/components/common/BacklinksSection";
+import { ACTIVITIES, ACTIVITY_TAG, readActivityTag, resolveActivity, withTag, type ActivityId } from "@/lib/task-tracking";
 
 /** Per-style DialogContent classes. All override the shadcn defaults so the
  *  chosen style takes effect app-wide the moment the user selects it. */
@@ -599,6 +600,18 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                     {a}
                   </button>
                 ))}
+              </div>
+            </PillPopover>
+
+            <PillPopover
+              icon={resolveActivity(draft) ? (() => { const Icon = resolveActivity(draft)?.icon ?? History; return <Icon className="h-3.5 w-3.5" />; })() : <History className="h-3.5 w-3.5" />}
+              label={resolveActivity(draft) ? `${resolveActivity(draft)?.label}${readActivityTag(draft.tags) ? "" : " · suggested"}` : "Activity"}
+              active={!!resolveActivity(draft)}
+              onClear={readActivityTag(draft.tags) ? () => set("tags", withTag(draft.tags, ACTIVITY_TAG, undefined)) : undefined}
+            >
+              <div className="w-52 p-1">
+                {resolveActivity(draft) && !readActivityTag(draft.tags) && <p className="px-2 py-1 text-[10px] text-muted-foreground">Suggested from the task text and context</p>}
+                {ACTIVITIES.map(activity => { const Icon = activity.icon; return <button key={activity.id} type="button" onClick={() => set("tags", withTag(draft.tags, ACTIVITY_TAG, activity.id as ActivityId))} className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted", readActivityTag(draft.tags) === activity.id && "bg-muted")}><Icon className="h-3.5 w-3.5" /><span>{activity.label}</span></button>; })}
               </div>
             </PillPopover>
 
