@@ -347,7 +347,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     history.push(entry);
     haptics.drop();
     setAnnouncement(`${task?.title ?? "Task"} scheduled at ${minTo12(absMin)}`);
-    toast.success(`Scheduled ${minTo12(absMin)}`, {
+    toast.success(dayISO === iso
+      ? `Scheduled ${minTo12(absMin)}`
+      : `Moved to ${format(new Date(`${dayISO}T12:00:00`), "EEE, MMM d")} at ${minTo12(absMin)}`, {
       action: { label: "Undo", onClick: () => { void runUndo(); } },
     });
   };
