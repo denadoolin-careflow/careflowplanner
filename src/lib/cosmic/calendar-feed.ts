@@ -17,6 +17,7 @@ export interface CosmicCalendarItem {
   glyph?: string;
   title?: string;
   eventKind?: CosmicEvent["kind"];
+  event: CosmicEvent;
 }
 
 /** Compute cosmic events for a window and return a Map keyed by ISO date. */
@@ -34,6 +35,7 @@ export function buildCosmicCalendarIndex(from: Date, days: number): Map<string, 
       glyph: e.glyph,
       title: e.title,
       eventKind: e.kind,
+      event: e,
     }));
     if (list.length) map.set(iso, list);
   }

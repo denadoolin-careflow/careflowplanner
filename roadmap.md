@@ -1,5 +1,5 @@
-- [ ] Improve Month, Week, and Day indicator hierarchy for moon, cycle, habits, routines, and goals
-- [ ] Add searchable scheduled-task selection to Top Priorities
-- [ ] Add priority and activity indicators to schedule grid and task editor activity selection/inference
-- [ ] Make grid medication clicks check off and add meds/meals check-off section outside grid
-- [ ] Add descriptive astrology and energy guidance when hovering cosmic events
+- [x] Improve Month, Week, and Day indicator hierarchy for moon, cycle, habits, routines, and goals
+- [x] Add searchable scheduled-task selection to Top Priorities
+- [x] Add priority and activity indicators to schedule grid and task editor activity selection/inference
+- [x] Make grid medication clicks check off and add meds/meals check-off section outside grid
+- [x] Add descriptive astrology and energy guidance when hovering cosmic events

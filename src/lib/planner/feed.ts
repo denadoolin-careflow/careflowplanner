@@ -14,6 +14,7 @@ import { apptOccursOn } from "@/lib/appointment-range";
 import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 import { expandRecurrence, taskRecurrenceRule } from "@/lib/recurrence";
 import { useCaregivingChores } from "@/lib/caregiving-chores";
+import type { CosmicEvent } from "@/lib/cosmic/events";
 import { exceptionFor, usePlannerRecurrenceExceptions } from "./recurrence-exceptions";
 
 export type FeedSource = "task" | "appointment" | "meal" | "care" | "birthday" | "holiday" | "gcal" | "cosmic";
@@ -42,6 +43,7 @@ export interface PlannerFeedItem {
   occurrenceDate?: string;
   /** Points back at the record so callers can open or mutate the original. */
   sourceRef: { type: FeedSource; id: string };
+  cosmicEvent?: CosmicEvent;
 }
 
 
@@ -215,7 +217,7 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
         for (const c of list) {
           items.push({
             kind: "cosmic", id: `cosmic:${c.id}:${key}`, title: c.label, date: key,
-            allDay: true, color: colorOf("cosmic"), sourceRef: { type: "cosmic", id: c.id },
+            allDay: true, color: colorOf("cosmic"), cosmicEvent: c.event, sourceRef: { type: "cosmic", id: c.id },
           });
         }
       }

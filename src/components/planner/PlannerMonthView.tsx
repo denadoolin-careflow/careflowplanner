@@ -21,6 +21,7 @@ import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { getMoonSign } from "@/lib/zodiac";
 import { useStore } from "@/lib/store";
 import { habitProgress } from "./PlannerRhythmRow";
+import { CosmicEventHover } from "./CosmicEventHover";
 
 const KEY_MOON_PHASES = ["new", "first-quarter", "full", "last-quarter"];
 
@@ -188,7 +189,11 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
                 <span className="planner-month-day__number">{format(day, "d")}</span>{current && <span className="planner-month-day__today-label">Today</span>}
                 <span className="ml-auto flex items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={11} />{cycle && <span className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>
               </button>
-              {rhythm && <span className="planner-month-day__rhythm" title={rhythm.title}>{rhythm.moon && <span aria-hidden>{rhythm.moon}</span>}<span aria-hidden className="opacity-70">{rhythm.sign}</span>{rhythm.cycleGlyph && <span aria-hidden>{rhythm.cycleGlyph}</span>}{!isMobile && habits.total > 0 && <span className="ml-auto opacity-70">🌱 {habits.done}/{habits.total}</span>}</span>}
+              {rhythm && <span className="planner-month-day__rhythm" title={rhythm.title}>
+                <span className="inline-flex items-center gap-0.5 font-medium">{rhythm.moon && <span aria-hidden>{rhythm.moon}</span>}<span aria-hidden>{rhythm.sign}</span></span>
+                {rhythm.cycleGlyph && <span className="rounded bg-calendar-cosmic/10 px-1" aria-hidden>{rhythm.cycleGlyph}</span>}
+                {habits.total > 0 && <span className="ml-auto inline-flex items-center gap-0.5 text-muted-foreground">🌱 {habits.done}/{habits.total}</span>}
+              </span>}
                {!isMobile && <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact />{tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>}
                {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.length > 0 && <span className="planner-month-day__count">{rows.length}</span>}<span className="planner-month-day__signals"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={9} />{cycle && <i className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span></button> : <div className="planner-month-day__items">{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{rows.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{rows.length - visible.length} more</button>}</div>}
             </DayDropZone>;
@@ -203,7 +208,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
 function MonthItem({ item, onOpen, compact }: { item: PlannerFeedItem; onOpen: (item: PlannerFeedItem) => void; compact?: boolean }) {
   const Icon = KIND_ICONS[item.kind];
   const drag = useDraggableCard(feedDragItem(item), { idPrefix: "month" });
-  return <div
+  const card = <div
     ref={drag.ref}
     {...drag.props}
     role="button"
@@ -214,4 +219,5 @@ function MonthItem({ item, onOpen, compact }: { item: PlannerFeedItem; onOpen: (
   >
     {item.done ? <Check className="h-3 w-3 shrink-0" /> : <Icon className="h-3 w-3 shrink-0" style={{ color: item.color }} />}<span className="truncate">{item.time ? `${fmt12(item.time)} ` : ""}{item.title}</span>
   </div>;
+  return item.cosmicEvent ? <CosmicEventHover event={item.cosmicEvent}>{card}</CosmicEventHover> : card;
 }

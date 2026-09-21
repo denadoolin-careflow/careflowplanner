@@ -1,5 +1,6 @@
 import type { PlannerFeedItem } from "@/lib/planner/feed";
 import { cn } from "@/lib/utils";
+import { CosmicEventHover } from "./CosmicEventHover";
 
 /** Compact all-day strip shown above a timeline column. */
 export function PlannerAllDayRow({ items, onOpen, className }: {
@@ -10,8 +11,8 @@ export function PlannerAllDayRow({ items, onOpen, className }: {
   if (!items.length) return <div className={cn("min-h-[6px]", className)} />;
   return (
     <div className={cn("flex flex-col gap-0.5 px-1 py-1", className)}>
-      {items.slice(0, 3).map(it => (
-        <button
+      {items.slice(0, 3).map(it => {
+        const button = <button
           key={it.id}
           type="button"
           onClick={() => onOpen?.(it)}
@@ -21,8 +22,9 @@ export function PlannerAllDayRow({ items, onOpen, className }: {
           style={{ background: `${it.color}22`, color: it.color }}
         >
           {it.title}
-        </button>
-      ))}
+        </button>;
+        return it.cosmicEvent ? <CosmicEventHover key={it.id} event={it.cosmicEvent}>{button}</CosmicEventHover> : button;
+      })}
       {items.length > 3 && (
         <span className="px-1.5 text-[9px] text-muted-foreground">+{items.length - 3} more</span>
       )}
