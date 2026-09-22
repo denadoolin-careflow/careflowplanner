@@ -77,6 +77,42 @@ export type Database = {
         }
         Relationships: []
       }
+      app_user_connections: {
+        Row: {
+          account_email: string | null
+          auto_sync: boolean
+          connection_key_ciphertext: string
+          connector_id: string
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_email?: string | null
+          auto_sync?: boolean
+          connection_key_ciphertext: string
+          connector_id: string
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_email?: string | null
+          auto_sync?: boolean
+          connection_key_ciphertext?: string
+          connector_id?: string
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           all_day: boolean
@@ -2732,6 +2768,30 @@ export type Database = {
           provider?: string | null
           start_date?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gmail_task_links: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          task_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          task_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          task_id?: string | null
           user_id?: string
         }
         Relationships: []
