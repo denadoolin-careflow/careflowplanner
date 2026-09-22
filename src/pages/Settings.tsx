@@ -16,6 +16,7 @@ import { pomodoroPrefs, usePomodoroPrefs } from "@/lib/pomodoro-prefs";
 import { playPomodoroChime } from "@/lib/pomodoro-chime";
 import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
 import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
+import { GmailSection } from "@/components/gmail/GmailSection";
 import { CalendarColorsSection } from "@/components/settings/CalendarColorsSection";
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { GroceryPrefsSection } from "@/components/settings/GroceryPrefsSection";
@@ -304,6 +305,15 @@ export default function Settings() {
       >
         <GoogleCalendarSection />
       </SectionCard>
+
+      <SectionCard
+        title="Gmail"
+        subtitle="Star an email in Gmail and it shows up as a task in your inbox."
+        accent="calm"
+      >
+        <GmailSection />
+      </SectionCard>
+
 
       <SectionCard
         title="Calendar colors"
