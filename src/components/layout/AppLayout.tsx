@@ -32,6 +32,7 @@ import { Link } from "react-router-dom";
 import { HeaderNowStrip } from "./HeaderNowStrip";
 import { CapacityChip } from "@/components/header/CapacityChip";
 import { TrayDock } from "@/components/tray/TrayDock";
+import { GmailBackgroundSync } from "@/components/gmail/GmailBackgroundSync";
 
 export function AppLayout() {
   const { state } = useStore();
@@ -111,6 +112,7 @@ export function AppLayout() {
       <AICaptureDialog />
       <CareyChat />
       <TrayDock />
+      <GmailBackgroundSync />
     </div>
   );
 }
