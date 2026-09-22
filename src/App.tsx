@@ -88,6 +88,7 @@ import Terms from "./pages/Terms";
 import Updates from "./pages/Updates";
 import AdminUpdates from "./pages/AdminUpdates";
 import Roadmap from "./pages/Roadmap";
+import GmailCallback from "./pages/GmailCallback";
 import AdminRoadmap from "./pages/AdminRoadmap";
 import FamilySettings from "./pages/FamilySettings";
 import JoinHousehold from "./pages/JoinHousehold";
