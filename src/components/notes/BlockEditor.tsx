@@ -150,6 +150,41 @@ export function extractAllTags(source: string): string[] {
 /*  Markdown <-> HTML helpers (storage compat with existing notes)    */
 /* ------------------------------------------------------------------ */
 /** Serialize a live query embed back to a raw HTML block (attrs preserved). */
+/**
+ * Re-derive heading fold visuals from the `data-collapsed` attributes:
+ * hide every block a folded heading owns (until the next heading of the
+ * same or higher level) and mark each heading's first line as its fold proxy.
+ * Pure DOM — safe to run at any time (load, edits, external content sync).
+ */
+export function applyHeadingFolds(root: HTMLElement) {
+  root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
+  root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
+  root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
+    const firstLine = h.nextElementSibling as HTMLElement | null;
+    if (firstLine && !/^H[1-6]$/.test(firstLine.tagName)) firstLine.setAttribute("data-heading-fold-proxy", "true");
+    if (h.getAttribute("data-collapsed") !== "true") return;
+    const level = parseInt(h.tagName[1], 10);
+    let sib = h.nextElementSibling as HTMLElement | null;
+    while (sib) {
+      if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
+      sib.classList.add("cf-h-hidden");
+      sib = sib.nextElementSibling as HTMLElement | null;
+    }
+  });
+}
+
+/** Run the fold pass once the editor has painted, plus a late safety pass. */
+export function scheduleHeadingFolds(getRoot: () => HTMLElement | undefined) {
+  window.requestAnimationFrame(() => {
+    const root = getRoot();
+    if (root) applyHeadingFolds(root);
+    window.setTimeout(() => {
+      const late = getRoot();
+      if (late) applyHeadingFolds(late);
+    }, 120);
+  });
+}
+
 function serializeQueryBlock(el: HTMLElement): string {
   const attrs = [...QUERY_BLOCK_ATTRS]
     .map(k => {
@@ -2304,21 +2339,7 @@ export function BlockEditor({
           const nodePos = $pos.before(d);
           ed.view.dispatch(ed.state.tr.setNodeMarkup(nodePos, undefined, { ...node.attrs, collapsed: value }));
           const sync = () => {
-            const root = ed.view.dom as HTMLElement;
-            root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
-            root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
-            root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(heading => {
-              const firstLine = heading.nextElementSibling as HTMLElement | null;
-              if (firstLine && !/^H[1-6]$/.test(firstLine.tagName)) firstLine.setAttribute("data-heading-fold-proxy", "true");
-              if (heading.getAttribute("data-collapsed") !== "true") return;
-              const level = parseInt(heading.tagName[1], 10);
-              let sibling = heading.nextElementSibling as HTMLElement | null;
-              while (sibling) {
-                if (/^H[1-6]$/.test(sibling.tagName) && parseInt(sibling.tagName[1], 10) <= level) break;
-                sibling.classList.add("cf-h-hidden");
-                sibling = sibling.nextElementSibling as HTMLElement | null;
-              }
-            });
+            applyHeadingFolds(ed.view.dom as HTMLElement);
           };
           window.requestAnimationFrame(sync);
           window.setTimeout(sync, 80);
