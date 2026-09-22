@@ -3043,7 +3043,8 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 .block-editor .ProseMirror h6,
 .block-editor .ProseMirror [data-heading-fold-proxy="true"] {
   position: relative;
-  padding-left: 2rem;
+  /* Generous gutter so the fold chevron never crowds the text. */
+  padding-left: 2.75rem;
 }
 .block-editor .ProseMirror h1::before,
 .block-editor .ProseMirror h2::before,
@@ -3102,7 +3103,7 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
   content: "folded";
   display: inline-flex;
   vertical-align: middle;
-  margin-left: 0.65rem;
+  margin-left: 1rem;
   padding: 0.16rem 0.4rem;
   border: 1px solid hsl(var(--border) / 0.75);
   border-radius: 5px;
