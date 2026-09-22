@@ -2118,7 +2118,12 @@ export function BlockEditor({
     if (body === lastSyncedRef.current) return;
     lastSyncedRef.current = body;
     const next = bodyToHtml(body);
-    if (next !== editor.getHTML()) editor.commands.setContent(next, { emitUpdate: false });
+    if (next !== editor.getHTML()) {
+      editor.commands.setContent(next, { emitUpdate: false });
+      // emitUpdate:false fires no editor event, so the fold pass never re-runs
+      // on its own — re-derive saved folds explicitly once the DOM is painted.
+      scheduleHeadingFolds(() => editorRef.current?.view.dom as HTMLElement | undefined);
+    }
   }, [body, editor]);
 
   // "Remove link" from the inline chip hover popover: keep the words, drop the
