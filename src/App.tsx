@@ -156,6 +156,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/updates" element={<Updates />} />
               <Route path="/roadmap" element={<Roadmap />} />
+              <Route path="/gmail/callback" element={<GmailCallback />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
