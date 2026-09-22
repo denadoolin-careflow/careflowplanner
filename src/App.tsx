@@ -88,6 +88,7 @@ import Terms from "./pages/Terms";
 import Updates from "./pages/Updates";
 import AdminUpdates from "./pages/AdminUpdates";
 import Roadmap from "./pages/Roadmap";
+import GmailCallback from "./pages/GmailCallback";
 import AdminRoadmap from "./pages/AdminRoadmap";
 import FamilySettings from "./pages/FamilySettings";
 import JoinHousehold from "./pages/JoinHousehold";
@@ -156,6 +157,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/updates" element={<Updates />} />
               <Route path="/roadmap" element={<Roadmap />} />
+              <Route path="/gmail/callback" element={<GmailCallback />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
