@@ -2540,24 +2540,9 @@ export function BlockEditor({
   // re-derive the hidden siblings from the `collapsed` attribute after renders.
   useEffect(() => {
     if (!editor) return;
-    const root = editor.view.dom as HTMLElement;
     const apply = () => {
-      root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
-      root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
-      root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
-        const firstLine = h.nextElementSibling as HTMLElement | null;
-        if (firstLine && !/^H[1-6]$/.test(firstLine.tagName)) {
-          firstLine.setAttribute("data-heading-fold-proxy", "true");
-        }
-        if (h.getAttribute("data-collapsed") !== "true") return;
-        const level = parseInt(h.tagName[1], 10);
-        let sib = h.nextElementSibling as HTMLElement | null;
-        while (sib) {
-          if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
-          sib.classList.add("cf-h-hidden");
-          sib = sib.nextElementSibling as HTMLElement | null;
-        }
-      });
+      const root = editor.view.dom as HTMLElement;
+      if (root) applyHeadingFolds(root);
     };
     let frame = window.requestAnimationFrame(apply);
     const startupTimers = [50, 250].map(delay => window.setTimeout(apply, delay));
