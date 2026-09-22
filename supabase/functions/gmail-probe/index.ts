@@ -12,7 +12,8 @@ Deno.serve(async (req) => {
     method,
     headers: {
       "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
-      "X-Connection-Api-Key": Deno.env.get("GOOGLE_MAIL_APP_USER_CONNECTOR_CLIENT_API_KEY") ?? "",
+      "X-Client-Api-Key": Deno.env.get("GOOGLE_MAIL_APP_USER_CONNECTOR_CLIENT_API_KEY") ?? "",
+      "X-Connection-Api-Key": body.connectionKey ?? "",
       "Content-Type": "application/json",
     },
     body: method === "GET" ? undefined : JSON.stringify(payload),
