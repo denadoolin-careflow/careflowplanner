@@ -11,8 +11,9 @@ import { useCycleDots } from "./day-rhythm";
 import { getMoonPhase, MOON_INFO, type MoonPhase } from "@/lib/moon";
 import { getMoonSign } from "@/lib/zodiac";
 import { useReminderPrefs } from "@/lib/reminders";
+import { useStore } from "@/lib/store";
 
-export type ReminderSourceKind = "task" | "appointment" | "meal" | "care" | "moon" | "cycle" | "journal";
+export type ReminderSourceKind = "task" | "appointment" | "meal" | "care" | "moon" | "cycle" | "journal" | "milestone";
 export type ReminderGroup = "overdue" | "today" | "rhythm" | "journal" | "later";
 
 export interface ReminderRow {
@@ -57,6 +58,8 @@ export function useReminderCenter(horizonDays = 8) {
   const today = useMemo(() => startOfDay(new Date()), []);
   const [prefs] = useReminderPrefs();
   const { items } = usePlannerFeed(today, horizonDays);
+  const { state: storeState } = useStore();
+  const projects = storeState.projects;
   const days = useMemo(() => Array.from({ length: horizonDays }, (_, i) => addDays(today, i)), [today, horizonDays]);
   const cycles = useCycleDots(days);
   const [instances, setInstances] = useState<Map<string, InstanceRow>>(new Map());
@@ -167,9 +170,24 @@ export function useReminderCenter(horizonDays = 8) {
       }
     }
 
+    if (prefs.tasksEnabled !== false) {
+      const horizonEnd = addDays(today, horizonDays);
+      for (const p of projects ?? []) {
+        for (const m of p.milestones ?? []) {
+          if (m.done || !m.date) continue;
+          const at = atFor(m.date, "09:00");
+          if (at > horizonEnd) continue;
+          push({
+            sourceKind: "milestone", sourceId: `${p.id}:${m.id}`, occurrenceKey: m.date,
+            title: m.title, detail: `Milestone · ${p.name}`, glyph: "🚩", at,
+          });
+        }
+      }
+    }
+
     out.sort((a, b) => a.at.getTime() - b.at.getTime());
     return out;
-  }, [items, days, cycles, prompts, instances, prefs, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [items, days, cycles, prompts, instances, prefs, tick, projects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const write = useCallback(async (row: ReminderRow, patch: { snoozed_until?: string | null; handled_at?: string | null }) => {
     const { data: { user } } = await supabase.auth.getUser();
