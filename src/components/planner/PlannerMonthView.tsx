@@ -184,14 +184,16 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
              const cycle = cycles.get(key);
              const rhythm = rhythmMarks.get(key);
              const habits = habitProgress((state.habits ?? []) as any, day);
+             const dayMilestones = (state.projects ?? []).flatMap(p => (p.milestones ?? []).filter(m => m.date === key).map(m => ({ ...m, project: p })));
             return <DayDropZone key={key} dateISO={key} className={cn("planner-month-day", dim && "planner-month-day--dim", selected && "planner-month-day--selected", current && "planner-month-day--today")}>
               <button type="button" onClick={() => onSelectDay(day)} className="planner-month-day__header" aria-label={`Select ${format(day, "EEEE, MMMM d")}${rows.length ? `, ${rows.length} planned` : ""}`}>
                 <span className="planner-month-day__number">{format(day, "d")}</span>{current && <span className="planner-month-day__today-label">Today</span>}
                 <span className="ml-auto flex items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={11} />{cycle && <span className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>
               </button>
-              {rhythm && <span className="planner-month-day__rhythm" title={rhythm.title}>
-                <span className="inline-flex items-center gap-0.5 font-medium">{rhythm.moon && <span aria-hidden>{rhythm.moon}</span>}<span aria-hidden>{rhythm.sign}</span></span>
-                {rhythm.cycleGlyph && <span className="rounded bg-calendar-cosmic/10 px-1" aria-hidden>{rhythm.cycleGlyph}</span>}
+              {(rhythm || dayMilestones.length > 0) && <span className="planner-month-day__rhythm" title={rhythm?.title}>
+                <span className="inline-flex items-center gap-0.5 font-medium">{rhythm?.moon && <span aria-hidden>{rhythm.moon}</span>}<span aria-hidden>{rhythm?.sign}</span></span>
+                {rhythm?.cycleGlyph && <span className="rounded bg-calendar-cosmic/10 px-1" aria-hidden>{rhythm.cycleGlyph}</span>}
+                {dayMilestones.length > 0 && <span className="rounded bg-primary/10 px-1 text-primary" title={dayMilestones.map(m => `${m.project.name}: ${m.title}`).join("\n")}>🚩{dayMilestones.length > 1 ? dayMilestones.length : ""}</span>}
                 {habits.total > 0 && <span className="ml-auto inline-flex items-center gap-0.5 text-muted-foreground">🌱 {habits.done}/{habits.total}</span>}
               </span>}
                {!isMobile && <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact />{tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>}

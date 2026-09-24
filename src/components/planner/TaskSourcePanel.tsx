@@ -62,6 +62,8 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
   const [q, setQ] = useState("");
   const [sort, setSort] = usePlannerSort();
   const [tagFilter, setTagFilter] = usePlannerTagFilter();
+  const [projectFilter, setProjectFilter] = useState<string>(() => { try { return localStorage.getItem("careflow:tray-project") ?? ""; } catch { return ""; } });
+  useEffect(() => { try { localStorage.setItem("careflow:tray-project", projectFilter); } catch { /* ignore */ } }, [projectFilter]);
   const [open, setOpen] = useState<Record<string, boolean>>({
     inbox: true, today: true, upcoming: false, someday: false,
   });
@@ -113,8 +115,9 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
     const base = state.tasks.filter(t => !t.done && !t.parentTaskId);
     let filtered = q ? base.filter(t => t.title.toLowerCase().includes(q.toLowerCase())) : base;
     if (tagFilter.length > 0) filtered = filtered.filter(t => (t.tags ?? []).some(tg => tagFilter.includes(tg)));
+    if (projectFilter) filtered = filtered.filter(t => projectFilter === "__none__" ? !t.projectId : t.projectId === projectFilter);
     return sortTasks(filtered, sort);
-  }, [state.tasks, q, sort, tagFilter]);
+  }, [state.tasks, q, sort, tagFilter, projectFilter]);
 
   const sections: Section[] = [
     { id: "inbox", label: "Inbox", Icon: InboxIcon, match: (t) => !!t.inbox || (t.status === "active" && !t.dueDate && !t.startTime), defaultOpen: true },
@@ -229,6 +232,19 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tasks" className="h-8 pl-7 text-xs" />
         </div>
+        <label className="mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+          <FolderKanban className="h-3 w-3" />
+          <select
+            aria-label="Filter by project"
+            value={projectFilter}
+            onChange={(e) => setProjectFilter(e.target.value)}
+            className="h-7 min-w-0 flex-1 rounded-md border border-border/60 bg-background px-1.5 text-xs normal-case tracking-normal text-foreground"
+          >
+            <option value="">All projects</option>
+            <option value="__none__">No project</option>
+            {(state.projects ?? []).filter(p => !p.archivedAt).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </label>
         <div className="mt-2 flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
