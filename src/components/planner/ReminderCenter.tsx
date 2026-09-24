@@ -29,12 +29,17 @@ export function ReminderCenter({ onOpenSettings }: { onOpenSettings?: () => void
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
   const { grouped, actionableCount, snooze, snoozeUntil, dismiss } = useReminderCenter();
-  const { toggleTask } = useStore() as any;
+  const { toggleTask, state, updateProject } = useStore() as any;
   const { open: openItem, dialogs } = usePlannerItemOpener();
 
   const complete = async (row: ReminderRow) => {
     if (row.sourceKind === "task" && row.item && !row.item.done) {
       await toggleTask(row.item.sourceRef.id);
+    }
+    if (row.sourceKind === "milestone") {
+      const [pid, mid] = row.sourceId.split(":");
+      const p = (state.projects ?? []).find((x: any) => x.id === pid);
+      if (p) await updateProject(pid, { milestones: (p.milestones ?? []).map((m: any) => m.id === mid ? { ...m, done: true } : m) });
     }
     await dismiss(row);
   };
