@@ -119,7 +119,7 @@ export function ReminderCenter({ onOpenSettings }: { onOpenSettings?: () => void
                           onClick={() => void snoozeUntil(row, tomorrowMorning())}>Tomorrow</Button>
                         <Button size="sm" variant="secondary" className="ml-auto h-8 rounded-full px-2.5 text-[11px]"
                           onClick={() => void complete(row)}>
-                          <Check className="mr-1 h-3 w-3" /> {row.sourceKind === "task" ? "Done" : "Dismiss"}
+                          <Check className="mr-1 h-3 w-3" /> {row.sourceKind === "task" || row.sourceKind === "milestone" ? "Done" : "Dismiss"}
                         </Button>
                       </div>
                     </li>
