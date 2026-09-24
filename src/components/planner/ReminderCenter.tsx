@@ -29,12 +29,17 @@ export function ReminderCenter({ onOpenSettings }: { onOpenSettings?: () => void
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
   const { grouped, actionableCount, snooze, snoozeUntil, dismiss } = useReminderCenter();
-  const { toggleTask } = useStore() as any;
+  const { toggleTask, state, updateProject } = useStore() as any;
   const { open: openItem, dialogs } = usePlannerItemOpener();
 
   const complete = async (row: ReminderRow) => {
     if (row.sourceKind === "task" && row.item && !row.item.done) {
       await toggleTask(row.item.sourceRef.id);
+    }
+    if (row.sourceKind === "milestone") {
+      const [pid, mid] = row.sourceId.split(":");
+      const p = (state.projects ?? []).find((x: any) => x.id === pid);
+      if (p) await updateProject(pid, { milestones: (p.milestones ?? []).map((m: any) => m.id === mid ? { ...m, done: true } : m) });
     }
     await dismiss(row);
   };
@@ -114,7 +119,7 @@ export function ReminderCenter({ onOpenSettings }: { onOpenSettings?: () => void
                           onClick={() => void snoozeUntil(row, tomorrowMorning())}>Tomorrow</Button>
                         <Button size="sm" variant="secondary" className="ml-auto h-8 rounded-full px-2.5 text-[11px]"
                           onClick={() => void complete(row)}>
-                          <Check className="mr-1 h-3 w-3" /> {row.sourceKind === "task" ? "Done" : "Dismiss"}
+                          <Check className="mr-1 h-3 w-3" /> {row.sourceKind === "task" || row.sourceKind === "milestone" ? "Done" : "Dismiss"}
                         </Button>
                       </div>
                     </li>
