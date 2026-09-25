@@ -883,13 +883,12 @@ export default function ProjectsHub() {
       </div>
 
       {/* Floating action button — plum→sage gradient, rotates on hover */}
+      <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} defaultArea="Personal" />
+
       <button
         type="button"
         aria-label="New project"
-        onClick={async () => {
-          const created = await addProject({ name: "Untitled project", areaName: "Personal" });
-          if (created) navigate(`/projects/${created.id}`);
-        }}
+        onClick={() => setNewProjectOpen(true)}
         className="group fixed bottom-6 right-6 z-30 grid h-14 w-14 place-items-center rounded-full text-white transition-transform duration-300 hover:-translate-y-1 hover:rotate-90"
         style={{
           background: "var(--gradient-brand-plum-sage)",
