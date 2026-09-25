@@ -5,6 +5,8 @@ import { useAtmosphere } from "@/lib/atmospheres";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { PROJECT_TEMPLATES, applyProjectTemplate, type ProjectTemplateKey } from "@/lib/project-templates";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ArrowRight, Sparkles, Folder, Rocket, Leaf, Pause, Lightbulb,
