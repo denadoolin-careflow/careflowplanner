@@ -5,6 +5,8 @@ import { useAtmosphere } from "@/lib/atmospheres";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { PROJECT_TEMPLATES, applyProjectTemplate, type ProjectTemplateKey } from "@/lib/project-templates";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ArrowRight, Sparkles, Folder, Rocket, Leaf, Pause, Lightbulb,
@@ -298,10 +300,78 @@ function CapturePopover({ placeholder, onSubmit, disabled }: { placeholder: stri
   );
 }
 
-function QuickCapture({ onCaptureIdea, defaultArea }: { onCaptureIdea: (title: string) => void; defaultArea: string }) {
-  const { addProject } = useStore();
+function NewProjectDialog({ open, onOpenChange, defaultArea }: { open: boolean; onOpenChange: (v: boolean) => void; defaultArea: string }) {
+  const { addProject, addSection, addTask, updateProject } = useStore();
   const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [template, setTemplate] = useState<ProjectTemplateKey>("blank");
   const [busy, setBusy] = useState(false);
+
+  const create = async () => {
+    const title = name.trim();
+    if (!title || busy) return;
+    setBusy(true);
+    try {
+      const tpl = PROJECT_TEMPLATES.find((t) => t.key === template);
+      const created = await addProject({ name: title, areaName: tpl?.area ?? defaultArea });
+      if (created) {
+        await applyProjectTemplate(created, template, { addSection, addTask, updateProject });
+        toast.success(`Project "${created.name}" created`);
+        onOpenChange(false);
+        setName("");
+        setTemplate("blank");
+        navigate(`/projects/${created.id}`);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Start a new project</DialogTitle>
+          <DialogDescription>Pick a template to get lanes, milestones and starter tasks — or begin with a blank canvas.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Project name…"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void create(); } }}
+          />
+          <div className="grid gap-2 sm:grid-cols-2">
+            {PROJECT_TEMPLATES.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTemplate(t.key)}
+                className={cn(
+                  "flex items-start gap-2.5 rounded-xl border p-3 text-left transition hover:-translate-y-0.5",
+                  template === t.key ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "bg-card/60",
+                )}
+              >
+                <span className="text-lg leading-none">{t.emoji}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{t.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{t.blurb}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <Button className="w-full" disabled={busy || !name.trim()} onClick={() => void create()}>
+            {busy ? "Creating…" : "Create project"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function QuickCapture({ onCaptureIdea, onNewProject }: { onCaptureIdea: (title: string) => void; onNewProject: () => void }) {
+  const navigate = useNavigate();
   return (
     <div
       className="flex flex-col gap-3 rounded-2xl border bg-card/60 p-4 sm:flex-row sm:items-center"
@@ -319,25 +389,7 @@ function QuickCapture({ onCaptureIdea, defaultArea }: { onCaptureIdea: (title: s
         />
         <QuickChip icon={CheckSquare} label="New Task" tone={STUDIO.sageDeep} onClick={() => navigate("/inbox?capture=task")} />
         <QuickChip icon={FileText} label="New Note" tone={STUDIO.ink} onClick={() => navigate("/notes?new=1")} />
-        <QuickChip
-          icon={Paperclip} label="New Project" tone={STUDIO.plum}
-          render={(close) => (
-            <CapturePopover
-              placeholder="Project name…"
-              onSubmit={async (v) => {
-                setBusy(true);
-                const created = await addProject({ name: v, areaName: defaultArea });
-                setBusy(false);
-                if (created) {
-                  toast.success(`Project "${created.name}" created`);
-                  navigate(`/projects/${created.id}`);
-                }
-                close();
-              }}
-              disabled={busy}
-            />
-          )}
-        />
+        <QuickChip icon={Paperclip} label="New Project" tone={STUDIO.plum} onClick={onNewProject} />
         <QuickChip icon={Heart} label="Inspiration" tone={STUDIO.blushDeep} onClick={() => navigate("/notes?new=1&kind=inspiration")} />
       </div>
     </div>
@@ -588,6 +640,7 @@ export default function ProjectsHub() {
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [folderFilter, setFolderFilter] = useState<string>("all");
   const setViewPersist = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   const filtered = useMemo(() => projects.filter((p) =>
     (stageFilter === "all" || stageOf(p.stage) === stageFilter)
@@ -664,7 +717,7 @@ export default function ProjectsHub() {
           <HeroFocusCard focus={focus} metrics={metrics} />
           <div className="flex flex-col gap-3">
             <HeroStatsGrid projects={projects} metrics={metrics} />
-            <QuickCapture onCaptureIdea={handleIdeaToProject} defaultArea="Personal" />
+            <QuickCapture onCaptureIdea={handleIdeaToProject} onNewProject={() => setNewProjectOpen(true)} />
           </div>
         </div>
 
@@ -796,10 +849,7 @@ export default function ProjectsHub() {
                 <Button
                   className="rounded-full text-white hover:-translate-y-0.5 transition"
                   style={{ background: "var(--gradient-brand-plum)", boxShadow: "var(--shadow-brand-soft)" }}
-                  onClick={async () => {
-                    const created = await addProject({ name: "Untitled project", areaName: "Personal" });
-                    if (created) navigate(`/projects/${created.id}`);
-                  }}
+                  onClick={() => setNewProjectOpen(true)}
                 >
                   <Plus className="mr-1 h-4 w-4" /> Start a new project
                 </Button>
@@ -833,13 +883,12 @@ export default function ProjectsHub() {
       </div>
 
       {/* Floating action button — plum→sage gradient, rotates on hover */}
+      <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} defaultArea="Personal" />
+
       <button
         type="button"
         aria-label="New project"
-        onClick={async () => {
-          const created = await addProject({ name: "Untitled project", areaName: "Personal" });
-          if (created) navigate(`/projects/${created.id}`);
-        }}
+        onClick={() => setNewProjectOpen(true)}
         className="group fixed bottom-6 right-6 z-30 grid h-14 w-14 place-items-center rounded-full text-white transition-transform duration-300 hover:-translate-y-1 hover:rotate-90"
         style={{
           background: "var(--gradient-brand-plum-sage)",
