@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       }),
     });
 
-    if (resp.status === 429) return new Response(JSON.stringify({ error: "Carey is a little busy right now. Please try again in a minute." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": resp.headers.get("retry-after") ?? "30" } });
+    if (resp.status === 429) return new Response(JSON.stringify({ rateLimited: true, subtasks: [], error: "Carey is a little busy right now. Please try again in a minute." }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": resp.headers.get("retry-after") ?? "30" } });
     if (resp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in workspace settings." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!resp.ok) {
       const t = await resp.text();

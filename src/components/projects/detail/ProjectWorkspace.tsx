@@ -314,6 +314,7 @@ function NextStepsSheet({ open, onOpenChange, project }: { open: boolean; onOpen
         },
       });
       if (error) throw error;
+      if ((data as any)?.rateLimited) throw data;
       const list: string[] = Array.isArray((data as any)?.subtasks) ? (data as any).subtasks : [];
       if (!list.length) toast.error("Carey couldn't find steps this time");
       setSteps(list.map(title => ({ title, on: true })));
