@@ -300,10 +300,78 @@ function CapturePopover({ placeholder, onSubmit, disabled }: { placeholder: stri
   );
 }
 
-function QuickCapture({ onCaptureIdea, defaultArea }: { onCaptureIdea: (title: string) => void; defaultArea: string }) {
-  const { addProject } = useStore();
+function NewProjectDialog({ open, onOpenChange, defaultArea }: { open: boolean; onOpenChange: (v: boolean) => void; defaultArea: string }) {
+  const { addProject, addSection, addTask, updateProject } = useStore();
   const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [template, setTemplate] = useState<ProjectTemplateKey>("blank");
   const [busy, setBusy] = useState(false);
+
+  const create = async () => {
+    const title = name.trim();
+    if (!title || busy) return;
+    setBusy(true);
+    try {
+      const tpl = PROJECT_TEMPLATES.find((t) => t.key === template);
+      const created = await addProject({ name: title, areaName: tpl?.area ?? defaultArea });
+      if (created) {
+        await applyProjectTemplate(created, template, { addSection, addTask, updateProject });
+        toast.success(`Project "${created.name}" created`);
+        onOpenChange(false);
+        setName("");
+        setTemplate("blank");
+        navigate(`/projects/${created.id}`);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Start a new project</DialogTitle>
+          <DialogDescription>Pick a template to get lanes, milestones and starter tasks — or begin with a blank canvas.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Project name…"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void create(); } }}
+          />
+          <div className="grid gap-2 sm:grid-cols-2">
+            {PROJECT_TEMPLATES.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTemplate(t.key)}
+                className={cn(
+                  "flex items-start gap-2.5 rounded-xl border p-3 text-left transition hover:-translate-y-0.5",
+                  template === t.key ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "bg-card/60",
+                )}
+              >
+                <span className="text-lg leading-none">{t.emoji}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{t.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{t.blurb}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <Button className="w-full" disabled={busy || !name.trim()} onClick={() => void create()}>
+            {busy ? "Creating…" : "Create project"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function QuickCapture({ onCaptureIdea, onNewProject }: { onCaptureIdea: (title: string) => void; onNewProject: () => void }) {
+  const navigate = useNavigate();
   return (
     <div
       className="flex flex-col gap-3 rounded-2xl border bg-card/60 p-4 sm:flex-row sm:items-center"
