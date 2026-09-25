@@ -34,6 +34,8 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { haptics } from "@/lib/haptics";
 import type { Project, ProjectStage } from "@/lib/types";
 import { CareyButton } from "@/components/carey/CareyButton";
+import { ProjectWorkspace } from "@/components/projects/detail/ProjectWorkspace";
+import { LayoutGrid } from "lucide-react";
 import { BacklinksSection } from "@/components/common/BacklinksSection";
 
 /* ----------------------------- Atmospheres ----------------------------- */
@@ -59,7 +61,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const { state, updateProject } = useStore();
   const project = (state.projects ?? []).find(p => p.id === id);
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState("board");
 
   if (!project) {
     return (
@@ -88,6 +90,7 @@ export default function ProjectDetail() {
               className="h-11 gap-1 rounded-full border border-border/40 bg-card/80 p-1 shadow-sm backdrop-blur"
             >
               {[
+                ["board",     "Board",     LayoutGrid],
                 ["overview",  "Overview",  Sparkles],
                 ["tasks",     "Tasks",     ListChecks],
                 ["milestones","Milestones",Flag],
@@ -106,6 +109,10 @@ export default function ProjectDetail() {
               ))}
             </TabsList>
           </div>
+
+          <TabsContent value="board" className="mt-0">
+            <ProjectWorkspace project={project} card={(c) => <SoftCard>{c}</SoftCard>} />
+          </TabsContent>
 
           <TabsContent value="overview" className="mt-0 space-y-6">
             <OverviewDashboard project={project} atmo={atmo} onUpdate={(p) => updateProject(project.id, p)} />
