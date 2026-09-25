@@ -640,6 +640,7 @@ export default function ProjectsHub() {
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [folderFilter, setFolderFilter] = useState<string>("all");
   const setViewPersist = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   const filtered = useMemo(() => projects.filter((p) =>
     (stageFilter === "all" || stageOf(p.stage) === stageFilter)
