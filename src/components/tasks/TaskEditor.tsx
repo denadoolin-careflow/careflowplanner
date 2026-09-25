@@ -298,6 +298,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         body: { title: draft.title, notes: draft.notes, area: draft.area, count: 5 },
       });
       if (error) throw error;
+      if ((data as any)?.rateLimited) throw data;
       const list: string[] = Array.isArray((data as any)?.subtasks) ? (data as any).subtasks : [];
       if (list.length === 0) { toast.error("No subtasks generated"); return; }
       for (const title of list) {
@@ -305,7 +306,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
       }
       toast.success(`Added ${list.length} steps`);
     } catch (e: any) {
-      toast.error("AI breakdown failed", { description: e?.message ?? String(e) });
+      toast.error("AI breakdown failed", { description: e?.error ?? e?.message ?? "Please try again in a minute." });
     } finally {
       setSubAiLoading(false);
     }
