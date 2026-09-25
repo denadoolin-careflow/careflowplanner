@@ -717,7 +717,7 @@ export default function ProjectsHub() {
           <HeroFocusCard focus={focus} metrics={metrics} />
           <div className="flex flex-col gap-3">
             <HeroStatsGrid projects={projects} metrics={metrics} />
-            <QuickCapture onCaptureIdea={handleIdeaToProject} defaultArea="Personal" />
+            <QuickCapture onCaptureIdea={handleIdeaToProject} onNewProject={() => setNewProjectOpen(true)} />
           </div>
         </div>
 
@@ -849,10 +849,7 @@ export default function ProjectsHub() {
                 <Button
                   className="rounded-full text-white hover:-translate-y-0.5 transition"
                   style={{ background: "var(--gradient-brand-plum)", boxShadow: "var(--shadow-brand-soft)" }}
-                  onClick={async () => {
-                    const created = await addProject({ name: "Untitled project", areaName: "Personal" });
-                    if (created) navigate(`/projects/${created.id}`);
-                  }}
+                  onClick={() => setNewProjectOpen(true)}
                 >
                   <Plus className="mr-1 h-4 w-4" /> Start a new project
                 </Button>
