@@ -326,7 +326,7 @@ function NextStepsSheet({ open, onOpenChange, project }: { open: boolean; onOpen
 
   const addChosen = async () => {
     const chosen = steps.filter(s => s.on);
-    for (const s of chosen) await addTask({ title: s.title, projectId: project.id, sectionId: lane || sections[0]?.id, area: project.areaName });
+    for (const s of chosen) await addTask({ title: s.title, projectId: project.id, sectionId: lane || sections[0]?.id, area: project.areaName as any });
     toast.success(`Added ${chosen.length} next steps`);
     setSteps([]);
     onOpenChange(false);
