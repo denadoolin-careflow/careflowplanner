@@ -389,25 +389,7 @@ function QuickCapture({ onCaptureIdea, onNewProject }: { onCaptureIdea: (title: 
         />
         <QuickChip icon={CheckSquare} label="New Task" tone={STUDIO.sageDeep} onClick={() => navigate("/inbox?capture=task")} />
         <QuickChip icon={FileText} label="New Note" tone={STUDIO.ink} onClick={() => navigate("/notes?new=1")} />
-        <QuickChip
-          icon={Paperclip} label="New Project" tone={STUDIO.plum}
-          render={(close) => (
-            <CapturePopover
-              placeholder="Project name…"
-              onSubmit={async (v) => {
-                setBusy(true);
-                const created = await addProject({ name: v, areaName: defaultArea });
-                setBusy(false);
-                if (created) {
-                  toast.success(`Project "${created.name}" created`);
-                  navigate(`/projects/${created.id}`);
-                }
-                close();
-              }}
-              disabled={busy}
-            />
-          )}
-        />
+        <QuickChip icon={Paperclip} label="New Project" tone={STUDIO.plum} onClick={onNewProject} />
         <QuickChip icon={Heart} label="Inspiration" tone={STUDIO.blushDeep} onClick={() => navigate("/notes?new=1&kind=inspiration")} />
       </div>
     </div>
