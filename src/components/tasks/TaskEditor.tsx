@@ -305,7 +305,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
       }
       toast.success(`Added ${list.length} steps`);
     } catch (e: any) {
-      toast.error("AI breakdown failed", { description: e?.message ?? String(e) });
+      toast.error("AI breakdown failed", { description: e?.error ?? e?.message ?? "Please try again in a minute." });
     } finally {
       setSubAiLoading(false);
     }

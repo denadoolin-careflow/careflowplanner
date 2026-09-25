@@ -318,7 +318,7 @@ function NextStepsSheet({ open, onOpenChange, project }: { open: boolean; onOpen
       if (!list.length) toast.error("Carey couldn't find steps this time");
       setSteps(list.map(title => ({ title, on: true })));
     } catch (e: any) {
-      toast.error("Carey couldn't break this down", { description: e?.message ?? String(e) });
+      toast.error("Carey couldn't break this down", { description: e?.error ?? e?.message ?? "Please try again in a minute." });
     } finally { setLoading(false); }
   };
 
