@@ -57,6 +57,8 @@ export interface RoutineItem {
 export interface RoutineMeta {
   prepNoticeMin?: number; // 0/2/5/10
   color?: string;
+  /** ISO dates marked as skip / rest days. */
+  skips?: string[];
 }
 export interface Routine {
   id: string;
