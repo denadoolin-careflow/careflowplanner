@@ -369,7 +369,10 @@ interface Ctx {
   reloadAll: () => Promise<void>;
 }
 
-const StoreCtx = createContext<Ctx | null>(null);
+// Keep one context instance across hot reloads so live-edit updates don't
+// orphan consumers from the already-mounted provider.
+const g = globalThis as unknown as { __careflowStoreCtx?: React.Context<Ctx | null> };
+const StoreCtx = g.__careflowStoreCtx ?? (g.__careflowStoreCtx = createContext<Ctx | null>(null));
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(() => seedState());
