@@ -25,7 +25,7 @@ export function StepArrive({ mood, onMood, captureText, onCaptureText, onContinu
       <div>
         <h2 className="font-display text-lg font-semibold sm:text-xl">How are you arriving today?</h2>
         <p className="mt-1 text-[15px] text-muted-foreground">
-          Carey uses this to shape the rest of your check-in.
+          Carey uses this to shape the rest of your reset.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {MOODS.map((m) => (

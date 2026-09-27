@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils";
 
 export const STEP_LABELS = [
-  "How are you arriving today?",
-  "Here's what I noticed",
-  "Build your day",
-  "Close the loop",
+  "Arrive",
+  "Notice",
+  "Shape the day",
+  "Close",
 ];
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 
 export function CheckInProgress({ step, onStep, maxReached }: Props) {
   return (
-    <div className="flex items-center gap-3" role="group" aria-label="Check-in progress">
+    <div className="flex items-center gap-3" role="group" aria-label="Morning Reset progress">
       <div className="flex items-center gap-2">
         {STEP_LABELS.map((label, i) => {
           const reachable = i <= maxReached;

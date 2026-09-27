@@ -28,6 +28,7 @@ import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
 import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
 import { ConnectionsCard } from "@/components/today/ConnectionsCard";
 import { TodayNudgeStrip } from "@/components/today/TodayNudgeStrip";
+import { DailyRituals } from "@/components/today/DailyRituals";
 
 import { RoutinesHabitsRow } from "@/components/today/dashboard/RoutinesHabitsRow";
 import { CapacityProvider } from "@/components/today/dashboard/capacity-context";
@@ -143,8 +144,8 @@ function TodayInner() {
       </div>
       <CollapsibleSection
         storageKey="planning.section.debrief.collapsed"
-        eyebrow="Daily debrief"
-        title="Reflect and reset"
+                  eyebrow="Plan insight"
+                  title="Review today's shape"
       >
         <DailyDebrief date={day} onTaskClick={setEditTaskId} />
       </CollapsibleSection>
@@ -172,6 +173,7 @@ function TodayInner() {
         />
         <DemoTasksBanner />
         {prefs.showQuickAdd && <QuickAddBar date={day} />}
+        {isReallyToday && <DailyRituals date={day} onEveningReflection={() => setExhaleOpen(true)} />}
         {view !== "board" && <ArriveBand date={day} />}
 
         {view === "board" ? (
@@ -227,8 +229,8 @@ function TodayInner() {
                 <GrowColumn date={day} />
                 <CollapsibleSection
                   storageKey="planning.section.debrief.collapsed"
-                  eyebrow="Daily debrief"
-                  title="Reflect and reset"
+        eyebrow="Plan insight"
+        title="Review today's shape"
                 >
                   <DailyDebrief date={day} onTaskClick={setEditTaskId} />
                 </CollapsibleSection>

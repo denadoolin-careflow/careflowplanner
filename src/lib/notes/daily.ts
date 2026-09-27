@@ -25,12 +25,12 @@ const pretty = (iso: string) => {
 export const DAILY_TEMPLATES: DailyTemplate[] = [
   {
     id: "morning",
-    name: "Morning check-in",
+    name: "Morning Reset",
     emoji: "🌅",
     description: "How you slept, how you feel, what today needs.",
     build: (iso) => [
       `# ${pretty(iso)}`, "",
-      "## Morning check-in", "",
+      "## Morning Reset", "",
       "**Sleep:** ", "", "**Energy (1–5):** ", "", "**Mood:** ", "",
       "**What today needs from me**", "", "- ", "",
       "**One kind thing for myself**", "", "- ", "",
@@ -80,7 +80,7 @@ export const DAILY_TEMPLATES: DailyTemplate[] = [
     description: "Morning, priorities, gratitude and reflection together.",
     build: (iso) => [
       `# ${pretty(iso)}`, "",
-      "## Morning check-in", "", "**Energy (1–5):** ", "", "**Mood:** ", "",
+      "## Morning Reset", "", "**Energy (1–5):** ", "", "**Mood:** ", "",
       "## Top 3 today", "", "- [ ] ", "- [ ] ", "- [ ] ", "",
       "## Notes", "", "- ", "",
       "## Grateful for", "", "- ", "",

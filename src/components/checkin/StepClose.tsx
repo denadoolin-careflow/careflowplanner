@@ -64,7 +64,7 @@ export function StepClose({
       </div>
 
       <div className="border-t border-border/40 pt-6">
-        <h3 className="font-display text-lg font-semibold">Exhale</h3>
+        <h3 className="font-display text-lg font-semibold">Gentle guidance</h3>
         <ul className="mt-3 divide-y divide-border/40">
           {EXHALE_LABELS.map(({ key, label }) => (
             <li key={key} className="flex items-start gap-3 py-2.5 text-[15px]">
@@ -93,7 +93,7 @@ export function StepClose({
       <div className="flex justify-between gap-3">
         <Button variant="ghost" onClick={onBack}>Back</Button>
         <Button size="lg" className="rounded-full shadow-lg" onClick={onComplete} disabled={completing}>
-          <Check className="mr-1.5 h-4 w-4" /> Complete check-in
+          <Check className="mr-1.5 h-4 w-4" /> Complete Morning Reset
         </Button>
       </div>
     </div>

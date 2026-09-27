@@ -71,9 +71,9 @@ export function CareLoopRow({
         onClick={() => navigate("/planner")}
       />
       <LoopCard
-        tone="exhale" icon={Wind} title="Exhale"
+        tone="exhale" icon={Wind} title="Evening Reflection"
         hint="Close the loop with a soft landing."
-        meta="Begin exhale"
+        meta="Begin reflection"
         onClick={onExhale}
       />
     </div>

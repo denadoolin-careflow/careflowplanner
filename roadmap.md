@@ -8,3 +8,5 @@
 - [x] Group planner habits and routines by day part and person
 - [x] Add compact per-day rhythm summaries with remembered expand/collapse controls
 - [x] Verify rhythm check-offs and responsive Day, 3 Day, and Week layouts
+- [x] Add Morning Reset and Evening Reflection rituals to Today
+- [x] Make note headings hide every subordinate block through the next peer or ancestor heading

@@ -27,7 +27,7 @@ const STEPS: { id: StepId; label: string; icon: typeof Wind; tint: string }[] = 
 ];
 
 export function ExhaleFlow({ open, onOpenChange, date }: Props) {
-  const { state, addJournal, updateTask } = useStore();
+  const { state, addJournal, addTask, updateTask } = useStore();
   const iso = format(date, "yyyy-MM-dd");
   const tomorrow = useMemo(() => addDays(date, 1), [date]);
   const tomorrowIso = format(tomorrow, "yyyy-MM-dd");
@@ -86,17 +86,17 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
         if (all.length) bodyParts.push(`**Tomorrow's anchors**\n${all.map(a => `- ${a}`).join("\n")}`);
       }
 
-      const body = bodyParts.join("\n\n") || "Exhale.";
+      const body = bodyParts.join("\n\n") || "Evening reflection.";
 
       // 1) Journal entry
-      await addJournal({
+      const savedReflection = await addJournal({
         date: iso,
         type: "daily",
-        template: "exhale",
-        title: `Exhale — ${format(date, "MMM d")}`,
+        template: "evening-reflection",
+        title: `Evening Reflection — ${format(date, "MMM d")}`,
         body,
         gratitudeItems: grat,
-        tags: ["exhale", ...(release.trim() ? ["release"] : [])],
+        tags: ["evening-reflection", ...(release.trim() ? ["release"] : [])],
         prompts: [
           "What landed in me today?",
           "What am I grateful for, however small?",
@@ -104,37 +104,29 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
           "What do I want tomorrow to feel like?",
         ],
       });
+      if (!savedReflection) throw new Error("Couldn't save your reflection. Please try again.");
 
       // 2) Carry unfinished tasks forward
       await Promise.all(
         Array.from(carryIds).map(id => updateTask(id, { dueDate: tomorrowIso, inbox: false })),
       );
 
-      // 3) Create new anchor tasks for tomorrow (top of mind)
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u?.user?.id;
-      if (uid && anchorList.length) {
-        await supabase.from("tasks").insert(
-          anchorList.map((title, i) => ({
-            user_id: uid,
-            title,
-            due_date: tomorrowIso,
-            priority: "medium",
-            area: "Personal",
-            done: false,
-            status: "active",
-            is_top_three: i < 3,
-            sort_order: i,
-          })),
-        );
-      }
+      // 3) Create new anchor tasks through the shared store so Today updates immediately.
+      await Promise.all(anchorList.slice(0, 3).map((title, i) => addTask({
+        title,
+        dueDate: tomorrowIso,
+        priority: "medium",
+        area: "Personal",
+        status: "active",
+        isTopThree: true,
+        sortOrder: i,
+      })));
 
       setDone(true);
       setStepIdx(STEPS.length); // moves to closing screen
-      toast("Exhaled. Sleep well. 🌙", { duration: 2400 });
+      toast("Evening Reflection saved. Sleep well. 🌙", { duration: 2400 });
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't save your exhale");
+      toast.error(e?.message ?? "Couldn't save your reflection");
     } finally {
       setSaving(false);
     }
@@ -160,7 +152,7 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
           />
           <DialogHeader className="relative">
             <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-              <Wind className="h-3.5 w-3.5" /> Exhale · {format(date, "EEEE, MMM d")}
+              <Wind className="h-3.5 w-3.5" /> Evening Reflection · {format(date, "EEEE, MMM d")}
             </div>
             <DialogTitle className="font-display text-2xl font-semibold leading-tight">
               {done ? "It is enough." : titleFor(step.id)}
@@ -244,7 +236,7 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
                 )}
                 {isLast ? (
                   <Button size="sm" disabled={saving} onClick={finish} className="rounded-full px-4">
-                    {saving ? "Saving…" : (<><Check className="mr-1 h-3.5 w-3.5" /> Exhale</>)}
+                    {saving ? "Saving…" : (<><Check className="mr-1 h-3.5 w-3.5" /> Complete reflection</>)}
                   </Button>
                 ) : (
                   <Button size="sm" onClick={() => setStepIdx(i => Math.min(STEPS.length - 1, i + 1))} className="rounded-full px-4">
@@ -267,7 +259,7 @@ function titleFor(id: StepId) {
     case "gratitude": return "What softened your day?";
     case "release":   return "What can you set down?";
     case "tomorrow":  return "Prepare tomorrow, gently.";
-    default:          return "Exhale";
+    default:          return "Evening Reflection";
   }
 }
 function subtitleFor(id: StepId) {

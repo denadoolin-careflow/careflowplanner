@@ -120,7 +120,7 @@ export function DailyDebrief({
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="inline-flex items-center gap-2 text-primary">
           <Sparkles className="h-3.5 w-3.5" />
-          <p className="text-[10px] uppercase tracking-[0.28em]">Daily debrief</p>
+          <p className="text-[10px] uppercase tracking-[0.28em]">Plan insight</p>
           <span className="text-[10px] text-muted-foreground">· {format(date, "EEE, MMM d")}</span>
         </div>
         <div className="flex items-center gap-1.5">

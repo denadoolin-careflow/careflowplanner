@@ -85,7 +85,7 @@ export function EndOfDaySummary({ date }: Props) {
               onClick={() => setExhaleOpen(true)}
               className="shrink-0 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-[0_0_18px_-4px_hsl(var(--primary)/0.6)] hover:opacity-95"
             >
-              <Wind className="mr-1.5 h-3.5 w-3.5" /> Begin Exhale
+              <Wind className="mr-1.5 h-3.5 w-3.5" /> Begin Evening Reflection
             </Button>
           </div>
           <p className="mt-3 font-display text-[15px] leading-snug text-foreground/80 sm:text-base">{closingNote}</p>

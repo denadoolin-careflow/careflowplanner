@@ -13,7 +13,7 @@ import {
 
 /**
  * Mounts globally. Once per day at the configured time (default 20:00),
- * nudges the user to begin the End-of-Day Exhale.
+ * nudges the user to begin the Evening Reflection ritual.
  */
 export function ExhaleReminderHost() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export function ExhaleReminderHost() {
       // Browser notification if granted
       if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
         try {
-          const n = new Notification("Time to Exhale", {
+          const n = new Notification("Time for your Evening Reflection", {
             body: "End your day with a gentle wind-down ritual.",
             tag: "careflow-exhale",
           });
@@ -44,7 +44,7 @@ export function ExhaleReminderHost() {
       }
 
       // In-app toast (always)
-      toast("🌙 Time to Exhale", {
+      toast("🌙 Time for your Evening Reflection", {
         description: "Close the day with a gentle wind-down.",
         duration: 30_000,
         action: { label: "Begin", onClick: go },

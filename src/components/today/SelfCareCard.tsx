@@ -45,7 +45,7 @@ export function SelfCareCard({ date, onExhale }: { date: Date; onExhale: () => v
       title="Self-care"
       action={
         <Button size="sm" variant="ghost" onClick={onExhale} className="h-8 rounded-full text-[11px]">
-          <Wind className="mr-1.5 h-3.5 w-3.5" aria-hidden /> Exhale
+          <Wind className="mr-1.5 h-3.5 w-3.5" aria-hidden /> Evening reflection
         </Button>
       }
     >
