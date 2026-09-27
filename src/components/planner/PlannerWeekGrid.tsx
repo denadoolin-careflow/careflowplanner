@@ -300,6 +300,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         {cols.map((d, i) => (
           <PlannerAllDayRow
             key={format(d, "yyyy-MM-dd")}
+             dateISO={format(d, "yyyy-MM-dd")}
             items={filterFeedItems(byDay.get(format(d, "yyyy-MM-dd")) ?? [], filters).filter(it => it.allDay)}
             onOpen={handleOpen}
             className={cn("min-w-0", i > 0 && "border-l border-border/40")}

@@ -34,14 +34,14 @@ function MealChip({ iso, slot, label, style }: { iso: string; slot: Meal["slot"]
           style={style}
           aria-label={meal ? `${label}: ${meal.name}. Edit meal` : `Add ${label.toLowerCase()}`}
           className={cn(
-            "absolute right-1 z-10 flex max-w-[46%] items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] shadow-sm backdrop-blur",
+            "absolute right-1 z-10 flex max-w-[calc(100%-3.5rem)] items-start gap-1 rounded-md border px-2 py-1 text-left text-[10px] leading-tight shadow-sm backdrop-blur",
             meal
               ? "border-yellow-300/70 bg-yellow-100/80 text-yellow-950 dark:border-yellow-800/60 dark:bg-yellow-900/50 dark:text-yellow-50"
               : "border-dashed border-border/70 bg-card/70 text-muted-foreground",
           )}
         >
           {meal ? <UtensilsCrossed className="h-3 w-3 shrink-0" /> : <Plus className="h-3 w-3 shrink-0" />}
-          <span className="truncate">{meal ? meal.name : label}</span>
+          <span className="whitespace-normal break-words [overflow-wrap:anywhere]">{meal ? meal.name : label}</span>
         </button>
       }
     />

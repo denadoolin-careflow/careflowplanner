@@ -15,3 +15,6 @@
 - [x] Whole-day rest day for habits & routines in week view
 - [x] Per-day Top 3 row in week view
 - [x] Home · Clean row with quick-add cleaning tasks
+- [x] Remembered completed-task strikethrough display option
+- [x] Full meal names and hover-expanded planner task titles
+- [x] Checkable, draggable all-day task cards matching scheduled tasks

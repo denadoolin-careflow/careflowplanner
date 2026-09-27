@@ -15,6 +15,8 @@ const WEEK_MODE_KEY = "careflow:planner:week-mode";
 const WEEK_HEADER_KEY = "careflow:planner:week-header";
 const MOBILE_WEEK_MODE_KEY = "careflow:planner:week-mode-mobile";
 const MONTH_MODE_KEY = "careflow:planner:month-mode";
+const COMPLETED_STRIKETHROUGH_KEY = "careflow:planner:completed-strikethrough";
+const PREF_CHANGE_EVENT = "careflow:planner-pref-change";
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -32,10 +34,21 @@ function useLS<T>(key: string, fallback: T): [T, (v: T) => void] {
   useEffect(() => { setVal(read(key, fallback)); }, [key]);
   useEffect(() => {
     const onStorage = (e: StorageEvent) => { if (e.key === key) setVal(read(key, fallback)); };
+    const onPreferenceChange = (e: Event) => {
+      if ((e as CustomEvent<{ key?: string }>).detail?.key === key) setVal(read(key, fallback));
+    };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener(PREF_CHANGE_EVENT, onPreferenceChange);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(PREF_CHANGE_EVENT, onPreferenceChange);
+    };
   }, [key, fallback]);
-  const setter = (v: T) => { setVal(v); write(key, v); };
+  const setter = (v: T) => {
+    setVal(v);
+    write(key, v);
+    window.dispatchEvent(new CustomEvent(PREF_CHANGE_EVENT, { detail: { key } }));
+  };
   return [val, setter];
 }
 
@@ -54,6 +67,8 @@ export type PlannerRangeLayout = "default" | "list" | "table";
 export const usePlannerRangeLayout = (view: PlannerView) =>
   useLS<PlannerRangeLayout>(`careflow:planner:layout:${view}`, "default");
 export const usePlannerMonthMode = () => useLS<PlannerMonthMode>(MONTH_MODE_KEY, "calendar");
+/** Device-local choice for how completed planner task titles are displayed. */
+export const usePlannerCompletedStrikethrough = () => useLS<boolean>(COMPLETED_STRIKETHROUGH_KEY, true);
 
 export type PlannerPanelId = "task" | "focus" | "context";
 export type PlannerPanelPrefs = Record<PlannerView, Record<PlannerPanelId, boolean>>;

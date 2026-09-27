@@ -85,7 +85,7 @@ export function MealCell({ meal, date, slot, onOpen, onCreate, onRename }: Props
         <>
           <div className="flex items-start gap-1">
             <button onClick={() => onOpen(meal)} className="flex-1 text-left text-xs leading-snug">
-              <span className="line-clamp-2">{meal.name}</span>
+              <span className="whitespace-normal break-words [overflow-wrap:anywhere]">{meal.name}</span>
             </button>
             <MealPickerPopover
               trigger={
