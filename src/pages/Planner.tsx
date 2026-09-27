@@ -1,3 +1,5 @@
+import { weekKeyFor } from "@/lib/notes/periods";
+import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { addDays, addMonths, addYears, differenceInCalendarDays, endOfYear, format, getDaysInMonth, isValid, parseISO, startOfMonth, startOfWeek, startOfYear } from "date-fns";
@@ -708,6 +710,7 @@ export default function Planner() {
                 <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} expandHeight />
               </div>
             )}
+            {view === "week" && <PeriodNoteCard kind="weekly" keyISO={weekKeyFor(weekStart)} className="mb-2" />}
             {view === "week" && activeWeekMode === "grid" && (
               <div className={expandedScheduleBox}>
                 <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} expandHeight />

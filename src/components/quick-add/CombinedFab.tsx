@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange, Salad, Droplets, Scale, Syringe, CalendarDays } from "lucide-react";
+import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange, Salad, Droplets, Scale, Syringe, CalendarDays, CalendarPlus } from "lucide-react";
+import { openAddEvent } from "@/components/calendar/AddEventHost";
 import { useNavigate } from "react-router-dom";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
@@ -106,6 +107,7 @@ export function CombinedFab() {
 
   const actions: { key: string; label: string; icon: any; onClick: () => void; accent?: boolean }[] = [
     { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
+    { key: "event", label: "Add event", icon: CalendarPlus, onClick: () => openAddEvent(), accent: true },
     { key: "planner", label: "Planner", icon: CalendarRange, onClick: () => navigate("/planner"), accent: true },
     { key: "note", label: "Note", icon: FileText, onClick: () => openNewNote() },
     { key: "daily", label: "Daily note", icon: CalendarDays, onClick: async () => { const n = await openDailyNoteWithTemplate(todayISO(), readDefaultDailyTemplate()); navigate(`/notes/${n.id}`); } },

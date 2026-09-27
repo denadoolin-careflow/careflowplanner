@@ -98,6 +98,26 @@ export const DAILY_TEMPLATES: DailyTemplate[] = [
 
 export const WEEKLY_TEMPLATES: PeriodTemplate[] = [
   {
+    id: "week-plan-reflect",
+    name: "Weekly plan & reflection",
+    emoji: "🌿",
+    description: "Plan the week up top, reflect on it at the end.",
+    build: (iso) => [
+      `# ${periodTitle("weekly", iso)}`, "",
+      "## Weekly plan", "",
+      "### Intentions", "", "- ", "",
+      "### Top 3 this week", "", "- [ ] ", "- [ ] ", "- [ ] ", "",
+      "### Key events & appointments", "", "- ", "",
+      "### Care, home & meals", "", "- ", "",
+      "### What to protect (rest, people, energy)", "", "- ", "",
+      "## Weekly reflection", "",
+      "### Wins & gratitude", "", "- ", "",
+      "### What was hard", "", "- ", "",
+      "### What I learned about my energy", "", "- ", "",
+      "### Carry into next week", "", "- ", "",
+    ].join("\n"),
+  },
+  {
     id: "week-plan",
     name: "Week plan",
     emoji: "🗓️",
@@ -192,7 +212,7 @@ export const TEMPLATES_BY_KIND: Record<PeriodKind, PeriodTemplate[]> = {
   monthly: MONTHLY_TEMPLATES,
 };
 
-const DEFAULT_ID: Record<PeriodKind, string> = { daily: "morning", weekly: "week-plan", monthly: "month-focus" };
+const DEFAULT_ID: Record<PeriodKind, string> = { daily: "morning", weekly: "week-plan-reflect", monthly: "month-focus" };
 
 export const getPeriodTemplate = (kind: PeriodKind, id: string | null | undefined) =>
   TEMPLATES_BY_KIND[kind].find(t => t.id === id) ?? null;
