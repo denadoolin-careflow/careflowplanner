@@ -4,10 +4,11 @@
  * card. Habits check off on any date; routine steps check off for today,
  * writing straight back to the existing habit logs and routine items.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, isToday } from "date-fns";
-import { Check, Repeat, Sprout } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, CloudSun, Moon, Repeat, Sprout, Sun } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import {
   useRoutines, routines as routinesApi, SLOT_LABEL, ROUTINE_SLOTS, formatTime12,
@@ -18,6 +19,54 @@ import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 const KEY = "careflow:planner:rhythm-row";
+const DENSITY_KEY = "careflow:planner:rhythm-density:v1";
+
+type DayPart = "morning" | "afternoon" | "evening";
+type DensityPreference = { allExpanded: boolean; days: Record<string, boolean> };
+
+const DAY_PARTS: Array<{
+  id: DayPart;
+  label: string;
+  Icon: typeof Sun;
+  tone: string;
+}> = [
+  { id: "morning", label: "Morning", Icon: Sun, tone: "text-amber-600 dark:text-amber-300" },
+  { id: "afternoon", label: "Afternoon", Icon: CloudSun, tone: "text-sky-600 dark:text-sky-300" },
+  { id: "evening", label: "Evening", Icon: Moon, tone: "text-primary" },
+];
+
+function readDensityPreference(): DensityPreference {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DENSITY_KEY) ?? "") as Partial<DensityPreference>;
+    return {
+      allExpanded: saved.allExpanded === true,
+      days: saved.days && typeof saved.days === "object" ? saved.days : {},
+    };
+  } catch {
+    return { allExpanded: false, days: {} };
+  }
+}
+
+function habitDayPart(habit: Habit): DayPart {
+  const slot = habit.timesOfDay?.[0];
+  if (slot === "midday" || slot === "afternoon") return "afternoon";
+  if (slot === "evening") return "evening";
+  return "morning";
+}
+
+function routineDayPart(routine: Routine): DayPart {
+  if (routine.time_of_day) {
+    const hour = Number.parseInt(routine.time_of_day.split(":")[0], 10);
+    if (!Number.isNaN(hour)) {
+      if (hour < 12) return "morning";
+      if (hour < 17) return "afternoon";
+      return "evening";
+    }
+  }
+  if (routine.slot === "afternoon" || routine.slot === "nap") return "afternoon";
+  if (routine.slot === "evening" || routine.slot === "night") return "evening";
+  return "morning";
+}
 
 /** Remembered show/hide for the habits + routines lane. */
 export function useRhythmRowVisible(): [boolean, () => void] {
@@ -115,12 +164,12 @@ function HabitChip({ habit, iso }: { habit: Habit; iso: string }) {
   );
 }
 
-function RoutineChip({ routine, editable }: { routine: Routine; editable: boolean }) {
+function RoutineChip({ routine, editable, showPerson = true }: { routine: Routine; editable: boolean; showPerson?: boolean }) {
   const [open, setOpen] = useState(false);
   const total = routine.items.length;
   const done = routine.items.filter(i => i.done).length;
   const allDone = total > 0 && done === total;
-  const label = `${routine.time_of_day ? `${formatTime12(routine.time_of_day)} ` : ""}${routine.person_name} ${SLOT_LABEL[routine.slot].toLowerCase()}`;
+  const label = `${routine.time_of_day ? `${formatTime12(routine.time_of_day)} · ` : ""}${showPerson ? `${routine.person_name} · ` : ""}${SLOT_LABEL[routine.slot]}`;
 
   const toggleAll = async () => {
     haptics.snap();
@@ -214,11 +263,41 @@ function GroupHeader({ icon, label, done, total }: { icon: React.ReactNode; labe
   );
 }
 
-function RhythmGroups({ date, wrap }: { date: Date; wrap?: boolean }) {
+function MiniProgressRing({ done, total }: { done: number; total: number }) {
+  const pct = total > 0 ? Math.min(done / total, 1) : 0;
+  const radius = 7;
+  const circumference = 2 * Math.PI * radius;
+  return (
+    <svg className="h-5 w-5 shrink-0 -rotate-90" viewBox="0 0 20 20" role="img" aria-label={`${done} of ${total} rhythm items complete`}>
+      <circle cx="10" cy="10" r={radius} fill="none" className="stroke-muted" strokeWidth="2.5" />
+      <circle
+        cx="10"
+        cy="10"
+        r={radius}
+        fill="none"
+        className="stroke-primary transition-[stroke-dashoffset] duration-300"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference * (1 - pct)}
+      />
+    </svg>
+  );
+}
+
+interface RhythmDayData {
+  iso: string;
+  habits: Habit[];
+  routines: Routine[];
+  habitsDone: number;
+  routineDone: number;
+  routineTotal: number;
+}
+
+function useRhythmDayData(date: Date): RhythmDayData {
   const { state } = useStore() as any;
   const { routines: allRoutines } = useRoutines();
   const iso = format(date, "yyyy-MM-dd");
-  const editableRoutines = isToday(date);
 
   const habits: Habit[] = useMemo(
     () => ((state.habits ?? []) as Habit[]).filter(h => habitOnDate(h, date)),
@@ -229,47 +308,162 @@ function RhythmGroups({ date, wrap }: { date: Date; wrap?: boolean }) {
     [allRoutines, iso], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  const rp = routineProgress(dayRoutines);
+  return {
+    iso,
+    habits,
+    routines: dayRoutines,
+    habitsDone: habits.filter(h => !!h.log?.[iso]).length,
+    routineDone: rp.done,
+    routineTotal: rp.total,
+  };
+}
+
+function RhythmSummary({ data, expanded, onToggle }: { data: RhythmDayData; expanded: boolean; onToggle: () => void }) {
+  const combinedDone = data.habitsDone + data.routineDone;
+  const combinedTotal = data.habits.length + data.routineTotal;
+
+  if (!data.habits.length && !data.routines.length) {
+    return <span className="block px-0.5 py-1 text-[9.5px] text-muted-foreground/60">—</span>;
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      aria-label={`${expanded ? "Collapse" : "Expand"} habits and routines for ${data.iso}`}
+      className="h-auto min-h-8 w-full justify-start gap-1 rounded-md border border-border/50 bg-card/60 px-1.5 py-1 text-[9px] font-medium hover:bg-muted/70"
+    >
+      <MiniProgressRing done={combinedDone} total={combinedTotal} />
+      <span className="min-w-0 flex-1 space-y-0.5 text-left leading-none">
+        <span className="flex items-center gap-1 whitespace-nowrap">
+          <Sprout className="h-2.5 w-2.5 text-primary" aria-hidden />
+          <span className="tabular-nums">{data.habitsDone}/{data.habits.length}</span>
+          <span className="truncate text-muted-foreground">habits</span>
+        </span>
+        <span className="flex items-center gap-1 whitespace-nowrap">
+          <Repeat className="h-2.5 w-2.5 text-primary" aria-hidden />
+          <span className="tabular-nums">{data.routineDone}/{data.routineTotal}</span>
+          <span className="truncate text-muted-foreground">routines</span>
+        </span>
+      </span>
+      {expanded ? <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />}
+    </Button>
+  );
+}
+
+function RhythmGroups({ date, wrap, data: suppliedData }: { date: Date; wrap?: boolean; data?: RhythmDayData }) {
+  const queriedData = useRhythmDayData(date);
+  const data = suppliedData ?? queriedData;
+  const { iso, habits, routines: dayRoutines } = data;
+  const editableRoutines = isToday(date);
+
   if (!habits.length && !dayRoutines.length) {
     return <span className="block px-0.5 text-[9.5px] text-muted-foreground/60">—</span>;
   }
 
-  const habitsDone = habits.filter(h => !!h.log?.[iso]).length;
-  const rp = routineProgress(dayRoutines);
   const listClass = wrap ? "flex flex-wrap gap-1 [&>*]:w-auto [&>*]:max-w-full" : "space-y-0.5";
 
   return (
-    <div className="space-y-1.5">
-      {habits.length > 0 && (
-        <div className="space-y-0.5">
-          <GroupHeader icon={<Sprout className="h-2.5 w-2.5" aria-hidden />} label="Habits" done={habitsDone} total={habits.length} />
-          <div className={listClass}>
-            {habits.map(h => <HabitChip key={h.id} habit={h} iso={iso} />)}
-          </div>
-        </div>
-      )}
-      {dayRoutines.length > 0 && (
-        <div className="space-y-0.5">
-          <GroupHeader icon={<Repeat className="h-2.5 w-2.5" aria-hidden />} label="Routines" done={rp.done} total={rp.total} />
-          <div className={listClass}>
-            {dayRoutines.map(r => <RoutineChip key={r.id} routine={r} editable={editableRoutines} />)}
-          </div>
-        </div>
-      )}
+    <div className="space-y-2 pt-1">
+      {DAY_PARTS.map(({ id, label, Icon, tone }) => {
+        const partHabits = habits.filter(habit => habitDayPart(habit) === id);
+        const partRoutines = dayRoutines.filter(routine => routineDayPart(routine) === id);
+        if (!partHabits.length && !partRoutines.length) return null;
+        const partHabitDone = partHabits.filter(habit => !!habit.log?.[iso]).length;
+        const partRoutineProgress = routineProgress(partRoutines);
+        const people = Array.from(new Set(partRoutines.map(routine => routine.person_name)));
+        return (
+          <section key={id} className="space-y-1">
+            <GroupHeader
+              icon={<Icon className={cn("h-2.5 w-2.5", tone)} aria-hidden />}
+              label={label}
+              done={partHabitDone + partRoutineProgress.done}
+              total={partHabits.length + partRoutineProgress.total}
+            />
+            {partHabits.length > 0 && (
+              <div className={listClass}>
+                {partHabits.map(habit => <HabitChip key={habit.id} habit={habit} iso={iso} />)}
+              </div>
+            )}
+            {people.map(person => (
+              <div key={person} className="space-y-0.5">
+                <p className="truncate px-0.5 text-[9px] font-medium text-muted-foreground">{person}</p>
+                <div className={listClass}>
+                  {partRoutines.filter(routine => routine.person_name === person).map(routine => (
+                    <RoutineChip key={routine.id} routine={routine} editable={editableRoutines} showPerson={false} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
+        );
+      })}
     </div>
+  );
+}
+
+function RhythmDayColumn({ iso, expanded, onToggle }: { iso: string; expanded: boolean; onToggle: () => void }) {
+  const date = useMemo(() => new Date(`${iso}T12:00:00`), [iso]);
+  const data = useRhythmDayData(date);
+  return (
+    <>
+      <RhythmSummary data={data} expanded={expanded} onToggle={onToggle} />
+      {expanded && <RhythmGroups date={date} data={data} />}
+    </>
   );
 }
 
 /** Week-grid lane: one column per day, aligned to the grid template. */
 export function PlannerRhythmRow({ days, colTemplate }: { days: string[]; colTemplate: string }) {
+  const [density, setDensity] = useState<DensityPreference>(readDensityPreference);
+  const everyExpanded = days.every(iso => density.days[iso] ?? density.allExpanded);
+
+  useEffect(() => {
+    try { localStorage.setItem(DENSITY_KEY, JSON.stringify(density)); } catch { /* ignore */ }
+  }, [density]);
+
+  const toggleDay = (iso: string) => {
+    haptics.tap?.();
+    setDensity(current => ({
+      ...current,
+      days: { ...current.days, [iso]: !(current.days[iso] ?? current.allExpanded) },
+    }));
+  };
+
+  const toggleAll = () => {
+    haptics.tap?.();
+    const next = !everyExpanded;
+    setDensity(current => ({
+      allExpanded: next,
+      days: { ...current.days, ...Object.fromEntries(days.map(iso => [iso, next])) },
+    }));
+  };
+
   return (
     <div className="grid border-b border-border/40 bg-background/30" style={{ gridTemplateColumns: colTemplate }}>
-      <div className="sticky left-0 z-30 flex items-center justify-end gap-1 border-r border-border/50 bg-card/95 pr-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 backdrop-blur">
-        <Sprout className="h-3 w-3" aria-hidden />
-        Rhythm
+      <div className="sticky left-0 z-30 flex flex-col items-end justify-center gap-0.5 border-r border-border/50 bg-card/95 px-1 py-1 backdrop-blur">
+        <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider text-muted-foreground/70">
+          <Sprout className="h-3 w-3" aria-hidden /> Rhythm
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={toggleAll}
+          aria-expanded={everyExpanded}
+          className="h-5 rounded px-1 text-[8px] font-medium text-muted-foreground"
+          title={everyExpanded ? "Collapse all days" : "Expand all days"}
+        >
+          {everyExpanded ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />}
+          {everyExpanded ? "Collapse" : "Expand"}
+        </Button>
       </div>
       {days.map((iso, index) => (
         <div key={iso} className={cn("min-w-0 p-1", index > 0 && "border-l border-border/40")}>
-          <RhythmGroups date={new Date(`${iso}T12:00:00`)} />
+          <RhythmDayColumn iso={iso} expanded={density.days[iso] ?? density.allExpanded} onToggle={() => toggleDay(iso)} />
         </div>
       ))}
     </div>
