@@ -290,6 +290,7 @@ interface RhythmDayData {
   habits: Habit[];
   routines: Routine[];
   habitsDone: number;
+  routinesDone: number;
   routineDone: number;
   routineTotal: number;
 }
@@ -314,14 +315,15 @@ function useRhythmDayData(date: Date): RhythmDayData {
     habits,
     routines: dayRoutines,
     habitsDone: habits.filter(h => !!h.log?.[iso]).length,
+    routinesDone: dayRoutines.filter(routine => routine.items.length > 0 && routine.items.every(item => item.done)).length,
     routineDone: rp.done,
     routineTotal: rp.total,
   };
 }
 
 function RhythmSummary({ data, expanded, onToggle }: { data: RhythmDayData; expanded: boolean; onToggle: () => void }) {
-  const combinedDone = data.habitsDone + data.routineDone;
-  const combinedTotal = data.habits.length + data.routineTotal;
+  const combinedDone = data.habitsDone + data.routinesDone;
+  const combinedTotal = data.habits.length + data.routines.length;
 
   if (!data.habits.length && !data.routines.length) {
     return <span className="block px-0.5 py-1 text-[9.5px] text-muted-foreground/60">—</span>;
@@ -345,7 +347,7 @@ function RhythmSummary({ data, expanded, onToggle }: { data: RhythmDayData; expa
         </span>
         <span className="flex items-center gap-1 whitespace-nowrap">
           <Repeat className="h-2.5 w-2.5 text-primary" aria-hidden />
-          <span className="tabular-nums">{data.routineDone}/{data.routineTotal}</span>
+          <span className="tabular-nums">{data.routinesDone}/{data.routines.length}</span>
           <span className="truncate text-muted-foreground">routines</span>
         </span>
       </span>

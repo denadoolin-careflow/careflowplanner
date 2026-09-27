@@ -5,6 +5,6 @@
 - [x] Add descriptive astrology and energy guidance when hovering cosmic events
 - [x] Make crowded notes-calendar days reveal all hidden notes with hover previews
 - [x] Show resolved note icons in calendar note entries
-- [ ] Group planner habits and routines by day part and person
-- [ ] Add compact per-day rhythm summaries with remembered expand/collapse controls
-- [ ] Verify rhythm check-offs and responsive Day, 3 Day, and Week layouts
+- [x] Group planner habits and routines by day part and person
+- [x] Add compact per-day rhythm summaries with remembered expand/collapse controls
+- [x] Verify rhythm check-offs and responsive Day, 3 Day, and Week layouts
