@@ -4,6 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { openAddEvent } from "@/components/calendar/AddEventHost";
 import { createWriteBlock, openWriteBlock } from "@/lib/planner/write-blocks";
 
 type Kind = "task" | "event" | "note" | "journal" | "care" | "expense" | "meal" | "idea";
@@ -38,6 +39,7 @@ export function CaptureMenu({ onCapture, writeDate }: { onCapture: (kind?: Kind)
 
   const pick = (kind: Kind) => {
     if (kind === "note" || kind === "journal") { void scheduleWrite(kind); return; }
+    if (kind === "event") { openAddEvent(writeDate); return; }
     if (kind === "expense") { navigate("/moneyflow"); return; }
     if (kind === "meal") { navigate("/home?section=meals"); return; }
     if (kind === "idea") { navigate("/ideas"); return; }

@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { NotebookPen } from "lucide-react";
 import { toast } from "sonner";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
+import { getDailyNote, type Note } from "@/lib/notes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
@@ -27,6 +30,7 @@ export function DailyNoteDot({ date, mark, className, size = 14 }: {
   const [defaultId, setDefaultId] = useDefaultDailyTemplate();
   const iso = format(date, "yyyy-MM-dd");
   const written = !!mark?.written;
+  const [preview, setPreview] = useState<Note | null | undefined>(undefined);
 
   const openNote = async (templateId?: string | null) => {
     try {
@@ -44,6 +48,8 @@ export function DailyNoteDot({ date, mark, className, size = 14 }: {
 
   if (written) {
     return (
+      <HoverCard openDelay={300} onOpenChange={(o) => { if (o && preview === undefined) { setPreview(null); void getDailyNote(iso).then(n => setPreview(n ?? null)).catch(() => {}); } }}>
+      <HoverCardTrigger asChild>
       <button
         type="button"
         title={label}
@@ -54,6 +60,13 @@ export function DailyNoteDot({ date, mark, className, size = 14 }: {
       >
         <NotebookPen style={{ height: size, width: size }} aria-hidden />
       </button>
+      </HoverCardTrigger>
+      <HoverCardContent side="right" align="start" className="w-72 p-3" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground"><NotebookPen className="h-3 w-3" />{format(date, "EEEE, MMM d")}</div>
+        {preview ? <NoteMarkdownPreview body={preview.body ?? ""} maxChars={420} /> : <p className="text-xs text-muted-foreground">Loading note…</p>}
+        <button type="button" onClick={(e) => { e.stopPropagation(); void openNote(null); }} className="mt-2 text-[11px] font-medium text-primary hover:underline">Open note →</button>
+      </HoverCardContent>
+      </HoverCard>
     );
   }
 

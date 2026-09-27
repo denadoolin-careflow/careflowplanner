@@ -50,6 +50,10 @@ function DayDropZone({ dateISO, as = "article", className, children }: { dateISO
   return <Tag ref={zone.ref as any} {...zone.nativeProps} {...zone.dataProps} className={cn(className, zone.className, zone.isOver && "planner-month-day--drop")}>{children}</Tag>;
 }
 
+const MEAL_ORDER = ["Breakfast", "Lunch", "Dinner", "Snack", "Drink"];
+const MEAL_ABBR: Record<string, string> = { Breakfast: "B", Lunch: "L", Dinner: "D", Snack: "S", Drink: "Dr" };
+const mealRank = (item: PlannerFeedItem) => { const i = MEAL_ORDER.indexOf(item.title.split(": ")[0]); return i < 0 ? 99 : i; };
+
 export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSelectedDate, onCapture, onOpenItem }: {
   date: Date;
   selectedDate?: Date;
@@ -69,6 +73,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
     const index = new Map<string, PlannerFeedItem[]>();
     days.forEach(day => index.set(format(day, "yyyy-MM-dd"), []));
     filteredItems.forEach(item => index.get(item.date)?.push(item));
+    index.forEach(list => list.sort((a, b) => (a.kind === "meal" && b.kind === "meal") ? mealRank(a) - mealRank(b) : 0));
     return index;
   }, [days, filteredItems]);
   const { open: openItem, dialogs } = usePlannerItemOpener();
@@ -175,7 +180,9 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
           {days.map(day => {
             const key = format(day, "yyyy-MM-dd");
              const rows = filteredByDay.get(key) ?? [];
-             const visible = rows.slice(0, isMobile ? 3 : 5);
+             const meals = rows.filter(row => row.kind === "meal");
+             const nonMeals = rows.filter(row => row.kind !== "meal");
+             const visible = nonMeals.slice(0, isMobile ? 3 : 4);
              const dim = !isSameMonth(day, date);
              const current = isSameDay(day, today);
              const selected = key === selectedKey;
@@ -197,7 +204,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
                 {habits.total > 0 && <span className="ml-auto inline-flex items-center gap-0.5 text-muted-foreground">🌱 {habits.done}/{habits.total}</span>}
               </span>}
                {!isMobile && <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact />{tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>}
-               {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.length > 0 && <span className="planner-month-day__count">{rows.length}</span>}<span className="planner-month-day__signals"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={9} />{cycle && <i className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span></button> : <div className="planner-month-day__items">{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{rows.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{rows.length - visible.length} more</button>}</div>}
+               {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.length > 0 && <span className="planner-month-day__count">{rows.length}</span>}<span className="planner-month-day__signals"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={9} />{cycle && <i className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span></button> : <div className="planner-month-day__items">{meals.length > 0 && <div className="flex flex-col gap-px rounded-md border border-border/40 bg-muted/30 px-1 py-0.5 text-[9px] leading-tight" aria-label="Meals">{meals.map(m => { const [slot, ...rest] = m.title.split(": "); return <button key={m.id} type="button" onClick={e => { e.stopPropagation(); handleOpen(m); }} title={m.title} className="flex min-w-0 items-baseline gap-1 text-left hover:text-foreground"><span className="shrink-0 font-semibold uppercase text-muted-foreground">{MEAL_ABBR[slot] ?? slot.slice(0, 1)}</span><span className="truncate">{rest.join(": ") || slot}</span></button>; })}</div>}{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{nonMeals.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{nonMeals.length - visible.length} more</button>}</div>}
             </DayDropZone>;
           })}
         </div>

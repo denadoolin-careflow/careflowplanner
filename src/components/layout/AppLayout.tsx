@@ -8,6 +8,7 @@ import { useAutoAtmosphereResolver, useAtmosphere } from "@/lib/atmospheres";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { CareGuideFab } from "@/components/care/CareGuideFab";
 import { CombinedFab } from "@/components/quick-add/CombinedFab";
+import { AddEventHost } from "@/components/calendar/AddEventHost";
 import { AICaptureDialog } from "@/components/care/AICaptureDialog";
 import { CareyChat } from "@/components/carey/CareyChat";
 import { useStore } from "@/lib/store";
@@ -101,6 +102,7 @@ export function AppLayout() {
       <QuickAddFab hideButton />
       <CareGuideFab hideButton />
       <CombinedFab />
+      <AddEventHost />
       <BottomNav />
       <CommandPalette />
       <FocusPanel />
