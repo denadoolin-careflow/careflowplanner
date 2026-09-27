@@ -48,8 +48,8 @@ export function PlanningHeader({
         </CollapsibleSection>
         <CollapsibleSection
           storageKey="planning.section.debrief.collapsed"
-          eyebrow="Daily debrief"
-          title="Reflect and reset"
+          eyebrow="Plan insight"
+          title="Review today's shape"
         >
           <DailyDebrief date={date} onTaskClick={onTaskClick} />
         </CollapsibleSection>

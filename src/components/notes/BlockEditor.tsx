@@ -160,17 +160,25 @@ export function applyHeadingFolds(root: HTMLElement) {
   root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
   root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
   root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
-    const firstLine = h.nextElementSibling as HTMLElement | null;
+    const section = headingSectionElements(h);
+    const firstLine = section[0] ?? null;
     if (firstLine && !/^H[1-6]$/.test(firstLine.tagName)) firstLine.setAttribute("data-heading-fold-proxy", "true");
     if (h.getAttribute("data-collapsed") !== "true") return;
-    const level = parseInt(h.tagName[1], 10);
-    let sib = h.nextElementSibling as HTMLElement | null;
-    while (sib) {
-      if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
-      sib.classList.add("cf-h-hidden");
-      sib = sib.nextElementSibling as HTMLElement | null;
-    }
+    section.forEach(block => block.classList.add("cf-h-hidden"));
   });
+}
+
+/** Every block owned by a heading, ending at its next peer or ancestor heading. */
+function headingSectionElements(heading: HTMLElement): HTMLElement[] {
+  const level = Number(heading.tagName.slice(1));
+  const blocks: HTMLElement[] = [];
+  let sibling = heading.nextElementSibling as HTMLElement | null;
+  while (sibling) {
+    if (/^H[1-6]$/.test(sibling.tagName) && Number(sibling.tagName.slice(1)) <= level) break;
+    blocks.push(sibling);
+    sibling = sibling.nextElementSibling as HTMLElement | null;
+  }
+  return blocks;
 }
 
 /** Run the fold pass once the editor has painted, plus a late safety pass. */
@@ -2404,35 +2412,18 @@ export function BlockEditor({
       (collapsed ? haptics.fold : haptics.unfold)();
       (collapsed ? foldSound.fold : foldSound.unfold)();
       if (collapsed) {
-        const level = parseInt(h.tagName[1], 10);
-        const sibs: HTMLElement[] = [];
-        let sib = h.nextElementSibling as HTMLElement | null;
-        while (sib) {
-          if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
-          sibs.push(sib);
-          sib = sib.nextElementSibling as HTMLElement | null;
-        }
+        const sibs = headingSectionElements(h);
         void Promise.all(sibs.map(s => animateCollapse(s, 160))).then(() => {
           sibs.forEach(s => s.classList.add("cf-h-hidden"));
           setFoldAttr(h, ["heading"], true);
         });
       } else {
-        const level = parseInt(h.tagName[1], 10);
-        let visible = h.nextElementSibling as HTMLElement | null;
-        while (visible) {
-          if (/^H[1-6]$/.test(visible.tagName) && parseInt(visible.tagName[1], 10) <= level) break;
-          visible.classList.remove("cf-h-hidden");
-          visible = visible.nextElementSibling as HTMLElement | null;
-        }
+        const sibs = headingSectionElements(h);
+        sibs.forEach(block => block.classList.remove("cf-h-hidden"));
         setFoldAttr(h, ["heading"], false);
         window.requestAnimationFrame(() => {
-          const level = parseInt(h.tagName[1], 10);
-          let sib = h.nextElementSibling as HTMLElement | null;
-          while (sib) {
-            if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
-            animateExpand(sib, 180);
-            sib = sib.nextElementSibling as HTMLElement | null;
-          }
+          sibs.forEach(block => animateExpand(block, 180));
+          applyHeadingFolds(h.closest(".ProseMirror") as HTMLElement);
         });
       }
     };

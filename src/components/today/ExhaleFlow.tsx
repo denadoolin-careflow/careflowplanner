@@ -86,17 +86,17 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
         if (all.length) bodyParts.push(`**Tomorrow's anchors**\n${all.map(a => `- ${a}`).join("\n")}`);
       }
 
-      const body = bodyParts.join("\n\n") || "Exhale.";
+      const body = bodyParts.join("\n\n") || "Evening reflection.";
 
       // 1) Journal entry
       await addJournal({
         date: iso,
         type: "daily",
-        template: "exhale",
-        title: `Exhale — ${format(date, "MMM d")}`,
+        template: "evening-reflection",
+        title: `Evening Reflection — ${format(date, "MMM d")}`,
         body,
         gratitudeItems: grat,
-        tags: ["exhale", ...(release.trim() ? ["release"] : [])],
+        tags: ["evening-reflection", ...(release.trim() ? ["release"] : [])],
         prompts: [
           "What landed in me today?",
           "What am I grateful for, however small?",
@@ -132,7 +132,7 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
 
       setDone(true);
       setStepIdx(STEPS.length); // moves to closing screen
-      toast("Exhaled. Sleep well. 🌙", { duration: 2400 });
+      toast("Evening Reflection saved. Sleep well. 🌙", { duration: 2400 });
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't save your exhale");
     } finally {
@@ -160,7 +160,7 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
           />
           <DialogHeader className="relative">
             <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-              <Wind className="h-3.5 w-3.5" /> Exhale · {format(date, "EEEE, MMM d")}
+              <Wind className="h-3.5 w-3.5" /> Evening Reflection · {format(date, "EEEE, MMM d")}
             </div>
             <DialogTitle className="font-display text-2xl font-semibold leading-tight">
               {done ? "It is enough." : titleFor(step.id)}
@@ -244,7 +244,7 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
                 )}
                 {isLast ? (
                   <Button size="sm" disabled={saving} onClick={finish} className="rounded-full px-4">
-                    {saving ? "Saving…" : (<><Check className="mr-1 h-3.5 w-3.5" /> Exhale</>)}
+                    {saving ? "Saving…" : (<><Check className="mr-1 h-3.5 w-3.5" /> Complete reflection</>)}
                   </Button>
                 ) : (
                   <Button size="sm" onClick={() => setStepIdx(i => Math.min(STEPS.length - 1, i + 1))} className="rounded-full px-4">
@@ -267,7 +267,7 @@ function titleFor(id: StepId) {
     case "gratitude": return "What softened your day?";
     case "release":   return "What can you set down?";
     case "tomorrow":  return "Prepare tomorrow, gently.";
-    default:          return "Exhale";
+    default:          return "Evening Reflection";
   }
 }
 function subtitleFor(id: StepId) {

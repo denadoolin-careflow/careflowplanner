@@ -1228,6 +1228,9 @@
   overflow: hidden;
   transition: border-color 160ms ease;
 }
+.block-editor .ProseMirror details.cf-toggle:not([open]) > div[data-type="detailsContent"] {
+  display: none !important;
+}
 .block-editor .ProseMirror details.cf-toggle:hover > div[data-type="detailsContent"] {
   border-left-color: hsl(var(--primary) / 0.45);
 }

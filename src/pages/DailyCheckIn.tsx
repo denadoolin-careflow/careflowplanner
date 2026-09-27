@@ -90,7 +90,7 @@ export default function DailyCheckIn() {
       });
       if (finalIntention) setIntention(iso, finalIntention);
       await complete();
-      toast.success("Check-in saved. Have a beautiful day. 🌿");
+      toast.success("Morning Reset saved. Have a beautiful day. 🌿");
       nav("/today");
     } finally {
       setCompleting(false);
@@ -109,7 +109,7 @@ export default function DailyCheckIn() {
         {/* Hero */}
         <Card className="reset-glass overflow-hidden border-secondary/40 p-6 sm:p-8">
           <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-            <Sparkles className="h-3 w-3 text-primary" /> Morning check-in
+            <Sparkles className="h-3 w-3 text-primary" /> Morning Reset
           </p>
           <h1 className="mt-1 font-display text-3xl font-semibold sm:text-4xl">
             {timeOfDayGreeting(now)},{" "}
@@ -144,7 +144,7 @@ export default function DailyCheckIn() {
         <Card className="reset-glass mt-4 border-secondary/40 p-6 sm:p-8">
           {loading ? (
             <div className="flex items-center gap-3 py-6 text-[15px] text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading your check-in…
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading your Morning Reset…
             </div>
           ) : step === 0 ? (
             <StepArrive
