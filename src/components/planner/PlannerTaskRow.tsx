@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Star, Clock, GripVertical, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
@@ -44,9 +44,15 @@ export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; 
 
   const due = task.dueDate ? format(parseISO(task.dueDate), "MMM d") : null;
 
+  // Touch screens have no hover: first tap reveals the full title, next tap opens it.
+  const [expanded, setExpanded] = useState(false);
   const pointer = usePlannerPointerDrag(
     () => ({ taskId: task.id, label: task.title }),
-    { onClick: () => openTaskQuickEdit(task.id) },
+    { onClick: () => {
+      const noHover = typeof window !== "undefined" && window.matchMedia?.("(hover: none)").matches;
+      if (noHover && (compact || allDay) && !expanded) { setExpanded(true); return; }
+      openTaskQuickEdit(task.id);
+    } },
   );
 
   return (
@@ -55,6 +61,9 @@ export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; 
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onPointerDown={pointer.onPointerDown}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setExpanded(false); }}
+      tabIndex={-1}
+      aria-expanded={compact || allDay ? expanded : undefined}
       style={{ minHeight: ROW_PX }}
       className={cn(
         "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[length:var(--task-font,13px)] transition-colors hover:border-primary/40 hover:bg-card",
@@ -79,7 +88,7 @@ export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; 
         {ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden /> : <span className="mt-0.5 shrink-0 text-sm leading-none" aria-hidden>{ic.char}</span>}
         <span className={cn(
           "min-w-0 flex-1 leading-snug [overflow-wrap:anywhere] whitespace-normal break-words",
-          compact && "line-clamp-1 group-hover:line-clamp-none group-focus-within:line-clamp-none",
+          (compact || allDay) && !expanded && "line-clamp-1 group-hover:line-clamp-none group-focus-within:line-clamp-none",
           task.done && completedStrikethrough && "line-through",
         )}>
           {task.title}
