@@ -34,7 +34,7 @@ function ScheduleRow({ item, onOpen, onMove }: { item: PlannerFeedItem; onOpen: 
     <div ref={drag.ref} {...drag.props} className={cn("group flex min-h-11 items-start gap-2 border-b border-border/45 py-2.5 last:border-0", item.done && "opacity-55", drag.className)}>
       <span className="w-12 shrink-0 pt-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">{item.time ? fmt12(item.time) : "Anytime"}</span>
       {isTask ? <button type="button" onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); void toggleTask(item.sourceRef.id); }} aria-label={item.done ? `Mark ${item.title} not done` : `Mark ${item.title} done`} aria-pressed={!!item.done} className={cn("mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 transition-colors", item.done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary")}>{item.done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}</button> :
-      <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted"><Icon className="h-3.5 w-3.5" style={{ color: item.color }} /></span>
+      <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted"><Icon className="h-3.5 w-3.5" style={{ color: item.color }} /></span>}
       <button type="button" onClick={() => onOpen(item)} className="min-w-0 flex-1 text-left">
         <span className={cn("block text-[13px] font-semibold leading-snug text-foreground", isTask && item.done && "line-through")}>{item.title}</span>
         {(item.location || item.area) && <span className="block truncate text-[10px] text-muted-foreground">{item.location || item.area}</span>}
