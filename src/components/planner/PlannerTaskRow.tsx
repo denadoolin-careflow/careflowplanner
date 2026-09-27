@@ -12,6 +12,7 @@ import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
 import { format, parseISO } from "date-fns";
 import { CosmicTaskChip } from "./CosmicTaskChip";
 import { ActivityChip } from "./ActivityChip";
+import { usePlannerCompletedStrikethrough } from "@/lib/planner-prefs";
 
 const AREA_TINTS: Record<string, string> = {
   Family: "bg-amber-400",
@@ -26,8 +27,9 @@ const AREA_TINTS: Record<string, string> = {
   "Holidays & Birthdays": "bg-rose-400",
 };
 
-export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolean }) {
+export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; compact?: boolean; allDay?: boolean }) {
   const { toggleTask, updateTask } = useStore();
+  const [completedStrikethrough] = usePlannerCompletedStrikethrough();
   const ic = useMemo(() => resolveTaskIcon(task), [task]);
   const tint = AREA_TINTS[task.area] ?? "bg-muted-foreground/40";
 
@@ -56,12 +58,13 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
       style={{ minHeight: ROW_PX }}
       className={cn(
         "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[length:var(--task-font,13px)] transition-colors hover:border-primary/40 hover:bg-card",
-        "max-sm:flex-col max-sm:gap-1",
+        !allDay && "max-sm:flex-col max-sm:gap-1",
+        allDay && "min-h-0 items-center px-1.5 py-1 text-[10px] shadow-sm",
         task.done && "opacity-60",
       )}
     >
       <div className="flex min-w-0 flex-1 items-start gap-2">
-        <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/50 opacity-0 group-hover:opacity-100" aria-hidden />
+        <GripVertical className={cn("mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/50 opacity-0 group-hover:opacity-100", allDay && "hidden")} aria-hidden />
         <button
           onClick={(e) => { e.stopPropagation(); void toggleTask(task.id); }}
           aria-label={task.done ? "Mark not done" : "Mark done"}
@@ -74,11 +77,15 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
         </button>
         <span className={cn("mt-0.5 h-2 w-2 shrink-0 rounded-full", tint)} aria-hidden />
         {ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden /> : <span className="mt-0.5 shrink-0 text-sm leading-none" aria-hidden>{ic.char}</span>}
-        <span className={cn("min-w-0 flex-1 leading-snug [overflow-wrap:anywhere] whitespace-normal break-words", compact && "line-clamp-1", task.done && "line-through")}>
+        <span className={cn(
+          "min-w-0 flex-1 leading-snug [overflow-wrap:anywhere] whitespace-normal break-words",
+          compact && "line-clamp-1 group-hover:line-clamp-none group-focus-within:line-clamp-none",
+          task.done && completedStrikethrough && "line-through",
+        )}>
           {task.title}
         </span>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 text-[10px] text-muted-foreground max-sm:w-full max-sm:justify-start">
+      {!allDay && <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 text-[10px] text-muted-foreground max-sm:w-full max-sm:justify-start">
         {task.recurrenceType && task.recurrenceType !== "none" && <Repeat className="h-3 w-3" aria-hidden />}
         <ActivityChip task={task} />
         {task.estMinutes && (
@@ -95,7 +102,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
         >
           <Star className={cn("h-3.5 w-3.5", task.isTopThree && "fill-current")} />
         </button>
-      </div>
+      </div>}
     </div>
   );
 }

@@ -44,13 +44,13 @@ import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsShee
 import { ReminderCenter } from "@/components/planner/ReminderCenter";
 import { PlannerRhythmCard } from "@/components/planner/PlannerRhythmRow";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
-import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMobileWeekMode, usePlannerMonthMode, usePlannerRangeLayout, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
+import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMobileWeekMode, usePlannerMonthMode, usePlannerRangeLayout, usePlannerCompletedStrikethrough, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
 import { PlannerWeekFilterBar } from "@/components/planner/PlannerWeekFilterBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight, Timer, PanelRightClose, PanelRightOpen, Keyboard } from "lucide-react";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { tray, useTray } from "@/lib/tray-store";
@@ -119,6 +119,7 @@ export default function Planner() {
   const [mobileWeekMode, setMobileWeekMode] = usePlannerMobileWeekMode();
   const [monthMode, setMonthMode] = usePlannerMonthMode();
   const [rangeLayout, setRangeLayout] = usePlannerRangeLayout(view);
+  const [completedStrikethrough, setCompletedStrikethrough] = usePlannerCompletedStrikethrough();
   const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
   const [segment, setSegment] = useState<Segment>("all");
@@ -355,6 +356,14 @@ export default function Planner() {
                 </>
               )}
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Actions</DropdownMenuLabel>
+              <DropdownMenuCheckboxItem
+                checked={completedStrikethrough}
+                onCheckedChange={(checked) => setCompletedStrikethrough(checked === true)}
+                onSelect={(event) => event.preventDefault()}
+              >
+                Strikethrough completed
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
                 <Sparkles className="mr-2 h-3.5 w-3.5" /> Plan my day
               </DropdownMenuItem>
@@ -464,6 +473,21 @@ export default function Planner() {
               />
             )}
             {view !== "month" && <PlannerKindFilter className="ml-auto" />}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">Display</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Task appearance</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem
+                  checked={completedStrikethrough}
+                  onCheckedChange={(checked) => setCompletedStrikethrough(checked === true)}
+                  onSelect={(event) => event.preventDefault()}
+                >
+                  Strikethrough completed
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <TrayToggle />
             {(view === "day" || view === "3day" || view === "week" || view === "month" || view === "year") && (
               <Button

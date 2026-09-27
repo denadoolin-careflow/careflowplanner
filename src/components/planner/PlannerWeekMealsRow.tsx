@@ -71,7 +71,7 @@ function SlotChip({ iso, slot, short, label, onOpen }: {
       )}
     >
       {meal ? <UtensilsCrossed className="h-3 w-3 shrink-0" /> : <Plus className="h-3 w-3 shrink-0" />}
-      <span className="truncate">{meal ? meal.name : short}</span>
+      <span className="whitespace-normal break-words [overflow-wrap:anywhere]">{meal ? meal.name : short}</span>
     </button>
   );
 }

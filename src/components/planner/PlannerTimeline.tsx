@@ -17,7 +17,7 @@ import { resolveTaskIcon } from "@/lib/task-icons";
 import type { Task, Appointment } from "@/lib/types";
 import { toast } from "sonner";
 import { usePomodoro } from "@/lib/pomodoro-store";
-import { usePlannerFocusTaskId } from "@/lib/planner-prefs";
+import { usePlannerCompletedStrikethrough, usePlannerFocusTaskId } from "@/lib/planner-prefs";
 import { haptics } from "@/lib/haptics";
 import { BlockQuickActions } from "./BlockQuickActions";
 import { BlockCheckbox } from "./BlockCheckbox";
@@ -144,6 +144,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
   const { state, updateTask, addTask, toggleTask } = useStore();
   const pomo = usePomodoro();
   const [focusTaskId] = usePlannerFocusTaskId();
+  const [completedStrikethrough] = usePlannerCompletedStrikethrough();
   const iso = format(date, "yyyy-MM-dd");
   const gridRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1431,7 +1432,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                     else openTaskEditor(it.id);
                   }}
                   className={cn(
-                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:z-40 hover:overflow-visible hover:shadow-md focus-visible:z-40 focus-visible:overflow-visible focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-55 saturate-50 shadow-none",
@@ -1460,7 +1461,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                       {it.kind === "write" && (it.write?.kind === "journal"
                         ? <NotebookPen className="h-3 w-3 shrink-0" />
                         : <StickyNote className="h-3 w-3 shrink-0" />)}
-                      <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && "line-through")}>{it.title}</span>
+                      <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && completedStrikethrough && "line-through")}>{it.title}</span>
                       <span className="shrink-0 font-mono text-[9px] font-semibold opacity-80">{minTo12(it.startMin + START_H * 60)}</span>
                       {conflictNode}
                     </div>
@@ -1498,7 +1499,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                           ? <NotebookPen className="mt-[1px] h-3 w-3 shrink-0" />
                           : <StickyNote className="mt-[1px] h-3 w-3 shrink-0" />)}
                         <span
-                          className={cn("min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]", it.done && "line-through")}
+                          className={cn("min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]", it.done && completedStrikethrough && "line-through")}
                           style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: titleLines, overflow: "hidden" }}
                         >
                           {it.title}
@@ -1510,6 +1511,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                          {it.priority === "medium" && <span className="shrink-0 rounded-full bg-primary/12 px-1 text-primary">Medium</span>}
                          {it.task && <ActivityChip task={it.task} showLabel className="ml-auto shrink-0" />}
                        </div>}
+                    </div>
+                  )}
+                  {it.kind === "task" && (
+                    <div className="pointer-events-none invisible absolute left-0 top-full z-50 mt-1 w-max max-w-[min(22rem,80vw)] whitespace-normal rounded-md border border-border bg-popover px-2 py-1.5 text-xs font-medium leading-snug text-popover-foreground shadow-lg group-hover:visible group-focus-visible:visible">
+                      {it.title}
                     </div>
                   )}
                   {it.kind === "task" && (trackedByTask.get(it.id) ?? 0) > 0 && (() => {
