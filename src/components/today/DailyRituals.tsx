@@ -23,8 +23,8 @@ export function DailyRituals({ date, onEveningReflection }: {
   }, [iso]);
 
   const eveningDone = useMemo(
-    () => (state.journals ?? []).some(entry => entry.date === iso && entry.template === "evening-reflection"),
-    [state.journals, iso],
+    () => state.journal.some(entry => entry.date === iso && entry.template === "evening-reflection"),
+    [state.journal, iso],
   );
   const unfinished = useMemo(
     () => state.tasks.filter(task => task.dueDate === iso && !task.done && !task.parentTaskId).length,
