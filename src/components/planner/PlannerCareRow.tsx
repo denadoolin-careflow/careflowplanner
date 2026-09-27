@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, HeartHandshake, Home, Sparkles } from "lucide-react";
+import { ChevronDown, HeartHandshake, Home, Plus, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { openTaskEditor } from "@/lib/open-task-editor";
@@ -41,17 +41,17 @@ export function useCareRowVisible(): [boolean, () => void] {
   return [on, toggle];
 }
 
-function CareChips({ iso }: { iso: string }) {
+function CareChips({ iso, lanes }: { iso: string; lanes?: CareLane[] }) {
   const { state, toggleTask } = useStore() as any;
   const items = useMemo(() => {
     const out: { task: Task; lane: CareLane }[] = [];
     for (const t of (state.tasks ?? []) as Task[]) {
       if (t.dueDate !== iso) continue;
       const lane = laneOf(t);
-      if (lane) out.push({ task: t, lane });
+      if (lane && (!lanes || lanes.includes(lane))) out.push({ task: t, lane });
     }
     return out.sort((a, b) => a.lane.localeCompare(b.lane));
-  }, [state.tasks, iso]);
+  }, [state.tasks, iso, lanes]);
 
   if (!items.length) {
     return <span className="block px-0.5 text-[9.5px] text-muted-foreground/60">—</span>;
@@ -94,16 +94,41 @@ function CareChips({ iso }: { iso: string }) {
 }
 
 /** Grid row of caregiving / home / cleaning tasks, one column per day. */
-export function PlannerCareRow({ days, colTemplate, gutterClass, onToggle }: {
+function HomeCleanAdd({ iso }: { iso: string }) {
+  const { addTask } = useStore() as any;
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const save = async () => {
+    const title = text.trim();
+    if (title) await addTask({ title, area: "Home", tags: ["cleaning"], priority: "medium", done: false, dueDate: iso, inbox: false } as any);
+    setText(""); setOpen(false);
+  };
+  if (!open) return (
+    <button type="button" onClick={() => setOpen(true)} className="flex h-[20px] w-full items-center gap-0.5 rounded-md px-1 text-[9.5px] text-muted-foreground hover:bg-muted">
+      <Plus className="h-2.5 w-2.5" /> Clean task
+    </button>
+  );
+  return (
+    <input autoFocus value={text} onChange={e => setText(e.target.value)} onBlur={save}
+      onKeyDown={e => { if (e.key === "Enter") void save(); if (e.key === "Escape") { setText(""); setOpen(false); } }}
+      placeholder="Wipe counters…" aria-label={`Add cleaning task for ${iso}`}
+      className="h-[22px] w-full rounded-md border border-border/60 bg-background px-1 text-[10px] outline-none focus:border-primary" />
+  );
+}
+
+export function PlannerCareRow({ days, colTemplate, gutterClass, onToggle, lanes, label = "Care", quickAdd }: {
   days: string[];
   colTemplate: string;
   gutterClass?: string;
   onToggle?: () => void;
+  lanes?: CareLane[];
+  label?: string;
+  quickAdd?: boolean;
 }) {
   return (
     <div className="grid border-b border-border/40 bg-background/30" style={{ gridTemplateColumns: colTemplate }}>
       <div className={cn("sticky left-0 z-30 flex flex-col items-end justify-center gap-0.5 border-r border-border/50 bg-card/95 py-1 pr-1 text-right backdrop-blur", gutterClass)}>
-        <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70">Care</span>
+        <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70">{label}</span>
         {onToggle && (
           <button
             type="button"
@@ -118,7 +143,8 @@ export function PlannerCareRow({ days, colTemplate, gutterClass, onToggle }: {
       </div>
       {days.map((iso, i) => (
         <div key={iso} className={cn("min-w-0 space-y-0.5 px-1 py-1", i > 0 && "border-l border-border/40")}>
-          <CareChips iso={iso} />
+          <CareChips iso={iso} lanes={lanes} />
+          {quickAdd && <HomeCleanAdd iso={iso} />}
         </div>
       ))}
     </div>

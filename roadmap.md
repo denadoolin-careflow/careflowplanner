@@ -10,3 +10,8 @@
 - [x] Verify rhythm check-offs and responsive Day, 3 Day, and Week layouts
 - [x] Add Morning Reset and Evening Reflection rituals to Today
 - [x] Make note headings hide every subordinate block through the next peer or ancestor heading
+- [x] Editable (add/reorder/remove) Morning Reset & Evening Reflection steps
+- [x] Weekly ritual history with reflections
+- [x] Whole-day rest day for habits & routines in week view
+- [x] Per-day Top 3 row in week view
+- [x] Home · Clean row with quick-add cleaning tasks

@@ -574,6 +574,37 @@ function RhythmGroups({ date, wrap, data: suppliedData }: { date: Date; wrap?: b
   );
 }
 
+/** Whole-day rest: skips every unfinished habit and routine for this date. */
+function DayRestButton({ data }: { data: RhythmDayData }) {
+  const { updateHabit } = useStore() as any;
+  const { iso, habits, routines: dayRoutines } = data;
+  const openHabits = habits.filter(h => !h.log?.[iso]);
+  const allRested = (openHabits.length + dayRoutines.length) > 0
+    && openHabits.every(h => h.skips?.includes(iso))
+    && dayRoutines.every(r => r.meta?.skips?.includes(iso));
+  if (!habits.length && !dayRoutines.length) return null;
+  const toggle = async () => {
+    haptics.tap?.();
+    for (const h of openHabits) {
+      const s = new Set(h.skips ?? []);
+      if (allRested) s.delete(iso); else s.add(iso);
+      await updateHabit(h.id, { skips: Array.from(s) });
+    }
+    for (const r of dayRoutines) {
+      const s = new Set(r.meta?.skips ?? []);
+      if (allRested) s.delete(iso); else s.add(iso);
+      await routinesApi.upsert(r.person_name, r.slot, { meta: { ...r.meta, skips: Array.from(s) } });
+    }
+  };
+  return (
+    <Button type="button" variant="ghost" size="sm" onClick={toggle}
+      aria-pressed={allRested}
+      className={cn("mt-1 h-7 w-full gap-1 rounded-md border border-dashed border-border/60 px-1.5 text-[9.5px]", allRested && "bg-muted")}>
+      <Coffee className="h-3 w-3" aria-hidden /> {allRested ? "Undo rest day" : "Rest day · skip all"}
+    </Button>
+  );
+}
+
 function RhythmDayColumn({ iso, expanded, onToggle }: { iso: string; expanded: boolean; onToggle: () => void }) {
   const date = useMemo(() => new Date(`${iso}T12:00:00`), [iso]);
   const data = useRhythmDayData(date);
@@ -581,6 +612,7 @@ function RhythmDayColumn({ iso, expanded, onToggle }: { iso: string; expanded: b
     <>
       <RhythmSummary data={data} expanded={expanded} onToggle={onToggle} />
       {expanded && <RhythmGroups date={date} data={data} />}
+      {expanded && <DayRestButton data={data} />}
     </>
   );
 }

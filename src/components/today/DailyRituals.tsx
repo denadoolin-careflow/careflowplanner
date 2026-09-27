@@ -5,6 +5,8 @@ import { Check, ChevronRight, Moon, Sunrise } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loadCheckIn, type CheckInRecord } from "@/lib/daily-checkin-store";
 import { useStore } from "@/lib/store";
+import { RitualStepsEditor } from "./RitualStepsEditor";
+import { RitualWeeklyHistory } from "./RitualWeeklyHistory";
 
 export function DailyRituals({ date, onEveningReflection }: {
   date: Date;
@@ -34,8 +36,10 @@ export function DailyRituals({ date, onEveningReflection }: {
   const morningStarted = !!morning && !morningDone && !!(morning.mood || morning.capture_text || morning.ai_payload);
 
   return (
-    <section aria-label="Daily rituals" className="grid gap-3 sm:grid-cols-2">
-      <div className="flex min-h-[112px] items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl">
+    <section aria-label="Daily rituals" className="space-y-2">
+    <div className="flex justify-end"><RitualWeeklyHistory date={date} /></div>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl"><div className="flex min-h-[80px] items-center gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-care-anchor-soft text-care-anchor">
           {morningDone ? <Check className="h-5 w-5" aria-hidden /> : <Sunrise className="h-5 w-5" aria-hidden />}
         </span>
@@ -52,8 +56,10 @@ export function DailyRituals({ date, onEveningReflection }: {
           </Link>
         </Button>
       </div>
+      <RitualStepsEditor kind="morning" iso={iso} />
+      </div>
 
-      <div className="flex min-h-[112px] items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl">
+      <div className="rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl"><div className="flex min-h-[80px] items-center gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-care-exhale-soft text-care-exhale">
           {eveningDone ? <Check className="h-5 w-5" aria-hidden /> : <Moon className="h-5 w-5" aria-hidden />}
         </span>
@@ -68,6 +74,9 @@ export function DailyRituals({ date, onEveningReflection }: {
           <ChevronRight className="ml-1 h-3.5 w-3.5" aria-hidden />
         </Button>
       </div>
+      <RitualStepsEditor kind="evening" iso={iso} />
+      </div>
+    </div>
     </section>
   );
 }

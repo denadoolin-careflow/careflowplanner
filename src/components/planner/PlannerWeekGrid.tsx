@@ -21,6 +21,7 @@ import { PeriodNoteDot } from "@/components/notes/PeriodNoteDot";
 import { usePeriodNoteMarks } from "@/lib/notes/daily";
 import { weekKeyFor } from "@/lib/notes/periods";
 import { useDropZone } from "@/lib/planner/planner-dnd";
+import { PlannerDayPrioritiesRow } from "./PlannerDayPrioritiesRow";
 import { PlannerCareRow, useCareRowVisible } from "./PlannerCareRow";
 import { PlannerDailyCareChecklist } from "./PlannerDailyCareChecklist";
 import { UtensilsCrossed, HeartHandshake } from "lucide-react";
@@ -247,6 +248,9 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         ))}
       </div>
 
+      {/* Per-day Top 3 */}
+      <PlannerDayPrioritiesRow days={cols} colTemplate={colTemplate} />
+
       {/* Meals + tracked food */}
       <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>
         <div className="sticky left-0 z-30 flex items-center justify-end border-r border-border/50 bg-card/95 pr-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 backdrop-blur">Care</div>
@@ -267,6 +271,18 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           days={cols.map(d => format(d, "yyyy-MM-dd"))}
           colTemplate={colTemplate}
           onToggle={toggleCare}
+          lanes={["care"]}
+        />
+      )}
+
+      {/* Home · Clean */}
+      {careVisible && (
+        <PlannerCareRow
+          days={cols.map(d => format(d, "yyyy-MM-dd"))}
+          colTemplate={colTemplate}
+          lanes={["home", "cleaning"]}
+          label="Home · Clean"
+          quickAdd
         />
       )}
 
