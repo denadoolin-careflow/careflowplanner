@@ -187,6 +187,10 @@ export interface Habit {
   linkedRoutineIds?: string[];
   linkedTaskIds?: string[];
   linkedGoalIds?: string[];
+  /** Flexible habits: aim for N check-ins per week on any days. */
+  weeklyTarget?: number;
+  /** ISO dates marked as skip / rest days (never break a streak). */
+  skips?: string[];
 }
 
 export interface JournalEntry {

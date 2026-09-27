@@ -165,10 +165,12 @@ const habitFrom = (r: any): Habit => {
     linkedRoutineIds: Array.isArray(meta.linkedRoutineIds) ? meta.linkedRoutineIds : undefined,
     linkedTaskIds: Array.isArray(meta.linkedTaskIds) ? meta.linkedTaskIds : undefined,
     linkedGoalIds: Array.isArray(meta.linkedGoalIds) ? meta.linkedGoalIds : undefined,
+    weeklyTarget: typeof meta.weeklyTarget === "number" && meta.weeklyTarget > 0 ? meta.weeklyTarget : undefined,
+    skips: Array.isArray(meta.skips) ? meta.skips : undefined,
   };
 };
 
-const META_KEYS = ["timesOfDay","daysOfWeek","reminderTime","linkedProjectIds","linkedRoutineIds","linkedTaskIds","linkedGoalIds"] as const;
+const META_KEYS = ["timesOfDay","daysOfWeek","reminderTime","linkedProjectIds","linkedRoutineIds","linkedTaskIds","linkedGoalIds","weeklyTarget","skips"] as const;
 const journalFrom = (r: any): JournalEntry => ({
   id: r.id, date: r.date, type: r.type, title: r.title ?? undefined, body: r.body, mood: r.mood ?? undefined,
   template: r.template ?? undefined,
