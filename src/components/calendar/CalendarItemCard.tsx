@@ -1,3 +1,4 @@
+import { useEventTypeColors, eventTypeOf } from "@/lib/event-type-colors";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { formatTime12 } from "@/lib/routines";
@@ -77,6 +78,8 @@ export function CalendarItemCard({
   const task = (kind === "task" || kind === "care") && id ? state.tasks.find(t => t.id === id) : undefined;
   const appt = kind === "appt" && id ? state.appointments.find(a => a.id === id) : undefined;
 
+  const { colorOf: typeColorOf } = useEventTypeColors();
+  const typeStyle = appt ? kindStyleFromHex(typeColorOf(eventTypeOf(appt))).card : null;
   const titleText = task?.title ?? appt?.title ?? stripLeadingGlyph(label);
   const customIcon =
     task?.icon && !task.icon.startsWith("lc:") ? task.icon
@@ -100,7 +103,7 @@ export function CalendarItemCard({
 
   // gcal event color (from Google) still wins for that single event.
   const gcalInline = kind === "gcal" && color ? { borderLeftColor: color } : null;
-  const style = { ...(overrideStyle ?? {}), ...(gcalInline ?? {}) };
+  const style = { ...(typeStyle ?? overrideStyle ?? {}), ...(gcalInline ?? {}) };
 
   return (
     <button
@@ -114,7 +117,7 @@ export function CalendarItemCard({
       style={Object.keys(style).length ? style : undefined}
       className={cn(
         "group relative w-full rounded-md border border-l-[3px] text-left transition-all",
-        hasOverride ? "text-foreground" : meta.color,
+        hasOverride || typeStyle ? "text-foreground" : meta.color,
         variant === "compact" ? "px-1.5 py-1 text-[11px] leading-snug" : "px-2 py-1.5 text-[11.5px] leading-snug",
         !disabled && onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm",
         draggable && "active:cursor-grabbing",

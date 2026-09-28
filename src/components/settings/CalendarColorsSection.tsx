@@ -10,6 +10,24 @@ import {
 } from "@/lib/calendar-colors";
 import { KIND_META } from "@/components/calendar/CalendarItemCard";
 import { toast } from "sonner";
+import { EVENT_TYPES, useEventTypeColors } from "@/lib/event-type-colors";
+
+function EventTypeColors() {
+  const { colorOf, setColor, reset, overrides } = useEventTypeColors();
+  return (
+    <div className="space-y-2 rounded-xl border border-border/50 bg-card/60 p-3">
+      <div className="flex items-center justify-between"><div className="text-sm font-medium">Event types</div>
+        {Object.keys(overrides).length > 0 && <Button variant="ghost" size="sm" className="h-7 text-[11px]" onClick={reset}><RotateCcw className="mr-1 h-3 w-3" />Reset</Button>}</div>
+      {EVENT_TYPES.map(t => (
+        <div key={t.key} className="flex flex-wrap items-center gap-1.5">
+          <span className="w-32 text-xs">{t.emoji} {t.label}</span>
+          {CALENDAR_PALETTE.map(h => <Swatch key={h} hex={h} selected={colorOf(t.key).toLowerCase() === h} onClick={() => setColor(t.key, h)} />)}
+          <input type="color" aria-label={`${t.label} custom color`} value={colorOf(t.key)} onChange={e => setColor(t.key, e.target.value)} className="h-7 w-8 cursor-pointer rounded border border-border/60 bg-transparent p-0" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const KINDS: KindKey[] = ["task", "appt", "care", "meal", "bday", "hol", "gcal", "season", "cosmic"];
 
@@ -165,6 +183,7 @@ export function CalendarColorsSection() {
           <RotateCcw className="h-3.5 w-3.5" /> Reset all to defaults
         </Button>
       </div>
+      <EventTypeColors />
       <div className="grid gap-2">
         {KINDS.map(k => <KindRow key={k} kind={k} />)}
       </div>

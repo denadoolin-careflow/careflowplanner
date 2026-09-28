@@ -1,3 +1,4 @@
+import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { addMonths, eachDayOfInterval, endOfMonth, format, isSameMonth, startOfMonth, subMonths } from "date-fns";
@@ -381,6 +382,7 @@ export default function MonthOverview() {
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Monthly Overview</p>
           <h1 className="font-display text-3xl font-semibold sm:text-4xl">{format(cursor, "MMMM yyyy")}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2">
+            <ScheduleSheetButton />
             <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs", seasonMeta.chip)}>
               <span>{seasonMeta.icon}</span> {seasonMeta.label}
             </span>
