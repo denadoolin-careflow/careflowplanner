@@ -5,3 +5,4 @@
 - Daily rituals reuse daily_checkins for Morning Reset and dated journal entries tagged with the evening-reflection template for Evening Reflection completion, avoiding a duplicate ritual store.
 - Ritual step lists (Morning Reset / Evening Reflection) and their per-date check-offs are device-local (localStorage) presentation data; ritual completion itself stays in daily_checkins / journal.
 - Completed-task strikethrough is a device-local planner presentation preference shared across scheduled, all-day, and list task surfaces.
+- Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
