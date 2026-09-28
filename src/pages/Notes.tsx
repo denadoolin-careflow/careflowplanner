@@ -1,3 +1,4 @@
+import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
@@ -245,6 +246,7 @@ export default function Notes() {
             <h1 className="font-display text-xl font-semibold leading-tight sm:text-2xl">Notes</h1>
             <p className="text-[11px] text-muted-foreground">Your second brain</p>
           </div>
+          <ScheduleSheetButton />
         </div>
 
         <div className="relative ml-auto w-full sm:w-72">
