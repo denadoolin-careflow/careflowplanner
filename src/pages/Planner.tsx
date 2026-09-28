@@ -1,3 +1,4 @@
+import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { weekKeyFor } from "@/lib/notes/periods";
 import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
@@ -475,6 +476,7 @@ export default function Planner() {
               />
             )}
             {view !== "month" && <PlannerKindFilter className="ml-auto" />}
+            {view !== "day" && <ScheduleSheetButton initialDate={day} />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">Display</Button>
