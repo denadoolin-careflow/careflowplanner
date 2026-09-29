@@ -9,7 +9,7 @@ export function PlannerRangeModeTabs<T extends string>({ value, onChange, option
   className?: string;
 }) {
   return (
-    <div className={cn("inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-background/70 p-0.5", className)}>
+    <div className={cn("planner-range-mode-tabs inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-background/70 p-0.5", className)}>
       {options.map(o => {
         const active = o.id === value;
         return (

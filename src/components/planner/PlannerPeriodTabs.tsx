@@ -52,7 +52,7 @@ export function PlannerPeriodTabs({ value, onChange, className, hideGrid }: {
 }) {
   const options = hideGrid ? OPTIONS.filter(o => o.id !== "grid") : OPTIONS;
   return (
-    <div className={cn("inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-border/80 bg-background/90 p-1 shadow-sm backdrop-blur-sm", className)}>
+    <div className={cn("planner-period-tabs inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-border/80 bg-background/90 p-1 shadow-sm backdrop-blur-sm", className)}>
       {options.map(o => {
         const active = value === o.id;
         return (

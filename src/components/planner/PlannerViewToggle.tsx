@@ -14,7 +14,7 @@ export function PlannerViewToggle({ value, onChange, className }: {
   value: PlannerView; onChange: (v: PlannerView) => void; className?: string;
 }) {
   return (
-    <div className={cn("inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-background/70 p-0.5", className)}>
+    <div className={cn("planner-view-toggle inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-background/70 p-0.5", className)}>
       {OPTIONS.map(o => {
         const active = o.id === value;
         return (

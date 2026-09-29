@@ -287,7 +287,7 @@ export default function Planner() {
       <div ref={shellTopRef} aria-hidden className="h-0" />
 
       {isMobile ? (
-         <div ref={mobileHeaderRef} className="sticky top-0 z-30 -mx-2 space-y-1 border-b border-border/50 bg-background/95 px-2 pb-1.5 pt-[max(.375rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
+         <div ref={mobileHeaderRef} className="planner-mobile-command sticky top-0 z-30 -mx-2 space-y-2 border-b border-border/50 bg-background/95 px-2 pb-2 pt-[max(.375rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
         <div className="flex items-center gap-1">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
             <SheetTrigger asChild>
@@ -380,14 +380,11 @@ export default function Planner() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div
-           className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ maskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)" }}
-        >
-          <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
+         <div className="min-w-0">
+           <PlannerViewToggle value={view} onChange={setView} className="w-full" />
          </div>
-         <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-           {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
+          <div className="planner-mobile-modes flex min-w-0 flex-wrap items-center gap-1.5">
+            {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="w-full" />}
            {view === "week" && (
              <PlannerRangeModeTabs
                className="shrink-0"
@@ -421,9 +418,11 @@ export default function Planner() {
               ]}
             />
           )}
-          {view !== "month" && <PlannerKindFilter className="shrink-0" />}
-           <ReminderCenter />
-           <AutoScheduleSettings size="md" />
+           <div className="ml-auto flex items-center gap-1">
+             {view !== "month" && <PlannerKindFilter className="shrink-0" />}
+             <ReminderCenter />
+             <AutoScheduleSettings size="md" />
+           </div>
         </div>
         </div>
       ) : (
