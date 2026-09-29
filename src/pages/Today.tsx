@@ -157,7 +157,7 @@ function TodayInner() {
 
   return (
     <CapacityProvider value={capacity}>
-      <div className="mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4">
+      <div className="today-mobile-feed mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4">
         <TodayHeader
           date={day}
           onDate={setDayAndUrl}
@@ -172,7 +172,7 @@ function TodayInner() {
           onTemplates={() => setGalleryOpen(true)}
         />
         <DemoTasksBanner />
-        {prefs.showQuickAdd && <QuickAddBar date={day} />}
+        {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
         {isReallyToday && <DailyRituals date={day} onEveningReflection={() => setExhaleOpen(true)} />}
         {view !== "board" && <ArriveBand date={day} />}
 
@@ -187,7 +187,7 @@ function TodayInner() {
           </>
         ) : isMobile ? (
           <div className="animate-fade-in space-y-3">
-            <div role="tablist" aria-label="Today sections" className="grid grid-cols-3 gap-1 rounded-full border border-border/60 bg-card/70 p-1 text-xs">
+            <div role="tablist" aria-label="Today sections" className="today-mobile-section-tabs grid grid-cols-3 gap-1 rounded-xl border border-border/60 bg-card/70 p-1 text-xs">
               {(["plan", "care", "grow"] as const).map((t) => (
                 <button
                   key={t}
@@ -196,7 +196,7 @@ function TodayInner() {
                   type="button"
                   onClick={() => setMobileTab(t)}
                   className={cn(
-                    "min-h-[36px] rounded-full capitalize transition-colors",
+                    "min-h-11 rounded-lg capitalize transition-colors",
                     mobileTab === t ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground",
                   )}
                 >

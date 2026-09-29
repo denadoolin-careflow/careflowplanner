@@ -7,6 +7,8 @@ import { loadCheckIn, type CheckInRecord } from "@/lib/daily-checkin-store";
 import { useStore } from "@/lib/store";
 import { RitualStepsEditor } from "./RitualStepsEditor";
 import { RitualWeeklyHistory } from "./RitualWeeklyHistory";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export function DailyRituals({ date, onEveningReflection }: {
   date: Date;
@@ -14,6 +16,8 @@ export function DailyRituals({ date, onEveningReflection }: {
 }) {
   const iso = format(date, "yyyy-MM-dd");
   const { state } = useStore();
+  const isMobile = useIsMobile();
+  const [expanded, setExpanded] = useState<"morning" | "evening" | null>(null);
   const [morning, setMorning] = useState<CheckInRecord | null>(null);
 
   useEffect(() => {
@@ -34,6 +38,47 @@ export function DailyRituals({ date, onEveningReflection }: {
   );
   const morningDone = !!morning?.completed_at;
   const morningStarted = !!morning && !morningDone && !!(morning.mood || morning.capture_text || morning.ai_payload);
+
+  if (isMobile) {
+    const rituals = [
+      { kind: "morning" as const, title: "Morning Reset", detail: morningDone ? "Complete" : morningStarted ? "Continue" : "Start gently", done: morningDone, Icon: Sunrise },
+      { kind: "evening" as const, title: "Evening Reflection", detail: eveningDone ? "Complete" : unfinished ? `${unfinished} to review` : "Close the day", done: eveningDone, Icon: Moon },
+    ];
+    return (
+      <section aria-label="Daily rituals" className="mobile-rituals space-y-2">
+        <div className="flex items-center justify-between gap-2 px-1">
+          <p className="mobile-feed-kicker">Daily rituals</p>
+          <RitualWeeklyHistory date={date} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {rituals.map(({ kind, title, detail, done, Icon }) => (
+            <div key={kind} className={cn("mobile-ritual-card", expanded === kind && "mobile-ritual-card--open")}>
+              <button type="button" className="flex min-h-14 w-full items-center gap-2.5 text-left" aria-expanded={expanded === kind} onClick={() => setExpanded(current => current === kind ? null : kind)}>
+                <span className={cn("mobile-ritual-icon", done && "mobile-ritual-icon--done")}>
+                  {done ? <Check className="h-4 w-4" aria-hidden /> : <Icon className="h-4 w-4" aria-hidden />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold leading-tight">{title}</span>
+                  <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{detail}</span>
+                </span>
+                <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", expanded === kind && "rotate-90")} aria-hidden />
+              </button>
+              {expanded === kind && (
+                <div className="border-t border-border/40 pt-1">
+                  <RitualStepsEditor kind={kind} iso={iso} />
+                  {kind === "morning" ? (
+                    <Button asChild size="sm" className="mt-2 h-10 w-full rounded-xl"><Link to="/check-in">{morningDone ? "Review reset" : morningStarted ? "Continue reset" : "Start reset"}</Link></Button>
+                  ) : (
+                    <Button size="sm" className="mt-2 h-10 w-full rounded-xl" onClick={onEveningReflection}>{eveningDone ? "Review reflection" : "Begin reflection"}</Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section aria-label="Daily rituals" className="space-y-2">

@@ -33,11 +33,12 @@ export function TodayHeader({
       onNext={() => onDate(new Date(date.getTime() + 86400000))}
       onToday={() => onDate(new Date())}
       onDatePick={onDate}
+      className="today-mobile-header"
       views={
         <div
             role="tablist"
             aria-label="Today layout"
-            className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]"
+            className="today-layout-tabs inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]"
           >
             {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
               <button
