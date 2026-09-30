@@ -13,6 +13,7 @@ import { format, parseISO } from "date-fns";
 import { CosmicTaskChip } from "./CosmicTaskChip";
 import { ActivityChip } from "./ActivityChip";
 import { usePlannerCompletedStrikethrough } from "@/lib/planner-prefs";
+import { SwipeableTaskCard } from "./mobile/SwipeableTaskCard";
 
 const AREA_TINTS: Record<string, string> = {
   Family: "bg-amber-400",
@@ -55,7 +56,7 @@ export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; 
     } },
   );
 
-  return (
+  const row = (
     <div
       draggable
       onDragStart={onDragStart}
@@ -114,4 +115,5 @@ export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; 
       </div>}
     </div>
   );
+  return allDay ? row : <SwipeableTaskCard task={task}>{row}</SwipeableTaskCard>;
 }
