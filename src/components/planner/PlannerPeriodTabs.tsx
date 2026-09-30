@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { LayoutGrid, CalendarClock, Clock4, Gauge } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ViewPills } from "@/components/layout/ViewPills";
 
 export type PlannerPeriod = "grid" | "schedule" | "timeofday" | "capacity" | "morning" | "afternoon" | "evening";
@@ -41,7 +42,7 @@ export function usePlannerPeriod(): [PlannerPeriod, (p: PlannerPeriod) => void] 
   return [p, set];
 }
 
-const OPTIONS: { id: PlannerPeriod; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+const OPTIONS: { id: PlannerPeriod; label: string; Icon: LucideIcon }[] = [
   { id: "grid", label: "Grid", Icon: LayoutGrid },
   { id: "schedule", label: "Schedule", Icon: CalendarClock },
   { id: "timeofday", label: "Time of day", Icon: Clock4 },

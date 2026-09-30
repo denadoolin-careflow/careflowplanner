@@ -673,12 +673,28 @@ export function PlannerRhythmRow({ days, colTemplate }: { days: string[]; colTem
 
 /** Single-day card for the Day view. */
 export function PlannerRhythmCard({ date, className }: { date: Date; className?: string }) {
+  const data = useRhythmDayData(date);
+  const iso = format(date, "yyyy-MM-dd");
+  const key = `careflow:planner:rhythm-card:${iso}`;
+  const [expanded, setExpanded] = useState(() => {
+    try { return localStorage.getItem(key) === "1"; } catch { return false; }
+  });
+  const toggle = () => setExpanded(current => {
+    const next = !current;
+    try { localStorage.setItem(key, next ? "1" : "0"); } catch { /* ignore */ }
+    return next;
+  });
   return (
     <section className={cn("rounded-xl border border-border/60 bg-card/50 p-2.5", className)}>
-      <p className="mb-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-        <Sprout className="h-3 w-3" aria-hidden /> Habits &amp; routines
-      </p>
-      <RhythmGroups date={date} wrap />
+      <div className="flex items-center gap-2">
+        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <Sprout className="h-3 w-3" aria-hidden /> Habits &amp; routines
+        </p>
+        <div className="ml-auto min-w-[9.5rem] max-w-52">
+          <RhythmSummary data={data} expanded={expanded} onToggle={toggle} />
+        </div>
+      </div>
+      {expanded && <div className="mt-2 border-t border-border/40 pt-1"><RhythmGroups date={date} wrap data={data} /><DayRestButton data={data} /></div>}
     </section>
   );
 }
