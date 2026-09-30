@@ -25,6 +25,9 @@ import { PlannerDayPrioritiesRow } from "./PlannerDayPrioritiesRow";
 import { PlannerCareRow, useCareRowVisible } from "./PlannerCareRow";
 import { PlannerDailyCareChecklist } from "./PlannerDailyCareChecklist";
 import { UtensilsCrossed, HeartHandshake } from "lucide-react";
+import { useWeatherSnapshot, cToF } from "@/lib/weather-store";
+import { byHour } from "@/lib/planner/hour-weather";
+import { ConditionIcon } from "@/components/weather/ConditionIcon";
 
 const MEALS_ROW_KEY = "careflow:planner:week-meals-visible";
 
@@ -96,6 +99,8 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const { zoom, zoomBy } = useTimelineZoom();
   const HOUR_PX = BASE_HOUR_PX * zoom;
   const [fullScreen, setFullScreen] = useState(false);
+  const weather = useWeatherSnapshot();
+  const hourWeather = useMemo(() => byHour(weather?.todayHourly), [weather]);
   const [mealsVisible, setMealsVisible] = useState(() => {
     try { return localStorage.getItem(MEALS_ROW_KEY) !== "0"; } catch { return true; }
   });
@@ -327,9 +332,16 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           >
             {Array.from({ length: PLANNER_END_H - PLANNER_START_H }, (_, i) => {
               const h = PLANNER_START_H + i;
+              const wx = hourWeather.get(h);
               return (
                 <div key={h} style={{ height: HOUR_PX }} className="relative pr-1 text-right">
-                  <span className="absolute -top-2 right-1">{format(new Date(2000, 0, 1, h), "h a")}</span>
+                  <span className="absolute -top-2 right-1 font-medium">{format(new Date(2000, 0, 1, h), "h a")}</span>
+                  {wx && (
+                    <span className="absolute left-1 top-1 flex flex-col items-center gap-0.5 font-mono text-[9px] leading-none" title={`${wx.conditionLabel}, ${cToF(wx.tempC)}°F`}>
+                      <ConditionIcon condition={wx.condition} isNight={wx.isNight} className="h-3 w-3" />
+                      <span>{cToF(wx.tempC)}°F</span>
+                    </span>
+                  )}
                 </div>
               );
             })}
