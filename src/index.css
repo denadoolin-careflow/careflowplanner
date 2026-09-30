@@ -456,17 +456,18 @@
     .today-mobile-section-tabs { @apply sticky top-[6.75rem] z-20 shadow-soft backdrop-blur-xl; background-color: hsl(var(--mobile-botanical-paper) / .9); }
     .today-mobile-feed .animate-fade-in { animation-duration: .2s; }
     .planner-mobile-command { background-color: hsl(var(--mobile-botanical-paper) / .96); }
-    .planner-view-toggle { @apply grid grid-cols-5 rounded-xl border-border/50 bg-card/60; }
-    .planner-view-toggle > button { @apply min-w-0 px-1 text-[11px]; }
+    .planner-view-toggle { @apply grid w-full grid-cols-5 gap-1 rounded-xl border-border/50 bg-card/60 p-1; }
+    .planner-view-toggle > button { @apply min-h-9 min-w-0 justify-center px-1.5 text-[11px]; }
     .planner-period-tabs,
-    .planner-range-mode-tabs { @apply grid min-w-0 rounded-xl border-border/50 bg-card/60 shadow-none; }
+    .planner-range-mode-tabs { @apply grid w-full min-w-0 gap-1 rounded-xl border-border/50 bg-card/60 p-1 shadow-none; }
     .planner-period-tabs { @apply grid-cols-4 overflow-visible; }
     .planner-range-mode-tabs { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
     .planner-period-tabs > button,
-    .planner-range-mode-tabs > button { @apply min-w-0 justify-center px-1 text-[10px]; }
+    .planner-range-mode-tabs > button { @apply min-h-9 min-w-0 justify-center gap-1 px-1.5 text-[11px]; }
     .planner-period-tabs > button svg { @apply h-3.5 w-3.5; }
-    .planner-mobile-modes > div:not(.ml-auto) { @apply flex-1; }
-    .planner-mobile-modes > .ml-auto { @apply w-full justify-end border-t border-border/40 pt-1; }
+    .planner-mobile-modes { @apply grid w-full grid-cols-1 gap-2; }
+    .planner-mobile-modes > [role="tablist"] { @apply w-full; }
+    .planner-mobile-modes > .ml-auto { @apply ml-0 w-full justify-end border-t border-border/40 pt-2; }
     .planner-surface { @apply min-w-0 overflow-x-clip; }
     .planner-surface [data-planner-scroll-region] { scroll-snap-type: x proximity; }
     .planner-surface [data-planner-scroll-region] > div { scroll-snap-align: start; }
