@@ -1,3 +1,4 @@
+import { MobileWeekAgendaStrip } from "@/components/planner/mobile/MobileWeekAgendaStrip";
 import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { weekKeyFor } from "@/lib/notes/periods";
 import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
@@ -424,6 +425,7 @@ export default function Planner() {
              <AutoScheduleSettings size="md" />
            </div>
         </div>
+        <MobileWeekAgendaStrip day={day} onSelect={go} />
         </div>
       ) : (
         <>
