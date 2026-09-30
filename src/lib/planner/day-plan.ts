@@ -26,6 +26,14 @@ export const BUCKET_DEFAULT_TIME: Record<TimeBucket, string | null> = {
   evening: "18:00",
 };
 
+/** Estimated capacity in minutes per bucket. Matches PlannerCapacityBar. */
+export const BUCKET_BUDGET: Record<TimeBucket, number> = {
+  allDay: 0,
+  morning: 420,
+  afternoon: 300,
+  evening: 300,
+};
+
 export const hmToMin = (hm?: string | null): number | null => {
   if (!hm) return null;
   const m = /^(\d{1,2}):(\d{2})/.exec(hm);
@@ -56,9 +64,24 @@ export function bucketFor(t: Task): TimeBucket {
   return "evening";
 }
 
+export function bucketForMeal(m: Meal): TimeBucket {
+  const slot = m.slot.toLowerCase();
+  if (slot === "breakfast") return "morning";
+  if (slot === "lunch") return "afternoon";
+  if (slot === "dinner") return "evening";
+  return "afternoon"; // Snacks/Drinks
+}
+
+export interface DayGroup {
+  bucket: TimeBucket;
+  tasks: Task[];
+  meals: Meal[];
+  timeLeft?: number;
+}
+
 export interface DayPlan {
   iso: string;
-  groups: { bucket: TimeBucket; tasks: Task[] }[];
+  groups: DayGroup[];
   tasks: Task[];
   meals: Meal[];
   events: any[];
@@ -75,7 +98,7 @@ export function useDayPlans(dates: string[]): Map<string, DayPlan> {
     const set = new Set(dates);
     const out = new Map<string, DayPlan>();
     for (const iso of dates) {
-      out.set(iso, { iso, groups: ORDER.map(b => ({ bucket: b, tasks: [] })), tasks: [], meals: [], events: [], cosmic: [] });
+      out.set(iso, { iso, groups: ORDER.map(b => ({ bucket: b, tasks: [], meals: [] })), tasks: [], meals: [], events: [], cosmic: [] });
     }
     for (const t of (state.tasks ?? []) as Task[]) {
       const iso = (t as any).dueDate?.slice(0, 10);
@@ -84,18 +107,29 @@ export function useDayPlans(dates: string[]): Map<string, DayPlan> {
       plan.tasks.push(t);
       plan.groups.find(g => g.bucket === bucketFor(t))!.tasks.push(t);
     }
+    for (const m of (state.meals ?? []) as Meal[]) {
+      const iso = m.date?.slice(0, 10);
+      if (iso && set.has(iso)) {
+        const plan = out.get(iso)!;
+        plan.meals.push(m);
+        plan.groups.find(g => g.bucket === bucketForMeal(m))!.meals.push(m);
+      }
+    }
     for (const plan of out.values()) {
       for (const g of plan.groups) {
         g.tasks.sort((a, b) => (hmToMin(taskTime(a)) ?? 0) - (hmToMin(taskTime(b)) ?? 0));
+        
+        // Calculate Time Left (simplified: budget - active tasks)
+        const budget = BUCKET_BUDGET[g.bucket];
+        if (budget > 0) {
+          const used = g.tasks.reduce((acc, t) => acc + (!t.done ? (t.estMinutes ?? 30) : 0), 0);
+          g.timeLeft = Math.max(0, budget - used);
+        }
       }
     }
     for (const a of (state.appointments ?? []) as any[]) {
       const iso = a.date?.slice(0, 10);
       if (iso && set.has(iso)) out.get(iso)!.events.push(a);
-    }
-    for (const m of (state.meals ?? []) as Meal[]) {
-      const iso = m.date?.slice(0, 10);
-      if (iso && set.has(iso)) out.get(iso)!.meals.push(m);
     }
     if (dates.length) {
       const sorted = [...dates].sort();
@@ -107,7 +141,6 @@ export function useDayPlans(dates: string[]): Map<string, DayPlan> {
       }
     }
     return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, state.tasks, state.appointments, state.meals]);
 }
 
