@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarClock, CheckCircle2, Circle, Plus, Sparkles, UtensilsCrossed } from "lucide-react";
+import { CalendarClock, CheckCircle2, Circle, Plus, Sparkles, UtensilsCrossed, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { linkNote } from "@/lib/note-links";
 import { WeekMealDialog } from "@/components/planner/WeekMealDialog";
+import { openTaskQuickEdit } from "@/lib/open-task-quick-edit";
 import { BUCKET_DEFAULT_TIME, BUCKET_LABEL, fmt12, taskTime, type DayPlan, type TimeBucket } from "@/lib/planner/day-plan";
 import { CosmicPeek, EventPeek, TaskPeek } from "./PlannerPeeks";
 import { PriorityFlag } from "@/components/cards/PriorityFlag";
 import { ActivityChip } from "@/components/planner/ActivityChip";
-import { taskDragProps } from "@/lib/notes/task-drag";
-import type { Meal } from "@/lib/types";
+import { taskDragProps, taskDropProps } from "@/lib/notes/task-drag";
+import type { Meal, Task } from "@/lib/types";
 
 const AREA_TINT: Record<string, string> = {
   Family: "bg-amber-400", Kids: "bg-amber-500", Caregiving: "bg-violet-400",
@@ -23,7 +24,7 @@ const AREA_TINT: Record<string, string> = {
 
 /** One day of the planner, rendered inside a note. Tasks can be added and ticked here. */
 export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string }) {
-  const { addTask, toggleTask } = useStore();
+  const { addTask, toggleTask, updateTask } = useStore();
   const [adding, setAdding] = useState<TimeBucket | null>(null);
   const [draft, setDraft] = useState("");
   const [mealEdit, setMealEdit] = useState<{ meal: Meal | null; slot: Meal["slot"] } | null>(null);
@@ -41,6 +42,16 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
     } as any);
     if (id && noteId) void linkNote(noteId, "task", id).catch(() => {});
     if (id) toast.success("Added to the planner", { description: title });
+  };
+
+  const handleDrop = async (taskId: string, bucket: TimeBucket) => {
+    const time = BUCKET_DEFAULT_TIME[bucket];
+    await updateTask(taskId, {
+      dueDate: plan.iso,
+      startTime: time || undefined,
+      allDay: bucket === "allDay",
+    } as Partial<Task>);
+    toast.success(`Moved to ${BUCKET_LABEL[bucket].toLowerCase()}`);
   };
 
   const AddLine = ({ bucket }: { bucket: TimeBucket }) =>
@@ -68,6 +79,16 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
 
   return (
     <div className="space-y-1.5">
+      {/* Cosmic Events First */}
+      {plan.cosmic.map(c => (
+        <CosmicPeek key={c.id} item={c}>
+          <div className="flex items-center gap-1.5 px-1 text-[11.5px] text-muted-foreground">
+            <Sparkles className="h-3 w-3 shrink-0 text-amber-500" aria-hidden />
+            <span className="truncate">{c.label}</span>
+          </div>
+        </CosmicPeek>
+      ))}
+
       {plan.events.map((a: any) => (
         <EventPeek key={a.id} event={a}>
           <div className="flex items-center gap-1.5 text-[11.5px]">
@@ -79,29 +100,63 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
       ))}
 
       {plan.groups.map(g => (
-        (g.tasks.length > 0 || g.bucket !== "allDay") && (
-          <div key={g.bucket} className="rounded-lg px-1 py-0.5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">{BUCKET_LABEL[g.bucket]}</div>
+        (g.tasks.length > 0 || g.meals.length > 0 || g.bucket !== "allDay") && (
+          <div
+            key={g.bucket}
+            {...taskDropProps(taskId => handleDrop(taskId, g.bucket))}
+            className="rounded-lg px-1 py-0.5 transition-colors hover:bg-muted/30"
+          >
+            <div className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              <span>{BUCKET_LABEL[g.bucket]}</span>
+              {g.timeLeft !== undefined && g.timeLeft > 0 && (
+                <span className="font-mono lowercase opacity-70">{Math.round(g.timeLeft / 60 * 10) / 10}h left</span>
+              )}
+            </div>
+            
             <ul className="mt-0.5 space-y-0.5">
+              {/* Meals under day part */}
+              {g.meals.map(m => (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    onClick={() => setMealEdit({ meal: m, slot: m.slot })}
+                    className="flex w-full items-center gap-1.5 rounded-md px-1 py-0.5 text-[11.5px] hover:bg-muted/60"
+                  >
+                    <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-yellow-600" aria-hidden />
+                    <span className="text-muted-foreground">{m.slot}:</span>
+                    <span className="truncate">{m.name}</span>
+                  </button>
+                </li>
+              ))}
+
+              {/* Tasks */}
               {g.tasks.map(t => (
                 <li key={t.id}>
                   <TaskPeek task={t}>
                     <div
                       {...taskDragProps(t.id)}
-                      title="Drag to another day"
+                      title="Drag to change bucket or day"
                       className="group flex cursor-grab items-center gap-1.5 rounded-md px-1 py-0.5 text-[11.5px] hover:bg-muted/60 active:cursor-grabbing"
                     >
                       <button type="button" aria-label={t.done ? "Mark not done" : "Mark done"}
-                              onClick={() => void toggleTask(t.id)} className="shrink-0">
+                              onClick={(e) => { e.stopPropagation(); void toggleTask(t.id); }} className="shrink-0">
                         {t.done
                           ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                           : <Circle className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />}
                       </button>
                       <span className={cn("h-2 w-2 shrink-0 rounded-full", AREA_TINT[t.area] ?? "bg-muted-foreground/40")} aria-hidden />
                       <PriorityFlag task={t} className="h-3 w-3" />
-                      <Link to={`/tasks/${t.id}`} className={cn("min-w-0 flex-1 truncate hover:underline", t.done && "text-muted-foreground line-through")}>
+                      <div
+                        onClick={() => openTaskQuickEdit(t.id)}
+                        className={cn("min-w-0 flex-1 cursor-pointer truncate hover:underline", t.done && "text-muted-foreground")}
+                      >
                         {t.title}
-                      </Link>
+                      </div>
+                      {t.estMinutes && (
+                         <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground opacity-60">
+                           <Clock className="h-2.5 w-2.5" />{t.estMinutes}m
+                         </span>
+                      )}
                       <ActivityChip task={t} className="shrink-0" />
                       {taskTime(t) && <span className="shrink-0 text-[10px] text-muted-foreground">{fmt12(taskTime(t))}</span>}
                     </div>
@@ -112,27 +167,6 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
             <div className="mt-0.5"><AddLine bucket={g.bucket} /></div>
           </div>
         )
-      ))}
-
-      {plan.meals.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 px-1 text-[11.5px]">
-          <UtensilsCrossed className="h-3 w-3 shrink-0 text-yellow-600" aria-hidden />
-          {plan.meals.map(m => (
-            <button key={m.id} type="button" onClick={() => setMealEdit({ meal: m, slot: m.slot })}
-                    className="rounded-full border border-border/60 px-2 py-0.5 hover:bg-muted">
-              <span className="text-muted-foreground">{m.slot}:</span> {m.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {plan.cosmic.map(c => (
-        <CosmicPeek key={c.id} item={c}>
-          <div className="flex items-center gap-1.5 px-1 text-[11.5px] text-muted-foreground">
-            <Sparkles className="h-3 w-3 shrink-0 text-amber-500" aria-hidden />
-            <span className="truncate">{c.label}</span>
-          </div>
-        </CosmicPeek>
       ))}
 
       {!hasAnything && (
