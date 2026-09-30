@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addDays, format, isSameDay } from "date-fns";
 import { Sparkles, Rows3 } from "lucide-react";
 import { PlannerTimeline } from "./PlannerTimeline";

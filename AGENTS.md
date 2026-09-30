@@ -7,3 +7,5 @@
 - Completed-task strikethrough is a device-local planner presentation preference shared across scheduled, all-day, and list task surfaces.
 - Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
 - Today and Planner use page-scoped Soft Botanical mobile presentation tokens and Outfit/Figtree typography, preserving the app-wide theme.
+- Planner range and layout selectors reuse the shared ViewPills control so Today and Planner remain visually consistent.
+- Planner day context composes moon, solar season, cycle, and capacity inside one collapsible Day rhythm surface.

@@ -317,6 +317,12 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     return Math.round(raw / SNAP_MIN) * SNAP_MIN;
   };
 
+  const pointToGridMinute = (clientY: number): number | null => {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return yToMin(clientY - rect.top);
+  };
+
   /** Schedule a task at a time — on this day, or on `targetISO` when dragged
    *  sideways onto another day column in the week grid. */
   const scheduleTaskAt = async (taskId: string, absMin: number, targetISO?: string) => {
@@ -785,8 +791,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     if (target.closest("button") && !target.closest("[data-planner-gap]")) return;
     if (quickAdd) return; // click handler closes it
     const rect = gridRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const start = yToMin(e.clientY - rect.top);
+    const start = pointToGridMinute(e.clientY);
+    if (!rect || start === null) return;
     const touch = e.pointerType === "touch";
     const st = { start, armed: !touch, moved: false, timer: null as number | null };
     createRef.current = st;
@@ -805,7 +811,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       if (!st2) return;
       const r = gridRef.current?.getBoundingClientRect();
       if (!r) return;
-      const cur = yToMin(ev.clientY - r.top);
+      const cur = pointToGridMinute(ev.clientY);
+      if (cur === null) return;
       if (!st2.armed) {
         // Finger moved before the long-press landed → it's a scroll, bail out.
         if (Math.abs(cur - st2.start) >= SNAP_MIN) {
@@ -861,9 +868,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     // duration choice is never lost to a stray click.
     if (quickAdd) { setQuickAdd(null); return; }
     const rect = gridRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const y = e.clientY - rect.top;
-    const relMin = yToMin(y);
+    const relMin = pointToGridMinute(e.clientY);
+    if (!rect || relMin === null) return;
     const abs = relMin + START_H * 60;
     setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30, mode: "task" });
   };
