@@ -32,10 +32,7 @@ import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/Planne
 import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
-import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
-import { PlannerMoonInsight } from "@/components/planner/PlannerMoonInsight";
-import { SolarSeasonGuide } from "@/components/planner/SolarSeasonGuide";
-import { CyclePlanningGuide } from "@/components/planner/CyclePlanningGuide";
+import { PlannerDayRhythm } from "@/components/planner/PlannerDayRhythm";
 import { PlannerDayAssistant } from "@/components/planner/PlannerDayAssistant";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
@@ -630,22 +627,16 @@ export default function Planner() {
                 >
                   <div className="space-y-2 px-2 pb-2">
                      <PlannerOverdueSection date={day} />
-                     <PlannerMoonInsight date={day} onSelectDate={openDay} />
-                     <SolarSeasonGuide date={day} />
-                     <CyclePlanningGuide date={day} />
+                      <PlannerDayRhythm date={day} onSelectDate={openDay} />
                     <PlannerDayAssistant date={day} />
-                    <PlannerCapacityBar date={day} />
                      <PlannerRhythmCard date={day} />
                      <PlannerDayReferences date={day} />
                   </div>
                 </CollapsibleSection>
               ) : (
                 <>
-                   <PlannerMoonInsight date={day} onSelectDate={openDay} />
-                   <SolarSeasonGuide date={day} />
-                   <CyclePlanningGuide date={day} />
+                    <PlannerDayRhythm date={day} onSelectDate={openDay} />
                   <PlannerDayAssistant date={day} />
-                  <PlannerCapacityBar date={day} />
                   <PlannerRhythmCard date={day} />
                    <PlannerDayReferences date={day} />
                 </>

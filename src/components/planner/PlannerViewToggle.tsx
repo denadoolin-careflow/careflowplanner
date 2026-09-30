@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PlannerView } from "@/lib/planner-prefs";
+import { ViewPills } from "@/components/layout/ViewPills";
 
 const OPTIONS: { id: PlannerView; label: string }[] = [
   { id: "day", label: "Day" },
@@ -13,26 +13,5 @@ const OPTIONS: { id: PlannerView; label: string }[] = [
 export function PlannerViewToggle({ value, onChange, className }: {
   value: PlannerView; onChange: (v: PlannerView) => void; className?: string;
 }) {
-  return (
-    <div className={cn("planner-view-toggle inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-background/70 p-0.5", className)}>
-      {OPTIONS.map(o => {
-        const active = o.id === value;
-        return (
-          <Button
-            key={o.id}
-            size="sm"
-            variant="ghost"
-            aria-pressed={active}
-            className={cn(
-              "h-8 rounded-md px-3 text-xs max-sm:h-9 max-sm:px-3.5",
-              active && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
-            )}
-            onClick={() => { if (!active) onChange(o.id); }}
-          >
-            {o.label}
-          </Button>
-        );
-      })}
-    </div>
-  );
+  return <ViewPills items={OPTIONS.map(o => ({ value: o.id, label: o.label }))} value={value} onChange={onChange} ariaLabel="Planner range" className={cn("planner-view-toggle", className)} />;
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { LayoutGrid, CalendarClock, Clock4, Gauge } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { ViewPills } from "@/components/layout/ViewPills";
 
 export type PlannerPeriod = "grid" | "schedule" | "timeofday" | "capacity" | "morning" | "afternoon" | "evening";
 
@@ -40,7 +42,7 @@ export function usePlannerPeriod(): [PlannerPeriod, (p: PlannerPeriod) => void] 
   return [p, set];
 }
 
-const OPTIONS: { id: PlannerPeriod; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+const OPTIONS: { id: PlannerPeriod; label: string; Icon: LucideIcon }[] = [
   { id: "grid", label: "Grid", Icon: LayoutGrid },
   { id: "schedule", label: "Schedule", Icon: CalendarClock },
   { id: "timeofday", label: "Time of day", Icon: Clock4 },
@@ -51,22 +53,5 @@ export function PlannerPeriodTabs({ value, onChange, className, hideGrid }: {
   value: PlannerPeriod; onChange: (v: PlannerPeriod) => void; className?: string; hideGrid?: boolean;
 }) {
   const options = hideGrid ? OPTIONS.filter(o => o.id !== "grid") : OPTIONS;
-  return (
-    <div className={cn("planner-period-tabs inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-border/80 bg-background/90 p-1 shadow-sm backdrop-blur-sm", className)}>
-      {options.map(o => {
-        const active = value === o.id;
-        return (
-          <button key={o.id}
-            onClick={() => onChange(o.id)}
-            aria-pressed={active}
-            className={cn("inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
-              active ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent hover:text-foreground",
-            )}
-          >
-            <o.Icon className="h-4 w-4" />{o.label}
-          </button>
-        );
-      })}
-    </div>
-  );
+  return <ViewPills items={options.map(o => ({ value: o.id, label: o.label, icon: o.Icon }))} value={value} onChange={onChange} ariaLabel="Planner time view" className={cn("planner-period-tabs", className)} />;
 }

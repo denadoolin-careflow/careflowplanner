@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
-import { useWeatherSnapshot } from "@/lib/weather-store";
+import { cToF, useWeatherSnapshot } from "@/lib/weather-store";
 import type { HourlyForecast } from "@/lib/weather";
 import { byHour, hourTint } from "@/lib/planner/hour-weather";
 import { ConditionIcon } from "@/components/weather/ConditionIcon";
@@ -315,6 +315,12 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     const rel = Math.max(0, y);
     const raw = (rel / HOUR_PX) * 60;
     return Math.round(raw / SNAP_MIN) * SNAP_MIN;
+  };
+
+  const pointToGridMinute = (clientY: number): number | null => {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return yToMin(clientY - rect.top);
   };
 
   /** Schedule a task at a time — on this day, or on `targetISO` when dragged
@@ -785,8 +791,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     if (target.closest("button") && !target.closest("[data-planner-gap]")) return;
     if (quickAdd) return; // click handler closes it
     const rect = gridRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const start = yToMin(e.clientY - rect.top);
+    const start = pointToGridMinute(e.clientY);
+    if (!rect || start === null) return;
     const touch = e.pointerType === "touch";
     const st = { start, armed: !touch, moved: false, timer: null as number | null };
     createRef.current = st;
@@ -805,7 +811,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       if (!st2) return;
       const r = gridRef.current?.getBoundingClientRect();
       if (!r) return;
-      const cur = yToMin(ev.clientY - r.top);
+      const cur = pointToGridMinute(ev.clientY);
+      if (cur === null) return;
       if (!st2.armed) {
         // Finger moved before the long-press landed → it's a scroll, bail out.
         if (Math.abs(cur - st2.start) >= SNAP_MIN) {
@@ -860,9 +867,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     // An open composer stays open: the first tap outside just closes it, so a
     // duration choice is never lost to a stray click.
     if (quickAdd) { setQuickAdd(null); return; }
-    const rect = gridRef.current!.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const relMin = yToMin(y);
+    const rect = gridRef.current?.getBoundingClientRect();
+    const relMin = pointToGridMinute(e.clientY);
+    if (!rect || relMin === null) return;
     const abs = relMin + START_H * 60;
     setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30, mode: "task" });
   };
@@ -1189,15 +1196,16 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
               const wx = hourWeather.get(h);
               const tint = hourTint(wx);
               return <div key={h} style={{ height: HOUR_PX }} className="relative pr-1 text-right">
-                <span className="absolute -top-2 right-1">{label}</span>
+                <span className="absolute -top-2 right-1 font-medium">{label}</span>
                 {wx && tint && (
                   <span
-                    className="absolute left-1 top-1 dark:brightness-[1.9]"
+                    className="absolute left-1 top-1 flex flex-col items-center gap-0.5 font-mono text-[9px] leading-none dark:brightness-[1.9]"
                     style={{ color: tint.color }}
                     title={`${label} · ${wx.conditionLabel}${wx.precipChance >= 10 ? ` · ${wx.precipChance}% precip` : ""}`}
                     aria-hidden
                   >
                     <ConditionIcon condition={wx.condition} isNight={wx.isNight} className="h-3 w-3" />
+                    <span>{cToF(wx.tempC)}°F</span>
                   </span>
                 )}
               </div>;
@@ -1432,7 +1440,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                     else openTaskEditor(it.id);
                   }}
                   className={cn(
-                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:z-40 hover:overflow-visible hover:shadow-md focus-visible:z-40 focus-visible:overflow-visible focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11.5px] shadow-sm outline-none transition-shadow hover:z-40 hover:overflow-visible hover:shadow-md focus-visible:z-40 focus-visible:overflow-visible focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-55 saturate-50 shadow-none",
@@ -1578,8 +1586,6 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                   align="start"
                   className="w-80 p-3"
                   onOpenAutoFocus={(e) => e.preventDefault()}
-                  onInteractOutside={(e) => e.preventDefault()}
-                  onPointerDownOutside={(e) => e.preventDefault()}
                 >
                   {composerBody}
                 </PopoverContent>

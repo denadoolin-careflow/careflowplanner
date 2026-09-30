@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ViewPills } from "@/components/layout/ViewPills";
 
 /** Small pill row for the mode within a range (Grid/Board, Calendar/Overview). */
 export function PlannerRangeModeTabs<T extends string>({ value, onChange, options, className }: {
@@ -8,24 +8,5 @@ export function PlannerRangeModeTabs<T extends string>({ value, onChange, option
   options: { id: T; label: string }[];
   className?: string;
 }) {
-  return (
-    <div className={cn("planner-range-mode-tabs inline-flex items-center gap-0.5 rounded-lg border border-border/60 bg-background/70 p-0.5", className)}>
-      {options.map(o => {
-        const active = o.id === value;
-        return (
-          <Button
-            key={o.id}
-            size="sm"
-            variant="ghost"
-            aria-pressed={active}
-            className={cn("h-8 rounded-md px-3 text-xs max-sm:h-9",
-              active && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
-            onClick={() => { if (!active) onChange(o.id); }}
-          >
-            {o.label}
-          </Button>
-        );
-      })}
-    </div>
-  );
+  return <ViewPills items={options.map(o => ({ value: o.id, label: o.label }))} value={value} onChange={onChange} ariaLabel="Planner layout" className={cn("planner-range-mode-tabs", className)} />;
 }

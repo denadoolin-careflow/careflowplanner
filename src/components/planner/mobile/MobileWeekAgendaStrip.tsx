@@ -58,7 +58,7 @@ export function MobileWeekAgendaStrip({ day, onSelect }: { day: Date; onSelect: 
                   aria-label={`${format(d, "EEEE MMM d")}, ${tasks.length} tasks`}
                   aria-current={selected ? "date" : undefined}
                   onPointerDown={(e) => {
-                    press.current = { long: false, x: e.clientX, t: window.setTimeout(() => { press.current.long = true; haptics.pickup(); setPeek(iso); }, 420) };
+                    press.current = { long: false, x: e.clientX, t: window.setTimeout(() => { press.current.long = true; haptics.pickup(); setPeek(iso); }, 700) };
                   }}
                   onPointerUp={() => window.clearTimeout(press.current.t)}
                   onPointerLeave={() => window.clearTimeout(press.current.t)}
@@ -80,22 +80,25 @@ export function MobileWeekAgendaStrip({ day, onSelect }: { day: Date; onSelect: 
                   </span>
                 </button>
               </PopoverAnchor>
-              <PopoverContent className="w-64 p-2" align="center">
-                <p className="px-1 pb-1 text-xs font-semibold">{format(d, "EEE, MMM d")}</p>
+              <PopoverContent className="w-72 p-2" align="center">
+                <div className="flex items-baseline justify-between px-1 pb-1.5">
+                  <p className="text-xs font-semibold">{format(d, "EEEE, MMM d")}</p>
+                  <span className="text-[10px] text-muted-foreground">{tasks.length} scheduled</span>
+                </div>
                 {tasks.length === 0 ? (
                   <p className="px-1 py-2 text-xs text-muted-foreground">Nothing scheduled.</p>
                 ) : (
                   <ul className="max-h-60 space-y-0.5 overflow-y-auto">
                     {tasks.map((t) => (
-                      <li key={t.id} className="flex items-center gap-2 rounded-md px-1 py-1 text-xs">
+                      <li key={t.id} className="flex min-h-9 items-start gap-2 rounded-md px-1.5 py-1.5 text-xs hover:bg-muted/50">
                         <button
                           type="button"
                           aria-label={t.done ? "Mark not done" : "Mark done"}
                           onClick={() => void toggleTask(t.id)}
                           className={cn("h-4 w-4 shrink-0 rounded-full border-2", t.done ? "border-primary bg-primary" : "border-muted-foreground/40")}
                         />
-                        <span className="w-10 shrink-0 font-mono text-[10px] text-muted-foreground">{t.startTime?.slice(0, 5) ?? "—"}</span>
-                        <span className={cn("min-w-0 flex-1 truncate", t.done && "line-through opacity-60")}>{t.title}</span>
+                        <span className="w-10 shrink-0 pt-0.5 font-mono text-[10px] text-muted-foreground">{t.startTime?.slice(0, 5) ?? "—"}</span>
+                        <span className={cn("min-w-0 flex-1 whitespace-normal break-words leading-snug", t.done && "line-through opacity-60")}>{t.title}</span>
                       </li>
                     ))}
                   </ul>

@@ -19,3 +19,4 @@
 - [x] Full meal names and hover-expanded planner task titles
 - [x] Checkable, draggable all-day task cards matching scheduled tasks
 - [x] Focused botanical mobile feed for Today and compact two-level Planner controls
+- [x] Refine Planner gestures, controls, rhythm density, day context, references, and hourly weather
