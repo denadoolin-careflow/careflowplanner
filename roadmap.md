@@ -20,3 +20,4 @@
 - [x] Checkable, draggable all-day task cards matching scheduled tasks
 - [x] Focused botanical mobile feed for Today and compact two-level Planner controls
 - [x] Refine Planner gestures, controls, rhythm density, day context, references, and hourly weather
+- [x] Align and space the mobile Planner range and view controls
