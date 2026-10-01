@@ -27,14 +27,19 @@ export function PeriodNotePreviewTrigger({
     void getNote(noteId).then(setPreview).catch(() => setPreview(null));
   };
 
-  const trigger = isValidElement(children) ? cloneElement(children as ReactElement<any>, {
+  const triggerElement = children as ReactElement<{
+    onMouseEnter?: (event: React.MouseEvent) => void;
+    onMouseLeave?: (event: React.MouseEvent) => void;
+    onFocus?: (event: React.FocusEvent) => void;
+  }>;
+  const trigger = isValidElement(triggerElement) ? cloneElement(triggerElement, {
     onMouseEnter: (event: React.MouseEvent) => {
-      children.props.onMouseEnter?.(event);
+      triggerElement.props.onMouseEnter?.(event);
       if (noteId) { load(); setOpen(true); }
     },
-    onMouseLeave: (event: React.MouseEvent) => children.props.onMouseLeave?.(event),
+    onMouseLeave: (event: React.MouseEvent) => triggerElement.props.onMouseLeave?.(event),
     onFocus: (event: React.FocusEvent) => {
-      children.props.onFocus?.(event);
+      triggerElement.props.onFocus?.(event);
       if (noteId) { load(); setOpen(true); }
     },
     onClick: (event: React.MouseEvent) => {
