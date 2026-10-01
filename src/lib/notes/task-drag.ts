@@ -15,3 +15,19 @@ export function taskDragProps(taskId: string) {
 export function readDraggedTaskId(e: React.DragEvent): string | null {
   return e.dataTransfer.getData(TASK_DRAG_TYPE) || e.dataTransfer.getData("text/plain") || null;
 }
+
+/** Drop-target props that accept a dragged planner task. */
+export function taskDropProps(onDropTask: (taskId: string) => void) {
+  return {
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = readDraggedTaskId(e);
+      if (id) onDropTask(id);
+    },
+  };
+}
