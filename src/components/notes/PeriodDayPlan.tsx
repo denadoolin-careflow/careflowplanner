@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { CalendarClock, CheckCircle2, Circle, Plus, Sparkles, UtensilsCrossed, Clock } from "lucide-react";
@@ -14,6 +14,9 @@ import { PriorityFlag } from "@/components/cards/PriorityFlag";
 import { ActivityChip } from "@/components/planner/ActivityChip";
 import { taskDragProps, taskDropProps } from "@/lib/notes/task-drag";
 import type { Meal, Task } from "@/lib/types";
+import { usePlannerDropListener, usePlannerPointerDrag } from "@/lib/planner-touch-drag";
+import { CosmicEventPopover } from "@/components/planner/CosmicEventPopover";
+import { copyForEvent, guidanceForEvent } from "@/lib/cosmic/transit-copy";
 
 const AREA_TINT: Record<string, string> = {
   Family: "bg-amber-400", Kids: "bg-amber-500", Caregiving: "bg-violet-400",
@@ -24,12 +27,57 @@ const AREA_TINT: Record<string, string> = {
 
 const MEAL_FOR: Partial<Record<TimeBucket, Meal["slot"]>> = { morning: "Breakfast", afternoon: "Lunch", evening: "Dinner" };
 
+const BUCKET_STYLE: Record<TimeBucket, string> = {
+  allDay: "border-border/60 bg-muted/20",
+  morning: "border-amber-300/60 bg-amber-50/45 dark:border-amber-700/50 dark:bg-amber-950/15",
+  afternoon: "border-sky-300/60 bg-sky-50/45 dark:border-sky-700/50 dark:bg-sky-950/15",
+  evening: "border-violet-300/60 bg-violet-50/45 dark:border-violet-700/50 dark:bg-violet-950/15",
+};
+
+function NotebookTaskRow({ task, onToggle }: { task: Task; onToggle: () => void }) {
+  const pointer = usePlannerPointerDrag(() => ({ taskId: task.id, label: task.title }), {
+    onClick: () => openTaskQuickEdit(task.id),
+  });
+  const time = taskTime(task);
+  return (
+    <TaskPeek task={task}>
+      <div
+        {...taskDragProps(task.id)}
+        onPointerDown={pointer.onPointerDown}
+        title="Drag or long-press to change time of day"
+        className={cn("group flex min-h-9 cursor-grab touch-none select-none items-center gap-2 rounded-md px-1.5 py-1 text-[11.5px] hover:bg-background/75 active:cursor-grabbing", task.done && "opacity-65")}
+      >
+        <span className="flex w-[4.75rem] shrink-0 items-center gap-1 font-mono text-[10px] tabular-nums text-muted-foreground">
+          <span>{time ? fmt12(time) : "Anytime"}</span>
+          {task.estMinutes ? <span className="opacity-70">· {task.estMinutes}m</span> : null}
+        </span>
+        <span className="flex shrink-0 items-center gap-1">
+          <button type="button" aria-label={task.done ? "Mark not done" : "Mark done"}
+                  onPointerDown={e => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onToggle(); }} className="shrink-0">
+            {task.done
+              ? <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              : <Circle className="h-4 w-4 text-muted-foreground hover:text-primary" />}
+          </button>
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", AREA_TINT[task.area] ?? "bg-muted-foreground/40")} aria-hidden />
+          <PriorityFlag task={task} className="h-3 w-3" />
+          <ActivityChip task={task} className="shrink-0" />
+        </span>
+        <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => openTaskQuickEdit(task.id)}
+                className={cn("min-w-0 flex-1 truncate text-left hover:underline", task.done && "text-muted-foreground")}>
+          {task.title}
+        </button>
+      </div>
+    </TaskPeek>
+  );
+}
+
 /** One day of the planner, rendered inside a note. Tasks can be added and ticked here. */
 export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string }) {
   const { addTask, toggleTask, updateTask } = useStore();
   const [adding, setAdding] = useState<TimeBucket | null>(null);
   const [draft, setDraft] = useState("");
   const [mealEdit, setMealEdit] = useState<{ meal: Meal | null; slot: Meal["slot"] } | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const submit = async (bucket: TimeBucket) => {
     const title = draft.trim();
@@ -56,6 +104,16 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
     toast.success(`Moved to ${BUCKET_LABEL[bucket].toLowerCase()}`);
   };
 
+  usePlannerDropListener(d => {
+    const element = document.elementFromPoint(d.clientX, d.clientY) as HTMLElement | null;
+    const target = element?.closest<HTMLElement>("[data-notebook-bucket]");
+    if (!target || !rootRef.current?.contains(target)) return;
+    const bucket = target.dataset.notebookBucket as TimeBucket | undefined;
+    const iso = target.dataset.dropdate;
+    if (!bucket || iso !== plan.iso) return;
+    void handleDrop(d.taskId, bucket);
+  });
+
   const AddLine = ({ bucket }: { bucket: TimeBucket }) =>
     adding === bucket ? (
       <input
@@ -80,15 +138,28 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
   const hasAnything = plan.tasks.length || plan.events.length || plan.meals.length || plan.cosmic.length;
 
   return (
-    <div className="space-y-1.5">
+    <div ref={rootRef} className="space-y-2">
       {/* Cosmic Events First */}
       {plan.cosmic.map(c => (
-        <CosmicPeek key={c.id} item={c}>
-          <div className="flex items-center gap-1.5 px-1 text-[11.5px] text-muted-foreground">
-            <Sparkles className="h-3 w-3 shrink-0 text-amber-500" aria-hidden />
-            <span className="truncate">{c.label}</span>
-          </div>
-        </CosmicPeek>
+        <CosmicEventPopover key={c.id} event={{
+          id: c.id,
+          glyph: c.event.glyph,
+          title: c.event.title,
+          when: c.event.subtitle,
+          detail: copyForEvent(c.event).insight,
+          landing: guidanceForEvent(c.event).whatToExpect,
+          actions: [guidanceForEvent(c.event).doMore, `Go gently with: ${guidanceForEvent(c.event).doLess}`],
+        }}>
+          <span className="block">
+            <CosmicPeek item={c}>
+              <button type="button" className="flex w-full items-center gap-1.5 rounded-md border border-amber-300/45 bg-amber-50/40 px-2 py-1 text-left text-[11.5px] text-foreground hover:bg-amber-50/80 dark:border-amber-700/40 dark:bg-amber-950/15">
+                <Sparkles className="h-3 w-3 shrink-0 text-amber-500" aria-hidden />
+                <span className="truncate">{c.label}</span>
+                <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">Details</span>
+              </button>
+            </CosmicPeek>
+          </span>
+        </CosmicEventPopover>
       ))}
 
       {plan.events.map((a: any) => (
@@ -106,7 +177,9 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
           <div
             key={g.bucket}
             {...taskDropProps(taskId => handleDrop(taskId, g.bucket))}
-            className="rounded-lg px-1 py-0.5 transition-colors hover:bg-muted/30"
+            data-notebook-bucket={g.bucket}
+            data-dropdate={plan.iso}
+            className={cn("rounded-lg border px-2 py-1.5 transition-colors data-[planner-drop-active]:border-primary data-[planner-drop-active]:ring-2 data-[planner-drop-active]:ring-primary/20", BUCKET_STYLE[g.bucket])}
           >
             <div className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
               <span>{BUCKET_LABEL[g.bucket]}</span>
@@ -133,7 +206,7 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
 
               {MEAL_FOR[g.bucket] && !g.meals.some(m => m.slot === MEAL_FOR[g.bucket]) && (
                 <li>
-                  <button type="button" onClick={() => setMealEdit({ meal: null, slot: MEAL_FOR[g.bucket]! })}
+                  <button type="button" onClick={() => { const slot = MEAL_FOR[g.bucket]; if (slot) setMealEdit({ meal: null, slot }); }}
                           className="flex w-full items-center gap-1.5 rounded-md border border-dashed border-border/60 px-1 py-0.5 text-[11px] text-muted-foreground hover:bg-muted/60">
                     <UtensilsCrossed className="h-3 w-3 shrink-0" aria-hidden /> Plan {MEAL_FOR[g.bucket]!.toLowerCase()}
                   </button>
@@ -142,35 +215,7 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
               {/* Tasks */}
               {g.tasks.map(t => (
                 <li key={t.id}>
-                  <TaskPeek task={t}>
-                    <div
-                      {...taskDragProps(t.id)}
-                      title="Drag to change bucket or day"
-                      className="group flex cursor-grab items-center gap-1.5 rounded-md px-1 py-0.5 text-[11.5px] hover:bg-muted/60 active:cursor-grabbing"
-                    >
-                      <button type="button" aria-label={t.done ? "Mark not done" : "Mark done"}
-                              onClick={(e) => { e.stopPropagation(); void toggleTask(t.id); }} className="shrink-0">
-                        {t.done
-                          ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                          : <Circle className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />}
-                      </button>
-                      <span className="w-11 shrink-0 text-[10px] tabular-nums text-muted-foreground">{taskTime(t) ? fmt12(taskTime(t)) : ""}</span>
-                      <span className={cn("h-2 w-2 shrink-0 rounded-full", AREA_TINT[t.area] ?? "bg-muted-foreground/40")} aria-hidden />
-                      <PriorityFlag task={t} className="h-3 w-3" />
-                      <div
-                        onClick={() => openTaskQuickEdit(t.id)}
-                        className={cn("min-w-0 flex-1 cursor-pointer truncate hover:underline", t.done && "text-muted-foreground")}
-                      >
-                        {t.title}
-                      </div>
-                      {t.estMinutes && (
-                         <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground opacity-60">
-                           <Clock className="h-2.5 w-2.5" />{t.estMinutes}m
-                         </span>
-                      )}
-                      <ActivityChip task={t} className="shrink-0" />
-                    </div>
-                  </TaskPeek>
+                  <NotebookTaskRow task={t} onToggle={() => void toggleTask(t.id)} />
                 </li>
               ))}
             </ul>
