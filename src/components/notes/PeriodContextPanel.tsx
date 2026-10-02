@@ -12,6 +12,7 @@ import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate, usePeriodNoteMar
 import { plannerHref } from "@/lib/notes/date-refs";
 import { useDayPlans } from "@/lib/planner/day-plan";
 import { PeriodDayPlan } from "./PeriodDayPlan";
+import { PeriodNoteGlimpse } from "./PeriodNoteGlimpse";
 import { useStore } from "@/lib/store";
 import { readDraggedTaskId } from "@/lib/notes/task-drag";
 
@@ -112,11 +113,13 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
           const mk = markFor(p.kind, p.key);
           return (
             <span key={p.key} className="flex items-center gap-1">
+              <PeriodNoteGlimpse noteId={mk?.id} written={mk?.written} label={periodTitle(p.kind, p.key)}>
               <button type="button" onClick={() => void openPeriod(p.kind, p.key)}
                       className={cn("rounded-full px-2 py-0.5 hover:bg-muted", mk?.written ? "text-foreground" : "text-muted-foreground")}
                       title={mk?.written ? `Open ${PERIOD_LABEL[p.kind].toLowerCase()} note` : `Start ${PERIOD_LABEL[p.kind].toLowerCase()} note`}>
                 {periodTitle(p.kind, p.key, { short: true })}{!mk?.written && <span className="ml-1 opacity-60">+</span>}
               </button>
+              </PeriodNoteGlimpse>
               <ChevronRight className="h-3 w-3 text-muted-foreground/60" aria-hidden />
             </span>
           );
@@ -139,7 +142,8 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
             const isSelf = ck === kind && k === key;
             const label = ck === "daily" ? format(d, "EEE, MMM d") : `week of ${format(d, "MMM d")}`;
             return (
-              <button key={k} type="button" onClick={() => void openPeriod(ck, k)}
+              <PeriodNoteGlimpse key={k} noteId={mk?.id} written={mk?.written} label={label}>
+              <button type="button" onClick={() => void openPeriod(ck, k)}
                       {...dropProps(k, label)}
                       className={cn(
                         "rounded-full border px-2 py-1 text-[11px] transition",
@@ -151,6 +155,7 @@ export function PeriodContextPanel({ note, className, onSendUnchecked, dueDate, 
                       title={`${mk?.written ? "Open note" : "Start a note"} · drop a task to move it here`}>
                 {ck === "daily" ? format(d, "EEE d") : `Wk of ${format(d, "MMM d")}`}
               </button>
+              </PeriodNoteGlimpse>
             );
           })}
         </div>

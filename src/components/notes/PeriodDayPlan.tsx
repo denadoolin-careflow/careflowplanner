@@ -22,6 +22,8 @@ const AREA_TINT: Record<string, string> = {
   "Holidays & Birthdays": "bg-rose-400",
 };
 
+const MEAL_FOR: Partial<Record<TimeBucket, Meal["slot"]>> = { morning: "Breakfast", afternoon: "Lunch", evening: "Dinner" };
+
 /** One day of the planner, rendered inside a note. Tasks can be added and ticked here. */
 export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string }) {
   const { addTask, toggleTask, updateTask } = useStore();
@@ -129,6 +131,14 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
                 </li>
               ))}
 
+              {MEAL_FOR[g.bucket] && !g.meals.some(m => m.slot === MEAL_FOR[g.bucket]) && (
+                <li>
+                  <button type="button" onClick={() => setMealEdit({ meal: null, slot: MEAL_FOR[g.bucket]! })}
+                          className="flex w-full items-center gap-1.5 rounded-md border border-dashed border-border/60 px-1 py-0.5 text-[11px] text-muted-foreground hover:bg-muted/60">
+                    <UtensilsCrossed className="h-3 w-3 shrink-0" aria-hidden /> Plan {MEAL_FOR[g.bucket]!.toLowerCase()}
+                  </button>
+                </li>
+              )}
               {/* Tasks */}
               {g.tasks.map(t => (
                 <li key={t.id}>
@@ -144,6 +154,7 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
                           ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                           : <Circle className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />}
                       </button>
+                      <span className="w-11 shrink-0 text-[10px] tabular-nums text-muted-foreground">{taskTime(t) ? fmt12(taskTime(t)) : ""}</span>
                       <span className={cn("h-2 w-2 shrink-0 rounded-full", AREA_TINT[t.area] ?? "bg-muted-foreground/40")} aria-hidden />
                       <PriorityFlag task={t} className="h-3 w-3" />
                       <div
@@ -158,7 +169,6 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
                          </span>
                       )}
                       <ActivityChip task={t} className="shrink-0" />
-                      {taskTime(t) && <span className="shrink-0 text-[10px] text-muted-foreground">{fmt12(taskTime(t))}</span>}
                     </div>
                   </TaskPeek>
                 </li>
