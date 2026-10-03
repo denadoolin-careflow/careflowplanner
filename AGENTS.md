@@ -9,3 +9,4 @@
 - Today and Planner use page-scoped Soft Botanical mobile presentation tokens and Outfit/Figtree typography, preserving the app-wide theme.
 - Planner range and layout selectors reuse the shared ViewPills control so Today and Planner remain visually consistent.
 - Planner day context composes moon, solar season, cycle, and capacity inside one collapsible Day rhythm surface.
+- Note page properties are stored per note in notes.properties (jsonb); shared supertag fields reuse item_field_values with entity_type 'note'.

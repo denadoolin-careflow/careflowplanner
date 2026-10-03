@@ -6,6 +6,7 @@ import { clearDraft, draftDiffers, loadDraft, saveDraft } from "@/lib/notes/draf
 import { notifyDailyNotesChanged } from "@/lib/notes/daily";
 import { BlockEditor } from "./BlockEditor";
 import { SaveStatus, type SaveState } from "./SaveStatus";
+import { NotePropertiesSection } from "./NotePropertiesSection";
 
 /**
  * A note's editor embedded in place (Notebook rows). Same autosave safety net
@@ -108,6 +109,13 @@ export function InlineNoteEditor({ noteId, initial, onBodyChange }: {
           Open full note <ExternalLink className="h-3 w-3" />
         </Link>
       </div>
+      <NotePropertiesSection
+        className="mb-2"
+        noteId={note.id}
+        tags={note.tags}
+        value={note.properties ?? []}
+        onChange={(next) => { setNote({ ...note, properties: next }); void updateNote(note.id, { properties: next }); }}
+      />
       <div className="overflow-auto" style={{ height }}>
         <BlockEditor
           body={body}
