@@ -474,7 +474,18 @@ export default function Notes() {
             ) : view === "outline" ? (
               <NotesOutlineView notes={filtered} selectedId={noteParam} onSelect={selectNote} term={q} />
             ) : view === "table" ? (
-              <NotesTableView notes={filtered} selectedId={noteParam} onSelect={selectNote} sort={sort} onSortChange={setSort} />
+              <NotesTableView
+                notes={filtered} allNotes={notes} selectedId={noteParam} onSelect={selectNote} sort={sort} onSortChange={setSort}
+                onPropertiesChange={(id, properties) => {
+                  setNotes(prev => prev.map(x => x.id === id ? { ...x, properties } : x));
+                  void updateNote(id, { properties }).catch(() => toast.error("Save failed"));
+                }}
+                onCreate={async (title, properties) => {
+                  const n = await createNote({ title });
+                  if (properties.length) await updateNote(n.id, { properties });
+                  setNotes(prev => [{ ...n, properties }, ...prev]);
+                }}
+              />
             ) : view === "list" ? (
               <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} onDelete={handleDeleteNote} onPin={handlePinNote} onArchive={handleArchiveNote} />
             ) : view === "board" ? (

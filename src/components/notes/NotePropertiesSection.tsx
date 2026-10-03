@@ -24,8 +24,22 @@ const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
 ];
 const iconFor = (t: NotePropertyType) => TYPES.find(x => x.type === t)?.icon ?? Type;
 
-export function NotePropertiesSection({ noteId, tags, value, onChange, className }: {
+export const OPTION_COLORS = ["#e6d3b3", "#f4c7c3", "#f7d9a8", "#fbeaa0", "#c8e6c9", "#b3dfe0", "#bcd4f6", "#d9c8f2", "#f2c6de", "#d6d3d1"];
+export function optionColor(prop: Pick<NoteProperty, "colors">, option: string): string {
+  if (prop.colors?.[option]) return prop.colors[option];
+  let h = 0; for (const c of option) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return OPTION_COLORS[h % OPTION_COLORS.length];
+}
+export function OptionChip({ prop, option }: { prop: Pick<NoteProperty, "colors">; option: string }) {
+  return <span className="rounded-full px-2 py-0.5 text-[11px] text-foreground" style={{ backgroundColor: optionColor(prop, option) }}>{option}</span>;
+}
+/** Today-or-created date (yyyy-mm-dd) used as the default for new date properties. */
+export const createdDay = (createdAt?: string) => (createdAt ?? new Date().toISOString()).slice(0, 10);
+export const PROPERTY_TYPES = TYPES;
+
+export function NotePropertiesSection({ noteId, tags, value, onChange, className, createdAt }: {
   noteId: string;
+  createdAt?: string;
   tags?: string[];
   value: NoteProperty[];
   onChange: (next: NoteProperty[]) => void;
@@ -40,7 +54,7 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
   const patch = (id: string, p: Partial<NoteProperty>) => onChange(value.map(v => v.id === id ? { ...v, ...p } : v));
   const add = (type: NotePropertyType) => {
     const label = name.trim() || TYPES.find(t => t.type === type)!.label;
-    onChange([...value, { id: crypto.randomUUID(), name: label, type, value: type === "checkbox" ? false : type === "multi" ? [] : null, options: [] }]);
+    onChange([...value, { id: crypto.randomUUID(), name: label, type, value: type === "checkbox" ? false : type === "multi" ? [] : type === "date" ? createdDay(createdAt) : null, options: [] }]);
     setName(""); setAdding(false);
   };
 
@@ -94,7 +108,7 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
   );
 }
 
-function PropValue({ prop, onChange }: { prop: NoteProperty; onChange: (p: Partial<NoteProperty>) => void }) {
+export function PropValue({ prop, onChange }: { prop: NoteProperty; onChange: (p: Partial<NoteProperty>) => void }) {
   const base = "h-7 w-full rounded bg-transparent px-1 text-xs outline-none hover:bg-muted/50 focus:bg-muted/60";
   switch (prop.type) {
     case "checkbox":
@@ -134,7 +148,7 @@ function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Pa
     <Popover>
       <PopoverTrigger asChild>
         <button type="button" className="flex min-h-7 w-full flex-wrap items-center gap-1 rounded px-1 text-left text-xs hover:bg-muted/50">
-          {selected.length ? selected.map(s => <span key={s} className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">{s}</span>)
+          {selected.length ? selected.map(s => <OptionChip key={s} prop={prop} option={s} />)
             : <span className="text-muted-foreground">Empty</span>}
         </button>
       </PopoverTrigger>
@@ -142,9 +156,22 @@ function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Pa
         <Input autoFocus placeholder="Find or create…" value={q} onChange={e => setQ(e.target.value)} className="h-8 text-xs"
           onKeyDown={e => { if (e.key === "Enter" && q.trim()) { e.preventDefault(); pick(q.trim()); } }} />
         {options.filter(o => o.toLowerCase().includes(q.toLowerCase())).map(o => (
-          <button key={o} type="button" onClick={() => pick(o)} className={cn("flex w-full items-center justify-between rounded px-2 py-1.5 text-xs hover:bg-muted", selected.includes(o) && "font-medium")}>
-            {o}{selected.includes(o) && <CheckSquare className="h-3 w-3" />}
-          </button>
+          <div key={o} className="flex items-center gap-1">
+            <button type="button" onClick={() => pick(o)} className={cn("flex flex-1 items-center justify-between rounded px-2 py-1 text-xs hover:bg-muted", selected.includes(o) && "font-medium")}>
+              <OptionChip prop={prop} option={o} />{selected.includes(o) && <CheckSquare className="h-3 w-3" />}
+            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" aria-label={`Color for ${o}`} className="h-4 w-4 rounded-full border border-border" style={{ backgroundColor: optionColor(prop, o) }} />
+              </PopoverTrigger>
+              <PopoverContent align="end" className="grid w-auto grid-cols-5 gap-1 p-2">
+                {OPTION_COLORS.map(c => (
+                  <button key={c} type="button" aria-label={`Use color ${c}`} onClick={() => onChange({ colors: { ...(prop.colors ?? {}), [o]: c } })}
+                    className={cn("h-5 w-5 rounded-full border border-border", optionColor(prop, o) === c && "ring-2 ring-primary")} style={{ backgroundColor: c }} />
+                ))}
+              </PopoverContent>
+            </Popover>
+          </div>
         ))}
         {q.trim() && !options.includes(q.trim()) && (
           <Button size="sm" variant="ghost" className="h-7 w-full justify-start text-xs" onClick={() => pick(q.trim())}>Create "{q.trim()}"</Button>
