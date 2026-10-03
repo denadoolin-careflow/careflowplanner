@@ -19,6 +19,7 @@ import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { CareyButton } from "@/components/carey/CareyButton";
 import { BlockEditor, type BlockEditorPlannerApi } from "@/components/notes/BlockEditor";
+import { NotePropertiesSection } from "@/components/notes/NotePropertiesSection";
 import { spanFor } from "@/lib/notes/periods";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
@@ -679,6 +680,19 @@ export default function NoteDetail() {
             }}
           />
         </div>
+
+        {id && (
+          <NotePropertiesSection
+            className="mt-4"
+            noteId={id}
+            tags={note.tags}
+            value={note.properties ?? []}
+            onChange={(next) => {
+              setNote({ ...note, properties: next });
+              void updateNote(id, { properties: next }).catch(() => toast.error("Save failed"));
+            }}
+          />
+        )}
 
         {id && (
           <div className="mt-4">
