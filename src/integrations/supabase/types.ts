@@ -5160,6 +5160,7 @@ export type Database = {
           kind: string
           pinned: boolean
           project_id: string | null
+          properties: Json
           tags: string[]
           title: string
           updated_at: string
@@ -5181,6 +5182,7 @@ export type Database = {
           kind?: string
           pinned?: boolean
           project_id?: string | null
+          properties?: Json
           tags?: string[]
           title?: string
           updated_at?: string
@@ -5202,6 +5204,7 @@ export type Database = {
           kind?: string
           pinned?: boolean
           project_id?: string | null
+          properties?: Json
           tags?: string[]
           title?: string
           updated_at?: string

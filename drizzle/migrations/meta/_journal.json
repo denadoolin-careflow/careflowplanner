@@ -36,6 +36,13 @@
       "when": 1790043650672,
       "tag": "0004_gmail_app_user_connection",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791032168251,
+      "tag": "0005_note_properties",
+      "breakpoints": true
     }
   ]
 }
