@@ -23,8 +23,18 @@ export interface Note {
   icon?: string | null;
   coverGradient?: string | null;
   attachments?: Attachment[];
+  properties?: NoteProperty[];
   createdAt: string;
   updatedAt: string;
+}
+
+export type NotePropertyType = "text" | "number" | "date" | "select" | "multi" | "checkbox" | "url" | "person";
+export interface NoteProperty {
+  id: string;
+  name: string;
+  type: NotePropertyType;
+  value: string | number | boolean | string[] | null;
+  options?: string[];
 }
 
 const fromRow = (r: any): Note => ({
@@ -38,6 +48,7 @@ const fromRow = (r: any): Note => ({
   icon: r.icon ?? null,
   coverGradient: r.cover_gradient ?? null,
   attachments: Array.isArray(r.attachments) ? (r.attachments as Attachment[]) : [],
+  properties: Array.isArray(r.properties) ? (r.properties as NoteProperty[]) : [],
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -112,6 +123,7 @@ export async function updateNote(id: string, patch: Partial<Note>): Promise<void
   if (patch.icon !== undefined) row.icon = patch.icon;
   if (patch.coverGradient !== undefined) row.cover_gradient = patch.coverGradient;
   if (patch.attachments !== undefined) row.attachments = patch.attachments as any;
+  if (patch.properties !== undefined) (row as any).properties = patch.properties as any;
   const { error } = await supabase.from("notes").update(row).eq("id", id);
   if (error) throw error;
   if (patch.pinned !== undefined || patch.title !== undefined || patch.archived !== undefined) {
