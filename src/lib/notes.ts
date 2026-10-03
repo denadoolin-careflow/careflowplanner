@@ -35,6 +35,8 @@ export interface NoteProperty {
   type: NotePropertyType;
   value: string | number | boolean | string[] | null;
   options?: string[];
+  /** Option name → background color. */
+  colors?: Record<string, string>;
 }
 
 const fromRow = (r: any): Note => ({
