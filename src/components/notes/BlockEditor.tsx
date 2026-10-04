@@ -1521,6 +1521,28 @@ export function BlockEditor({
                 }).run(),
             },
             {
+              title: "Notes query",
+              description: "Live list of notes with filters and pages",
+              icon: ListFilter,
+              keywords: ["notes", "journal", "daily", "weekly", "query", "database"],
+              command: (e: Editor) =>
+                e.chain().focus().insertContent({
+                  type: "queryBlock",
+                  attrs: { viewId: null, layout: "list", source: "notes", label: "Notes", limit: 10, filters: JSON.stringify({ kind: "any" }) },
+                }).run(),
+            },
+            {
+              title: "Person query",
+              description: "Tasks and notes for one person (care, visits)",
+              icon: ListFilter,
+              keywords: ["person", "people", "care", "caregiving", "doctor", "family", "query"],
+              command: (e: Editor) =>
+                e.chain().focus().insertContent({
+                  type: "queryBlock",
+                  attrs: { viewId: null, layout: "list", source: "person", label: "Person", limit: 10, filters: JSON.stringify({ hideDone: true, dueRange: "any" }) },
+                }).run(),
+            },
+            {
               title: "Cleaning tasks query",
               description: "Live cleaning list grouped by zone",
               icon: ListFilter,

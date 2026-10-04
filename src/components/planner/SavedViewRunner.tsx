@@ -104,7 +104,10 @@ export function SavedViewRunner({
   group = "none",
   emptyLabel = "Nothing matches this view.",
   onCount,
+  personId,
 }: {
+  /** Only tasks connected to this person (connection or care recipient). */
+  personId?: string | null;
   filters: Partial<WeekFilterState>;
   layout?: RunnerLayout;
   limit?: number;
@@ -127,7 +130,8 @@ export function SavedViewRunner({
 
     if (source === "tasks") {
       list = (state.tasks ?? [])
-        .filter((t: any) => !t.deletedAt && matchesTaskFilter(t, f))
+        .filter((t: any) => !t.deletedAt && matchesTaskFilter(t, f)
+          && (!personId || t.connectionId === personId || t.recipientId === personId))
         .map((t: any): RunnerRow => ({
           id: t.id,
           kind: "tasks",
