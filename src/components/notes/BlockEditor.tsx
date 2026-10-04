@@ -57,7 +57,11 @@ import {
   Table as TableIcon, Rows3, Columns3, Trash2,
   FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
-import { ChevronsDownUp, ChevronsUpDown, ListFilter, ShoppingCart } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, ListFilter, ShoppingCart, Link2 } from "lucide-react";
+import { BlockEmbed, BlockRef, BlockPickerDialog, EmbedContext } from "@/components/notes/BlockEmbedNode";
+import { newBlockId, blockUrl, BLOCK_MARKER_RE } from "@/lib/notes/blocks";
+import { copyToClipboard } from "@/lib/clipboard";
+import { useContext } from "react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -356,6 +360,20 @@ turndown.addRule("collapsedListItem", {
   filter: (node) => node.nodeName === "LI" && (node as HTMLElement).getAttribute("data-collapsed") === "true",
   replacement: (_content, node) => `\n${(node as HTMLElement).outerHTML}\n`,
 });
+// Block IDs ride along as a trailing ` ^b-xxxxxx` marker.
+turndown.addRule("blockIdParagraph", {
+  filter: (node) => node.nodeName === "P" && (node as HTMLElement).hasAttribute("data-block-id"),
+  replacement: (content, node) => `\n\n${content.trim()} ^${(node as HTMLElement).getAttribute("data-block-id")}\n\n`,
+});
+turndown.addRule("blockIdHeading", {
+  filter: (node) => /^H[1-6]$/.test(node.nodeName) && (node as HTMLElement).hasAttribute("data-block-id")
+    && (node as HTMLElement).getAttribute("data-collapsed") !== "true",
+  replacement: (content, node) => `\n\n${"#".repeat(Number(node.nodeName[1]))} ${content.trim()} ^${(node as HTMLElement).getAttribute("data-block-id")}\n\n`,
+});
+turndown.addRule("blockRefChip", {
+  filter: (node) => node.nodeName === "SPAN" && (node as HTMLElement).hasAttribute("data-block-ref"),
+  replacement: (_content, node) => (node as HTMLElement).outerHTML,
+});
 
 /**
  * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
@@ -391,9 +409,40 @@ export function bodyToHtml(body: string): string {
   if (!body) return "";
   const trimmed = body.trim();
   // Heuristic: if it starts with an HTML tag, treat as HTML already.
-  if (/^<[a-zA-Z!]/.test(trimmed)) return hydrateInlineEntities(normalizeTaskListsForTipTap(trimmed));
+  if (/^<[a-zA-Z!]/.test(trimmed)) return hydrateBlockIds(hydrateInlineEntities(normalizeTaskListsForTipTap(trimmed)));
   const html = marked.parse(body, { async: false, gfm: true, breaks: false }) as string;
-  return hydrateInlineEntities(normalizeTaskListsForTipTap(html));
+  return hydrateBlockIds(hydrateInlineEntities(normalizeTaskListsForTipTap(html)));
+}
+
+/** Move trailing ` ^b-xxxxxx` markers into data-block-id attributes. */
+function hydrateBlockIds(html: string): string {
+  if (!html || typeof document === "undefined" || !html.includes("^b-")) return html;
+  const wrap = document.createElement("div");
+  wrap.innerHTML = html;
+  const stripTail = (el: Element): string | null => {
+    let last: ChildNode | null = el.lastChild;
+    while (last && last.nodeType === 3 && !last.textContent?.trim()) last = last.previousSibling;
+    if (!last || last.nodeType !== 3) return null;
+    const m = BLOCK_MARKER_RE.exec(last.textContent ?? "");
+    if (!m) return null;
+    last.textContent = (last.textContent ?? "").replace(BLOCK_MARKER_RE, "");
+    return m[1];
+  };
+  wrap.querySelectorAll("p, h1, h2, h3, h4, h5, h6").forEach(el => {
+    const id = stripTail(el);
+    if (id) el.setAttribute("data-block-id", id);
+  });
+  // Tight list items have no <p>; wrap their leading inline content.
+  wrap.querySelectorAll("li").forEach(li => {
+    if (li.querySelector(":scope > p")) return;
+    const id = stripTail(li);
+    if (!id) return;
+    const p = document.createElement("p");
+    p.setAttribute("data-block-id", id);
+    while (li.firstChild && !(li.firstChild.nodeType === 1 && /^(UL|OL)$/.test((li.firstChild as Element).tagName))) p.appendChild(li.firstChild);
+    li.insertBefore(p, li.firstChild);
+  });
+  return wrap.innerHTML;
 }
 
 /** Rewrite `[[Title]]` tokens (outside of code blocks) into inline-entity spans
@@ -1371,6 +1420,30 @@ export function BlockEditor({
   const [toolbarHidden, setToolbarHidden] = useState(false);
   const [editorFocused, setEditorFocused] = useState(false);
   const [hasSelection, setHasSelection] = useState(false);
+  const [blockPicker, setBlockPicker] = useState<"embed" | "link" | null>(null);
+  const embedCtx = useContext(EmbedContext);
+  const editorRef = useRef<Editor | null>(null);
+
+  /** Give the paragraph/heading at `pos` an ID (if needed) and copy its link. */
+  const copyBlockLinkAt = async (pos: number) => {
+    const ed = editorRef.current;
+    const nid = noteIdRef.current;
+    if (!ed || !nid) { toast.error("Save the note first to link blocks"); return; }
+    const $pos = ed.state.doc.resolve(Math.min(pos, ed.state.doc.content.size));
+    for (let d = $pos.depth; d > 0; d--) {
+      const n = $pos.node(d);
+      if (n.type.name !== "paragraph" && n.type.name !== "heading") continue;
+      let id = n.attrs.blockId as string | null;
+      if (!id) {
+        id = newBlockId();
+        ed.view.dispatch(ed.state.tr.setNodeMarkup($pos.before(d), undefined, { ...n.attrs, blockId: id }));
+      }
+      const ok = await copyToClipboard(blockUrl(nid, id));
+      toast.success(ok ? "Link to block copied" : "Couldn't copy link");
+      return;
+    }
+    toast.message("Place the cursor in a paragraph or heading to link it");
+  };
 
   // Lock body scroll when fullscreen
   useEffect(() => {
