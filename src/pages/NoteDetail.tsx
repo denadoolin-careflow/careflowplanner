@@ -815,6 +815,7 @@ export default function NoteDetail() {
             body={body}
             tags={tags}
             projectId={note.projectId ?? null}
+            cosmicDate={noteCosmicDate(note.kind !== "note" ? note.date : null, note.createdAt)}
             onBodyChange={(next) => { setBody(next); save({ body: next }); }}
           />
           <NoteContextRail
