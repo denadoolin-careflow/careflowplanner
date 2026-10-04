@@ -3334,3 +3334,13 @@ body.planner-dragging [data-radix-dialog-overlay] {
   pointer-events: none !important;
   transition: opacity 150ms ease-out;
 }
+
+/* Craft-style block link jump highlight */
+.block-editor .ProseMirror .cf-block-flash {
+  border-radius: 6px;
+  animation: cf-block-flash 2.2s ease-out;
+}
+@keyframes cf-block-flash {
+  0%, 30% { background: hsl(var(--primary) / 0.16); box-shadow: 0 0 0 4px hsl(var(--primary) / 0.16); }
+  100% { background: transparent; box-shadow: 0 0 0 4px transparent; }
+}

@@ -57,7 +57,11 @@ import {
   Table as TableIcon, Rows3, Columns3, Trash2,
   FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
-import { ChevronsDownUp, ChevronsUpDown, ListFilter, ShoppingCart } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, ListFilter, ShoppingCart, Link2 } from "lucide-react";
+import { BlockEmbed, BlockRef, BlockPickerDialog, EmbedContext } from "@/components/notes/BlockEmbedNode";
+import { newBlockId, blockUrl, BLOCK_MARKER_RE } from "@/lib/notes/blocks";
+import { copyToClipboard } from "@/lib/clipboard";
+import { useContext } from "react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -356,6 +360,20 @@ turndown.addRule("collapsedListItem", {
   filter: (node) => node.nodeName === "LI" && (node as HTMLElement).getAttribute("data-collapsed") === "true",
   replacement: (_content, node) => `\n${(node as HTMLElement).outerHTML}\n`,
 });
+// Block IDs ride along as a trailing ` ^b-xxxxxx` marker.
+turndown.addRule("blockIdParagraph", {
+  filter: (node) => node.nodeName === "P" && (node as HTMLElement).hasAttribute("data-block-id"),
+  replacement: (content, node) => `\n\n${content.trim()} ^${(node as HTMLElement).getAttribute("data-block-id")}\n\n`,
+});
+turndown.addRule("blockIdHeading", {
+  filter: (node) => /^H[1-6]$/.test(node.nodeName) && (node as HTMLElement).hasAttribute("data-block-id")
+    && (node as HTMLElement).getAttribute("data-collapsed") !== "true",
+  replacement: (content, node) => `\n\n${"#".repeat(Number(node.nodeName[1]))} ${content.trim()} ^${(node as HTMLElement).getAttribute("data-block-id")}\n\n`,
+});
+turndown.addRule("blockRefChip", {
+  filter: (node) => node.nodeName === "SPAN" && (node as HTMLElement).hasAttribute("data-block-ref"),
+  replacement: (_content, node) => (node as HTMLElement).outerHTML,
+});
 
 /**
  * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
@@ -391,9 +409,40 @@ export function bodyToHtml(body: string): string {
   if (!body) return "";
   const trimmed = body.trim();
   // Heuristic: if it starts with an HTML tag, treat as HTML already.
-  if (/^<[a-zA-Z!]/.test(trimmed)) return hydrateInlineEntities(normalizeTaskListsForTipTap(trimmed));
+  if (/^<[a-zA-Z!]/.test(trimmed)) return hydrateBlockIds(hydrateInlineEntities(normalizeTaskListsForTipTap(trimmed)));
   const html = marked.parse(body, { async: false, gfm: true, breaks: false }) as string;
-  return hydrateInlineEntities(normalizeTaskListsForTipTap(html));
+  return hydrateBlockIds(hydrateInlineEntities(normalizeTaskListsForTipTap(html)));
+}
+
+/** Move trailing ` ^b-xxxxxx` markers into data-block-id attributes. */
+function hydrateBlockIds(html: string): string {
+  if (!html || typeof document === "undefined" || !html.includes("^b-")) return html;
+  const wrap = document.createElement("div");
+  wrap.innerHTML = html;
+  const stripTail = (el: Element): string | null => {
+    let last: ChildNode | null = el.lastChild;
+    while (last && last.nodeType === 3 && !last.textContent?.trim()) last = last.previousSibling;
+    if (!last || last.nodeType !== 3) return null;
+    const m = BLOCK_MARKER_RE.exec(last.textContent ?? "");
+    if (!m) return null;
+    last.textContent = (last.textContent ?? "").replace(BLOCK_MARKER_RE, "");
+    return m[1];
+  };
+  wrap.querySelectorAll("p, h1, h2, h3, h4, h5, h6").forEach(el => {
+    const id = stripTail(el);
+    if (id) el.setAttribute("data-block-id", id);
+  });
+  // Tight list items have no <p>; wrap their leading inline content.
+  wrap.querySelectorAll("li").forEach(li => {
+    if (li.querySelector(":scope > p")) return;
+    const id = stripTail(li);
+    if (!id) return;
+    const p = document.createElement("p");
+    p.setAttribute("data-block-id", id);
+    while (li.firstChild && !(li.firstChild.nodeType === 1 && /^(UL|OL)$/.test((li.firstChild as Element).tagName))) p.appendChild(li.firstChild);
+    li.insertBefore(p, li.firstChild);
+  });
+  return wrap.innerHTML;
 }
 
 /** Rewrite `[[Title]]` tokens (outside of code blocks) into inline-entity spans
@@ -1371,6 +1420,29 @@ export function BlockEditor({
   const [toolbarHidden, setToolbarHidden] = useState(false);
   const [editorFocused, setEditorFocused] = useState(false);
   const [hasSelection, setHasSelection] = useState(false);
+  const [blockPicker, setBlockPicker] = useState<"embed" | "link" | null>(null);
+  const embedCtx = useContext(EmbedContext);
+
+  /** Give the paragraph/heading at `pos` an ID (if needed) and copy its link. */
+  const copyBlockLinkAt = async (pos: number) => {
+    const ed = editorRef.current;
+    const nid = noteIdRef.current;
+    if (!ed || !nid) { toast.error("Save the note first to link blocks"); return; }
+    const $pos = ed.state.doc.resolve(Math.min(pos, ed.state.doc.content.size));
+    for (let d = $pos.depth; d > 0; d--) {
+      const n = $pos.node(d);
+      if (n.type.name !== "paragraph" && n.type.name !== "heading") continue;
+      let id = n.attrs.blockId as string | null;
+      if (!id) {
+        id = newBlockId();
+        ed.view.dispatch(ed.state.tr.setNodeMarkup($pos.before(d), undefined, { ...n.attrs, blockId: id }));
+      }
+      const ok = await copyToClipboard(blockUrl(nid, id));
+      toast.success(ok ? "Link to block copied" : "Couldn't copy link");
+      return;
+    }
+    toast.message("Place the cursor in a paragraph or heading to link it");
+  };
 
   // Lock body scroll when fullscreen
   useEffect(() => {
@@ -1509,6 +1581,27 @@ export function BlockEditor({
               icon: Paperclip,
               keywords: ["file", "pdf", "doc", "docx", "attachment", "upload", "attach"],
               command: () => triggerFileUpload(),
+            },
+            {
+              title: "Embed block",
+              description: "Show a block or section from another note",
+              icon: Link2,
+              keywords: ["embed", "block", "transclude", "synced", "section", "craft"],
+              command: () => setBlockPicker("embed"),
+            },
+            {
+              title: "Link to block",
+              description: "Insert a chip that jumps to a block",
+              icon: Link2,
+              keywords: ["link", "block", "reference", "ref", "craft"],
+              command: () => setBlockPicker("link"),
+            },
+            {
+              title: "Copy link to block",
+              description: "Copy a link to the block you're in",
+              icon: Link2,
+              keywords: ["copy", "link", "block", "share"],
+              command: (e: Editor) => { void copyBlockLinkAt(e.state.selection.from); },
             },
             {
               title: "Live query",
@@ -1826,6 +1919,18 @@ export function BlockEditor({
               attrs.collapsed ? { "data-collapsed": "true" } : {},
           },
         },
+      }, {
+        // Craft-style block IDs — assigned the first time a block is linked.
+        types: ["paragraph", "heading"],
+        attributes: {
+          blockId: {
+            default: null,
+            keepOnSplit: false,
+            parseHTML: (el: HTMLElement) => el.getAttribute("data-block-id"),
+            renderHTML: (attrs: Record<string, any>) =>
+              attrs.blockId ? { "data-block-id": attrs.blockId } : {},
+          },
+        },
       }];
     },
   }), []);
@@ -2085,6 +2190,8 @@ export function BlockEditor({
       InlineEntityCard,
       QueryBlock,
       GroceryBlock,
+      BlockEmbed,
+      BlockRef,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
@@ -2203,6 +2310,51 @@ export function BlockEditor({
       editor.off("selectionUpdate", onSel);
     };
   }, [editor]);
+
+
+  /* Block links: click the drag handle to copy a link; jump to #b-xxxx on open. */
+  useEffect(() => {
+    if (!editor) return;
+    const onClick = (e: MouseEvent) => {
+      const handle = (e.target as HTMLElement | null)?.closest(".drag-handle") as HTMLElement | null;
+      if (!handle || !noteIdRef.current) return;
+      const r = handle.getBoundingClientRect();
+      const editorRect = editor.view.dom.getBoundingClientRect();
+      const hit = editor.view.posAtCoords({ left: Math.max(r.right + 24, editorRect.left + 24), top: r.top + r.height / 2 });
+      if (!hit) return;
+      void copyBlockLinkAt(hit.pos);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const hash = window.location.hash.slice(1);
+    if (!/^b-[a-z0-9]{6}$/.test(hash)) return;
+    const t = window.setTimeout(() => {
+      // Unfold any collapsed heading above the target so it's visible.
+      let targetPos = -1;
+      editor.state.doc.descendants((n, pos) => { if (n.attrs?.blockId === hash) { targetPos = pos; return false; } return true; });
+      if (targetPos < 0) return;
+      const tr = editor.state.tr;
+      let changed = false;
+      editor.state.doc.descendants((n, pos) => {
+        if (pos >= targetPos) return false;
+        if (n.type.name === "heading" && n.attrs.collapsed) { tr.setNodeMarkup(pos, undefined, { ...n.attrs, collapsed: false }); changed = true; }
+        return true;
+      });
+      if (changed) editor.view.dispatch(tr);
+      const el = editor.view.dom.querySelector(`[data-block-id="${hash}"]`) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("cf-block-flash");
+      window.setTimeout(() => el.classList.remove("cf-block-flash"), 2200);
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [editor, noteId]);
+
 
   /* ----------------------------------------------------------------- *
    *  Mobile swipe-to-select: long-press to arm, drag to extend.       *
@@ -3104,7 +3256,23 @@ export function BlockEditor({
           </button>
         </div>
       )}
-      <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      <EmbedContext.Provider value={{ noteId, depth: embedCtx.depth }}>
+        <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      </EmbedContext.Provider>
+      <BlockPickerDialog
+        open={!!blockPicker}
+        mode={blockPicker ?? "embed"}
+        excludeNoteId={noteId}
+        onOpenChange={(o) => { if (!o) setBlockPicker(null); }}
+        onPick={({ noteId: nid, blockId, label }) => {
+          if (!editor) return;
+          if (blockPicker === "link") {
+            editor.chain().focus().insertContent([{ type: "blockRef", attrs: { noteId: nid, blockId, label } }, { type: "text", text: " " }]).run();
+          } else {
+            editor.chain().focus().insertContent({ type: "blockEmbed", attrs: { noteId: nid, blockId, mode: "read" } }).run();
+          }
+        }}
+      />
       {editor && !isMobile && toolbarPlacement === "bottom" && (
         <div
           className={cn(

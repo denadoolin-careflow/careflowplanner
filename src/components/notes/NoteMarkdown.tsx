@@ -1,3 +1,4 @@
+import { stripBlockMarkers } from "@/lib/notes/blocks";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link } from "react-router-dom";
@@ -9,7 +10,7 @@ import { useMemo } from "react";
  * real markdown links that ReactMarkdown then renders.
  */
 function preprocess(body: string, projects: { id: string; name: string }[]): string {
-  let t = body;
+  let t = stripBlockMarkers(body);
   // [[Title]] → wiki link
   t = t.replace(/\[\[([^\]]+)\]\]/g, (_, title: string) => {
     const slug = encodeURIComponent(title.trim());

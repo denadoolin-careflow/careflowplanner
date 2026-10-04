@@ -1,3 +1,4 @@
+import { stripBlockMarkers } from "@/lib/notes/blocks";
 import { useMemo } from "react";
 import { marked } from "marked";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ export function NoteMarkdownPreview({
 }) {
   const html = useMemo(() => {
     if (!body) return "";
+    body = stripBlockMarkers(body);
     // Avoid cutting through HTML/table markup. Plain markdown can be safely shortened.
     const hasRichHtml = /<(table|details|div\s+[^>]*data-)/i.test(body);
     const source = !hasRichHtml && body.length > maxChars
