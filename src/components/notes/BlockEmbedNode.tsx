@@ -174,6 +174,7 @@ function RefView({ node }: NodeViewProps) {
     <NodeViewWrapper as="span" contentEditable={false} className="inline">
       <button
         type="button"
+        data-block-ref-id={blockId}
         onClick={() => navigate(missing ? `/notes/${noteId}` : `/notes/${noteId}#${blockId}`)}
         className="inline-flex max-w-[22ch] items-center gap-1 truncate rounded bg-primary/10 px-1.5 align-baseline text-[0.9em] text-primary hover:bg-primary/20"
         title={missing ? "Block removed — opens the note" : label}
