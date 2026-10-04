@@ -28,6 +28,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  NotesQueryRunner, NOTES_KINDS, NOTES_KIND_LABEL, NOTES_QUERY_SORTS, NOTES_QUERY_SORT_LABEL,
+  NOTES_QUERY_COLUMNS, NOTES_QUERY_COLUMN_LABEL, DEFAULT_NOTES_QUERY_COLUMNS,
+  type NotesQuerySort, type NotesKindFilter, type NotesQueryColumn,
+} from "@/components/notes/NotesQueryRunner";
+import { PersonPicker } from "@/components/people/PersonPicker";
+import { usePerson } from "@/lib/people-directory";
+
+/** Block-level sources: the task runner sources plus notes and a person view. */
+type BlockSource = RunnerSource | "notes" | "person";
+const BLOCK_SOURCES: BlockSource[] = [...RUNNER_SOURCES, "notes", "person"];
+const BLOCK_SOURCE_LABEL: Record<BlockSource, string> = {
+  ...RUNNER_SOURCE_LABEL, notes: "Notes", person: "Person (tasks + notes)",
+};
+const PAGE_SIZES = [5, 10, 25, 50, 100];
 
 function parseFilters(raw: string | null): Partial<WeekFilterState> {
   if (!raw) return {};
@@ -58,9 +73,12 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
   const sort: RunnerSort = (node.attrs.sort ?? "due") as RunnerSort;
   const limit: number = Number(node.attrs.limit ?? 25) || 25;
   const columns = parseColumns(node.attrs.columns);
-  const source: RunnerSource = (RUNNER_SOURCES as readonly string[]).includes(node.attrs.source)
-    ? node.attrs.source as RunnerSource
+  const blockSource: BlockSource = (BLOCK_SOURCES as string[]).includes(node.attrs.source)
+    ? node.attrs.source as BlockSource
     : "tasks";
+  const isNotes = blockSource === "notes";
+  const isPerson = blockSource === "person";
+  const source: RunnerSource = isNotes || isPerson ? "tasks" : blockSource as RunnerSource;
   const group: RunnerGroup = (RUNNER_GROUPS as readonly string[]).includes(node.attrs.group)
     ? node.attrs.group as RunnerGroup
     : "none";
@@ -69,6 +87,11 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
   const inline = parseFilters(node.attrs.filters);
   const filters = view ? view.filters : { ...EMPTY_WEEK_FILTERS, ...inline };
   const name = view?.name ?? node.attrs.label ?? "Open tasks";
+  const notesFilter = inline as any as { search?: string; kind?: NotesKindFilter; tag?: string; personId?: string; notesSort?: NotesQuerySort; notesColumns?: NotesQueryColumn[] };
+  const person = usePerson(notesFilter.personId);
+  const notesSort: NotesQuerySort = notesFilter.notesSort ?? "updated";
+  const notesColumns: NotesQueryColumn[] = notesFilter.notesColumns ?? DEFAULT_NOTES_QUERY_COLUMNS;
+  const notesLayout = layout === "table" ? "table" : "list";
 
   const [saveName, setSaveName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -92,7 +115,7 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
     if (Object.keys(patch).length) updateAttributes(patch);
   }, [view, node.attrs, updateAttributes]);
 
-  const setInline = (patch: Partial<WeekFilterState>) =>
+  const setInline = (patch: Partial<WeekFilterState> & Record<string, unknown>) =>
     updateAttributes({ filters: JSON.stringify({ ...inline, ...patch }) });
 
   const toggleColumn = (c: RunnerColumn) => {
@@ -208,7 +231,7 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
           <ListFilter className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           <span className="text-[12px] font-semibold">{name}</span>
           <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-            {RUNNER_SOURCE_LABEL[source]} · live{count !== null ? ` · ${count}` : ""}
+            {BLOCK_SOURCE_LABEL[blockSource]}{person ? ` · ${person.name}` : ""} · live{count !== null ? ` · ${count}` : ""}
           </span>
           <span className="ml-auto flex items-center gap-1">
             <button
@@ -236,12 +259,70 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Source</p>
                   <select
                     aria-label="Data source"
-                    value={source}
-                    onChange={e => updateAttributes({ source: e.target.value })}
+                    value={blockSource}
+                    onChange={e => {
+                      const v = e.target.value as BlockSource;
+                      const patch: Record<string, unknown> = { source: v };
+                      if (v === "notes" || v === "person") { patch.viewId = null; if (layout === "board") patch.layout = "list"; }
+                      updateAttributes(patch);
+                    }}
                     className="w-full rounded-md border border-border/60 bg-background px-2 py-1 text-[12px]"
                   >
-                    {RUNNER_SOURCES.map(s => <option key={s} value={s}>{RUNNER_SOURCE_LABEL[s]}</option>)}
+                    {BLOCK_SOURCES.map(s => <option key={s} value={s}>{BLOCK_SOURCE_LABEL[s]}</option>)}
                   </select>
+                  {(isNotes || isPerson) && (
+                    <div className="space-y-1">
+                      <Label className="text-[10px] text-muted-foreground">Person</Label>
+                      <PersonPicker
+                        value={notesFilter.personId ?? null}
+                        placeholder={isPerson ? "Pick a person" : "Any person"}
+                        onChange={p => setInline({ personId: p?.id ?? undefined })}
+                      />
+                    </div>
+                  )}
+                  {(isNotes || isPerson) && (
+                    <div className="space-y-1">
+                      <Label htmlFor="query-page-size" className="text-[10px] text-muted-foreground">Notes per page</Label>
+                      <select id="query-page-size" value={limit}
+                        onChange={e => updateAttributes({ limit: Number(e.target.value) })}
+                        className="w-full rounded-md border border-border/60 bg-background px-2 py-1 text-[12px]">
+                        {[...new Set([...PAGE_SIZES, limit])].sort((a, b) => a - b).map(n => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {isNotes && (
+                    <div className="space-y-2">
+                      <input aria-label="Search notes" value={notesFilter.search ?? ""}
+                        onChange={e => setInline({ search: e.target.value })}
+                        placeholder="Any word in title or text"
+                        className="w-full rounded-md border border-border/60 bg-background px-2 py-1 text-[12px]" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <select aria-label="Note kind" value={notesFilter.kind ?? "any"}
+                          onChange={e => setInline({ kind: e.target.value })}
+                          className="w-full rounded-md border border-border/60 bg-background px-2 py-1 text-[12px]">
+                          {NOTES_KINDS.map(k => <option key={k} value={k}>{NOTES_KIND_LABEL[k]}</option>)}
+                        </select>
+                        <input aria-label="Tag" value={notesFilter.tag ?? ""}
+                          onChange={e => setInline({ tag: e.target.value.replace(/^#/, "") })}
+                          placeholder="#tag"
+                          className="w-full rounded-md border border-border/60 bg-background px-2 py-1 text-[12px]" />
+                        <select aria-label="Sort notes" value={notesSort}
+                          onChange={e => setInline({ notesSort: e.target.value })}
+                          className="col-span-2 w-full rounded-md border border-border/60 bg-background px-2 py-1 text-[12px]">
+                          {NOTES_QUERY_SORTS.map(k => <option key={k} value={k}>{NOTES_QUERY_SORT_LABEL[k]}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {NOTES_QUERY_COLUMNS.map(c => (
+                          <label key={c} className="flex items-center gap-1 text-[12px]">
+                            <Checkbox checked={notesColumns.includes(c)}
+                              onCheckedChange={() => setInline({ notesColumns: notesColumns.includes(c) ? notesColumns.filter(x => x !== c) : [...notesColumns, c] })} />
+                            {NOTES_QUERY_COLUMN_LABEL[c]}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <select
                     aria-label="Saved view"
                     value={viewId ?? ""}
@@ -254,7 +335,7 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
                 </section>
 
                 {/* ---- Filters ---- */}
-                {!view && (
+                {!isNotes && !view && (
                   <section className="space-y-2">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Filters</p>
                     <input
@@ -285,6 +366,7 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
                 )}
 
                 {/* ---- Display ---- */}
+                {!isNotes && (<>
                 <section className="space-y-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Display</p>
                   <div className="grid grid-cols-2 gap-2">
@@ -388,7 +470,9 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
                   </div>
                 </section>
 
+                </>)}
                 {/* ---- Save ---- */}
+                {!isNotes && !isPerson && (
                 <section className="space-y-1 border-t border-border/50 pt-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Save</p>
                   <div className="flex items-center gap-2">
@@ -418,6 +502,7 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
                     Keeps the filters, columns, sort, limit and board setup.
                   </p>
                 </section>
+                )}
               </PopoverContent>
             </Popover>
 
@@ -432,6 +517,25 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
           style={height ? { height } : undefined}
           className={cn(height && "overflow-y-auto")}
         >
+          {isNotes ? (
+            <NotesQueryRunner
+              filters={{ search: notesFilter.search, kind: notesFilter.kind, tag: notesFilter.tag, personId: person?.id, personName: person?.name }}
+              layout={notesLayout} sort={notesSort} limit={limit} columns={notesColumns} onCount={onCount}
+            />
+          ) : isPerson ? (
+            !person ? (
+              <p className="px-3 py-4 text-[12px] text-muted-foreground">Pick a person in settings to see their tasks and notes.</p>
+            ) : (
+              <div>
+                <p className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Tasks</p>
+                <SavedViewRunner filters={filters} layout={layout} sort={sort} limit={limit} columns={columns}
+                  source="tasks" group={group} personId={person.id} emptyLabel={`No tasks for ${person.name}.`} />
+                <p className="border-t border-border/40 px-3 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</p>
+                <NotesQueryRunner filters={{ personId: person.id, personName: person.name }}
+                  layout="list" limit={limit} onCount={onCount} emptyLabel={`No notes mention ${person.name}.`} />
+              </div>
+            )
+          ) : (
           <SavedViewRunner
             filters={filters}
             layout={layout}
@@ -442,6 +546,7 @@ function QueryView({ node, updateAttributes, selected }: NodeViewProps) {
             group={group}
             onCount={onCount}
           />
+          )}
         </div>
 
         <div
