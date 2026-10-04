@@ -3344,3 +3344,21 @@ body.planner-dragging [data-radix-dialog-overlay] {
   0%, 30% { background: hsl(var(--primary) / 0.16); box-shadow: 0 0 0 4px hsl(var(--primary) / 0.16); }
   100% { background: transparent; box-shadow: 0 0 0 4px transparent; }
 }
+
+.block-editor .ProseMirror .cf-embedded-badge {
+  margin-left: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--primary) / 0.3);
+  background: hsl(var(--primary) / 0.08);
+  padding: 0 0.4rem;
+  font-size: 10px;
+  line-height: 1.4;
+  color: hsl(var(--primary));
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+}
+.block-editor .ProseMirror .cf-embedded-badge:hover { background: hsl(var(--primary) / 0.16); }
+.block-editor h1, .block-editor h2, .block-editor h3 { scroll-margin-top: 96px; }
