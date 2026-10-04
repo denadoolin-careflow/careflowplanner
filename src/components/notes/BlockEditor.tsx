@@ -1422,7 +1422,6 @@ export function BlockEditor({
   const [hasSelection, setHasSelection] = useState(false);
   const [blockPicker, setBlockPicker] = useState<"embed" | "link" | null>(null);
   const embedCtx = useContext(EmbedContext);
-  const editorRef = useRef<Editor | null>(null);
 
   /** Give the paragraph/heading at `pos` an ID (if needed) and copy its link. */
   const copyBlockLinkAt = async (pos: number) => {
@@ -2312,7 +2311,6 @@ export function BlockEditor({
     };
   }, [editor]);
 
-  editorRef.current = editor;
 
   /* Block links: click the drag handle to copy a link; jump to #b-xxxx on open. */
   useEffect(() => {
