@@ -5,6 +5,7 @@ import { format, parseISO, isAfter, isBefore, addDays } from "date-fns";
 import {
   Sparkles, CheckSquare, CalendarDays, Users, ListPlus, ShoppingCart,
   BellPlus, Loader2, ChevronDown, ChevronRight, List, Link2, X, Pencil,
+  Search, MoonStar, FolderKanban, FileText, AtSign,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { NoteTOC } from "@/components/notes/NoteTOC";
+import { NoteCosmicStrip, useNoteCosmicEvents } from "@/components/notes/NoteCosmicStrip";
 import { useNoteEntities } from "@/hooks/useNoteEntities";
 import { toggleTaskLine, deleteTaskLine, editTaskLine } from "@/lib/note-entities";
 
@@ -25,6 +27,8 @@ interface Props {
   projectId?: string | null;
   /** When provided, checkbox toggles / edits inside detected tasks update the note body in place. */
   onBodyChange?: (nextBody: string) => void;
+  /** Day the note belongs to — drives the cosmic section. */
+  cosmicDate?: Date;
 }
 
 function stripMd(s: string): string {
@@ -37,8 +41,13 @@ function stripMd(s: string): string {
 
 function uniq<T>(arr: T[]): T[] { return Array.from(new Set(arr)); }
 
-export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, onBodyChange }: Props) {
-  const { state, addTask } = useStore();
+export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, onBodyChange, cosmicDate }: Props) {
+  const { state, addTask, toggleTask } = useStore();
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const matches = (...parts: (string | undefined | null)[]) => !q || parts.some(p => (p || "").toLowerCase().includes(q));
+  const cosmicDay = cosmicDate ?? new Date();
+  const cosmicEvents = useNoteCosmicEvents(cosmicDay);
   const nav = useNavigate();
   const bodyLc = (body || "").toLowerCase();
   const titleLc = (title || "").toLowerCase();
@@ -176,16 +185,26 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, on
   useEffect(() => { persistOpenRef.save(); }, [persistOpenRef]);
 
   const linkedItems = useMemo(() => {
-    const out: { key: string; label: string; to?: string }[] = [];
-    for (const w of entities.wikilinks.slice(0, 8)) {
-      out.push({ key: `w:${w}`, label: `[[${w}]]`, to: `/notes?q=${encodeURIComponent(w)}` });
+    const out: { key: string; label: string; kind: "note" | "project" | "mention"; meta?: string; to?: string }[] = [];
+    for (const w of entities.wikilinks.slice(0, 12)) {
+      out.push({ key: `w:${w}`, label: w, kind: "note", meta: "Note", to: `/notes?q=${encodeURIComponent(w)}` });
     }
-    for (const m of entities.mentions.slice(0, 8)) {
+    for (const m of entities.mentions.slice(0, 12)) {
       const proj = (state.projects ?? []).find(p => p.name.toLowerCase() === m.toLowerCase());
-      out.push({ key: `m:${m}`, label: `@${m}`, to: proj ? `/projects/${proj.id}` : undefined });
+      const open = proj ? (state.tasks ?? []).filter(t => !t.done && (t as any).projectId === proj.id).length : 0;
+      out.push({
+        key: `m:${m}`, label: m, kind: proj ? "project" : "mention",
+        meta: proj ? `Project · ${open} open task${open === 1 ? "" : "s"}` : "Mention",
+        to: proj ? `/projects/${proj.id}` : undefined,
+      });
     }
     return out;
-  }, [entities.wikilinks, entities.mentions, state.projects]);
+  }, [entities.wikilinks, entities.mentions, state.projects, state.tasks]);
+  const shownLinks = linkedItems.filter(l => matches(l.label, l.meta));
+  const shownTasks = relatedTasks.filter(t => matches(t.title, (t.tags ?? []).join(" ")));
+  const shownEvents = relatedEvents.filter(a => matches(a.title));
+  const shownCosmic = cosmicEvents.filter(e => matches(e.title, e.subtitle));
+  const shownInline = inlineTasks.filter(t => matches(t.text));
 
   return (
     <aside className="flex w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur">
@@ -197,12 +216,42 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, on
       </header>
 
       <div className="space-y-4 p-4">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tasks, links, events…"
+            aria-label="Search note context"
+            className="h-8 w-full rounded-lg border border-border/60 bg-background/70 pl-8 pr-2 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+          />
+        </div>
+
+        <Group title={`Cosmic · ${shownCosmic.length}`} icon={MoonStar} open={open.cosmic ?? true} onToggle={() => toggle("cosmic")}>
+          <NoteCosmicStrip date={cosmicDay} className="mb-2" />
+          {shownCosmic.length === 0 ? <Empty>No cosmic events match.</Empty> : (
+            <ul className="space-y-1">
+              {shownCosmic.map(e => (
+                <li key={e.id}>
+                  <Link to={`/cosmic-flow/event/${encodeURIComponent(e.id)}`} title={e.subtitle}
+                    className="flex items-start gap-2 rounded-lg border border-transparent px-2 py-1.5 text-xs transition hover:border-border/50 hover:bg-muted/40">
+                    <span className="text-sm leading-none" aria-hidden>{e.glyph}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{e.title}</span>
+                      {e.subtitle && <span className="line-clamp-2 text-[11px] text-muted-foreground">{e.subtitle}</span>}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Group>
         <Group title="On this page" icon={List} open={open.toc} onToggle={() => toggle("toc")}>
           <NoteTOC body={body} title="" className="ml-1" />
         </Group>
 
         <Group
-          title={`Tasks · ${inlineTasks.length}`}
+          title={`Tasks · ${shownInline.length}`}
           icon={CheckSquare}
           open={open.tasks}
           onToggle={() => toggle("tasks")}
@@ -211,7 +260,7 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, on
             <Empty>Add `- [ ] task` lines and they'll show up here.</Empty>
           ) : (
             <ul className="space-y-1">
-              {inlineTasks.map(t => (
+              {shownInline.map(t => (
                 <li key={`${t.line}:${t.text}`} className="group flex items-start gap-2 rounded-md px-1.5 py-1 text-xs hover:bg-muted/40">
                   <button
                     type="button"
@@ -273,60 +322,69 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, on
           )}
         </Group>
 
-        <Group title={`Linked · ${linkedItems.length}`} icon={Link2} open={open.linked} onToggle={() => toggle("linked")}>
-          {linkedItems.length === 0 ? (
-            <Empty>Type [[Title]] or @Project to link.</Empty>
+        <Group title={`Linked · ${shownLinks.length}`} icon={Link2} open={open.linked} onToggle={() => toggle("linked")}>
+          {shownLinks.length === 0 ? (
+            <Empty>{q ? "No links match." : "Type [[Title]] or @Project to link."}</Empty>
           ) : (
-            <ul className="flex flex-wrap gap-1.5">
-              {linkedItems.map(l => (
-                <li key={l.key}>
-                  {l.to ? (
-                    <Link to={l.to} className="inline-flex items-center rounded-full border border-border/50 bg-background/70 px-2 py-0.5 text-[11px] text-primary hover:bg-primary/10">
-                      {l.label}
-                    </Link>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full border border-border/50 bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground">
-                      {l.label}
+            <ul className="space-y-1">
+              {shownLinks.map(l => {
+                const Icon = l.kind === "project" ? FolderKanban : l.kind === "note" ? FileText : AtSign;
+                const inner = (
+                  <>
+                    <span className={cn("grid h-6 w-6 shrink-0 place-items-center rounded-md", l.kind === "project" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+                      <Icon className="h-3.5 w-3.5" />
                     </span>
-                  )}
-                </li>
-              ))}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-medium">{l.label}</span>
+                      <span className="block text-[10px] text-muted-foreground">{l.meta}</span>
+                    </span>
+                  </>
+                );
+                const cls = "flex items-center gap-2 rounded-lg border border-border/40 bg-background/50 px-2 py-1.5 transition hover:border-primary/40 hover:bg-primary/5";
+                return (
+                  <li key={l.key}>
+                    {l.to ? <Link to={l.to} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Group>
 
-        <Group title={`Related tasks · ${relatedTasks.length}`} icon={CheckSquare} open={open.relatedTasks ?? true} onToggle={() => toggle("relatedTasks")}>
-          {relatedTasks.length === 0 ? (
+        <Group title={`Related tasks · ${shownTasks.length}`} icon={CheckSquare} open={open.relatedTasks ?? true} onToggle={() => toggle("relatedTasks")}>
+          {shownTasks.length === 0 ? (
             <Empty>No matching tasks yet.</Empty>
           ) : (
             <ul className="space-y-1">
-              {relatedTasks.map(t => (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    onClick={() => openTaskEditor(t.id)}
-                    className="flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left text-xs hover:bg-muted/50"
-                  >
-                    <CheckSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    {t.dueDate && (
-                      <span className="shrink-0 text-[10px] text-muted-foreground/80">
-                        {format(parseISO(t.dueDate), "MMM d")}
+              {shownTasks.map(t => {
+                const proj = (state.projects ?? []).find(p => p.id === (t as any).projectId);
+                const overdue = t.dueDate && t.dueDate < todayISO();
+                return (
+                  <li key={t.id} className="flex items-start gap-2 rounded-lg border border-border/40 bg-background/50 px-2 py-1.5 hover:border-primary/40">
+                    <button type="button" onClick={() => void toggleTask(t.id)} aria-label="Complete task"
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border border-border/70 bg-background hover:border-primary" />
+                    <button type="button" onClick={() => openTaskEditor(t.id)} className="min-w-0 flex-1 text-left">
+                      <span className="block truncate text-xs font-medium">{t.title}</span>
+                      <span className="flex flex-wrap items-center gap-x-1.5 text-[10px] text-muted-foreground">
+                        {t.dueDate && <span className={cn(overdue && "text-destructive")}>{format(parseISO(t.dueDate), "MMM d")}</span>}
+                        {proj && <span>· {proj.name}</span>}
+                        {(t as any).priority && (t as any).priority !== "low" && <span className="capitalize">· {(t as any).priority}</span>}
+                        {(t.tags ?? []).slice(0, 2).map(x => <span key={x}>#{x}</span>)}
                       </span>
-                    )}
-                  </button>
-                </li>
-              ))}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Group>
 
-        <Group title={`Upcoming events · ${relatedEvents.length}`} icon={CalendarDays} open={open.events} onToggle={() => toggle("events")}>
+        <Group title={`Upcoming events · ${shownEvents.length}`} icon={CalendarDays} open={open.events} onToggle={() => toggle("events")}>
           {relatedEvents.length === 0 ? (
             <Empty>Nothing scheduled that matches.</Empty>
           ) : (
             <ul className="space-y-1">
-              {relatedEvents.map(a => (
+              {shownEvents.map(a => (
                 <li key={a.id}>
                   <Link
                     to={`/calendar?date=${a.date}`}

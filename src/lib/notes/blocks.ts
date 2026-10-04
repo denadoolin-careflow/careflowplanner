@@ -21,7 +21,7 @@ export function stripBlockMarkers(md: string): string {
   return (md || "").replace(BLOCK_MARKER_GLOBAL_RE, "");
 }
 
-export type BlockType = "heading" | "paragraph" | "listItem";
+export type BlockType = "heading" | "paragraph" | "listItem" | "toggle";
 export interface NoteBlock {
   id: string | null;
   type: BlockType;
@@ -50,6 +50,12 @@ export function parseBlocks(body: string): NoteBlock[] {
   while (i < lines.length) {
     const line = lines[i];
     if (/^\s*```/.test(line)) { inFence = !inFence; i++; continue; }
+    if (!inFence && /^\s*<details\b/.test(line)) {
+      const idm = /data-block-id="(b-[a-z0-9]{6})"/.exec(line);
+      const sm = /<summary>([\s\S]*?)<\/summary>/.exec(line);
+      out.push({ id: idm?.[1] ?? null, type: "toggle", level: 0, text: cleanText(sm?.[1] ?? ""), start: i, end: i });
+      i++; continue;
+    }
     if (inFence || !line.trim() || /^\s*</.test(line) || /^\s*>/.test(line) || /^\s*\|/.test(line)) { i++; continue; }
     const h = /^(#{1,6})\s+/.exec(line);
     if (h) {
@@ -78,8 +84,14 @@ export function blockRange(body: string, blockId: string): { start: number; end:
   const idx = blocks.findIndex(b => b.id === blockId);
   if (idx < 0) return null;
   const block = blocks[idx];
-  if (block.type !== "heading") return { start: block.start, end: block.end, block };
   const lines = body.split("\n");
+  if (block.type === "listItem") {
+    const indent = (lines[block.start].match(/^\s*/)?.[0].length) ?? 0;
+    let end = block.end;
+    while (end + 1 < lines.length && lines[end + 1].trim() && ((lines[end + 1].match(/^\s*/)?.[0].length) ?? 0) > indent) end++;
+    return { start: block.start, end, block };
+  }
+  if (block.type !== "heading") return { start: block.start, end: block.end, block };
   let end = lines.length - 1;
   for (let k = idx + 1; k < blocks.length; k++) {
     if (blocks[k].type === "heading" && blocks[k].level <= block.level) { end = blocks[k].start - 1; break; }
@@ -108,6 +120,16 @@ export async function ensureBlockId(noteId: string, block: NoteBlock): Promise<s
   const note = await getNote(noteId);
   if (!note) throw new Error("Note not found");
   const lines = note.body.split("\n");
+  if (block.type === "toggle") {
+    const line = lines[block.start] ?? "";
+    const found = /data-block-id="(b-[a-z0-9]{6})"/.exec(line);
+    if (found) return found[1];
+    const id = newBlockId();
+    lines[block.start] = line.replace(/<details\b/, `<details data-block-id="${id}"`);
+    await updateNote(noteId, { body: lines.join("\n") });
+    notifyNoteBodyChanged(noteId);
+    return id;
+  }
   const existing = BLOCK_MARKER_RE.exec(lines[block.end] ?? "");
   if (existing) return existing[1];
   const id = newBlockId();
@@ -124,4 +146,21 @@ export function notifyNoteBodyChanged(noteId: string) {
 
 export function blockUrl(noteId: string, blockId: string): string {
   return `${window.location.origin}/notes/${noteId}#${blockId}`;
+}
+
+/** Block IDs from this note that are embedded elsewhere, with the host notes. */
+export function findEmbedsIn(hostBodies: { id: string; title: string; body: string }[], sourceNoteId: string) {
+  const map = new Map<string, { id: string; title: string }[]>();
+  const re = new RegExp(`data-block-embed[^>]*data-note-id="${sourceNoteId}"[^>]*data-block-ref-id="(b-[a-z0-9]{6})"|data-note-id="${sourceNoteId}"[^>]*data-block-ref-id="(b-[a-z0-9]{6})"[^>]*data-block-embed`, "g");
+  for (const n of hostBodies) {
+    if (n.id === sourceNoteId) continue;
+    for (const m of n.body.matchAll(re)) {
+      const bid = m[1] || m[2];
+      if (!bid) continue;
+      const arr = map.get(bid) ?? [];
+      if (!arr.some(x => x.id === n.id)) arr.push({ id: n.id, title: n.title });
+      map.set(bid, arr);
+    }
+  }
+  return map;
 }

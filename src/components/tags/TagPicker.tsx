@@ -24,9 +24,10 @@ interface Props {
   /** Render the picker as inline chips + add button (default true).
    *  When false, the parent renders chips and this only shows a trigger. */
   inline?: boolean;
+  onTagClick?: (name: string) => void;
 }
 
-export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerClassName, inline = true }: Props) {
+export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerClassName, inline = true, onTagClick }: Props) {
   const { tags, ensure, recolor } = useTags();
   const { state } = useStore();
   const { atmosphere } = useAtmosphere();
@@ -84,6 +85,7 @@ export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerCl
           name={name}
           size="sm"
           onRemove={() => onChange(value.filter((v) => v !== name))}
+          onClick={onTagClick ? () => onTagClick(name) : undefined}
         />
       ))}
       <Popover open={open} onOpenChange={setOpen}>

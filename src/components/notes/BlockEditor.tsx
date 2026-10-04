@@ -59,7 +59,9 @@ import {
 } from "lucide-react";
 import { ChevronsDownUp, ChevronsUpDown, ListFilter, ShoppingCart, Link2 } from "lucide-react";
 import { BlockEmbed, BlockRef, BlockPickerDialog, EmbedContext } from "@/components/notes/BlockEmbedNode";
-import { newBlockId, blockUrl, BLOCK_MARKER_RE } from "@/lib/notes/blocks";
+import { newBlockId, blockUrl, BLOCK_MARKER_RE, findEmbedsIn, NOTE_BODY_EVENT } from "@/lib/notes/blocks";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+const EMBEDDED_IN_KEY = new PluginKey<{ map: Map<string, { id: string; title: string }[]> }>("cfEmbeddedIn");
 import { copyToClipboard } from "@/lib/clipboard";
 import { useContext } from "react";
 import { useStore } from "@/lib/store";
@@ -346,7 +348,8 @@ turndown.addRule("detailsToggle", {
     const open = el.hasAttribute("open") && el.getAttribute("open") !== "false";
     const summaryHtml = (summary?.innerHTML ?? "").trim();
     const contentHtml = (contentEl?.innerHTML ?? "").trim();
-    return `\n\n<details class="cf-toggle"${open ? " open" : ""}><summary>${summaryHtml}</summary><div data-type="detailsContent">${contentHtml}</div></details>\n\n`;
+    const bid = el.getAttribute("data-block-id");
+    return `\n\n<details class="cf-toggle"${bid ? ` data-block-id="${bid}"` : ""}${open ? " open" : ""}><summary>${summaryHtml}</summary><div data-type="detailsContent">${contentHtml}</div></details>\n\n`;
   },
 });
 // Markdown cannot represent fold state. Keep collapsed headings and list items
@@ -1431,6 +1434,18 @@ export function BlockEditor({
     const $pos = ed.state.doc.resolve(Math.min(pos, ed.state.doc.content.size));
     for (let d = $pos.depth; d > 0; d--) {
       const n = $pos.node(d);
+      // Prefer the enclosing toggle when the caret is in its title.
+      const parent = d > 1 ? $pos.node(d - 1) : null;
+      if (n.type.name === "detailsSummary" && parent?.type.name === "details") {
+        let id = parent.attrs.blockId as string | null;
+        if (!id) {
+          id = newBlockId();
+          ed.view.dispatch(ed.state.tr.setNodeMarkup($pos.before(d - 1), undefined, { ...parent.attrs, blockId: id }));
+        }
+        const ok = await copyToClipboard(blockUrl(nid, id));
+        toast.success(ok ? "Link to toggle copied" : "Couldn't copy link");
+        return;
+      }
       if (n.type.name !== "paragraph" && n.type.name !== "heading") continue;
       let id = n.attrs.blockId as string | null;
       if (!id) {
@@ -1441,7 +1456,7 @@ export function BlockEditor({
       toast.success(ok ? "Link to block copied" : "Couldn't copy link");
       return;
     }
-    toast.message("Place the cursor in a paragraph or heading to link it");
+    toast.message("Place the cursor in a paragraph, bullet, heading or toggle title to link it");
   };
 
   // Lock body scroll when fullscreen
@@ -1921,7 +1936,7 @@ export function BlockEditor({
         },
       }, {
         // Craft-style block IDs — assigned the first time a block is linked.
-        types: ["paragraph", "heading"],
+        types: ["paragraph", "heading", "details"],
         attributes: {
           blockId: {
             default: null,
@@ -2130,6 +2145,45 @@ export function BlockEditor({
   // Decorate the top-level block containing the selection so CSS can dim others
   // when focus mode is enabled. The decoration is always present (cheap); the
   // dim only renders when the wrapper has `.cf-focus`.
+  /* "Embedded in" badges on blocks that other notes embed. */
+  const embeddedInExtension = useMemo(() => Extension.create({
+    name: "cfEmbeddedIn",
+    addProseMirrorPlugins() {
+      return [new Plugin({
+        key: EMBEDDED_IN_KEY,
+        state: {
+          init: () => ({ map: new Map<string, { id: string; title: string }[]>() }),
+          apply: (tr, prev) => tr.getMeta(EMBEDDED_IN_KEY) ?? prev,
+        },
+        props: {
+          decorations(state) {
+            const { map } = EMBEDDED_IN_KEY.getState(state) ?? { map: new Map() };
+            if (!map.size) return null;
+            const decos: Decoration[] = [];
+            state.doc.descendants((node, pos) => {
+              const id = node.attrs?.blockId as string | undefined;
+              const hosts = id ? map.get(id) : undefined;
+              if (!id || !hosts?.length) return true;
+              const at = node.type.name === "details" ? pos + 1 + (node.firstChild?.nodeSize ?? 1) - 1 : pos + node.nodeSize - 1;
+              decos.push(Decoration.widget(at, () => {
+                const b = document.createElement("button");
+                b.type = "button";
+                b.contentEditable = "false";
+                b.className = "cf-embedded-badge";
+                b.dataset.embeddedBlock = id;
+                b.title = `Embedded in ${hosts.map(h => h.title || "Untitled").join(", ")}`;
+                b.textContent = `↗ ${hosts.length}`;
+                return b;
+              }, { side: 1, key: `emb-${id}-${hosts.length}` }));
+              return true;
+            });
+            return DecorationSet.create(state.doc, decos);
+          },
+        },
+      })];
+    },
+  }), []);
+
   const focusBlockExtension = useMemo(() => Extension.create({
     name: "focusBlock",
     addProseMirrorPlugins() {
@@ -2204,6 +2258,7 @@ export function BlockEditor({
       toggleKeymap,
       foldAttributes,
       focusBlockExtension,
+      embeddedInExtension,
     ],
     content: bodyToHtml(body),
     editorProps: {
@@ -2311,6 +2366,38 @@ export function BlockEditor({
     };
   }, [editor]);
 
+
+  const [embedHosts, setEmbedHosts] = useState<Map<string, { id: string; title: string }[]>>(new Map());
+  const [embedsFor, setEmbedsFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!noteId) return;
+    let alive = true;
+    const load = async () => {
+      const { data } = await supabase.from("notes").select("id,title,body")
+        .eq("archived", false).ilike("body", `%data-note-id="${noteId}"%`).limit(200);
+      if (!alive) return;
+      setEmbedHosts(findEmbedsIn((data ?? []).map((r: any) => ({ id: r.id, title: r.title ?? "", body: r.body ?? "" })), noteId));
+    };
+    void load();
+    const onChange = () => { void load(); };
+    window.addEventListener(NOTE_BODY_EVENT, onChange);
+    window.addEventListener("focus", onChange);
+    return () => { alive = false; window.removeEventListener(NOTE_BODY_EVENT, onChange); window.removeEventListener("focus", onChange); };
+  }, [noteId]);
+  useEffect(() => {
+    if (!editor) return;
+    editor.view.dispatch(editor.state.tr.setMeta(EMBEDDED_IN_KEY, { map: embedHosts }).setMeta("addToHistory", false));
+  }, [editor, embedHosts]);
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const b = (e.target as HTMLElement | null)?.closest("[data-embedded-block]") as HTMLElement | null;
+      if (!b || !wrapperRef.current?.contains(b)) return;
+      e.preventDefault(); e.stopPropagation();
+      setEmbedsFor(b.dataset.embeddedBlock ?? null);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
 
   /* Block links: click the drag handle to copy a link; jump to #b-xxxx on open. */
   useEffect(() => {
@@ -3259,6 +3346,21 @@ export function BlockEditor({
       <EmbedContext.Provider value={{ noteId, depth: embedCtx.depth }}>
         <EditorContent editor={editor} className="pl-3 sm:pl-4" />
       </EmbedContext.Provider>
+      <Dialog open={!!embedsFor} onOpenChange={(o) => { if (!o) setEmbedsFor(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Embedded in</DialogTitle></DialogHeader>
+          <ul className="space-y-1">
+            {(embedsFor ? embedHosts.get(embedsFor) ?? [] : []).map(h => (
+              <li key={h.id}>
+                <button type="button" onClick={() => { setEmbedsFor(null); navigate(`/notes/${h.id}`); }}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted">
+                  <Link2 className="h-4 w-4 text-muted-foreground" /> {h.title || "Untitled"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
       <BlockPickerDialog
         open={!!blockPicker}
         mode={blockPicker ?? "embed"}

@@ -23,3 +23,8 @@
 - [x] Align and space the mobile Planner range and view controls
 - [ ] Upgrade Notebook “On the planner” with day-part task dragging, meal planning, cosmic-first context, and period-note hover previews
 - [ ] Refine notebook cosmic details, mobile long-press drag, task row layout, day-part colors, and formatted date previews
+- [x] "Embedded in" marker for linked blocks
+- [x] Block links/embeds for bullet points and toggles
+- [x] Intelligence panel: TOC auto-scroll, nicer look, richer linked tasks/links, search, cosmic events
+- [x] Auto moon phase + sign on notes with hover cosmic details
+- [x] Click a tag to view it above properties

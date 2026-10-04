@@ -12,6 +12,8 @@ interface Props {
   /** Render as a Link to the tag-detail page. */
   linkable?: boolean;
   onRemove?: () => void;
+  /** Makes the chip a button (e.g. to preview the tag in place). */
+  onClick?: () => void;
   className?: string;
   size?: "xs" | "sm" | "md";
   /** Use the muted/outline style instead of a saturated chip. */
@@ -21,7 +23,7 @@ interface Props {
   entityType?: string;
 }
 
-export function TagChip({ name, linkable, onRemove, className, size = "sm", subtle, entityId, entityType = "task" }: Props) {
+export function TagChip({ name, linkable, onRemove, onClick, className, size = "sm", subtle, entityId, entityType = "task" }: Props) {
   const { resolve } = useTags();
   const meta = resolve(name);
   const Icon = tagIconFor(meta.icon);
@@ -63,6 +65,14 @@ export function TagChip({ name, linkable, onRemove, className, size = "sm", subt
     </span>
   );
 
+  if (onClick) {
+    return (
+      <span role="button" tabIndex={0} className="inline-flex cursor-pointer hover:-translate-y-px"
+        onClick={onClick} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}>
+        {inner}
+      </span>
+    );
+  }
   if (entityId) {
     return (
       <TagFieldsPopover tagName={meta.name} entityId={entityId} entityType={entityType}>
