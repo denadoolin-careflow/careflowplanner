@@ -148,17 +148,21 @@ export function blockUrl(noteId: string, blockId: string): string {
   return `${window.location.origin}/notes/${noteId}#${blockId}`;
 }
 
-/** Block IDs from this note that are embedded elsewhere, with the host notes. */
+export interface BlockHost { id: string; title: string; kind: "embed" | "link" }
+/** Block IDs from this note that other notes embed or link to via chips. */
 export function findEmbedsIn(hostBodies: { id: string; title: string; body: string }[], sourceNoteId: string) {
-  const map = new Map<string, { id: string; title: string }[]>();
-  const re = new RegExp(`data-block-embed[^>]*data-note-id="${sourceNoteId}"[^>]*data-block-ref-id="(b-[a-z0-9]{6})"|data-note-id="${sourceNoteId}"[^>]*data-block-ref-id="(b-[a-z0-9]{6})"[^>]*data-block-embed`, "g");
+  const map = new Map<string, BlockHost[]>();
+  const tagRe = /<(div|span)\b[^>]*>/g;
   for (const n of hostBodies) {
     if (n.id === sourceNoteId) continue;
-    for (const m of n.body.matchAll(re)) {
-      const bid = m[1] || m[2];
-      if (!bid) continue;
+    for (const m of n.body.matchAll(tagRe)) {
+      const tag = m[0];
+      if (!tag.includes(`data-note-id="${sourceNoteId}"`)) continue;
+      const kind = tag.includes("data-block-embed") ? "embed" : tag.includes("data-block-ref") ? "link" : null;
+      const bid = /data-block-ref-id="(b-[a-z0-9]{6})"/.exec(tag)?.[1];
+      if (!kind || !bid) continue;
       const arr = map.get(bid) ?? [];
-      if (!arr.some(x => x.id === n.id)) arr.push({ id: n.id, title: n.title });
+      if (!arr.some(x => x.id === n.id && x.kind === kind)) arr.push({ id: n.id, title: n.title, kind });
       map.set(bid, arr);
     }
   }

@@ -31,6 +31,7 @@ import { NoteContextRail } from "@/components/notes/NoteContextRail";
 import { NoteIntelligencePanel } from "@/components/notes/NoteIntelligencePanel";
 import { NoteCosmicStrip, noteCosmicDate } from "@/components/notes/NoteCosmicStrip";
 import { TagFocusPanel } from "@/components/notes/TagFocusPanel";
+import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { useTags } from "@/hooks/use-tags";
 import { useStore } from "@/lib/store";
 import { copyToClipboard } from "@/lib/clipboard";
@@ -503,6 +504,7 @@ export default function NoteDetail() {
               onRestore={(v) => { setTitle(v.title); setBody(v.body); save({ title: v.title, body: v.body }); }}
             />
           )}
+          <ScheduleSheetButton iconOnly initialDate={noteCosmicDate(note.kind !== "note" ? note.date : null, null)} />
           <EditorPrefsMenu />
           <NoteIconPicker
             value={note.icon ?? null}
