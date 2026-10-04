@@ -2312,6 +2312,8 @@ export function BlockEditor({
     };
   }, [editor]);
 
+  editorRef.current = editor;
+
   /* Block links: click the drag handle to copy a link; jump to #b-xxxx on open. */
   useEffect(() => {
     if (!editor) return;

@@ -1,3 +1,4 @@
+import { stripBlockMarkers } from "@/lib/notes/blocks";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link } from "react-router-dom";
@@ -15,7 +16,7 @@ import { QuickPeek, inferPeek } from "@/components/notes/QuickPeek";
  *   links so they participate in the same safe navigation flow.
  */
 function preprocess(body: string, projects: { id: string; name: string }[]): string {
-  let t = body;
+  let t = stripBlockMarkers(body);
   // [[Title]] → /notes?q=Title
   t = t.replace(/\[\[([^\]]+)\]\]/g, (_, title: string) => {
     const slug = encodeURIComponent(title.trim());
