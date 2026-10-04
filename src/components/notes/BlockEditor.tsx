@@ -1511,6 +1511,27 @@ export function BlockEditor({
               command: () => triggerFileUpload(),
             },
             {
+              title: "Embed block",
+              description: "Show a block or section from another note",
+              icon: Link2,
+              keywords: ["embed", "block", "transclude", "synced", "section", "craft"],
+              command: () => setBlockPicker("embed"),
+            },
+            {
+              title: "Link to block",
+              description: "Insert a chip that jumps to a block",
+              icon: Link2,
+              keywords: ["link", "block", "reference", "ref", "craft"],
+              command: () => setBlockPicker("link"),
+            },
+            {
+              title: "Copy link to block",
+              description: "Copy a link to the block you're in",
+              icon: Link2,
+              keywords: ["copy", "link", "block", "share"],
+              command: (e: Editor) => { void copyBlockLinkAt(e.state.selection.from); },
+            },
+            {
               title: "Live query",
               icon: ListFilter,
               keywords: ["query", "view", "embed", "open tasks", "search", "live"],
@@ -1826,6 +1847,18 @@ export function BlockEditor({
               attrs.collapsed ? { "data-collapsed": "true" } : {},
           },
         },
+      }, {
+        // Craft-style block IDs — assigned the first time a block is linked.
+        types: ["paragraph", "heading"],
+        attributes: {
+          blockId: {
+            default: null,
+            keepOnSplit: false,
+            parseHTML: (el: HTMLElement) => el.getAttribute("data-block-id"),
+            renderHTML: (attrs: Record<string, any>) =>
+              attrs.blockId ? { "data-block-id": attrs.blockId } : {},
+          },
+        },
       }];
     },
   }), []);
@@ -2085,6 +2118,8 @@ export function BlockEditor({
       InlineEntityCard,
       QueryBlock,
       GroceryBlock,
+      BlockEmbed,
+      BlockRef,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
@@ -2203,6 +2238,50 @@ export function BlockEditor({
       editor.off("selectionUpdate", onSel);
     };
   }, [editor]);
+
+  /* Block links: click the drag handle to copy a link; jump to #b-xxxx on open. */
+  useEffect(() => {
+    if (!editor) return;
+    const onClick = (e: MouseEvent) => {
+      const handle = (e.target as HTMLElement | null)?.closest(".drag-handle") as HTMLElement | null;
+      if (!handle || !noteIdRef.current) return;
+      const r = handle.getBoundingClientRect();
+      const editorRect = editor.view.dom.getBoundingClientRect();
+      const hit = editor.view.posAtCoords({ left: Math.max(r.right + 24, editorRect.left + 24), top: r.top + r.height / 2 });
+      if (!hit) return;
+      void copyBlockLinkAt(hit.pos);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const hash = window.location.hash.slice(1);
+    if (!/^b-[a-z0-9]{6}$/.test(hash)) return;
+    const t = window.setTimeout(() => {
+      // Unfold any collapsed heading above the target so it's visible.
+      let targetPos = -1;
+      editor.state.doc.descendants((n, pos) => { if (n.attrs?.blockId === hash) { targetPos = pos; return false; } return true; });
+      if (targetPos < 0) return;
+      const tr = editor.state.tr;
+      let changed = false;
+      editor.state.doc.descendants((n, pos) => {
+        if (pos >= targetPos) return false;
+        if (n.type.name === "heading" && n.attrs.collapsed) { tr.setNodeMarkup(pos, undefined, { ...n.attrs, collapsed: false }); changed = true; }
+        return true;
+      });
+      if (changed) editor.view.dispatch(tr);
+      const el = editor.view.dom.querySelector(`[data-block-id="${hash}"]`) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("cf-block-flash");
+      window.setTimeout(() => el.classList.remove("cf-block-flash"), 2200);
+    }, 350);
+    return () => window.clearTimeout(t);
+  }, [editor, noteId]);
+
 
   /* ----------------------------------------------------------------- *
    *  Mobile swipe-to-select: long-press to arm, drag to extend.       *
@@ -3104,7 +3183,23 @@ export function BlockEditor({
           </button>
         </div>
       )}
-      <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      <EmbedContext.Provider value={{ noteId, depth: embedCtx.depth }}>
+        <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      </EmbedContext.Provider>
+      <BlockPickerDialog
+        open={!!blockPicker}
+        mode={blockPicker ?? "embed"}
+        excludeNoteId={noteId}
+        onOpenChange={(o) => { if (!o) setBlockPicker(null); }}
+        onPick={({ noteId: nid, blockId, label }) => {
+          if (!editor) return;
+          if (blockPicker === "link") {
+            editor.chain().focus().insertContent([{ type: "blockRef", attrs: { noteId: nid, blockId, label } }, { type: "text", text: " " }]).run();
+          } else {
+            editor.chain().focus().insertContent({ type: "blockEmbed", attrs: { noteId: nid, blockId, mode: "read" } }).run();
+          }
+        }}
+      />
       {editor && !isMobile && toolbarPlacement === "bottom" && (
         <div
           className={cn(
