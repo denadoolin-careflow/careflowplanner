@@ -188,6 +188,16 @@ export function NotesTableView({ notes, allNotes, selectedId, onSelect, sort, on
               </tr>
             );
           })}
+          {rows.length === 0 && (
+            <tr>
+              <td colSpan={COLS.length + cols.length + 1} className="px-3 py-6 text-center text-sm text-muted-foreground">
+                No notes match.
+                {Object.values(filters).some(v => v.trim()) && (
+                  <button type="button" onClick={() => setFilters({})} className="ml-2 underline hover:text-foreground">Clear all filters</button>
+                )}
+              </td>
+            </tr>
+          )}
           {onCreate && (
             <tr>
               <td colSpan={COLS.length + cols.length + 1} className="px-3 py-1.5">
@@ -201,6 +211,17 @@ export function NotesTableView({ notes, allNotes, selectedId, onSelect, sort, on
             </tr>
           )}
         </tbody>
+        {cols.length > 0 && (
+          <tfoot>
+            <tr className="border-t border-border/60 text-[11px] text-muted-foreground">
+              <td className="px-3 py-1.5">{rows.length} {rows.length === 1 ? "note" : "notes"}</td>
+              <td className="hidden md:table-cell" /><td className="hidden sm:table-cell" /><td className="hidden lg:table-cell" />
+              <td className="hidden sm:table-cell" /><td />
+              {cols.map(c => <td key={keyOf(c.name)} className="px-2 py-1"><Aggregate col={c} values={rows.map(n => propOf(n, c)?.value ?? null)} /></td>)}
+              {onPropertiesChange && <td />}
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );
