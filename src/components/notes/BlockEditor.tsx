@@ -346,7 +346,8 @@ turndown.addRule("detailsToggle", {
     const open = el.hasAttribute("open") && el.getAttribute("open") !== "false";
     const summaryHtml = (summary?.innerHTML ?? "").trim();
     const contentHtml = (contentEl?.innerHTML ?? "").trim();
-    return `\n\n<details class="cf-toggle"${open ? " open" : ""}><summary>${summaryHtml}</summary><div data-type="detailsContent">${contentHtml}</div></details>\n\n`;
+    const bid = el.getAttribute("data-block-id");
+    return `\n\n<details class="cf-toggle"${bid ? ` data-block-id="${bid}"` : ""}${open ? " open" : ""}><summary>${summaryHtml}</summary><div data-type="detailsContent">${contentHtml}</div></details>\n\n`;
   },
 });
 // Markdown cannot represent fold state. Keep collapsed headings and list items
@@ -1431,6 +1432,18 @@ export function BlockEditor({
     const $pos = ed.state.doc.resolve(Math.min(pos, ed.state.doc.content.size));
     for (let d = $pos.depth; d > 0; d--) {
       const n = $pos.node(d);
+      // Prefer the enclosing toggle when the caret is in its title.
+      const parent = d > 1 ? $pos.node(d - 1) : null;
+      if (n.type.name === "detailsSummary" && parent?.type.name === "details") {
+        let id = parent.attrs.blockId as string | null;
+        if (!id) {
+          id = newBlockId();
+          ed.view.dispatch(ed.state.tr.setNodeMarkup($pos.before(d - 1), undefined, { ...parent.attrs, blockId: id }));
+        }
+        const ok = await copyToClipboard(blockUrl(nid, id));
+        toast.success(ok ? "Link to toggle copied" : "Couldn't copy link");
+        return;
+      }
       if (n.type.name !== "paragraph" && n.type.name !== "heading") continue;
       let id = n.attrs.blockId as string | null;
       if (!id) {
@@ -1441,7 +1454,7 @@ export function BlockEditor({
       toast.success(ok ? "Link to block copied" : "Couldn't copy link");
       return;
     }
-    toast.message("Place the cursor in a paragraph or heading to link it");
+    toast.message("Place the cursor in a paragraph, bullet, heading or toggle title to link it");
   };
 
   // Lock body scroll when fullscreen
@@ -1921,7 +1934,7 @@ export function BlockEditor({
         },
       }, {
         // Craft-style block IDs — assigned the first time a block is linked.
-        types: ["paragraph", "heading"],
+        types: ["paragraph", "heading", "details"],
         attributes: {
           blockId: {
             default: null,

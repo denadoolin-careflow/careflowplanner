@@ -19,6 +19,7 @@ import {
   notifyNoteBodyChanged, NOTE_BODY_EVENT, type NoteBlock,
 } from "@/lib/notes/blocks";
 import { NoteMarkdown } from "./NoteMarkdown";
+import { NoteMarkdownPreview } from "./NoteMarkdownPreview";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -131,6 +132,8 @@ function EmbedView({ node, updateAttributes, selected }: NodeViewProps) {
             </Suspense>
           </div>
         </EmbedContext.Provider>
+      ) : /^\s*</.test(md) ? (
+        <NoteMarkdownPreview body={md} maxChars={100000} />
       ) : (
         <NoteMarkdown body={stripBlockMarkers(md)} />
       )}
@@ -278,7 +281,7 @@ export function BlockPickerDialog({ open, mode, excludeNoteId, onOpenChange, onP
                   className={cn("flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted disabled:opacity-50", b.type === "heading" && "font-semibold")}
                   style={b.type === "heading" ? { paddingLeft: 8 + (b.level - 1) * 10 } : undefined}
                 >
-                  <span className="mt-0.5 w-6 shrink-0 text-[10px] uppercase text-muted-foreground">{b.type === "heading" ? `H${b.level}` : b.type === "listItem" ? "•" : "¶"}</span>
+                  <span className="mt-0.5 w-6 shrink-0 text-[10px] uppercase text-muted-foreground">{b.type === "heading" ? `H${b.level}` : b.type === "listItem" ? "•" : b.type === "toggle" ? "▸" : "¶"}</span>
                   <span className="line-clamp-2">{b.text}</span>
                 </button>
               </li>
