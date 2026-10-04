@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { FileText, Pin } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Pin } from "lucide-react";
 import { listNotes, type Note, type NoteKind } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +37,9 @@ export interface NotesQueryFilters {
   search?: string;
   kind?: NotesKindFilter;
   tag?: string;
+  /** Person id (and name) — matches person properties or a mention of the name. */
+  personId?: string;
+  personName?: string;
 }
 
 const KIND_BADGE: Record<NoteKind, string> = {
@@ -51,7 +54,9 @@ export function NotesQueryRunner({
   columns = DEFAULT_NOTES_QUERY_COLUMNS,
   emptyLabel = "No notes match this query.",
   onCount,
+  paginate = true,
 }: {
+  paginate?: boolean;
   filters: NotesQueryFilters;
   layout?: "list" | "table" | "board";
   sort?: NotesQuerySort;
@@ -73,13 +78,20 @@ export function NotesQueryRunner({
     return () => { alive = false; window.removeEventListener("careflow:notes:pinned-changed", onChange); };
   }, []);
 
-  const rows = useMemo(() => {
+  const all = useMemo(() => {
     const search = (filters.search ?? "").trim().toLowerCase();
     const kind = filters.kind ?? "any";
     const tag = (filters.tag ?? "").trim().toLowerCase();
+    const pid = filters.personId ?? "";
+    const pname = (filters.personName ?? "").trim().toLowerCase();
     let list = notes.filter(n => {
       if (kind !== "any" && n.kind !== kind) return false;
       if (tag && !(n.tags ?? []).some(t => t.toLowerCase() === tag)) return false;
+      if (pid) {
+        const byProp = (n.properties ?? []).some(p => p.type === "person" && (p.value === pid || (Array.isArray(p.value) && p.value.includes(pid))));
+        const byName = !!pname && `${n.title} ${n.body}`.toLowerCase().includes(pname);
+        if (!byProp && !byName) return false;
+      }
       if (search && !(`${n.title} ${n.body}`.toLowerCase().includes(search))) return false;
       return true;
     });
@@ -90,16 +102,42 @@ export function NotesQueryRunner({
         default: return b.updatedAt.localeCompare(a.updatedAt);
       }
     };
-    return list.slice().sort(cmp).slice(0, limit);
-  }, [notes, filters.search, filters.kind, filters.tag, sort, limit]);
+    return list.slice().sort(cmp);
+  }, [notes, filters.search, filters.kind, filters.tag, filters.personId, filters.personName, sort]);
+
+  const pageSize = Math.max(1, limit);
+  const pages = paginate ? Math.max(1, Math.ceil(all.length / pageSize)) : 1;
+  const [page, setPage] = useState(0);
+  useEffect(() => { setPage(0); }, [filters.search, filters.kind, filters.tag, filters.personId, sort, pageSize]);
+  const cur = Math.min(page, pages - 1);
+  const rows = all.slice(cur * pageSize, cur * pageSize + pageSize);
 
   const countRef = useRef(onCount);
   countRef.current = onCount;
-  useEffect(() => { countRef.current?.(rows.length); }, [rows.length]);
+  useEffect(() => { countRef.current?.(all.length); }, [all.length]);
 
   if (rows.length === 0) {
     return <p className="px-3 py-4 text-[12px] text-muted-foreground">{emptyLabel}</p>;
   }
+
+  const pager = paginate && all.length > pageSize ? (
+    <div className="flex items-center justify-between gap-2 border-t border-border/40 px-3 py-1.5 text-[11px] text-muted-foreground">
+      <span>{cur * pageSize + 1}–{Math.min(all.length, (cur + 1) * pageSize)} of {all.length}</span>
+      <span className="flex items-center gap-1">
+        <button type="button" aria-label="Previous page" disabled={cur === 0}
+          onClick={() => setPage(cur - 1)}
+          className="rounded-md border border-border/60 p-1 hover:bg-muted disabled:opacity-40">
+          <ChevronLeft className="h-3 w-3" />
+        </button>
+        <span>Page {cur + 1} / {pages}</span>
+        <button type="button" aria-label="Next page" disabled={cur >= pages - 1}
+          onClick={() => setPage(cur + 1)}
+          className="rounded-md border border-border/60 p-1 hover:bg-muted disabled:opacity-40">
+          <ChevronRight className="h-3 w-3" />
+        </button>
+      </span>
+    </div>
+  ) : null;
 
   const has = (c: NotesQueryColumn) => columns.includes(c);
 
@@ -161,11 +199,13 @@ export function NotesQueryRunner({
             ))}
           </tbody>
         </table>
+        {pager}
       </div>
     );
   }
 
   return (
+    <>
     <ul className="divide-y divide-border/30">
       {rows.map(n => (
         <li key={n.id} className={cn("flex flex-wrap items-center gap-2 px-3 py-1.5 text-[13px]")}>
@@ -176,5 +216,7 @@ export function NotesQueryRunner({
         </li>
       ))}
     </ul>
+    {pager}
+    </>
   );
 }
