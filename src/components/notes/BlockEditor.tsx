@@ -61,7 +61,7 @@ import { ChevronsDownUp, ChevronsUpDown, ListFilter, ShoppingCart, Link2 } from 
 import { BlockEmbed, BlockRef, BlockPickerDialog, EmbedContext } from "@/components/notes/BlockEmbedNode";
 import { newBlockId, blockUrl, BLOCK_MARKER_RE, findEmbedsIn, NOTE_BODY_EVENT } from "@/lib/notes/blocks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-const EMBEDDED_IN_KEY = new PluginKey<{ map: Map<string, { id: string; title: string }[]> }>("cfEmbeddedIn");
+const EMBEDDED_IN_KEY = new PluginKey<{ map: Map<string, { id: string; title: string; kind?: "embed" | "link" }[]> }>("cfEmbeddedIn");
 import { copyToClipboard } from "@/lib/clipboard";
 import { useContext } from "react";
 import { useStore } from "@/lib/store";
@@ -2152,7 +2152,7 @@ export function BlockEditor({
       return [new Plugin({
         key: EMBEDDED_IN_KEY,
         state: {
-          init: () => ({ map: new Map<string, { id: string; title: string }[]>() }),
+          init: () => ({ map: new Map<string, { id: string; title: string; kind?: "embed" | "link" }[]>() }),
           apply: (tr, prev) => tr.getMeta(EMBEDDED_IN_KEY) ?? prev,
         },
         props: {
@@ -2171,7 +2171,7 @@ export function BlockEditor({
                 b.contentEditable = "false";
                 b.className = "cf-embedded-badge";
                 b.dataset.embeddedBlock = id;
-                b.title = `Embedded in ${hosts.map(h => h.title || "Untitled").join(", ")}`;
+                b.title = `Referenced in ${hosts.map(h => `${h.title || "Untitled"} (${h.kind === "link" ? "link" : "embed"})`).join(", ")}`;
                 b.textContent = `↗ ${hosts.length}`;
                 return b;
               }, { side: 1, key: `emb-${id}-${hosts.length}` }));
@@ -2367,7 +2367,7 @@ export function BlockEditor({
   }, [editor]);
 
 
-  const [embedHosts, setEmbedHosts] = useState<Map<string, { id: string; title: string }[]>>(new Map());
+  const [embedHosts, setEmbedHosts] = useState<Map<string, { id: string; title: string; kind?: "embed" | "link" }[]>>(new Map());
   const [embedsFor, setEmbedsFor] = useState<string | null>(null);
   useEffect(() => {
     if (!noteId) return;
@@ -2418,7 +2418,19 @@ export function BlockEditor({
 
   useEffect(() => {
     if (!editor) return;
-    const hash = window.location.hash.slice(1);
+    const rawHash = window.location.hash.slice(1);
+    const refMatch = /^ref-(b-[a-z0-9]{6})$/.exec(rawHash);
+    if (refMatch) {
+      const rt = window.setTimeout(() => {
+        const el = editor.view.dom.querySelector(`[data-block-ref-id="${refMatch[1]}"]`) as HTMLElement | null;
+        if (!el) return;
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("cf-block-flash");
+        window.setTimeout(() => el.classList.remove("cf-block-flash"), 2200);
+      }, 600);
+      return () => window.clearTimeout(rt);
+    }
+    const hash = rawHash;
     if (!/^b-[a-z0-9]{6}$/.test(hash)) return;
     const t = window.setTimeout(() => {
       // Unfold any collapsed heading above the target so it's visible.
@@ -3348,13 +3360,15 @@ export function BlockEditor({
       </EmbedContext.Provider>
       <Dialog open={!!embedsFor} onOpenChange={(o) => { if (!o) setEmbedsFor(null); }}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Embedded in</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Embedded and linked in</DialogTitle></DialogHeader>
           <ul className="space-y-1">
             {(embedsFor ? embedHosts.get(embedsFor) ?? [] : []).map(h => (
-              <li key={h.id}>
-                <button type="button" onClick={() => { setEmbedsFor(null); navigate(`/notes/${h.id}`); }}
+              <li key={`${h.id}:${h.kind}`}>
+                <button type="button" onClick={() => { setEmbedsFor(null); navigate(`/notes/${h.id}#ref-${embedsFor}`); }}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted">
-                  <Link2 className="h-4 w-4 text-muted-foreground" /> {h.title || "Untitled"}
+                  <Link2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate">{h.title || "Untitled"}</span>
+                  <span className="rounded-full bg-muted px-2 text-[10px] text-muted-foreground">{h.kind === "link" ? "Link" : "Embed"}</span>
                 </button>
               </li>
             ))}
