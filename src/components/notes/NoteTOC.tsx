@@ -83,9 +83,20 @@ export function NoteTOC({
   }, [headings]);
 
   const handleJump = (id: string) => {
-    const el = document.getElementById(id);
+    // The editor re-renders headings and can drop the ids we assigned, so
+    // fall back to matching by position among the container's headings.
+    let el = document.getElementById(id);
+    if (!el) {
+      const idx = headings.findIndex(h => h.id === id);
+      const root = document.querySelector(containerSelector);
+      const nodes = root ? Array.from(root.querySelectorAll<HTMLElement>("h1, h2, h3")).filter(n => (n.textContent || "").trim()) : [];
+      el = nodes[idx] ?? null;
+      if (el) el.id = id;
+    }
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.add("cf-block-flash");
+    window.setTimeout(() => el?.classList.remove("cf-block-flash"), 1800);
     setActive(id);
   };
 
@@ -105,19 +116,19 @@ export function NoteTOC({
       <div className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         <List className="h-3 w-3" /> {title}
       </div>
-      <ul className="space-y-0.5 border-l border-border/50">
+      <ul className="space-y-0.5 border-l-2 border-border/40">
         {headings.map(h => (
           <li key={h.id}>
             <button
               onClick={() => handleJump(h.id)}
               className={cn(
-                "block w-full truncate border-l-2 py-0.5 pl-2 pr-1 text-left leading-snug transition-colors",
+                "block w-full truncate rounded-r-md border-l-2 py-1 pl-2 pr-1 text-left leading-snug transition-colors hover:bg-muted/50",
                 h.level === 1 && "pl-2 font-medium",
                 h.level === 2 && "pl-4",
                 h.level === 3 && "pl-6 text-muted-foreground",
                 active === h.id
-                  ? "-ml-px border-l-primary text-primary"
-                  : "-ml-px border-l-transparent hover:text-foreground",
+                  ? "-ml-[2px] border-l-primary bg-primary/5 font-medium text-primary"
+                  : "-ml-[2px] border-l-transparent hover:text-foreground",
               )}
               title={h.text}
             >
