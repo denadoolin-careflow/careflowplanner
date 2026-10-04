@@ -188,6 +188,16 @@ export function NotesTableView({ notes, allNotes, selectedId, onSelect, sort, on
               </tr>
             );
           })}
+          {rows.length === 0 && (
+            <tr>
+              <td colSpan={COLS.length + cols.length + 1} className="px-3 py-6 text-center text-sm text-muted-foreground">
+                No notes match.
+                {Object.values(filters).some(v => v.trim()) && (
+                  <button type="button" onClick={() => setFilters({})} className="ml-2 underline hover:text-foreground">Clear all filters</button>
+                )}
+              </td>
+            </tr>
+          )}
           {onCreate && (
             <tr>
               <td colSpan={COLS.length + cols.length + 1} className="px-3 py-1.5">
@@ -201,6 +211,17 @@ export function NotesTableView({ notes, allNotes, selectedId, onSelect, sort, on
             </tr>
           )}
         </tbody>
+        {cols.length > 0 && (
+          <tfoot>
+            <tr className="border-t border-border/60 text-[11px] text-muted-foreground">
+              <td className="px-3 py-1.5">{rows.length} {rows.length === 1 ? "note" : "notes"}</td>
+              <td className="hidden md:table-cell" /><td className="hidden sm:table-cell" /><td className="hidden lg:table-cell" />
+              <td className="hidden sm:table-cell" /><td />
+              {cols.map(c => <td key={keyOf(c.name)} className="px-2 py-1"><Aggregate col={c} values={rows.map(n => propOf(n, c)?.value ?? null)} /></td>)}
+              {onPropertiesChange && <td />}
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );
@@ -220,6 +241,56 @@ function AddColumn({ onAdd }: { onAdd: (name: string, type: NotePropertyType) =>
           <button key={t.type} type="button" disabled={!name.trim()} onClick={() => { onAdd(name, t.type); setName(""); setOpen(false); }}
             className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted disabled:opacity-50">
             <t.icon className="h-3.5 w-3.5 text-muted-foreground" /> {t.label}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+type AggFn = "none" | "count" | "filled" | "empty" | "sum" | "avg" | "min" | "max" | "checked" | "pct";
+const AGG_LABEL: Record<AggFn, string> = { none: "Calculate", count: "Count", filled: "Filled", empty: "Empty", sum: "Sum", avg: "Average", min: "Min", max: "Max", checked: "Checked", pct: "% checked" };
+const aggsFor = (t: NotePropertyType): AggFn[] =>
+  t === "number" ? ["none", "count", "filled", "empty", "sum", "avg", "min", "max"]
+  : t === "checkbox" ? ["none", "count", "checked", "pct"]
+  : ["none", "count", "filled", "empty"];
+const AGG_KEY = "careflow.notes.table.aggs";
+
+function Aggregate({ col, values }: { col: PropCol; values: NoteProperty["value"][] }) {
+  const k = keyOf(col.name);
+  const [fn, setFn] = useState<AggFn>(() => { try { return JSON.parse(localStorage.getItem(AGG_KEY) || "{}")[k] ?? "none"; } catch { return "none"; } });
+  const choose = (f: AggFn) => {
+    setFn(f);
+    try { const all = JSON.parse(localStorage.getItem(AGG_KEY) || "{}"); all[k] = f; localStorage.setItem(AGG_KEY, JSON.stringify(all)); } catch { /* noop */ }
+  };
+  const isEmpty = (v: NoteProperty["value"]) => v == null || v === "" || (Array.isArray(v) && v.length === 0) || v === false;
+  const nums = values.filter((v): v is number => typeof v === "number");
+  const fmt = (n: number) => Number.isInteger(n) ? String(n) : n.toFixed(2);
+  const result = (() => {
+    switch (fn) {
+      case "count": return String(values.length);
+      case "filled": return String(values.filter(v => !isEmpty(v)).length);
+      case "empty": return String(values.filter(isEmpty).length);
+      case "sum": return fmt(nums.reduce((a, b) => a + b, 0));
+      case "avg": return nums.length ? fmt(nums.reduce((a, b) => a + b, 0) / nums.length) : "—";
+      case "min": return nums.length ? fmt(Math.min(...nums)) : "—";
+      case "max": return nums.length ? fmt(Math.max(...nums)) : "—";
+      case "checked": return String(values.filter(v => v === true).length);
+      case "pct": return values.length ? `${Math.round(values.filter(v => v === true).length / values.length * 100)}%` : "—";
+      default: return "";
+    }
+  })();
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className="w-full rounded px-1 py-0.5 text-left hover:bg-muted/50 hover:text-foreground">
+          {fn === "none" ? <span className="opacity-60">Calculate</span> : <><span className="opacity-70">{AGG_LABEL[fn]}</span> <span className="font-medium text-foreground tabular-nums">{result}</span></>}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-40 p-1">
+        {aggsFor(col.type).map(f => (
+          <button key={f} type="button" onClick={() => choose(f)} className={cn("block w-full rounded px-2 py-1 text-left text-xs hover:bg-muted", fn === f && "font-medium")}>
+            {f === "none" ? "None" : AGG_LABEL[f]}
           </button>
         ))}
       </PopoverContent>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ItemFieldsSection } from "@/components/tags/ItemFieldsSection";
+import { PersonPicker } from "@/components/people/PersonPicker";
 import type { NoteProperty, NotePropertyType } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 
@@ -128,9 +129,26 @@ export function PropValue({ prop, onChange }: { prop: NoteProperty; onChange: (p
     case "select":
     case "multi":
       return <OptionPicker prop={prop} onChange={onChange} />;
+    case "person":
+      return <PersonPicker value={(prop.value as string) ?? null} placeholder="Empty" className="min-h-7 border-0 bg-transparent px-1 text-xs"
+        onChange={p => onChange({ value: p ? p.id : null })} />;
     default:
       return <input className={base} placeholder="Empty" defaultValue={(prop.value as string) ?? ""} onBlur={e => onChange({ value: e.target.value || null })} />;
   }
+}
+
+/** Rename an option everywhere it appears in this property (options, colors, value). */
+function renameOption(prop: NoteProperty, from: string, to: string): Partial<NoteProperty> {
+  const options = (prop.options ?? []).map(o => o === from ? to : o).filter((o, i, a) => a.indexOf(o) === i);
+  const colors = { ...(prop.colors ?? {}) };
+  if (colors[from]) { colors[to] = colors[from]; delete colors[from]; }
+  const value = Array.isArray(prop.value) ? (prop.value as string[]).map(v => v === from ? to : v) : prop.value === from ? to : prop.value;
+  return { options, colors, value };
+}
+function removeOption(prop: NoteProperty, o: string): Partial<NoteProperty> {
+  const colors = { ...(prop.colors ?? {}) }; delete colors[o];
+  const value = Array.isArray(prop.value) ? (prop.value as string[]).filter(v => v !== o) : prop.value === o ? null : prop.value;
+  return { options: (prop.options ?? []).filter(x => x !== o), colors, value };
 }
 
 function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Partial<NoteProperty>) => void }) {
@@ -164,11 +182,20 @@ function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Pa
               <PopoverTrigger asChild>
                 <button type="button" aria-label={`Color for ${o}`} className="h-4 w-4 rounded-full border border-border" style={{ backgroundColor: optionColor(prop, o) }} />
               </PopoverTrigger>
-              <PopoverContent align="end" className="grid w-auto grid-cols-5 gap-1 p-2">
-                {OPTION_COLORS.map(c => (
-                  <button key={c} type="button" aria-label={`Use color ${c}`} onClick={() => onChange({ colors: { ...(prop.colors ?? {}), [o]: c } })}
-                    className={cn("h-5 w-5 rounded-full border border-border", optionColor(prop, o) === c && "ring-2 ring-primary")} style={{ backgroundColor: c }} />
-                ))}
+              <PopoverContent align="end" className="w-48 space-y-2 p-2">
+                <Input defaultValue={o} aria-label={`Rename ${o}`} className="h-7 text-xs"
+                  onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                  onBlur={e => { const t = e.target.value.trim(); if (t && t !== o) onChange(renameOption(prop, o, t)); }} />
+                <div className="grid grid-cols-5 gap-1">
+                  {OPTION_COLORS.map(c => (
+                    <button key={c} type="button" aria-label={`Use color ${c}`} onClick={() => onChange({ colors: { ...(prop.colors ?? {}), [o]: c } })}
+                      className={cn("h-5 w-5 rounded-full border border-border", optionColor(prop, o) === c && "ring-2 ring-primary")} style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+                <button type="button" onClick={() => onChange(removeOption(prop, o))}
+                  className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-xs text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-3 w-3" /> Delete option
+                </button>
               </PopoverContent>
             </Popover>
           </div>

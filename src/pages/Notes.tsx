@@ -460,7 +460,7 @@ export default function Notes() {
               <div className="rounded-2xl border border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">Loading…</div>
             ) : view === "notebook" ? (
               <NotesNotebookView notes={filtered} selectedId={noteParam} onSelect={selectNote} />
-            ) : filtered.length === 0 ? (
+            ) : filtered.length === 0 && view !== "table" ? (
               <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">
                 <Sparkles className="mx-auto mb-2 h-5 w-5 opacity-60" />
                 No notes match. Try clearing filters or create your first one.
