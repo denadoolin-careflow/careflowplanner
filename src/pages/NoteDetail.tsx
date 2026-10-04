@@ -29,6 +29,8 @@ import type { Attachment } from "@/lib/types";
 import { NoteTOC } from "@/components/notes/NoteTOC";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
 import { NoteIntelligencePanel } from "@/components/notes/NoteIntelligencePanel";
+import { NoteCosmicStrip, noteCosmicDate } from "@/components/notes/NoteCosmicStrip";
+import { TagFocusPanel } from "@/components/notes/TagFocusPanel";
 import { useTags } from "@/hooks/use-tags";
 import { useStore } from "@/lib/store";
 import { copyToClipboard } from "@/lib/clipboard";
@@ -68,6 +70,21 @@ export default function NoteDetail() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  // Tag links inside the note open the tag view above properties instead of leaving.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.metaKey || e.ctrlKey) return;
+      const a = (e.target as HTMLElement | null)?.closest('.block-editor a[href^="/tags/"]') as HTMLAnchorElement | null;
+      if (!a) return;
+      e.preventDefault(); e.stopPropagation();
+      const name = decodeURIComponent(a.getAttribute("href")!.slice(6));
+      setActiveTag(name);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
   const saveTimer = useRef<number | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -671,8 +688,10 @@ export default function NoteDetail() {
           Updated {format(parseISO(note.updatedAt), "MMM d, h:mm a")}
         </p>
 
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <NoteCosmicStrip date={noteCosmicDate(note.kind !== "note" ? note.date : null, note.createdAt)} />
           <TagPicker
+            onTagClick={(name) => setActiveTag(t => t === name ? null : name)}
             value={tags}
             onChange={(next) => {
               setTags(next);
@@ -680,6 +699,8 @@ export default function NoteDetail() {
             }}
           />
         </div>
+
+        {activeTag && <TagFocusPanel tag={activeTag} currentNoteId={id} onClose={() => setActiveTag(null)} />}
 
         {id && (
           <NotePropertiesSection
