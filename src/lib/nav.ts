@@ -108,7 +108,8 @@ export const NAV = [
   { to: "/health", label: "Health", icon: HeartPulse },
   { to: "/wealth", label: "Wealth", icon: Wallet },
   { to: "/mental-load", label: "Mental Load", icon: Leaf },
-  { to: "/home-areas", label: "Home", icon: Home },
+  { to: "/home", label: "Home", icon: Home },
+  { to: "/home-areas", label: "Home Areas", icon: Home },
   { to: "/home-reset", label: "Home Hub", icon: Sparkle },
   { to: "/journal", label: "Journal", icon: BookHeart },
   { to: "/journal-flow", label: "Journal & Flow", icon: Wind },
@@ -126,7 +127,7 @@ export const MOBILE_NAV = [
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/today", label: "Today", icon: Sun },
   { to: "/calendar", label: "Calendar", icon: CalendarCheck },
-  { to: "/home-areas", label: "Home", icon: Home },
+  { to: "/home", label: "Home", icon: Home },
   { to: "/meals", label: "Meals", icon: UtensilsCrossed },
   { to: "/notes", label: "Notes", icon: NotebookPen },
 ] as const;
