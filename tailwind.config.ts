@@ -13,6 +13,7 @@ export default {
         brand: ['"Nunito Sans"', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
       },
       colors: {
+        kitchen: { cream: "hsl(var(--kitchen-cream))", terracotta: "hsl(var(--kitchen-terracotta))", ink: "hsl(var(--kitchen-ink))" },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
