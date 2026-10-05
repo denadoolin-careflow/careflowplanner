@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, subMinutes, set } from "date-fns";
-import { ChefHat, Clock, Flame, UtensilsCrossed, ChevronDown, ShoppingCart, Check } from "lucide-react";
+import { ChefHat, Clock, Flame, UtensilsCrossed, ChevronDown, ShoppingCart, Check, AlertTriangle } from "lucide-react";
 import { useStore, todayISO } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import type { Meal } from "@/lib/types";
 import { PlanDinnerSheet } from "@/components/meals/PlanDinnerSheet";
 import { useMealPeople } from "@/lib/meal-people";
 import { usePeopleDirectory } from "@/lib/people-directory";
+import { useDietaryMap, mealConflicts } from "@/lib/dietary";
 
 const DINNER_HOUR_KEY = "meals.dinnerTime";
 
@@ -24,12 +25,14 @@ export function TonightDinnerHero({ onOpen }: { onOpen: (m: Meal) => void }) {
   const dinners: Meal[] = useMemo(() => (state.meals ?? []).filter((m: Meal) => m.date === todayISO() && m.slot === "Dinner"), [state.meals]);
   const { links } = useMealPeople(dinners.map((d) => d.id));
   const people = usePeopleDirectory();
+  const diet = useDietaryMap();
   const linkedIds = new Set(links.map((l) => l.mealId));
   const meal: Meal | undefined = dinners.find((d) => !linkedIds.has(d.id)) ?? dinners[0];
   const plates = dinners.filter((d) => d.id !== meal?.id && linkedIds.has(d.id)).map((d) => {
     const l = links.find((x) => x.mealId === d.id);
     const p = people.find((x) => x.id === l?.personId);
-    return { id: d.id, meal: d, who: p ? `${p.emoji ? p.emoji + " " : ""}${p.name}` : "Someone" };
+    const conflicts = l ? mealConflicts(d, diet[l.personId]) : [];
+    return { id: d.id, meal: d, who: p ? `${p.emoji ? p.emoji + " " : ""}${p.name}` : "Someone", conflicts };
   });
 
   const [h, m] = dinnerAt.split(":").map(Number);
@@ -79,9 +82,13 @@ export function TonightDinnerHero({ onOpen }: { onOpen: (m: Meal) => void }) {
           {plates.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {plates.map((p) => (
-                <button key={p.id} type="button" onClick={() => onOpen(p.meal)}
-                  className="rounded-full bg-kitchen-terracotta/10 px-2.5 py-1 text-xs font-medium ring-1 ring-kitchen-terracotta/25">
+                <button key={p.id} type="button" onClick={() => p.conflicts.length ? setPlanOpen(true) : onOpen(p.meal)}
+                  title={p.conflicts.length ? `Doesn't match: ${p.conflicts.map((c) => `${c.rule} (${c.word})`).join(", ")}` : undefined}
+                  className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ring-1",
+                    p.conflicts.length ? "bg-destructive/10 text-destructive ring-destructive/30" : "bg-kitchen-terracotta/10 ring-kitchen-terracotta/25")}>
+                  {p.conflicts.length > 0 && <AlertTriangle className="h-3 w-3" />}
                   {p.who} · {p.meal.name}
+                  {p.conflicts.length > 0 && <span className="opacity-80">— {p.conflicts.map((c) => c.rule).join(", ")}</span>}
                 </button>
               ))}
             </div>

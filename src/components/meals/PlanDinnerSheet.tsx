@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Plus, Trash2, Users } from "lucide-react";
+import { AlertTriangle, BookOpen, Plus, Salad, Trash2, Users } from "lucide-react";
+import { useDietaryMap, mealConflicts, hasDietary } from "@/lib/dietary";
+import { DietaryDialog } from "@/components/meals/DietaryDialog";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,9 @@ export function PlanDinnerSheet({
   const [split, setSplit] = useState(false);
   const [shop, setShop] = useState(true);
   const [saving, setSaving] = useState(false);
+  const diet = useDietaryMap();
+  const [dietFor, setDietFor] = useState<string | null>(null);
+  const dietPerson = people.find((x) => x.id === dietFor) ?? null;
 
   useEffect(() => {
     if (!open) return;
@@ -139,7 +144,14 @@ export function PlanDinnerSheet({
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
+                {p.personId && (
+                  <button type="button" onClick={() => setDietFor(p.personId!)}
+                    className="flex items-center gap-1 text-xs font-semibold text-kitchen-terracotta">
+                    <Salad className="h-3.5 w-3.5" /> {hasDietary(diet[p.personId]) ? "Diet & allergies: " + [...(diet[p.personId].diets ?? []), ...(diet[p.personId].allergies ?? []).map((a) => `no ${a.toLowerCase()}`)].join(", ") || "notes" : "Add diet & allergies"}
+                  </button>
+                )}
                 <PlateEditor plate={p} onChange={(np) => setExtras((xs) => xs.map((x, j) => j === i ? np : x))} compact />
+                <ConflictNote plate={p} d={p.personId ? diet[p.personId] : undefined} />
               </div>
             ))}
             <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 rounded-full"
@@ -158,7 +170,20 @@ export function PlanDinnerSheet({
           {saving ? "Saving…" : "Save dinner"}
         </Button>
       </DialogContent>
+      <DietaryDialog person={dietPerson} value={dietFor ? diet[dietFor] : undefined} open={!!dietFor} onOpenChange={(v) => !v && setDietFor(null)} />
     </Dialog>
+  );
+}
+
+function ConflictNote({ plate, d }: { plate: Plate; d?: import("@/lib/dietary").Dietary }) {
+  if (!plate.name.trim()) return null;
+  const c = mealConflicts({ name: plate.name, ingredients: lines(plate.ingredients), tags: [] }, d);
+  if (!c.length) return null;
+  return (
+    <p className="flex items-start gap-1.5 rounded-xl bg-destructive/10 px-2.5 py-2 text-xs text-destructive">
+      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <span>Doesn't match: {c.map((x) => `${x.rule} (${x.word})`).join(", ")}</span>
+    </p>
   );
 }
 
