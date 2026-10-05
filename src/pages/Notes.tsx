@@ -36,7 +36,8 @@ import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
 import { NotesOutlineView } from "@/components/notes/NotesOutlineView";
 import { NotesTableView } from "@/components/notes/NotesTableView";
-import { NotesNotebookView } from "@/components/notes/NotesNotebookView";
+import { NotesCaptureBox } from "@/components/notes/NotesCaptureBox";
+import { NotesNotebookGallery } from "@/components/notes/NotesNotebookGallery";
 import { noteDisplayTitle, weekKeyFor, monthKeyFor } from "@/lib/notes/periods";
 import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate } from "@/lib/notes/daily";
 import { getNoteCoverCss } from "@/lib/note-covers";
@@ -50,12 +51,10 @@ const COLLECTION_KEY = "careflow.notes.collection";
 const SIDE_NAV_KEY = "careflow.notes.sidenav";
 
 const ADVANCED_VIEWS: { id: Exclude<View, "list" | "compact" | "grid">; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "notebook", label: "Notebook", icon: NotebookPen },
   { id: "outline", label: "Outline", icon: IndentIncrease },
   { id: "board", label: "Board", icon: KanbanSquare },
   { id: "table", label: "Table", icon: Table2 },
   { id: "timeline", label: "Timeline", icon: Clock3 },
-  { id: "calendar", label: "Calendar", icon: CalendarIcon },
 ];
 
 type NoteSpace = { name: string; icon: React.ComponentType<{ className?: string }>; tags: readonly string[] };
@@ -74,7 +73,7 @@ const SPACES: readonly NoteSpace[] = [
 export default function Notes() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const { state } = useStore();
+  const { state, addTask } = useStore();
   const initialQ = params.get("q") ?? "";
   const noteParam = params.get("note");
   const [notes, setNotes] = useState<Note[]>([]);
@@ -91,7 +90,7 @@ export default function Notes() {
       const stored = localStorage.getItem(VIEW_KEY) as View | null;
       if (stored) return stored;
     }
-    return "list";
+    return "notebook";
   });
   const [collection, setCollection] = useState<SmartCollectionId>(() => {
     const fromUrl = params.get("collection") as SmartCollectionId | null;
@@ -224,11 +223,15 @@ export default function Notes() {
           )}
         </header>
 
-        <button type="button" onClick={() => void newNote()} className="notes-quick-capture group mb-3 flex min-h-[62px] w-full items-center gap-3 rounded-2xl border px-4 text-left transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Flower2 className="h-5 w-5 shrink-0 text-primary" aria-hidden />
-          <span className="flex-1 text-sm text-muted-foreground">What’s on your mind?</span>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-glow transition-transform group-hover:rotate-90" aria-hidden><Plus className="h-5 w-5" /></span>
-        </button>
+        <NotesCaptureBox
+          notes={notes}
+          projects={state.projects ?? []}
+          addTask={addTask}
+          onCreated={async result => {
+            await refresh();
+            if (result?.kind === "note" && result.id) navigate(`/notes/${result.id}`);
+          }}
+        />
 
         <nav aria-label="Note filters" className="notes-filter-scroll -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {([
@@ -261,9 +264,11 @@ export default function Notes() {
             <section aria-labelledby="all-notes-heading">
               <div className="mb-3 flex items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <h2 id="all-notes-heading" className="truncate font-display text-xl font-semibold">{activeTag ? `#${activeTag}` : collection === "all" ? "All Notes" : collection === "pinned" ? "Pinned Notes" : "Recent Notes"} <span className="font-sans text-xs font-normal text-muted-foreground">· {filtered.length}</span></h2>
+                   <h2 id="all-notes-heading" className="truncate font-display text-xl font-semibold">{activeTag ? `#${activeTag}` : view === "notebook" ? "Notebooks" : view === "calendar" ? "Notes Calendar" : collection === "all" ? "All Notes" : collection === "pinned" ? "Pinned Notes" : "Recent Notes"} <span className="font-sans text-xs font-normal text-muted-foreground">· {filtered.length}</span></h2>
                 </div>
                 <div className="notes-view-control flex shrink-0 items-center rounded-full border p-0.5" aria-label="Note view">
+                   <Button variant="ghost" size="icon" onClick={() => setView("notebook")} aria-label="Notebook gallery" aria-pressed={view === "notebook"} className={cn("h-9 w-9 rounded-full", view === "notebook" && "is-active")}><NotebookPen className="h-4 w-4" /></Button>
+                   <Button variant="ghost" size="icon" onClick={() => setView("calendar")} aria-label="Calendar view" aria-pressed={view === "calendar"} className={cn("h-9 w-9 rounded-full", view === "calendar" && "is-active")}><CalendarIcon className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => setView("grid")} aria-label="Grid view" aria-pressed={view === "grid"} className={cn("h-9 w-9 rounded-full", view === "grid" && "is-active")}><LayoutGrid className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => setView("list")} aria-label="List view" aria-pressed={view === "list"} className={cn("h-9 w-9 rounded-full", view === "list" && "is-active")}><ListIcon className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => setView("compact")} aria-label="Compact view" aria-pressed={view === "compact"} className={cn("h-9 w-9 rounded-full", view === "compact" && "is-active")}><IndentIncrease className="h-4 w-4" /></Button>
@@ -286,8 +291,12 @@ export default function Notes() {
                 </DropdownMenu>
               </div>
 
-              {loading ? <NotesLoading /> : filtered.length === 0 && view !== "table" ? <EmptyNotes onCreate={() => void newNote()} /> : view === "notebook" ? (
-                <NotesNotebookView notes={filtered} selectedId={noteParam} onSelect={selectNote} />
+              {loading ? <NotesLoading /> : view === "notebook" ? (
+                <NotesNotebookGallery notes={filtered} selectedId={noteParam} onSelect={selectNote} onOpenMonth={async key => {
+                  try { navigate(`/notes/${(await openPeriodNoteWithTemplate("monthly", key, readDefaultPeriodTemplate("monthly"))).id}`); }
+                  catch { toast.error("Could not open the month note"); }
+                }} />
+              ) : filtered.length === 0 && view !== "table" ? <EmptyNotes onCreate={() => void newNote()} /> : view === "grid" ? (
               ) : view === "grid" ? (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(n => <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} previewLines={previewLines} />)}</div>
               ) : view === "outline" ? (

@@ -46,7 +46,8 @@ export function NotesCaptureBox({
         const id = await addTask({
           title: parsed.title || raw,
           dueDate: parsed.dueDate,
-          dueTime: parsed.time,
+          startDate: parsed.time ? parsed.dueDate : undefined,
+          startTime: parsed.time,
           priority: parsed.priority,
           area: parsed.area,
           tags: parsed.tags,
@@ -69,9 +70,8 @@ export function NotesCaptureBox({
         toast.success(`Added to ${targetNote.title || "note"}`);
         await onCreated({ kind: "append", id: targetNote.id });
       } else {
-        const parsed = parseTaskInput(raw);
-        const title = parsed.title || raw;
-        const note = await createNote({ title, body: raw, tags: parsed.tags });
+        const title = raw.length > 80 ? `${raw.slice(0, 77).trimEnd()}…` : raw;
+        const note = await createNote({ title, body: raw });
         toast.success("Note created");
         await onCreated({ kind: "note", id: note.id });
       }
