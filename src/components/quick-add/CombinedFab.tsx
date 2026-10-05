@@ -44,14 +44,33 @@ async function uploadToAttachments(file: File): Promise<Attachment | null> {
  *  • Quick add    → dispatches `careflow:quick-add`
  *  • Ask Carey    → dispatches `careflow:carey:open`
  */
-export function CombinedFab() {
+export function CombinedFab({ variant = "floating", className }: { variant?: "floating" | "dock"; className?: string }) {
+  const isDock = variant === "dock";
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState<null | "photo" | "pdf">(null);
   const drag = useDraggableFab("careflow:fab:combined", { right: 16, bottom: 96 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  // Dock variant: the button lives in the bottom bar — it asks us to toggle
+  // via `careflow:fab:toggle`, and we report state back via `careflow:fab:state`.
+  useEffect(() => {
+    if (!isDock) return;
+    const onToggle = () => setExpanded((v) => !v);
+    window.addEventListener("careflow:fab:toggle", onToggle);
+    return () => window.removeEventListener("careflow:fab:toggle", onToggle);
+  }, [isDock]);
+  useEffect(() => {
+    if (!isDock) return;
+    window.dispatchEvent(new CustomEvent("careflow:fab:state", { detail: expanded }));
+  }, [isDock, expanded]);
+  // Close the dock menu when navigating away.
+  useEffect(() => {
+    if (isDock) setExpanded(false);
+  }, [pathname, isDock]);
 
   // Close when clicking outside or pressing Escape.
   useEffect(() => {
