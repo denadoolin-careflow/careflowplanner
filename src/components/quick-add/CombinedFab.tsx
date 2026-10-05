@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange, Salad, Droplets, Scale, Syringe, CalendarDays, CalendarPlus } from "lucide-react";
 import { openAddEvent } from "@/components/calendar/AddEventHost";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
