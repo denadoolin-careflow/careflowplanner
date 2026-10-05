@@ -95,7 +95,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
               const Icon = SLOT_ICON[r.slot] ?? Sun;
               const complete = r.items.length > 0 && done === r.items.length;
               return (
-                <li key={r.id} className={cn("overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-r from-primary/8 to-transparent", complete && "opacity-75")}>
+                <li key={r.id} className={cn("overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-r from-primary/10 to-transparent", complete && "opacity-75")}>
                   <button type="button" onClick={() => setExpanded(v => v === r.id ? null : r.id)} className="flex min-h-12 w-full items-center gap-2 p-3 text-left" aria-expanded={expanded === r.id}>
                     <ProgressRing done={done} total={r.items.length} />
                     <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
@@ -114,7 +114,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
                       <span className={cn(item.done && "text-muted-foreground")}>{item.text}</span>
                     </button>)}
                   </div>}
-                  <div className="mt-2 flex flex-wrap gap-1" aria-hidden>
+                  <div className="mx-3 mb-3 mt-1 flex flex-wrap gap-1" aria-hidden>
                     {r.items.slice(0, 10).map(i => (
                       <span key={i.id} className={cn(
                         "h-1.5 w-1.5 rounded-full",
