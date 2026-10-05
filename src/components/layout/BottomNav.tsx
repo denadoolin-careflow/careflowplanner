@@ -100,40 +100,77 @@ export function BottomNav() {
     haptics.swipe();
     navigate(order[nextIdx]);
   };
+  const raisedIndex = primary.length >= 5 ? Math.floor((primary.length + 1) / 2) : -1;
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 px-2 pb-[env(safe-area-inset-bottom,0)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+10px)] lg:hidden"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <div className="mx-auto max-w-screen-md rounded-2xl border border-border/40 bg-background/85 px-1 pb-1 pt-1 shadow-sm backdrop-blur-xl">
-        <ul className="grid grid-cols-7">
-          {primary.map(({ to, label, icon: Icon }) => (
-            <li key={to}>
-              <NavLink
-                to={to}
-                onClick={() => haptics.tap()}
-                className={({ isActive }) =>
-                  cn(
-                    "group relative flex min-h-[44px] flex-col items-center gap-0.5 rounded-xl py-2 text-[9.5px] font-medium transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <span className="grid h-7 w-7 place-items-center rounded-xl transition-colors">
-                      <Icon className={cn("h-[18px] w-[18px]", isActive && "stroke-[2.4]")} />
-                    </span>
-                    <span className="leading-none">{label}</span>
-                    {isActive && (
-                      <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
-                    )}
-                  </>
-                )}
-              </NavLink>
-            </li>
-          ))}
+      <div className="mx-auto max-w-screen-md rounded-[32px] border border-border/40 bg-background/90 px-1.5 py-2 shadow-[0_20px_50px_-16px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+        <ul className="grid grid-cols-7 items-end">
+          {primary.map(({ to, label, icon: Icon }, i) => {
+            const isCenter = i === raisedIndex;
+            return (
+              <li key={to} className={cn(isCenter && "-mt-7")}>
+                <NavLink
+                  to={to}
+                  onClick={() => haptics.tap()}
+                  className={({ isActive }) =>
+                    cn(
+                      "group relative flex min-h-[44px] flex-col items-center justify-end gap-0.5 rounded-2xl py-2 text-[9.5px] font-medium transition-all active:scale-90",
+                      isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                      isCenter && "w-[60px]"
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && !isCenter && (
+                        <span
+                          aria-hidden
+                          className="absolute -bottom-1.5 left-1/2 h-11 w-11 -translate-x-1/2 rounded-full bg-primary/15 blur-xl"
+                        />
+                      )}
+                      {isCenter ? (
+                        <>
+                          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95">
+                            <Icon className="h-5 w-5" strokeWidth={2.4} />
+                          </span>
+                          <span className="mt-0.5 font-display text-[8.5px] font-semibold uppercase leading-none tracking-[0.12em] text-primary">
+                            {label}
+                          </span>
+                          {isActive && (
+                            <span className="relative mt-0.5 h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_2px] shadow-primary/50">
+                              <span
+                                aria-hidden
+                                className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/25 blur-md"
+                              />
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <span className="grid h-7 w-7 place-items-center rounded-xl transition-colors">
+                            <Icon className={cn("h-[18px] w-[18px]", isActive && "stroke-[2.4]")} />
+                          </span>
+                          <span className={cn("leading-none", isActive && "font-semibold")}>{label}</span>
+                          {isActive && (
+                            <span className="relative mt-0.5 h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_2px] shadow-primary/50">
+                              <span
+                                aria-hidden
+                                className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/25 blur-md"
+                              />
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            );
+          })}
           <li>
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger
