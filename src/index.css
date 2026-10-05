@@ -9,6 +9,9 @@
 
 @layer base {
   :root {
+    --kitchen-cream: 36 60% 95%;
+    --kitchen-terracotta: 14 58% 52%;
+    --kitchen-ink: 20 30% 22%;
     /* Surfaces — CareFlow warm cream (#FFF9F2) */
     --background: 36 100% 97%;
     --foreground: 150 25% 18%;
@@ -183,6 +186,9 @@
   }
 
   .dark {
+    --kitchen-cream: 24 20% 14%;
+    --kitchen-terracotta: 14 60% 60%;
+    --kitchen-ink: 32 40% 90%;
     --background: 150 20% 8%;
     --foreground: 40 40% 94%;
 

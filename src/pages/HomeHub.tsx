@@ -11,6 +11,7 @@ import { RhythmTab } from "@/components/home-hub/RhythmTab";
 import { ZonesTab } from "@/components/home-hub/ZonesTab";
 import { AnalyticsTab } from "@/components/home-hub/AnalyticsTab";
 import HomeReset from "@/pages/HomeReset";
+import { FifteenMinuteReset } from "@/components/home-hub/FifteenMinuteReset";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
@@ -132,6 +133,7 @@ export default function HomeHub() {
         </div>
        </div>
       </header>
+      <FifteenMinuteReset />
 
       {/* Sticky tab strip — mobile-first, scrollable */}
       <div className="sticky top-0 z-20 -mx-4 bg-background/85 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
