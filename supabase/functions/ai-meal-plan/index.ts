@@ -133,7 +133,7 @@ Preferences: ${JSON.stringify(prefs)}.
 Pantry already has: ${pantryNames.join(", ") || "nothing notable"}.`;
 
       const ai = await callAI(LOVABLE_API_KEY, userMsg, singleMealTool);
-      if (ai.error) return json(ai, ai.status ?? 500);
+      if (ai.error) return json(ai, ai.rateLimited ? 200 : (ai.status ?? 500));
       const meal = ai.args as any;
       // Replace existing meal at that slot/date
       await admin.from("meals").delete().eq("user_id", userId).eq("date", date).eq("slot", slot);
@@ -192,7 +192,7 @@ Pantry already has: ${pantryNames.join(", ") || "nothing notable"} (don't add th
 Generate meals and a consolidated grocery list grouped by category.`;
 
     const ai = await callAI(LOVABLE_API_KEY, userMsg, planTool);
-    if (ai.error) return json(ai, ai.status ?? 500);
+    if (ai.error) return json(ai, ai.rateLimited ? 200 : (ai.status ?? 500));
     const plan = ai.args as { meals: any[]; grocery: any[] };
 
     if (replace) {
@@ -290,8 +290,10 @@ function guessCategory(item: string): string {
   return "Other";
 }
 
-async function callAI(apiKey: string, userMsg: string, tool: any): Promise<{ args?: unknown; error?: string; status?: number }> {
-  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+async function callAI(apiKey: string, userMsg: string, tool: any): Promise<{ args?: unknown; error?: string; status?: number; rateLimited?: boolean }> {
+  let resp!: Response;
+  for (let attempt = 0; attempt < 3; attempt++) {
+  resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -304,7 +306,14 @@ async function callAI(apiKey: string, userMsg: string, tool: any): Promise<{ arg
       tool_choice: { type: "function", function: { name: tool.function.name } },
     }),
   });
-  if (resp.status === 429) return { error: "Rate limited. Please try again in a moment.", status: 429 };
+    if (resp.status !== 429 && resp.status < 500) break;
+    if (attempt < 2) {
+      const ra = Number(resp.headers.get("retry-after"));
+      const wait = Number.isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 8000) : 1000 * 2 ** attempt + Math.random() * 500;
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+  if (resp.status === 429) return { error: "Meal ideas are busy right now. Please try again in a minute.", status: 200, rateLimited: true };
   if (resp.status === 402) return { error: "AI credits exhausted. Add funds in Settings → Workspace → Usage.", status: 402 };
   if (!resp.ok) {
     const t = await resp.text();

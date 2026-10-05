@@ -50,6 +50,7 @@ export async function planWeek(startDate: string) {
     body: { action: "plan_week", start_date: startDate, replace: true },
   });
   if (error) throw error;
+  if ((data as any)?.rateLimited) throw new Error((data as any).error);
   return data as { ok: boolean; meals: number; grocery: number };
 }
 
@@ -58,6 +59,7 @@ export async function regenerateMeal(date: string, slot: string, avoid?: string)
     body: { action: "regenerate_meal", date, slot, avoid },
   });
   if (error) throw error;
+  if ((data as any)?.rateLimited) throw new Error((data as any).error);
   return data;
 }
 
