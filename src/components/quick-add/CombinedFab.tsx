@@ -216,28 +216,31 @@ export function CombinedFab({ variant = "floating", className }: { variant?: "fl
         </button>
       </div>
 
-      {/* Main FAB — planner lives inside the expanded grid */}
-      <div className="pointer-events-auto flex items-center gap-2">
-      <button
-        type="button"
-        ref={drag.ref as React.RefObject<HTMLButtonElement>}
-        {...drag.handlers}
-        onClick={(e) => {
-          if (drag.dragging) { e.preventDefault(); return; }
-          haptics.pickup();
-          setExpanded((v) => !v);
-        }}
-        aria-label={expanded ? "Close quick actions" : "Open quick actions"}
-        className={cn(
-          "pointer-events-auto grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-cozy",
-          "transition-transform hover:scale-105 active:scale-95",
-          drag.dragging && "scale-110 ring-2 ring-primary/40",
-          expanded && "rotate-45",
-        )}
-      >
-        {expanded ? <X className="h-6 w-6 -rotate-45" /> : <Plus className="h-6 w-6" />}
-      </button>
-      </div>
+      {/* Main FAB — planner lives inside the expanded grid. The dock variant
+          renders its button inside the bottom bar instead. */}
+      {!isDock && (
+        <div className="pointer-events-auto flex items-center gap-2">
+        <button
+          type="button"
+          ref={drag.ref as React.RefObject<HTMLButtonElement>}
+          {...drag.handlers}
+          onClick={(e) => {
+            if (drag.dragging) { e.preventDefault(); return; }
+            haptics.pickup();
+            setExpanded((v) => !v);
+          }}
+          aria-label={expanded ? "Close quick actions" : "Open quick actions"}
+          className={cn(
+            "pointer-events-auto grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-cozy",
+            "transition-transform hover:scale-105 active:scale-95",
+            drag.dragging && "scale-110 ring-2 ring-primary/40",
+            expanded && "rotate-45",
+          )}
+        >
+          {expanded ? <X className="h-6 w-6 -rotate-45" /> : <Plus className="h-6 w-6" />}
+        </button>
+        </div>
+      )}
     </div>
   );
 }
