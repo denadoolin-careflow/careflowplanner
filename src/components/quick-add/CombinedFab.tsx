@@ -149,8 +149,14 @@ export function CombinedFab({ variant = "floating", className }: { variant?: "fl
     <div
       ref={wrapRef}
       data-quick-add-fab
-      className={cn("pointer-events-none fixed z-40 flex flex-col items-end gap-2")}
-      style={drag.style}
+      className={cn(
+        "pointer-events-none fixed z-40 flex flex-col gap-2",
+        isDock
+          ? "items-center left-1/2 -translate-x-1/2 lg:hidden"
+          : "items-end hidden lg:flex",
+        className,
+      )}
+      style={isDock ? { bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" } : drag.style}
     >
       {/* Hidden file pickers */}
       <input ref={photoInputRef} type="file" accept="image/*" capture="environment"
