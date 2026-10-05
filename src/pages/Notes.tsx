@@ -12,6 +12,7 @@ import {
   Lightbulb, CalendarDays, Flower2, Users, BriefcaseBusiness, BookHeart,
   Flame, ChartNoAxesColumnIncreasing, SlidersHorizontal, Table2, NotebookPen,
   IndentIncrease, Images, BookTemplate, Archive,
+  Rows3, Rows4, RectangleHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,10 +46,12 @@ import { getNoteCoverCss } from "@/lib/note-covers";
 type View = "notebook" | "outline" | "list" | "compact" | "grid" | "board" | "table" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
 type TopFilter = "all" | "pinned" | "recent" | "favorites" | "tags";
+type PinnedDensity = "compact" | "comfortable" | "roomy";
 
 const VIEW_KEY = "careflow.notes.view";
 const COLLECTION_KEY = "careflow.notes.collection";
 const SIDE_NAV_KEY = "careflow.notes.sidenav";
+const PINNED_DENSITY_KEY = "careflow.notes.pinnedDensity";
 
 const ADVANCED_VIEWS: { id: Exclude<View, "list" | "compact" | "grid">; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "outline", label: "Outline", icon: IndentIncrease },
@@ -109,6 +112,10 @@ export default function Notes() {
     return Number.isFinite(raw) && raw >= 0 && raw <= 8 ? raw : 3;
   });
   const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [pinnedDensity, setPinnedDensity] = useState<PinnedDensity>(() => {
+    const stored = typeof window === "undefined" ? null : localStorage.getItem(PINNED_DENSITY_KEY);
+    return stored === "compact" || stored === "roomy" ? stored : "comfortable";
+  });
   const [kindFilter, setKindFilter] = useState<"all" | "note" | "daily" | "weekly" | "monthly">("all");
   const [sideOpen, setSideOpen] = useState<boolean>(() => typeof window === "undefined" || localStorage.getItem(SIDE_NAV_KEY) !== "0");
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
@@ -117,6 +124,7 @@ export default function Notes() {
   useEffect(() => { localStorage.setItem(VIEW_KEY, view); }, [view]);
   useEffect(() => { localStorage.setItem(COLLECTION_KEY, collection); }, [collection]);
   useEffect(() => { localStorage.setItem(SIDE_NAV_KEY, sideOpen ? "1" : "0"); }, [sideOpen]);
+  useEffect(() => { localStorage.setItem(PINNED_DENSITY_KEY, pinnedDensity); }, [pinnedDensity]);
   useEffect(() => {
     const next = new URLSearchParams(params);
     next.set("view", view);
@@ -253,10 +261,13 @@ export default function Notes() {
               <section className="mb-6" aria-labelledby="pinned-heading">
                 <div className="mb-2 flex items-center">
                   <h2 id="pinned-heading" className="font-display text-xl font-semibold"><Pin className="mr-1.5 inline h-4 w-4 fill-current text-accent" />Pinned <span className="font-sans text-xs font-normal text-muted-foreground">· {notes.filter(n => n.pinned).length}</span></h2>
-                  <Button variant="ghost" size="sm" className="ml-auto h-9 gap-1 text-xs" onClick={() => setCollection("pinned")}>View all <ChevronRight className="h-3.5 w-3.5" /></Button>
+                  <div className="notes-view-control ml-auto flex items-center rounded-full border p-0.5" aria-label="Pinned note size">
+                    {([{ id: "compact", label: "Compact pinned notes", icon: Rows3 }, { id: "comfortable", label: "Comfortable pinned notes", icon: Rows4 }, { id: "roomy", label: "Roomy pinned notes", icon: RectangleHorizontal }] as const).map(option => <Button key={option.id} variant="ghost" size="icon" onClick={() => setPinnedDensity(option.id)} aria-label={option.label} aria-pressed={pinnedDensity === option.id} className={cn("h-8 w-8 rounded-full", pinnedDensity === option.id && "is-active")}><option.icon className="h-3.5 w-3.5" /></Button>)}
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-9 gap-1 text-xs" onClick={() => setCollection("pinned")}>View all <ChevronRight className="h-3.5 w-3.5" /></Button>
                 </div>
                 <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {pinnedStrip.map(n => <PinnedNoteCard key={n.id} note={n} tagsByName={tagsByName} onOpen={selectNote} onPin={handlePinNote} onDelete={handleDeleteNote} />)}
+                  {pinnedStrip.map(n => <PinnedNoteCard key={n.id} note={n} density={pinnedDensity} tagsByName={tagsByName} onOpen={selectNote} onPin={handlePinNote} onDelete={handleDeleteNote} />)}
                 </div>
               </section>
             )}
@@ -349,15 +360,17 @@ function InsightStat({ icon: Icon, value, label }: { icon: React.ComponentType<{
   return <div className="flex min-w-0 items-center gap-2 px-2 first:pl-0"><Icon className="hidden h-4 w-4 shrink-0 text-primary sm:block" /><div><div className="font-display text-xl font-semibold leading-none">{value}</div><div className="mt-1 truncate text-[9px] text-muted-foreground">{label}</div></div></div>;
 }
 
-function PinnedNoteCard({ note, tagsByName, onOpen, onPin, onDelete }: { note: Note; tagsByName: Map<string, Tag>; onOpen: (id: string) => void; onPin: (id: string, next: boolean) => void; onDelete: (id: string) => void }) {
+function PinnedNoteCard({ note, density, tagsByName, onOpen, onPin, onDelete }: { note: Note; density: PinnedDensity; tagsByName: Map<string, Tag>; onOpen: (id: string) => void; onPin: (id: string, next: boolean) => void; onDelete: (id: string) => void }) {
   const cover = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
-  return <article className="notes-pinned-card relative w-[72vw] max-w-[250px] shrink-0 snap-start overflow-hidden rounded-2xl border">
+  const compact = density === "compact";
+  const roomy = density === "roomy";
+  return <article className={cn("notes-pinned-card relative shrink-0 snap-start overflow-hidden rounded-2xl border", compact ? "w-[54vw] max-w-[185px]" : roomy ? "w-[78vw] max-w-[290px]" : "w-[66vw] max-w-[230px]")}>
     <button type="button" onClick={() => onOpen(note.id)} className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Open ${noteDisplayTitle(note, true)}`}>
-      {note.coverUrl ? <img src={note.coverUrl} alt="" className="h-24 w-full object-cover" style={{ objectPosition: `center ${note.coverPosition ?? 50}%` }} /> : cover ? <div className="h-16 w-full" style={{ background: cover }} /> : <div className="h-3 bg-primary/25" />}
-      <div className="p-3">
+      {!compact && (note.coverUrl ? <img src={note.coverUrl} alt="" className={cn("w-full object-cover", roomy ? "h-24" : "h-16")} style={{ objectPosition: `center ${note.coverPosition ?? 50}%` }} /> : cover ? <div className={cn("w-full", roomy ? "h-20" : "h-12")} style={{ background: cover }} /> : <div className="h-3 bg-primary/25" />)}
+      <div className={cn(compact ? "p-2.5" : "p-3")}>
         <h3 className="line-clamp-1 font-display text-base font-semibold">{noteDisplayTitle(note, true)}</h3>
-        <div className="mt-1 line-clamp-2 min-h-[34px] text-xs leading-relaxed text-muted-foreground"><NoteMarkdownPreview body={note.body || ""} maxChars={100} /></div>
-        <div className="mt-2 flex items-center gap-1 overflow-hidden">{(note.tags ?? []).slice(0, 2).map(t => <SoftTag key={t} name={t} color={tagsByName.get(t.toLowerCase())?.color || fallbackColorFor(t)} />)}<span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{format(parseISO(note.updatedAt), "MMM d")}</span></div>
+        {!compact && <div className={cn("mt-1 text-xs leading-relaxed text-muted-foreground", roomy ? "line-clamp-3 min-h-[51px]" : "line-clamp-2 min-h-[34px]")}><NoteMarkdownPreview body={note.body || ""} maxChars={roomy ? 150 : 100} /></div>}
+        <div className={cn("flex items-center gap-1 overflow-hidden", compact ? "mt-1.5" : "mt-2")}>{!compact && (note.tags ?? []).slice(0, roomy ? 3 : 2).map(t => <SoftTag key={t} name={t} color={tagsByName.get(t.toLowerCase())?.color || fallbackColorFor(t)} />)}<span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{format(parseISO(note.updatedAt), "MMM d")}</span></div>
       </div>
     </button>
     <Pin className="absolute left-2 top-2 h-4 w-4 fill-current text-accent drop-shadow" aria-label="Pinned" />
