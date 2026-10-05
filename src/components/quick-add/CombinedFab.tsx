@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange, Salad, Droplets, Scale, Syringe, CalendarDays, CalendarPlus } from "lucide-react";
 import { openAddEvent } from "@/components/calendar/AddEventHost";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -44,14 +44,33 @@ async function uploadToAttachments(file: File): Promise<Attachment | null> {
  *  • Quick add    → dispatches `careflow:quick-add`
  *  • Ask Carey    → dispatches `careflow:carey:open`
  */
-export function CombinedFab() {
+export function CombinedFab({ variant = "floating", className }: { variant?: "floating" | "dock"; className?: string }) {
+  const isDock = variant === "dock";
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState<null | "photo" | "pdf">(null);
   const drag = useDraggableFab("careflow:fab:combined", { right: 16, bottom: 96 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  // Dock variant: the button lives in the bottom bar — it asks us to toggle
+  // via `careflow:fab:toggle`, and we report state back via `careflow:fab:state`.
+  useEffect(() => {
+    if (!isDock) return;
+    const onToggle = () => setExpanded((v) => !v);
+    window.addEventListener("careflow:fab:toggle", onToggle);
+    return () => window.removeEventListener("careflow:fab:toggle", onToggle);
+  }, [isDock]);
+  useEffect(() => {
+    if (!isDock) return;
+    window.dispatchEvent(new CustomEvent("careflow:fab:state", { detail: expanded }));
+  }, [isDock, expanded]);
+  // Close the dock menu when navigating away.
+  useEffect(() => {
+    if (isDock) setExpanded(false);
+  }, [pathname, isDock]);
 
   // Close when clicking outside or pressing Escape.
   useEffect(() => {
@@ -130,8 +149,14 @@ export function CombinedFab() {
     <div
       ref={wrapRef}
       data-quick-add-fab
-      className={cn("pointer-events-none fixed z-40 flex flex-col items-end gap-2")}
-      style={drag.style}
+      className={cn(
+        "pointer-events-none fixed z-40 flex flex-col gap-2",
+        isDock
+          ? "items-center left-1/2 -translate-x-1/2 lg:hidden"
+          : "items-end hidden lg:flex",
+        className,
+      )}
+      style={isDock ? { bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" } : drag.style}
     >
       {/* Hidden file pickers */}
       <input ref={photoInputRef} type="file" accept="image/*" capture="environment"
@@ -191,28 +216,31 @@ export function CombinedFab() {
         </button>
       </div>
 
-      {/* Main FAB — planner lives inside the expanded grid */}
-      <div className="pointer-events-auto flex items-center gap-2">
-      <button
-        type="button"
-        ref={drag.ref as React.RefObject<HTMLButtonElement>}
-        {...drag.handlers}
-        onClick={(e) => {
-          if (drag.dragging) { e.preventDefault(); return; }
-          haptics.pickup();
-          setExpanded((v) => !v);
-        }}
-        aria-label={expanded ? "Close quick actions" : "Open quick actions"}
-        className={cn(
-          "pointer-events-auto grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-cozy",
-          "transition-transform hover:scale-105 active:scale-95",
-          drag.dragging && "scale-110 ring-2 ring-primary/40",
-          expanded && "rotate-45",
-        )}
-      >
-        {expanded ? <X className="h-6 w-6 -rotate-45" /> : <Plus className="h-6 w-6" />}
-      </button>
-      </div>
+      {/* Main FAB — planner lives inside the expanded grid. The dock variant
+          renders its button inside the bottom bar instead. */}
+      {!isDock && (
+        <div className="pointer-events-auto flex items-center gap-2">
+        <button
+          type="button"
+          ref={drag.ref as React.RefObject<HTMLButtonElement>}
+          {...drag.handlers}
+          onClick={(e) => {
+            if (drag.dragging) { e.preventDefault(); return; }
+            haptics.pickup();
+            setExpanded((v) => !v);
+          }}
+          aria-label={expanded ? "Close quick actions" : "Open quick actions"}
+          className={cn(
+            "pointer-events-auto grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-cozy",
+            "transition-transform hover:scale-105 active:scale-95",
+            drag.dragging && "scale-110 ring-2 ring-primary/40",
+            expanded && "rotate-45",
+          )}
+        >
+          {expanded ? <X className="h-6 w-6 -rotate-45" /> : <Plus className="h-6 w-6" />}
+        </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
 import { useFlowAccents } from "@/lib/flow-accent";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff, ChevronDown } from "lucide-react";
+import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff, ChevronDown, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,8 @@ import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 
 const NAV_ORDER_KEY = "careflow:mobile-nav-order";
-const DEFAULT_NAV_IDS = MOBILE_NAV.slice(0, 6).map(n => n.to);
+const MAX_NAV_ITEMS = 5; // center slot of the dock is reserved for the quick-actions FAB
+const DEFAULT_NAV_IDS = MOBILE_NAV.slice(0, MAX_NAV_ITEMS).map(n => n.to);
 
 function loadNavOrder(): string[] {
   if (typeof window === "undefined") return DEFAULT_NAV_IDS;
@@ -23,7 +24,7 @@ function loadNavOrder(): string[] {
     const raw = window.localStorage.getItem(NAV_ORDER_KEY);
     if (!raw) return DEFAULT_NAV_IDS;
     const ids = JSON.parse(raw) as string[];
-    return Array.isArray(ids) && ids.length ? ids.slice(0, 6) : DEFAULT_NAV_IDS;
+    return Array.isArray(ids) && ids.length ? ids.slice(0, MAX_NAV_ITEMS) : DEFAULT_NAV_IDS;
   } catch {
     return DEFAULT_NAV_IDS;
   }
@@ -65,6 +66,7 @@ export function BottomNav() {
   const [open, setOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  const [fabOpen, setFabOpen] = useState(false);
   // Auto-close all groups whenever the sheet closes.
   useEffect(() => { if (!open) setOpenGroupId(null); }, [open]);
   const [navIds, setNavIds] = useNavOrder();
@@ -74,6 +76,18 @@ export function BottomNav() {
       .map(id => ALL_DESTINATIONS.find(d => d.to === id))
       .filter(Boolean) as typeof ALL_DESTINATIONS;
   }, [navIds]);
+  // The dock's center slot is the quick-actions FAB, so the bar shows at most
+  // 5 destinations: nav · FAB · nav, with More at the end.
+  const barItems = primary.slice(0, MAX_NAV_ITEMS);
+  const headItems = barItems.slice(0, Math.floor((barItems.length + 1) / 2));
+  const tailItems = barItems.slice(Math.floor((barItems.length + 1) / 2));
+  const raisedIndex = headItems.length;
+  // Mirror the quick-actions menu state (Plus ↔ Close) from CombinedFab.
+  useEffect(() => {
+    const fn = (e: Event) => setFabOpen(Boolean((e as CustomEvent<boolean>).detail));
+    window.addEventListener("careflow:fab:state", fn as EventListener);
+    return () => window.removeEventListener("careflow:fab:state", fn as EventListener);
+  }, []);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isDark = (resolvedTheme ?? theme) === "dark";
   const { state, setLowEnergyMode } = useStore();
@@ -100,7 +114,44 @@ export function BottomNav() {
     haptics.swipe();
     navigate(order[nextIdx]);
   };
-  const raisedIndex = primary.length >= 5 ? Math.floor((primary.length + 1) / 2) : -1;
+  const renderNavItem = ({ to, label, icon: Icon }: { to: string; label: string; icon: any }) => (
+    <li key={to}>
+      <NavLink
+        to={to}
+        data-no-haptic
+        onClick={() => { if (pathname !== to) haptics.swipe(); }}
+        className={({ isActive }) =>
+          cn(
+            "group relative flex min-h-[44px] flex-col items-center justify-end gap-0.5 rounded-2xl py-2 text-[9.5px] font-medium transition-all active:scale-90",
+            isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            {isActive && (
+              <span
+                aria-hidden
+                className="absolute -bottom-1.5 left-1/2 h-11 w-11 -translate-x-1/2 rounded-full bg-primary/15 blur-xl"
+              />
+            )}
+            <span className="grid h-7 w-7 place-items-center rounded-xl transition-colors">
+              <Icon className={cn("h-[18px] w-[18px]", isActive && "stroke-[2.4]")} />
+            </span>
+            <span className={cn("leading-none", isActive && "font-semibold")}>{label}</span>
+            {isActive && (
+              <span className="relative mt-0.5 h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_2px] shadow-primary/50">
+                <span
+                  aria-hidden
+                  className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/25 blur-md"
+                />
+              </span>
+            )}
+          </>
+        )}
+      </NavLink>
+    </li>
+  );
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+10px)] lg:hidden"
@@ -108,69 +159,36 @@ export function BottomNav() {
       onTouchEnd={onTouchEnd}
     >
       <div className="mx-auto max-w-screen-md rounded-[32px] border border-border/40 bg-background/90 px-1.5 py-2 shadow-[0_20px_50px_-16px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-        <ul className="grid grid-cols-7 items-end">
-          {primary.map(({ to, label, icon: Icon }, i) => {
-            const isCenter = i === raisedIndex;
-            return (
-              <li key={to} className={cn(isCenter && "-mt-7")}>
-                <NavLink
-                  to={to}
-                  onClick={() => haptics.tap()}
-                  className={({ isActive }) =>
-                    cn(
-                      "group relative flex min-h-[44px] flex-col items-center justify-end gap-0.5 rounded-2xl py-2 text-[9.5px] font-medium transition-all active:scale-90",
-                      isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                      isCenter && "w-[60px]"
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && !isCenter && (
-                        <span
-                          aria-hidden
-                          className="absolute -bottom-1.5 left-1/2 h-11 w-11 -translate-x-1/2 rounded-full bg-primary/15 blur-xl"
-                        />
-                      )}
-                      {isCenter ? (
-                        <>
-                          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95">
-                            <Icon className="h-5 w-5" strokeWidth={2.4} />
-                          </span>
-                          <span className="mt-0.5 font-display text-[8.5px] font-semibold uppercase leading-none tracking-[0.12em] text-primary">
-                            {label}
-                          </span>
-                          {isActive && (
-                            <span className="relative mt-0.5 h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_2px] shadow-primary/50">
-                              <span
-                                aria-hidden
-                                className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/25 blur-md"
-                              />
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <span className="grid h-7 w-7 place-items-center rounded-xl transition-colors">
-                            <Icon className={cn("h-[18px] w-[18px]", isActive && "stroke-[2.4]")} />
-                          </span>
-                          <span className={cn("leading-none", isActive && "font-semibold")}>{label}</span>
-                          {isActive && (
-                            <span className="relative mt-0.5 h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_2px] shadow-primary/50">
-                              <span
-                                aria-hidden
-                                className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/25 blur-md"
-                              />
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-                </NavLink>
-              </li>
-            );
-          })}
+        <ul className="grid items-end" style={{ gridTemplateColumns: `repeat(${barItems.length + 2}, minmax(0, 1fr))` }}>
+          {headItems.map(renderNavItem)}
+          {/* Quick-actions FAB — the raised center hub of the dock */}
+          <li className="-mt-7">
+            <button
+              type="button"
+              data-no-haptic
+              onClick={() => {
+                if (fabOpen) haptics.tap(); else haptics.pickup();
+                window.dispatchEvent(new CustomEvent("careflow:fab:toggle"));
+              }}
+              aria-label={fabOpen ? "Close quick actions" : "Open quick actions"}
+              aria-expanded={fabOpen}
+              className="group relative flex min-h-[44px] w-[60px] flex-col items-center justify-end gap-0.5 rounded-2xl py-2 transition-all active:scale-95"
+            >
+              {fabOpen && (
+                <span
+                  aria-hidden
+                  className="absolute -bottom-1.5 left-1/2 h-11 w-11 -translate-x-1/2 rounded-full bg-primary/25 blur-lg"
+                />
+              )}
+              <span className={cn("grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform duration-200", fabOpen && "rotate-45")}>
+                {fabOpen ? <X className="h-5 w-5" strokeWidth={2.4} /> : <Plus className="h-5 w-5" strokeWidth={2.4} />}
+              </span>
+              <span className="mt-0.5 font-display text-[8.5px] font-semibold uppercase leading-none tracking-[0.12em] text-primary">
+                {fabOpen ? "Close" : "Add"}
+              </span>
+            </button>
+          </li>
+          {tailItems.map(renderNavItem)}
           <li>
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger
@@ -235,9 +253,9 @@ export function BottomNav() {
                       e.preventDefault();
                       e.stopPropagation();
                       haptics.tap();
-                      if (isPinned) {
-                        setNavIds(navIds.filter(x => x !== flowTo));
-                      } else if (navIds.length >= 6) {
+                        if (isPinned) {
+                          setNavIds(navIds.filter(x => x !== flowTo));
+                        } else if (navIds.length >= MAX_NAV_ITEMS) {
                         toast.message("Bottom nav is full", { description: "Remove a destination first or open Customize." });
                       } else {
                         setNavIds([...navIds, flowTo]);
@@ -357,7 +375,7 @@ function CustomizeNavSheet({
     haptics.tap();
     setWorking(prev => {
       if (prev.includes(to)) return prev.filter(x => x !== to);
-      if (prev.length >= 6) return prev; // cap at 6
+      if (prev.length >= MAX_NAV_ITEMS) return prev; // center slot is the FAB
       return [...prev, to];
     });
   };
@@ -387,10 +405,10 @@ function CustomizeNavSheet({
         <SheetHeader>
           <SheetTitle>Customize bottom nav</SheetTitle>
         </SheetHeader>
-        <p className="mt-1 text-xs text-muted-foreground">Pick up to 6 destinations. Drag the arrows to reorder.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Pick up to 5 destinations — the raised center button is the quick-actions menu.</p>
 
         <div className="mt-4">
-          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">In your bar ({working.length}/6)</div>
+          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">In your bar ({working.length}/{MAX_NAV_ITEMS})</div>
           <ul className="space-y-1.5">
             {working.map((to, i) => {
               const dest = ALL_DESTINATIONS.find(d => d.to === to);
