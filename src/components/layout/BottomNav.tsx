@@ -24,7 +24,13 @@ function loadNavOrder(): string[] {
     const raw = window.localStorage.getItem(NAV_ORDER_KEY);
     if (!raw) return DEFAULT_NAV_IDS;
     const ids = JSON.parse(raw) as string[];
-    return Array.isArray(ids) && ids.length ? ids.slice(0, MAX_NAV_ITEMS) : DEFAULT_NAV_IDS;
+    if (!Array.isArray(ids) || !ids.length) return DEFAULT_NAV_IDS;
+    // The mobile Home destination now opens the full Home hub. Migrate saved
+    // dock layouts so existing users do not remain on the legacy areas shell.
+    return ids
+      .map((id) => id === "/home-areas" ? "/home" : id)
+      .filter((id, index, all) => all.indexOf(id) === index)
+      .slice(0, MAX_NAV_ITEMS);
   } catch {
     return DEFAULT_NAV_IDS;
   }
