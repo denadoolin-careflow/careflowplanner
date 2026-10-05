@@ -95,6 +95,7 @@ export default function Meals() {
         body: { action: "plan_week", start_date: startISO, replace: true, mode: mode ?? null },
       });
       if (error) throw error;
+      if (data?.rateLimited) throw new Error(data.error);
       await reloadAll();
       toast.success(`Planned ${data.meals} meals · added ${data.grocery} grocery items.`);
     } catch (e: any) {
