@@ -1002,6 +1002,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reminder_minutes_before: m.reminderMinutesBefore ?? null,
       }).select().single();
       if (data) setState(s => ({ ...s, meals: [mealFrom(data), ...s.meals] }));
+      return (data as any)?.id as string | undefined;
     },
     updateMeal: async (id, patch) => {
       const localTs = nowIso();
