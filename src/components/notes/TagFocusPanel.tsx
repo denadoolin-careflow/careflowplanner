@@ -1,7 +1,8 @@
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowUpRight, CheckSquare, ChevronLeft, ChevronRight, FileText, X } from "lucide-react";
+import { ArrowUpRight, CheckSquare, ChevronLeft, ChevronRight, Eye, Eye, FileText, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
 import { openTaskEditor } from "@/lib/open-task-editor";
