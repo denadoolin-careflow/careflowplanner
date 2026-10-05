@@ -36,3 +36,4 @@
 - [x] Keep the Today greeting as the first visible page content
 - [x] Implement Integrated Botanical Hub layouts for mobile Day, 3 Days, Week, Month, and Year with radial view controls
 - [x] Fix the mobile Home dock destination so it opens the complete Home hub instead of the blank legacy areas shell
+- [x] Redesign Notes into a mobile-first dark-plum second brain while preserving existing data and advanced views.

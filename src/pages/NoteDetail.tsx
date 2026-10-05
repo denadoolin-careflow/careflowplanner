@@ -462,8 +462,8 @@ export default function NoteDetail() {
           Exit focus
         </button>
       )}
-      <div className="min-w-0">
-      <header className="mx-auto flex w-full max-w-[760px] flex-wrap items-center gap-2 px-2">
+      <div className="notes-editor-experience min-w-0">
+      <header className="notes-editor-header mx-auto flex w-full max-w-[760px] flex-wrap items-center gap-2 px-2">
         <Button variant="ghost" size="sm" onClick={() => nav("/notes")} className="gap-1.5">
           <ArrowLeft className="h-4 w-4" /> Notes
         </Button>
@@ -687,7 +687,7 @@ export default function NoteDetail() {
           </div>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Updated {format(parseISO(note.updatedAt), "MMM d, h:mm a")}
+          Updated {format(parseISO(note.updatedAt), "MMM d, h:mm a")} · {body.trim() ? body.trim().split(/\s+/).length : 0} words
         </p>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">

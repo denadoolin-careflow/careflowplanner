@@ -39,6 +39,7 @@ export function AppLayout() {
   const { state } = useStore();
   const { pathname } = useLocation();
   const current = NAV.find(n => n.to === pathname) ?? NAV[0];
+  const isNotesExperience = pathname.startsWith("/notes");
   useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
   const { current: atmoId } = useAtmosphere();
   useEffect(() => { applyAnimIntensity(readAnimIntensity()); applyFontPrefs(); installGlobalHaptics(); }, []);
@@ -51,7 +52,7 @@ export function AppLayout() {
       <div className="flex w-full">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex flex-nowrap items-center justify-between gap-2 border-b border-border/50 bg-background/70 px-3 py-2 backdrop-blur-md sm:gap-3 sm:px-4 sm:py-3 lg:px-8">
+          {!isNotesExperience && <header className="sticky top-0 z-20 flex flex-nowrap items-center justify-between gap-2 border-b border-border/50 bg-background/70 px-3 py-2 backdrop-blur-md sm:gap-3 sm:px-4 sm:py-3 lg:px-8">
             <div className="flex min-w-0 flex-nowrap items-center gap-2">
               <MobileSidebarTrigger />
               <div className="min-w-0">
@@ -78,7 +79,7 @@ export function AppLayout() {
                 <CareFlowLogo size={32} />
               </Link>
             </div>
-          </header>
+          </header>}
           <main className="flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-12">
             <div className="mx-auto w-full max-w-6xl">
               <AnimatePresence mode="wait" initial={false}>
