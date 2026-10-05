@@ -253,9 +253,9 @@ export function BottomNav() {
                       e.preventDefault();
                       e.stopPropagation();
                       haptics.tap();
-                      if (isPinned) {
-                        setNavIds(navIds.filter(x => x !== flowTo));
-                      } else if (navIds.length >= 6) {
+                        if (isPinned) {
+                          setNavIds(navIds.filter(x => x !== flowTo));
+                        } else if (navIds.length >= MAX_NAV_ITEMS) {
                         toast.message("Bottom nav is full", { description: "Remove a destination first or open Customize." });
                       } else {
                         setNavIds([...navIds, flowTo]);
@@ -375,7 +375,7 @@ function CustomizeNavSheet({
     haptics.tap();
     setWorking(prev => {
       if (prev.includes(to)) return prev.filter(x => x !== to);
-      if (prev.length >= 6) return prev; // cap at 6
+      if (prev.length >= MAX_NAV_ITEMS) return prev; // center slot is the FAB
       return [...prev, to];
     });
   };
@@ -405,10 +405,10 @@ function CustomizeNavSheet({
         <SheetHeader>
           <SheetTitle>Customize bottom nav</SheetTitle>
         </SheetHeader>
-        <p className="mt-1 text-xs text-muted-foreground">Pick up to 6 destinations. Drag the arrows to reorder.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Pick up to 5 destinations — the raised center button is the quick-actions menu.</p>
 
         <div className="mt-4">
-          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">In your bar ({working.length}/6)</div>
+          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">In your bar ({working.length}/{MAX_NAV_ITEMS})</div>
           <ul className="space-y-1.5">
             {working.map((to, i) => {
               const dest = ALL_DESTINATIONS.find(d => d.to === to);
