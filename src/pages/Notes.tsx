@@ -297,7 +297,6 @@ export default function Notes() {
                   catch { toast.error("Could not open the month note"); }
                 }} />
               ) : filtered.length === 0 && view !== "table" ? <EmptyNotes onCreate={() => void newNote()} /> : view === "grid" ? (
-              ) : view === "grid" ? (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(n => <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} previewLines={previewLines} />)}</div>
               ) : view === "outline" ? (
                 <NotesOutlineView notes={filtered} selectedId={noteParam} onSelect={selectNote} term={q} />

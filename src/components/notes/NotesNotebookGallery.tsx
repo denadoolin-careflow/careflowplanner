@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { addMonths, format, parseISO, startOfMonth, subMonths } from "date-fns";
+import { format, parseISO, startOfMonth, subMonths } from "date-fns";
 import { ArrowLeft, BookOpenText, CalendarDays, ChevronRight, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Note } from "@/lib/notes";
