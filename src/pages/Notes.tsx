@@ -83,6 +83,7 @@ export default function Notes() {
   const [q, setQ] = useState(initialQ);
   const [searchOpen, setSearchOpen] = useState(Boolean(initialQ));
   const [spacesOpen, setSpacesOpen] = useState(false);
+  const [filterChoice, setFilterChoice] = useState<TopFilter>("all");
   const [view, setView] = useState<View>(() => {
     const fromUrl = params.get("view") as View | null;
     if (fromUrl) return fromUrl;
@@ -169,9 +170,10 @@ export default function Notes() {
   const handlePinNote = async (id: string, next: boolean) => { try { await updateNote(id, { pinned: next }); toast.success(next ? "Pinned" : "Unpinned"); await refresh(); } catch { toast.error("Could not update pin"); } };
   const handleArchiveNote = async (id: string, next: boolean) => { try { await updateNote(id, { archived: next }); toast.success(next ? "Archived" : "Restored"); await refresh(); } catch { toast.error("Could not update archive"); } };
 
-  const topFilter: TopFilter = activeTag ? "tags" : collection === "pinned" ? "pinned" : collection === "recent" ? "recent" : "all";
+  const topFilter: TopFilter = activeTag ? "tags" : collection === "recent" ? "recent" : collection === "pinned" ? filterChoice : "all";
   const setTopFilter = (next: TopFilter) => {
     if (next === "tags") { setSpacesOpen(true); return; }
+    setFilterChoice(next);
     setActiveTag(null); setPinnedOnly(false);
     setCollection(next === "recent" ? "recent" : next === "pinned" || next === "favorites" ? "pinned" : "all");
   };
@@ -232,8 +234,8 @@ export default function Notes() {
           {([
             ["all", "All", BookOpen], ["pinned", "Pinned", Pin], ["recent", "Recent", Clock3], ["favorites", "Favorites", Heart], ["tags", "Tags", Tags],
           ] as const).map(([id, label, Icon]) => (
-            <Button key={id} type="button" variant="ghost" onClick={() => setTopFilter(id)} aria-pressed={topFilter === id || (id === "favorites" && collection === "pinned")}
-              className={cn("notes-filter-pill h-11 shrink-0 gap-2 rounded-full px-4", (topFilter === id || (id === "favorites" && collection === "pinned")) && "is-active")}>
+            <Button key={id} type="button" variant="ghost" onClick={() => setTopFilter(id)} aria-pressed={topFilter === id}
+              className={cn("notes-filter-pill h-11 shrink-0 gap-2 rounded-full px-4", topFilter === id && "is-active")}>
               <Icon className="h-4 w-4" />{label}
             </Button>
           ))}
