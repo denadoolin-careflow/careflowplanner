@@ -4,7 +4,7 @@ import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
 import { useFlowAccents } from "@/lib/flow-accent";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff, ChevronDown } from "lucide-react";
+import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff, ChevronDown, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,8 @@ import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 
 const NAV_ORDER_KEY = "careflow:mobile-nav-order";
-const DEFAULT_NAV_IDS = MOBILE_NAV.slice(0, 6).map(n => n.to);
+const MAX_NAV_ITEMS = 5; // center slot of the dock is reserved for the quick-actions FAB
+const DEFAULT_NAV_IDS = MOBILE_NAV.slice(0, MAX_NAV_ITEMS).map(n => n.to);
 
 function loadNavOrder(): string[] {
   if (typeof window === "undefined") return DEFAULT_NAV_IDS;
