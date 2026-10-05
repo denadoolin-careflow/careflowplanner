@@ -66,6 +66,7 @@ export function BottomNav() {
   const [open, setOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  const [fabOpen, setFabOpen] = useState(false);
   // Auto-close all groups whenever the sheet closes.
   useEffect(() => { if (!open) setOpenGroupId(null); }, [open]);
   const [navIds, setNavIds] = useNavOrder();
@@ -75,6 +76,18 @@ export function BottomNav() {
       .map(id => ALL_DESTINATIONS.find(d => d.to === id))
       .filter(Boolean) as typeof ALL_DESTINATIONS;
   }, [navIds]);
+  // The dock's center slot is the quick-actions FAB, so the bar shows at most
+  // 5 destinations: nav · FAB · nav, with More at the end.
+  const barItems = primary.slice(0, MAX_NAV_ITEMS);
+  const headItems = barItems.slice(0, Math.floor((barItems.length + 1) / 2));
+  const tailItems = barItems.slice(Math.floor((barItems.length + 1) / 2));
+  const raisedIndex = headItems.length;
+  // Mirror the quick-actions menu state (Plus ↔ Close) from CombinedFab.
+  useEffect(() => {
+    const fn = (e: Event) => setFabOpen(Boolean((e as CustomEvent<boolean>).detail));
+    window.addEventListener("careflow:fab:state", fn as EventListener);
+    return () => window.removeEventListener("careflow:fab:state", fn as EventListener);
+  }, []);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isDark = (resolvedTheme ?? theme) === "dark";
   const { state, setLowEnergyMode } = useStore();
