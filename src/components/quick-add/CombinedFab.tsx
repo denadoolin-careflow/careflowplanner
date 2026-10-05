@@ -14,6 +14,17 @@ import { todayISO } from "@/lib/store";
 import type { Attachment } from "@/lib/types";
 import { toast } from "sonner";
 import { tray } from "@/lib/tray-store";
+import { Pin, Check, Settings2, ChevronLeft, ChevronRight } from "lucide-react";
+
+type FabPrefs = { order: string[]; pinned: string[] };
+const FAB_PREFS_KEY = "careflow:fab:prefs";
+function loadFabPrefs(): FabPrefs {
+  try {
+    const p = JSON.parse(localStorage.getItem(FAB_PREFS_KEY) || "null");
+    if (p && Array.isArray(p.order) && Array.isArray(p.pinned)) return p;
+  } catch {}
+  return { order: [], pinned: [] };
+}
 
 const ATTACH_BUCKET = "attachments";
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -48,6 +59,9 @@ export function CombinedFab({ variant = "floating", className }: { variant?: "fl
   const isDock = variant === "dock";
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState<null | "photo" | "pdf">(null);
+  const [editing, setEditing] = useState(false);
+  const [prefs, setPrefs] = useState<FabPrefs>(loadFabPrefs);
+  useEffect(() => { if (!expanded) setEditing(false); }, [expanded]);
   const drag = useDraggableFab("careflow:fab:combined", { right: 16, bottom: 96 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -145,6 +159,32 @@ export function CombinedFab({ variant = "floating", className }: { variant?: "fl
     { key: "pdf", label: "PDF", icon: FileUp, onClick: () => pdfInputRef.current?.click() },
   ];
 
+  const known = new Set(actions.map((a) => a.key));
+  const orderKeys = [...prefs.order.filter((k) => known.has(k)), ...actions.map((a) => a.key).filter((k) => !prefs.order.includes(k))];
+  const pinnedList = orderKeys.filter((k) => prefs.pinned.includes(k));
+  const byKey = new Map(actions.map((a) => [a.key, a]));
+  const ordered = [...pinnedList, ...orderKeys.filter((k) => !pinnedList.includes(k))].map((k) => byKey.get(k)!);
+  const savePrefs = (p: FabPrefs) => { setPrefs(p); try { localStorage.setItem(FAB_PREFS_KEY, JSON.stringify(p)); } catch {} };
+  const togglePin = (key: string) => {
+    haptics.tap();
+    const pinned = prefs.pinned.includes(key) ? prefs.pinned.filter((k) => k !== key) : [...prefs.pinned, key];
+    savePrefs({ order: orderKeys, pinned });
+  };
+  const move = (key: string, dir: -1 | 1) => {
+    const visual = ordered.map((a) => a.key);
+    const i = visual.indexOf(key); const j = i + dir;
+    if (j < 0 || j >= visual.length) return;
+    // Crossing the pinned boundary pins/unpins the item.
+    let pinned = prefs.pinned.filter((k) => known.has(k));
+    const otherPinned = pinned.includes(visual[j]);
+    if (otherPinned && !pinned.includes(key)) pinned = [...pinned, key];
+    if (!otherPinned && pinned.includes(key)) pinned = pinned.filter((k) => k !== key);
+    [visual[i], visual[j]] = [visual[j], visual[i]];
+    haptics.tap();
+    savePrefs({ order: visual, pinned });
+  };
+  const resetPrefs = () => { haptics.tap(); savePrefs({ order: [], pinned: [] }); };
+
   return (
     <div
       ref={wrapRef}
@@ -172,21 +212,37 @@ export function CombinedFab({ variant = "floating", className }: { variant?: "fl
             : "pointer-events-none translate-y-3 scale-90 opacity-0",
         )}
       >
-        <div className="grid grid-cols-3 gap-1">
-          {actions.map(({ key, label, icon: Icon, onClick, accent }) => {
+        <div className="mb-1 flex items-center justify-between px-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {editing ? "Tap pin · arrows to reorder" : pinnedList.length ? "Pinned first" : "Quick actions"}
+          </span>
+          <button
+            type="button"
+            onClick={() => { haptics.tap(); setEditing((v) => !v); }}
+            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-muted/60"
+            aria-pressed={editing}
+          >
+            {editing ? <><Check className="h-3 w-3" /> Done</> : <><Settings2 className="h-3 w-3" /> Edit</>}
+          </button>
+        </div>
+        <div className="grid max-h-[55vh] grid-cols-3 gap-1 overflow-y-auto">
+          {ordered.map(({ key, label, icon: Icon, onClick, accent }, idx) => {
             const loading = (key === "photo" && busy === "photo") || (key === "pdf" && busy === "pdf");
+            const isPinned = pinnedList.includes(key);
             return (
+              <div key={key} className="relative">
               <button
-                key={key}
                 type="button"
-                onClick={fire(onClick)}
+                onClick={editing ? () => togglePin(key) : fire(onClick)}
                 disabled={loading}
-                aria-label={label}
+                aria-label={editing ? `${isPinned ? "Unpin" : "Pin"} ${label}` : label}
                 title={label}
                 className={cn(
-                  "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium text-foreground",
+                  "flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium text-foreground",
                   "transition-colors hover:bg-muted/60 active:scale-95",
                   loading && "opacity-70",
+                  isPinned && "bg-primary/5",
+                  editing && "ring-1 ring-border/60",
                 )}
               >
                 <span
@@ -201,9 +257,33 @@ export function CombinedFab({ variant = "floating", className }: { variant?: "fl
                 </span>
                 <span className="w-full truncate text-center opacity-80">{label}</span>
               </button>
+              {(isPinned || editing) && (
+                <Pin className={cn("pointer-events-none absolute right-1 top-1 h-3 w-3", isPinned ? "fill-primary text-primary" : "text-muted-foreground/50")} />
+              )}
+              {editing && (
+                <div className="mt-0.5 flex justify-center gap-1">
+                  <button type="button" aria-label={`Move ${label} earlier`} disabled={idx === 0}
+                    onClick={() => move(key, -1)}
+                    className="grid h-6 w-6 place-items-center rounded-full bg-muted/60 disabled:opacity-30">
+                    <ChevronLeft className="h-3 w-3" />
+                  </button>
+                  <button type="button" aria-label={`Move ${label} later`} disabled={idx === ordered.length - 1}
+                    onClick={() => move(key, 1)}
+                    className="grid h-6 w-6 place-items-center rounded-full bg-muted/60 disabled:opacity-30">
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              </div>
             );
           })}
         </div>
+        {editing && (
+          <button type="button" onClick={resetPrefs}
+            className="mt-1 w-full rounded-xl py-1 text-[10px] text-muted-foreground hover:bg-muted/60">
+            Reset to default order
+          </button>
+        )}
         <button
           type="button"
           onClick={fire(() => { window.dispatchEvent(new Event("careflow:carey:open")); })}
