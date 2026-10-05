@@ -3369,44 +3369,28 @@ body.planner-dragging [data-radix-dialog-overlay] {
 .block-editor .ProseMirror .cf-embedded-badge:hover { background: hsl(var(--primary) / 0.16); }
 .block-editor h1, .block-editor h2, .block-editor h3 { scroll-margin-top: 96px; }
 
-/* Notes — a focused, warm-plum second-brain surface. */
+/* Notes — a focused second-brain surface shaped by the active atmosphere. */
 .notes-experience,
 .notes-editor-experience,
 .notes-spaces-sheet {
-  --notes-plum: 326 34% 19%;
-  --notes-plum-deep: 322 37% 13%;
-  --notes-lavender: 267 39% 75%;
-  --notes-rose: 345 35% 70%;
-  --notes-beige: 34 34% 86%;
-  --notes-sage: 139 19% 65%;
-  --notes-gold: 42 58% 64%;
-  --notes-surface: 324 27% 23%;
-  --notes-surface-raised: 324 24% 27%;
-  --notes-line: 315 18% 38%;
-  --notes-ink: 35 31% 93%;
-  --background: var(--notes-plum-deep);
-  --foreground: var(--notes-ink);
-  --card: var(--notes-plum);
-  --card-foreground: var(--notes-ink);
-  --popover: var(--notes-plum);
-  --popover-foreground: var(--notes-ink);
-  --primary: var(--notes-lavender);
-  --primary-foreground: var(--notes-plum-deep);
-  --primary-soft: 267 26% 29%;
-  --secondary: var(--notes-surface-raised);
-  --secondary-foreground: var(--notes-ink);
-  --muted: var(--notes-surface-raised);
-  --muted-foreground: 31 19% 75%;
-  --accent: var(--notes-gold);
-  --accent-foreground: var(--notes-plum-deep);
-  --border: var(--notes-line);
-  --input: var(--notes-line);
-  --ring: var(--notes-lavender);
+  --notes-plum: var(--card);
+  --notes-plum-deep: var(--background);
+  --notes-lavender: var(--primary);
+  --notes-rose: var(--destructive);
+  --notes-beige: var(--foreground);
+  --notes-sage: var(--primary);
+  --notes-gold: var(--accent);
+  --notes-surface: var(--card);
+  --notes-surface-raised: var(--muted);
+  --notes-line: var(--border);
+  --notes-ink: var(--foreground);
   color: hsl(var(--foreground));
+  font-family: var(--atmo-font-body, ui-sans-serif, system-ui, sans-serif);
 }
 .notes-experience {
   background:
-    linear-gradient(180deg, hsl(var(--notes-plum) / .86), hsl(var(--notes-plum-deep)) 28rem),
+    var(--atmo-glow),
+    linear-gradient(180deg, hsl(var(--notes-plum) / .72), hsl(var(--notes-plum-deep)) 28rem),
     hsl(var(--notes-plum-deep));
 }
 .notes-title { color: hsl(var(--notes-beige)); }
@@ -3437,6 +3421,23 @@ body.planner-dragging [data-radix-dialog-overlay] {
 .notes-editor-header { position: sticky; top: .5rem; z-index: 30; border: 1px solid hsl(var(--notes-line) / .55); border-radius: 999px; background: hsl(var(--notes-plum-deep) / .86); padding-top: .3rem; padding-bottom: .3rem; backdrop-filter: blur(18px); box-shadow: 0 14px 40px -32px hsl(var(--notes-lavender) / .8); }
 .notes-editor-experience .note-page-title { color: hsl(var(--notes-beige)); }
 .notes-editor-experience .block-editor { color: hsl(var(--notes-ink)); }
+.notes-notebook-card {
+  border-color: hsl(var(--notes-line) / .62);
+  background: linear-gradient(145deg, hsl(var(--notes-surface) / .94), hsl(var(--notes-surface-raised) / .76));
+  box-shadow: inset .32rem 0 0 hsl(var(--primary) / .42), 0 18px 44px -34px hsl(var(--primary) / .72);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.notes-notebook-card::after {
+  content: "";
+  position: absolute;
+  inset: .65rem .65rem .65rem auto;
+  width: 1px;
+  background: linear-gradient(transparent, hsl(var(--accent) / .34), transparent);
+}
+.notes-notebook-card--1 { box-shadow: inset .32rem 0 0 hsl(var(--accent) / .52), 0 18px 44px -34px hsl(var(--primary) / .72); }
+.notes-notebook-card--2 { box-shadow: inset .32rem 0 0 hsl(var(--secondary-foreground) / .34), 0 18px 44px -34px hsl(var(--primary) / .72); }
+.notes-notebook-card--3 { box-shadow: inset .32rem 0 0 hsl(var(--muted-foreground) / .48), 0 18px 44px -34px hsl(var(--primary) / .72); }
+.notes-notebook-card:hover { transform: translateY(-2px); border-color: hsl(var(--primary) / .42); }
 
 @media (max-width: 767px) {
   .notes-experience { padding-bottom: 8rem; }
@@ -3450,6 +3451,7 @@ body.planner-dragging [data-radix-dialog-overlay] {
 @media (prefers-reduced-motion: reduce) {
   .notes-pinned-card,
   .notes-list-card,
+  .notes-notebook-card,
   .notes-filter-pill,
   .notes-quick-capture span { transition: none !important; }
 }
