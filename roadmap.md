@@ -39,3 +39,6 @@
 - [x] Redesign Notes into a mobile-first dark-plum second brain while preserving existing data and advanced views.
 - [x] Add NLP inline Notes capture with explicit new-note, existing-note, and task destinations
 - [x] Make Notes follow the selected atmosphere and promote monthly notebook gallery/calendar views
+- [ ] Add editable pre-save review to inline note/task capture and simplify its placeholder
+- [ ] Add remembered compact sizing choices for pinned notes
+- [ ] Add per-month notebook cover color, seasonal icon, and custom title
