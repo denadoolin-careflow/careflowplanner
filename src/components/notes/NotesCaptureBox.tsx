@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/command";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { createNote, updateNote, type Note } from "@/lib/notes";
+import { createNote, getNote, updateNote, type Note } from "@/lib/notes";
 import { parseTaskInput } from "@/lib/nlp-task";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -65,8 +65,10 @@ export function NotesCaptureBox({
         toast.success("Added to tasks");
         await onCreated({ kind: "task", id });
       } else if (targetNote) {
-        const separator = targetNote.body.trim() ? "\n\n" : "";
-        await updateNote(targetNote.id, { body: `${targetNote.body}${separator}${raw}` });
+        const latest = await getNote(targetNote.id);
+        if (!latest) throw new Error("That note is no longer available");
+        const separator = latest.body.trim() ? "\n\n" : "";
+        await updateNote(latest.id, { body: `${latest.body}${separator}${raw}` });
         toast.success(`Added to ${targetNote.title || "note"}`);
         await onCreated({ kind: "append", id: targetNote.id });
       } else {
