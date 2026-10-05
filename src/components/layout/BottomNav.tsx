@@ -24,7 +24,7 @@ function loadNavOrder(): string[] {
     const raw = window.localStorage.getItem(NAV_ORDER_KEY);
     if (!raw) return DEFAULT_NAV_IDS;
     const ids = JSON.parse(raw) as string[];
-    return Array.isArray(ids) && ids.length ? ids.slice(0, 6) : DEFAULT_NAV_IDS;
+    return Array.isArray(ids) && ids.length ? ids.slice(0, MAX_NAV_ITEMS) : DEFAULT_NAV_IDS;
   } catch {
     return DEFAULT_NAV_IDS;
   }
