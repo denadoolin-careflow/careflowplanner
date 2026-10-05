@@ -36,6 +36,7 @@ import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
 import { TemplateGallery } from "@/components/today/TemplateGallery";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { GreetingBlock } from "@/components/today/dashboard/GreetingBlock";
 
 export default function Today() {
   return (
@@ -158,6 +159,7 @@ function TodayInner() {
   return (
     <CapacityProvider value={capacity}>
       <div className="today-mobile-feed mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4">
+        <GreetingBlock date={day} />
         <TodayHeader
           date={day}
           onDate={setDayAndUrl}
@@ -218,7 +220,6 @@ function TodayInner() {
                 <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
                 <DinnerTonightCard date={day} />
                 <CleaningTodayCard />
-                <RoutinesHabitsRow date={day} />
               </div>
             )}
 
@@ -227,6 +228,7 @@ function TodayInner() {
                 <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
                 <JournalCard date={day} />
                 <GrowColumn date={day} />
+                <RoutinesHabitsRow date={day} />
                 <CollapsibleSection
                   storageKey="planning.section.debrief.collapsed"
         eyebrow="Plan insight"

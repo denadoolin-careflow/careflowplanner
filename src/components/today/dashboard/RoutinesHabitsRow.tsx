@@ -1,12 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format, subDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
-import { useRoutines } from "@/lib/routines";
-import { ChevronRight, Clock, Moon, Sun, Sunrise } from "lucide-react";
+import { routines as routineStore, useRoutines } from "@/lib/routines";
+import { Check, ChevronDown, ChevronRight, Clock, Moon, Sun, Sunrise } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DashCard, EmptyLine } from "./DashCard";
 import { capacityLimit, useCapacity } from "./capacity-context";
+import { haptics } from "@/lib/haptics";
 
 function routineMinutes(items: { durationMin?: number }[]) {
   return items.reduce((n, i) => n + (i.durationMin ?? 0), 0);
@@ -49,6 +50,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
   const { routines } = useRoutines();
   const navigate = useNavigate();
   const capacity = useCapacity();
+  const [expanded, setExpanded] = useState<string | null>(null);
   const iso = format(date, "yyyy-MM-dd");
 
   // Due-now first, then nearly-finished, then untouched; completed sink.
@@ -93,8 +95,8 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
               const Icon = SLOT_ICON[r.slot] ?? Sun;
               const complete = r.items.length > 0 && done === r.items.length;
               return (
-                <li key={r.id} className={cn("rounded-2xl bg-muted/35 p-3", complete && "opacity-70")}>
-                  <div className="flex items-center gap-2">
+                <li key={r.id} className={cn("overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-r from-primary/8 to-transparent", complete && "opacity-75")}>
+                  <button type="button" onClick={() => setExpanded(v => v === r.id ? null : r.id)} className="flex min-h-12 w-full items-center gap-2 p-3 text-left" aria-expanded={expanded === r.id}>
                     <ProgressRing done={done} total={r.items.length} />
                     <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
                     <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium">
@@ -104,7 +106,14 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
                       {mins > 0 && (<><Clock className="mr-0.5 inline h-3 w-3" aria-hidden />{mins}m · </>)}
                       {done}/{r.items.length} steps
                     </span>
-                  </div>
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded === r.id && "rotate-180")} />
+                  </button>
+                  {expanded === r.id && <div className="border-t border-border/35 px-3 py-2">
+                    {r.items.map(item => <button key={item.id} type="button" onClick={() => { haptics.success(); void routineStore.toggleItem(r.person_name, r.slot, item.id); }} className="flex min-h-10 w-full items-center gap-2 text-left text-xs">
+                      <span className={cn("grid h-5 w-5 place-items-center rounded-full border-2 border-primary/50", item.done && "bg-primary text-primary-foreground")}>{item.done && <Check className="h-3 w-3" />}</span>
+                      <span className={cn(item.done && "text-muted-foreground")}>{item.text}</span>
+                    </button>)}
+                  </div>}
                   <div className="mt-2 flex flex-wrap gap-1" aria-hidden>
                     {r.items.slice(0, 10).map(i => (
                       <span key={i.id} className={cn(
@@ -140,14 +149,15 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
                 <li key={h.id} className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => void toggleHabit(h.id, iso)}
+                   onClick={() => { h.log[iso] ? haptics.tap() : haptics.success(); void toggleHabit(h.id, iso); }}
                     aria-label={h.log[iso] ? `Mark ${h.title} not done today` : `Mark ${h.title} done today`}
                     className={cn(
-                      "min-w-0 flex-1 text-left text-[12.5px] transition-colors",
-                      h.log[iso] ? "text-muted-foreground line-through" : "hover:text-primary",
+                       "flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border px-3 text-left text-[12.5px] transition-colors",
+                       h.log[iso] ? "border-primary/25 bg-primary/10 text-foreground" : "border-border/45 bg-background/50 hover:border-primary/30",
                     )}
                   >
-                    {h.title}
+                     <span className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-primary/50", h.log[iso] && "bg-primary text-primary-foreground")}>{h.log[iso] && <Check className="h-3 w-3" />}</span>
+                     <span className="truncate">{h.title}</span>
                   </button>
                   <span className="flex shrink-0 gap-1" aria-hidden>
                     {last7.map(d => (

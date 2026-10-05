@@ -17,6 +17,7 @@ import { solarSeasonFor, daysLeftInSolarSeason, ELEMENT_LABEL } from "@/lib/plan
 import { applyOverride, useSeasonOverrides } from "@/lib/planner/solar-season-custom";
 
 const OPEN_KEY = "careflow:today:rhythm-open";
+const AREAS_KEY = "careflow:today:rhythm-areas";
 
 function useOpen() {
   const [open, setOpen] = useState<boolean>(() => {
@@ -48,6 +49,15 @@ function Chips({ items }: { items: string[] }) {
 
 export function RhythmTodayCard({ date, className }: { date: Date; className?: string }) {
   const [open, setOpen] = useOpen();
+  const [areas, setAreas] = useState<Record<"moon" | "cycle" | "season", boolean>>(() => {
+    try { return { moon: true, cycle: true, season: true, ...JSON.parse(localStorage.getItem(AREAS_KEY) || "{}") }; }
+    catch { return { moon: true, cycle: true, season: true }; }
+  });
+  const toggleArea = (key: keyof typeof areas) => setAreas(prev => {
+    const next = { ...prev, [key]: !prev[key] };
+    try { localStorage.setItem(AREAS_KEY, JSON.stringify(next)); } catch { /* private mode */ }
+    return next;
+  });
   const { periods, settings } = useCycle();
   const suggestion = useCycleSuggestion(date);
   const { overrides } = useSeasonOverrides();
@@ -97,15 +107,24 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
           <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} aria-hidden />
         </button>
       }
-      className={className}
+      className={cn("overflow-hidden border-primary/15 bg-gradient-to-br from-[#f5eadc]/75 via-card to-[#dceadf]/55 dark:from-primary/10 dark:via-card dark:to-secondary/10", className)}
     >
       <Row>{tip.text}</Row>
+      <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Visible rhythm areas">
+        {([[
+          "moon", "Moon", moon.glyph,
+        ], ["cycle", "Cycle", "◌"], ["season", "Season", season.glyph]] as const).map(([key, label, glyph]) => (
+          <button key={key} type="button" onClick={() => toggleArea(key)} aria-pressed={areas[key]}
+            className={cn("min-h-8 rounded-full border px-2.5 text-[11px] transition", areas[key] ? "border-primary/25 bg-primary/12 text-foreground" : "border-border/50 bg-background/35 text-muted-foreground opacity-65")}
+          >{glyph} {label}</button>
+        ))}
+      </div>
 
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger className="sr-only">Toggle rhythm details</CollapsibleTrigger>
         <CollapsibleContent className="mt-3 space-y-3">
           {/* Moon */}
-          <section className="space-y-1 rounded-2xl border border-border/40 bg-background/40 p-3">
+          {areas.moon && <section className="space-y-1 rounded-2xl border border-[#9e7bc7]/20 bg-[#eee7f7]/60 p-3 dark:bg-[#9e7bc7]/10">
             <h4 className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
               <Moon className="h-3 w-3" aria-hidden /> Moon
             </h4>
@@ -116,10 +135,10 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
             >
               Open Cosmic Flow <ExternalLink className="h-3 w-3" aria-hidden />
             </Link>
-          </section>
+          </section>}
 
           {/* Cycle */}
-          <section className="space-y-1.5 rounded-2xl border border-border/40 bg-background/40 p-3">
+          {areas.cycle && <section className="space-y-1.5 rounded-2xl border border-[#d58d78]/20 bg-[#f8e7e0]/65 p-3 dark:bg-[#d58d78]/10">
             <h4 className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Cycle</h4>
             {!cycle ? (
               <Row>
@@ -150,10 +169,10 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
                 </Link>
               </>
             )}
-          </section>
+          </section>}
 
           {/* Solar season */}
-          <section className="space-y-1.5 rounded-2xl border border-border/40 bg-background/40 p-3">
+          {areas.season && <section className="space-y-1.5 rounded-2xl border border-[#7da184]/25 bg-[#e3eee2]/70 p-3 dark:bg-[#7da184]/10">
             <h4 className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
               <Sparkles className="h-3 w-3" aria-hidden /> {season.label}
             </h4>
@@ -170,7 +189,7 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
             <Link to="/planner" className="inline-flex items-center gap-1 text-[11.5px] text-primary hover:underline">
               Customise on the planner <ExternalLink className="h-3 w-3" aria-hidden />
             </Link>
-          </section>
+          </section>}
         </CollapsibleContent>
       </Collapsible>
     </DashCard>
