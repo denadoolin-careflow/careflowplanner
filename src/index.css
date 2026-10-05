@@ -3438,6 +3438,12 @@ body.planner-dragging [data-radix-dialog-overlay] {
 .notes-notebook-card--2 { box-shadow: inset .32rem 0 0 hsl(var(--secondary-foreground) / .34), 0 18px 44px -34px hsl(var(--primary) / .72); }
 .notes-notebook-card--3 { box-shadow: inset .32rem 0 0 hsl(var(--muted-foreground) / .48), 0 18px 44px -34px hsl(var(--primary) / .72); }
 .notes-notebook-card:hover { transform: translateY(-2px); border-color: hsl(var(--primary) / .42); }
+.notes-notebook-cover--primary { background: linear-gradient(145deg, hsl(var(--primary) / .2), hsl(var(--notes-surface) / .96)); box-shadow: inset .32rem 0 0 hsl(var(--primary) / .62), 0 18px 44px -34px hsl(var(--primary) / .72); }
+.notes-notebook-cover--accent { background: linear-gradient(145deg, hsl(var(--accent) / .24), hsl(var(--notes-surface) / .96)); box-shadow: inset .32rem 0 0 hsl(var(--accent) / .72), 0 18px 44px -34px hsl(var(--primary) / .72); }
+.notes-notebook-cover--sage { background: linear-gradient(145deg, hsl(var(--secondary) / .62), hsl(var(--notes-surface) / .96)); box-shadow: inset .32rem 0 0 hsl(var(--secondary-foreground) / .48), 0 18px 44px -34px hsl(var(--primary) / .72); }
+.notes-notebook-cover--rose { background: linear-gradient(145deg, hsl(var(--destructive) / .16), hsl(var(--notes-surface) / .96)); box-shadow: inset .32rem 0 0 hsl(var(--destructive) / .48), 0 18px 44px -34px hsl(var(--primary) / .72); }
+.notes-notebook-cover--neutral { background: linear-gradient(145deg, hsl(var(--muted)), hsl(var(--notes-surface) / .96)); box-shadow: inset .32rem 0 0 hsl(var(--muted-foreground) / .45), 0 18px 44px -34px hsl(var(--primary) / .72); }
+.notebook-cover-swatch { border-color: hsl(var(--notes-line) / .75); }
 
 @media (max-width: 767px) {
   .notes-experience { padding-bottom: 8rem; }
