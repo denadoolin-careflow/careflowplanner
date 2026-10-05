@@ -1,21 +1,57 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { format, subMinutes, set } from "date-fns";
-import { ChefHat, Clock, Flame, UtensilsCrossed, ChevronDown } from "lucide-react";
+import { ChefHat, Clock, Flame, UtensilsCrossed, ChevronDown, ShoppingCart, Check } from "lucide-react";
 import { useStore, todayISO } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import type { Meal } from "@/lib/types";
 
 const DINNER_HOUR_KEY = "meals.dinnerTime";
 
 export function TonightDinnerHero({ onOpen }: { onOpen: (m: Meal) => void }) {
-  const { state } = useStore();
+  const { state, addGrocery } = useStore();
   const [dinnerAt, setDinnerAt] = useState(() => localStorage.getItem(DINNER_HOUR_KEY) || "18:00");
   const [showSteps, setShowSteps] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [adding, setAdding] = useState(false);
   const meal: Meal | undefined = (state.meals ?? []).find((m: Meal) => m.date === todayISO() && m.slot === "Dinner");
 
   const [h, m] = dinnerAt.split(":").map(Number);
   const serve = set(new Date(), { hours: h, minutes: m, seconds: 0 });
   const startCook = meal?.prepMinutes ? subMinutes(serve, meal.prepMinutes) : null;
+
+  const ingredients = useMemo(() => (meal?.ingredients ?? []).filter((i) => i.trim()), [meal]);
+  const onList = useMemo(() => {
+    const names = new Set((state.grocery ?? []).filter((g) => !g.bought).map((g) => g.name.trim().toLowerCase()));
+    return ingredients.filter((i) => names.has(i.trim().toLowerCase()));
+  }, [state.grocery, ingredients]);
+
+  const openShop = () => {
+    const next: Record<string, boolean> = {};
+    const names = new Set((state.grocery ?? []).filter((g) => !g.bought).map((g) => g.name.trim().toLowerCase()));
+    ingredients.forEach((i) => { next[i] = !names.has(i.trim().toLowerCase()); });
+    setChecked(next);
+    setShopOpen(true);
+  };
+
+  const addSelected = async () => {
+    const selected = ingredients.filter((i) => checked[i]);
+    if (!selected.length) { setShopOpen(false); return; }
+    setAdding(true);
+    try {
+      for (const name of selected) await addGrocery(name);
+      toast.success(`Added ${selected.length} ingredient${selected.length === 1 ? "" : "s"} to your shopping list`, {
+        description: meal ? `From ${meal.name}` : undefined,
+      });
+      setShopOpen(false);
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <section className="relative overflow-hidden rounded-3xl bg-kitchen-cream p-5 text-kitchen-ink ring-1 ring-kitchen-terracotta/20 shadow-soft sm:p-6">
@@ -42,35 +78,81 @@ export function TonightDinnerHero({ onOpen }: { onOpen: (m: Meal) => void }) {
                 className="bg-transparent outline-none" />
             </label>
           </div>
-          {!!meal.steps?.length && (
-            <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Button type="button" size="sm" onClick={openShop} disabled={!ingredients.length}
+              className="gap-1.5 rounded-full bg-kitchen-terracotta text-kitchen-cream hover:bg-kitchen-terracotta/90">
+              <ShoppingCart className="h-4 w-4" /> Plan a meal
+            </Button>
+            {!!meal.steps?.length && (
               <button type="button" onClick={() => setShowSteps((v) => !v)}
                 className="flex items-center gap-1 text-sm font-semibold text-kitchen-terracotta">
                 <ChefHat className="h-4 w-4" /> {meal.steps.length} recipe steps
                 <ChevronDown className={cn("h-4 w-4 transition-transform", showSteps && "rotate-180")} />
               </button>
-              {showSteps && (
-                <ol className="mt-2 space-y-2">
-                  {meal.steps.map((s, i) => (
-                    <li key={i} className="flex gap-3 rounded-2xl bg-background/60 p-3 text-sm">
-                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-kitchen-terracotta/15 text-xs font-bold text-kitchen-terracotta">{i + 1}</span>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
+            )}
+          </div>
+          {showSteps && !!meal.steps?.length && (
+            <ol className="mt-3 space-y-2">
+              {meal.steps.map((s, i) => (
+                <li key={i} className="flex gap-3 rounded-2xl bg-background/60 p-3 text-sm">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-kitchen-terracotta/15 text-xs font-bold text-kitchen-terracotta">{i + 1}</span>
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ol>
           )}
           {!meal.steps?.length && (
-            <button type="button" onClick={() => onOpen(meal)} className="mt-4 text-sm font-semibold text-kitchen-terracotta">Add recipe & steps →</button>
+            <button type="button" onClick={() => onOpen(meal)} className="mt-3 text-sm font-semibold text-kitchen-terracotta">Add recipe & steps →</button>
           )}
         </>
       ) : (
         <div className="mt-1">
           <h2 className="font-display text-2xl font-semibold">Nothing planned yet</h2>
           <p className="mt-1 text-sm opacity-70">Add a dinner to tonight's row in the week below, or pick one from your library.</p>
+          <Button type="button" size="sm" asChild
+            className="mt-4 gap-1.5 rounded-full bg-kitchen-terracotta text-kitchen-cream hover:bg-kitchen-terracotta/90">
+            <Link to="/meals/library"><ShoppingCart className="h-4 w-4" /> Plan a meal</Link>
+          </Button>
         </div>
       )}
+
+      <Dialog open={shopOpen} onOpenChange={setShopOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">Shop for {meal?.name}</DialogTitle>
+            <DialogDescription>
+              Pick the ingredients you need — anything already on your shopping list is unchecked.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="max-h-72 space-y-1.5 overflow-y-auto py-1">
+            {ingredients.map((ing) => {
+              const isChecked = !!checked[ing];
+              return (
+                <li key={ing}>
+                  <button type="button" onClick={() => setChecked((c) => ({ ...c, [ing]: !c[ing] }))}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm ring-1 transition",
+                      isChecked ? "bg-kitchen-terracotta/10 ring-kitchen-terracotta/30" : "bg-background/60 ring-border/40 opacity-60",
+                    )}>
+                    <span className={cn(
+                      "grid h-5 w-5 shrink-0 place-items-center rounded-md ring-1",
+                      isChecked ? "bg-kitchen-terracotta text-kitchen-cream ring-kitchen-terracotta" : "ring-border",
+                    )}>
+                      {isChecked && <Check className="h-3.5 w-3.5" />}
+                    </span>
+                    {ing}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <Button type="button" onClick={addSelected} disabled={adding}
+            className="w-full gap-1.5 rounded-full bg-kitchen-terracotta text-kitchen-cream hover:bg-kitchen-terracotta/90">
+            <ShoppingCart className="h-4 w-4" />
+            {adding ? "Adding…" : `Add ${ingredients.filter((i) => checked[i]).length} to shopping list`}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
