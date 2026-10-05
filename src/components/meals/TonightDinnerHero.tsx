@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { format, subMinutes, set } from "date-fns";
 import { ChefHat, Clock, Flame, UtensilsCrossed, ChevronDown, ShoppingCart, Check } from "lucide-react";
 import { useStore, todayISO } from "@/lib/store";
@@ -8,6 +7,9 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Meal } from "@/lib/types";
+import { PlanDinnerSheet } from "@/components/meals/PlanDinnerSheet";
+import { useMealPeople } from "@/lib/meal-people";
+import { usePeopleDirectory } from "@/lib/people-directory";
 
 const DINNER_HOUR_KEY = "meals.dinnerTime";
 
@@ -18,7 +20,17 @@ export function TonightDinnerHero({ onOpen }: { onOpen: (m: Meal) => void }) {
   const [shopOpen, setShopOpen] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [adding, setAdding] = useState(false);
-  const meal: Meal | undefined = (state.meals ?? []).find((m: Meal) => m.date === todayISO() && m.slot === "Dinner");
+  const [planOpen, setPlanOpen] = useState(false);
+  const dinners: Meal[] = useMemo(() => (state.meals ?? []).filter((m: Meal) => m.date === todayISO() && m.slot === "Dinner"), [state.meals]);
+  const { links } = useMealPeople(dinners.map((d) => d.id));
+  const people = usePeopleDirectory();
+  const linkedIds = new Set(links.map((l) => l.mealId));
+  const meal: Meal | undefined = dinners.find((d) => !linkedIds.has(d.id)) ?? dinners[0];
+  const plates = dinners.filter((d) => d.id !== meal?.id && linkedIds.has(d.id)).map((d) => {
+    const l = links.find((x) => x.mealId === d.id);
+    const p = people.find((x) => x.id === l?.personId);
+    return { id: d.id, meal: d, who: p ? `${p.emoji ? p.emoji + " " : ""}${p.name}` : "Someone" };
+  });
 
   const [h, m] = dinnerAt.split(":").map(Number);
   const serve = set(new Date(), { hours: h, minutes: m, seconds: 0 });
@@ -64,6 +76,16 @@ export function TonightDinnerHero({ onOpen }: { onOpen: (m: Meal) => void }) {
           <button type="button" onClick={() => onOpen(meal)} className="mt-1 block text-left">
             <h2 className="font-display text-3xl font-semibold leading-tight">{meal.name}</h2>
           </button>
+          {plates.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {plates.map((p) => (
+                <button key={p.id} type="button" onClick={() => onOpen(p.meal)}
+                  className="rounded-full bg-kitchen-terracotta/10 px-2.5 py-1 text-xs font-medium ring-1 ring-kitchen-terracotta/25">
+                  {p.who} · {p.meal.name}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
             {meal.prepMinutes != null && (
               <span className="inline-flex items-center gap-1 rounded-full bg-background/70 px-3 py-1.5"><Clock className="h-3.5 w-3.5" />{meal.prepMinutes} min</span>
@@ -79,10 +101,16 @@ export function TonightDinnerHero({ onOpen }: { onOpen: (m: Meal) => void }) {
             </label>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Button type="button" size="sm" onClick={openShop} disabled={!ingredients.length}
+            <Button type="button" size="sm" onClick={() => setPlanOpen(true)}
               className="gap-1.5 rounded-full bg-kitchen-terracotta text-kitchen-cream hover:bg-kitchen-terracotta/90">
-              <ShoppingCart className="h-4 w-4" /> Plan a meal
+              <UtensilsCrossed className="h-4 w-4" /> Edit dinner
             </Button>
+            {!!ingredients.length && (
+              <Button type="button" size="sm" variant="outline" onClick={openShop}
+                className="gap-1.5 rounded-full border-kitchen-terracotta/40 bg-transparent text-kitchen-terracotta">
+                <ShoppingCart className="h-4 w-4" /> Shop
+              </Button>
+            )}
             {!!meal.steps?.length && (
               <button type="button" onClick={() => setShowSteps((v) => !v)}
                 className="flex items-center gap-1 text-sm font-semibold text-kitchen-terracotta">
@@ -108,13 +136,15 @@ export function TonightDinnerHero({ onOpen }: { onOpen: (m: Meal) => void }) {
       ) : (
         <div className="mt-1">
           <h2 className="font-display text-2xl font-semibold">Nothing planned yet</h2>
-          <p className="mt-1 text-sm opacity-70">Add a dinner to tonight's row in the week below, or pick one from your library.</p>
-          <Button type="button" size="sm" asChild
+          <p className="mt-1 text-sm opacity-70">Write one in or pick from your library.</p>
+          <Button type="button" size="sm" onClick={() => setPlanOpen(true)}
             className="mt-4 gap-1.5 rounded-full bg-kitchen-terracotta text-kitchen-cream hover:bg-kitchen-terracotta/90">
-            <Link to="/meals/library"><ShoppingCart className="h-4 w-4" /> Plan a meal</Link>
+            <UtensilsCrossed className="h-4 w-4" /> Plan a meal
           </Button>
         </div>
       )}
+
+      <PlanDinnerSheet open={planOpen} onOpenChange={setPlanOpen} dinners={dinners} links={links} />
 
       <Dialog open={shopOpen} onOpenChange={setShopOpen}>
         <DialogContent className="max-w-sm rounded-3xl">
