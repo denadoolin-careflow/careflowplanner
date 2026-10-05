@@ -7,7 +7,7 @@ import {
 import {
   Plus, Search, Sun, Sparkles, LayoutGrid, List as ListIcon,
   KanbanSquare, Calendar as CalendarIcon, ChevronLeft, ChevronRight,
-  Filter as FilterIcon, ArrowDownUp, Network, Clock3, ChevronDown,
+  ArrowDownUp, Network, Clock3,
   BookOpen, MoreHorizontal, Pin, Heart, Tags, Menu, FolderOpen,
   Lightbulb, CalendarDays, Flower2, Users, BriefcaseBusiness, BookHeart,
   Flame, ChartNoAxesColumnIncreasing, SlidersHorizontal, Table2, NotebookPen,
@@ -58,7 +58,9 @@ const ADVANCED_VIEWS: { id: Exclude<View, "list" | "compact" | "grid">; label: s
   { id: "calendar", label: "Calendar", icon: CalendarIcon },
 ];
 
-const SPACES = [
+type NoteSpace = { name: string; icon: React.ComponentType<{ className?: string }>; tags: readonly string[] };
+
+const SPACES: readonly NoteSpace[] = [
   { name: "All Notes", icon: BookOpen, tags: [] },
   { name: "Life", icon: Flower2, tags: ["life", "personal", "self"] },
   { name: "Care", icon: Heart, tags: ["care", "caregiving", "medical", "health", "therapy"] },
@@ -173,7 +175,7 @@ export default function Notes() {
     setActiveTag(null); setPinnedOnly(false);
     setCollection(next === "recent" ? "recent" : next === "pinned" || next === "favorites" ? "pinned" : "all");
   };
-  const selectSpace = (space: typeof SPACES[number]) => {
+  const selectSpace = (space: NoteSpace) => {
     setCollection("all");
     const used = new Set(notes.flatMap(n => n.tags ?? []).map(t => t.toLowerCase()));
     const tag = space.tags.find(t => used.has(t.toLowerCase())) ?? space.tags[0] ?? null;
@@ -359,11 +361,11 @@ function SortMenu({ sort, setSort }: { sort: Sort; setSort: (sort: Sort) => void
   return <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="notes-round-control h-10 w-10" aria-label="Sort notes"><ArrowDownUp className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Sort by</DropdownMenuLabel>{([{ id: "updated", label: "Recently updated" }, { id: "created", label: "Recently created" }, { id: "title", label: "Title (A–Z)" }, { id: "words", label: "Word count" }] as const).map(o => <DropdownMenuItem key={o.id} onClick={() => setSort(o.id)} className={cn(sort === o.id && "bg-primary/10")}>{o.label}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>;
 }
 
-function SpacesSheet({ open, onOpenChange, notes, tags, activeTag, activeCollection, onSpace, onTag, onNewTag, onNew }: { open: boolean; onOpenChange: (open: boolean) => void; notes: Note[]; tags: Tag[]; activeTag: string | null; activeCollection: SmartCollectionId; onSpace: (space: typeof SPACES[number]) => void; onTag: (tag: string) => void; onNewTag: () => void; onNew: () => void }) {
-  const counts = (space: typeof SPACES[number]) => space.tags.length === 0 ? notes.length : notes.filter(n => (n.tags ?? []).some(t => space.tags.some(s => s.toLowerCase() === t.toLowerCase()))).length;
+function SpacesSheet({ open, onOpenChange, notes, tags, activeTag, activeCollection, onSpace, onTag, onNewTag, onNew }: { open: boolean; onOpenChange: (open: boolean) => void; notes: Note[]; tags: Tag[]; activeTag: string | null; activeCollection: SmartCollectionId; onSpace: (space: NoteSpace) => void; onTag: (tag: string) => void; onNewTag: () => void; onNew: () => void }) {
+  const counts = (space: NoteSpace) => space.tags.length === 0 ? notes.length : notes.filter(n => (n.tags ?? []).some(t => space.tags.some(s => s.toLowerCase() === t.toLowerCase()))).length;
   const tagCounts = useMemo(() => { const out = new Map<string, number>(); notes.forEach(n => (n.tags ?? []).forEach(t => out.set(t.toLowerCase(), (out.get(t.toLowerCase()) ?? 0) + 1))); return out; }, [notes]);
   const merged = useMemo(() => { const map = new Map(tags.map(t => [t.name.toLowerCase(), t])); tagCounts.forEach((_, name) => { if (!map.has(name)) map.set(name, { id: `ghost:${name}`, name, color: fallbackColorFor(name), icon: "tag", pinned: false, defaults: {}, checklist: [], createdAt: "", updatedAt: "" }); }); return [...map.values()].sort((a,b) => (tagCounts.get(b.name.toLowerCase()) ?? 0) - (tagCounts.get(a.name.toLowerCase()) ?? 0)); }, [tags, tagCounts]);
-  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side="left" className="notes-spaces-sheet w-[88vw] max-w-sm overflow-y-auto border-r p-5"><SheetHeader className="text-left"><SheetTitle className="font-display text-2xl">My Notes</SheetTitle><SheetDescription>Spaces and tags for everything you’re holding.</SheetDescription></SheetHeader><Button onClick={onNew} className="mt-4 h-11 w-full gap-2 rounded-full"><Plus className="h-4 w-4" />New note</Button><section className="mt-6"><div className="mb-2 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase text-muted-foreground"><Pin className="mr-1 inline h-3.5 w-3.5" />Spaces</h2></div><ul className="space-y-1">{SPACES.map(space => { const Icon=space.icon; const active=space.name === "All Notes" ? activeCollection === "all" && !activeTag : Boolean(activeTag && space.tags.includes(activeTag.toLowerCase() as never)); return <li key={space.name}><Button variant="ghost" onClick={() => onSpace(space)} className={cn("h-11 w-full justify-start gap-3 px-2", active && "bg-primary/15 text-foreground")}><Icon className="h-4 w-4 text-primary" /><span className="flex-1 text-left">{space.name}</span><span className="text-xs text-muted-foreground">{counts(space)}</span></Button></li>; })}</ul></section><section className="mt-6 border-t border-border/50 pt-5"><div className="mb-3 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase text-muted-foreground"><Tags className="mr-1 inline h-3.5 w-3.5" />Tags</h2><Button variant="ghost" size="sm" onClick={onNewTag}>Edit</Button></div><div className="flex flex-wrap gap-2">{merged.length ? merged.map(t => <button type="button" key={t.id} onClick={() => onTag(t.name)} className="min-h-[36px] rounded-full px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ backgroundColor: `${t.color}24`, color: t.color }}>#{t.name} · {tagCounts.get(t.name.toLowerCase()) ?? 0}</button>) : <p className="text-sm text-muted-foreground">No tags yet.</p>}</div></section></SheetContent></Sheet>;
+  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side="left" className="notes-spaces-sheet w-[88vw] max-w-sm overflow-y-auto border-r p-5"><SheetHeader className="text-left"><SheetTitle className="font-display text-2xl">My Notes</SheetTitle><SheetDescription>Spaces and tags for everything you’re holding.</SheetDescription></SheetHeader><Button onClick={onNew} className="mt-4 h-11 w-full gap-2 rounded-full"><Plus className="h-4 w-4" />New note</Button><section className="mt-6"><div className="mb-2 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase text-muted-foreground"><Pin className="mr-1 inline h-3.5 w-3.5" />Spaces</h2></div><ul className="space-y-1">{SPACES.map(space => { const Icon=space.icon; const active=space.name === "All Notes" ? activeCollection === "all" && !activeTag : Boolean(activeTag && space.tags.includes(activeTag.toLowerCase())); return <li key={space.name}><Button variant="ghost" onClick={() => onSpace(space)} className={cn("h-11 w-full justify-start gap-3 px-2", active && "bg-primary/15 text-foreground")}><Icon className="h-4 w-4 text-primary" /><span className="flex-1 text-left">{space.name}</span><span className="text-xs text-muted-foreground">{counts(space)}</span></Button></li>; })}</ul></section><section className="mt-6 border-t border-border/50 pt-5"><div className="mb-3 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase text-muted-foreground"><Tags className="mr-1 inline h-3.5 w-3.5" />Tags</h2><Button variant="ghost" size="sm" onClick={onNewTag}>Edit</Button></div><div className="flex flex-wrap gap-2">{merged.length ? merged.map(t => <button type="button" key={t.id} onClick={() => onTag(t.name)} className="min-h-[36px] rounded-full px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ backgroundColor: `${t.color}24`, color: t.color }}>#{t.name} · {tagCounts.get(t.name.toLowerCase()) ?? 0}</button>) : <p className="text-sm text-muted-foreground">No tags yet.</p>}</div></section></SheetContent></Sheet>;
 }
 
 function NotesLoading() { return <div className="notes-empty rounded-2xl border p-10 text-center text-sm text-muted-foreground" aria-live="polite">Loading your notes…</div>; }
