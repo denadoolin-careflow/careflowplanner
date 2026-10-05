@@ -1,0 +1,2 @@
+ALTER TABLE public.loved_ones ADD COLUMN IF NOT EXISTS dietary jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.care_recipients ADD COLUMN IF NOT EXISTS dietary jsonb NOT NULL DEFAULT '{}'::jsonb;

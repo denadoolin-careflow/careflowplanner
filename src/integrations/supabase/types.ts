@@ -835,6 +835,7 @@ export type Database = {
           cycle: Json
           diagnoses: string[]
           diagnosis_notes: string | null
+          dietary: Json
           education_level: string | null
           food_preferences: Json
           id: string
@@ -861,6 +862,7 @@ export type Database = {
           cycle?: Json
           diagnoses?: string[]
           diagnosis_notes?: string | null
+          dietary?: Json
           education_level?: string | null
           food_preferences?: Json
           id?: string
@@ -887,6 +889,7 @@ export type Database = {
           cycle?: Json
           diagnoses?: string[]
           diagnosis_notes?: string | null
+          dietary?: Json
           education_level?: string | null
           food_preferences?: Json
           id?: string
@@ -4018,6 +4021,7 @@ export type Database = {
           birth_date: string | null
           color: string | null
           created_at: string
+          dietary: Json
           id: string
           kind: string
           name: string
@@ -4033,6 +4037,7 @@ export type Database = {
           birth_date?: string | null
           color?: string | null
           created_at?: string
+          dietary?: Json
           id?: string
           kind?: string
           name: string
@@ -4048,6 +4053,7 @@ export type Database = {
           birth_date?: string | null
           color?: string | null
           created_at?: string
+          dietary?: Json
           id?: string
           kind?: string
           name?: string
