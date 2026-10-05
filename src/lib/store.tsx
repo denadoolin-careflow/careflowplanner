@@ -324,7 +324,7 @@ interface Ctx {
   updateJournal: (id: string, patch: Partial<JournalEntry>) => Promise<void>;
   deleteJournal: (id: string) => Promise<void>;
 
-  addMeal: (m: Partial<Meal> & { name: string; date: string; slot: Meal["slot"] }) => Promise<void>;
+  addMeal: (m: Partial<Meal> & { name: string; date: string; slot: Meal["slot"] }) => Promise<string | undefined>;
   updateMeal: (id: string, patch: Partial<Meal>) => Promise<void>;
   deleteMeal: (id: string) => Promise<void>;
 
@@ -989,7 +989,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
 
     addMeal: async (m) => {
-      if (!uid) return;
+      if (!uid) return undefined;
       const { data } = await supabase.from("meals").insert({
         user_id: uid, name: m.name, date: m.date, slot: m.slot,
         notes: m.notes ?? null, kid_safe: m.kidSafe ?? false,
@@ -1002,6 +1002,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         reminder_minutes_before: m.reminderMinutesBefore ?? null,
       }).select().single();
       if (data) setState(s => ({ ...s, meals: [mealFrom(data), ...s.meals] }));
+      return (data as any)?.id as string | undefined;
     },
     updateMeal: async (id, patch) => {
       const localTs = nowIso();
