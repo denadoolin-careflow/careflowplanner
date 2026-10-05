@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRitualSteps, type RitualKind } from "@/lib/ritual-steps";
 import { cn } from "@/lib/utils";
+import { haptics } from "@/lib/haptics";
+import { motion } from "framer-motion";
 
-export function RitualStepsEditor({ kind, iso }: { kind: RitualKind; iso: string }) {
+export function RitualStepsEditor({ kind, iso, onComplete }: { kind: RitualKind; iso: string; onComplete?: () => void | Promise<void> }) {
   const { steps, done, add, remove, move, rename, toggle } = useRitualSteps(kind, iso);
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
+  const [celebrating, setCelebrating] = useState<string | null>(null);
   const label = kind === "morning" ? "Morning Reset steps" : "Evening Reflection steps";
 
   return (
@@ -32,10 +35,18 @@ export function RitualStepsEditor({ kind, iso }: { kind: RitualKind; iso: string
                 <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => remove(s.id)} aria-label="Remove step"><Trash2 className="h-3.5 w-3.5" /></Button>
               </>
             ) : (
-              <button type="button" onClick={() => toggle(s.id)} className="flex min-h-[32px] w-full items-center gap-2 text-left">
-                <span className={cn("grid h-4 w-4 shrink-0 place-items-center rounded-full border border-primary/60", done.includes(s.id) && "bg-primary text-primary-foreground")}>
+              <button type="button" onClick={() => {
+                const checking = !done.includes(s.id);
+                const completes = checking && steps.every(step => step.id === s.id || done.includes(step.id));
+                toggle(s.id);
+                if (checking) haptics.success(); else haptics.tap();
+                setCelebrating(s.id);
+                window.setTimeout(() => setCelebrating(null), 320);
+                if (completes) void onComplete?.();
+              }} className="flex min-h-[40px] w-full items-center gap-2 text-left" data-no-haptic>
+                <motion.span animate={celebrating === s.id ? { scale: [1, 1.35, 1] } : { scale: 1 }} className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-primary/60", done.includes(s.id) && "bg-primary text-primary-foreground")}>
                   {done.includes(s.id) && <Check className="h-3 w-3" />}
-                </span>
+                </motion.span>
                 <span className={cn(done.includes(s.id) && "text-muted-foreground line-through")}>{s.label}</span>
               </button>
             )}

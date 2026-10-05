@@ -31,7 +31,7 @@ import { PlannerRhythmHeader } from "@/components/planner/PlannerRhythmHeader";
 import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/PlannerPeriodTabs";
 import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
-import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
+import { PlannerMobileViewFab } from "@/components/planner/PlannerMobileViewFab";
 import { PlannerDayRhythm } from "@/components/planner/PlannerDayRhythm";
 import { PlannerDayAssistant } from "@/components/planner/PlannerDayAssistant";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
@@ -285,7 +285,7 @@ export default function Planner() {
       <div ref={shellTopRef} aria-hidden className="h-0" />
 
       {isMobile ? (
-         <div ref={mobileHeaderRef} className="planner-mobile-command sticky top-0 z-30 -mx-2 space-y-2 border-b border-border/50 bg-background/95 px-2 pb-2 pt-[max(.375rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
+         <div ref={mobileHeaderRef} className="planner-mobile-command sticky top-0 z-30 -mx-2 space-y-1.5 border-b border-border/50 bg-background/95 px-2 pb-2 pt-[max(.375rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
         <div className="flex items-center gap-1">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
             <SheetTrigger asChild>
@@ -378,45 +378,11 @@ export default function Planner() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-         <div className="min-w-0">
-           <PlannerViewToggle value={view} onChange={setView} className="w-full" />
-         </div>
-          <div className="planner-mobile-modes flex min-w-0 flex-wrap items-center gap-1.5">
-            {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="w-full" />}
-           {view === "week" && (
-             <PlannerRangeModeTabs
-               className="shrink-0"
-               value={activeWeekMode}
-               onChange={(next) => { setMobileWeekMode(next); setWeekMode(next); }}
-               options={[
-                 { id: "grid", label: "Schedule" },
-                 { id: "board", label: "Board" },
-                 { id: "overview", label: "Overview" },
-                 { id: "list", label: "List" },
-                 { id: "table", label: "Table" },
-               ]}
-             />
-           )}
-           {view === "month" && rangeLayout === "default" && (
-             <PlannerRangeModeTabs
-               className="shrink-0"
-               value={monthMode}
-               onChange={setMonthMode}
-               options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
-             />
-           )}
-           {view !== "week" && view !== "month" && (
-            <PlannerRangeModeTabs
-              className="shrink-0"
-              value={rangeLayout} onChange={setRangeLayout}
-              options={[
-                 { id: "default", label: view === "year" ? "Year" : view === "3day" ? "3 Day" : "Day" },
-                { id: "list", label: "List" },
-                { id: "table", label: "Table" },
-              ]}
-            />
-          )}
-           <div className="ml-auto flex items-center gap-1">
+           <div className="planner-mobile-modes flex min-w-0 items-center gap-1.5">
+            <div className="min-w-0 flex-1 pl-1 text-[11px] text-muted-foreground">
+              {view === "day" ? (period === "timeofday" ? "Time of day" : period) : view === "week" ? activeWeekMode : view === "month" ? monthMode : rangeLayout === "default" ? `${view === "3day" ? "3 day" : view} view` : rangeLayout}
+            </div>
+            <div className="ml-auto flex items-center gap-1">
              {view !== "month" && <PlannerKindFilter className="shrink-0" />}
              <ReminderCenter />
              <AutoScheduleSettings size="md" />
@@ -777,6 +743,19 @@ export default function Planner() {
           </div>
         )}
       </div>
+
+      {isMobile && <PlannerMobileViewFab
+        view={view}
+        setView={setView}
+        period={period}
+        setPeriod={setPeriod}
+        weekMode={activeWeekMode}
+        setWeekMode={(next) => { setMobileWeekMode(next); setWeekMode(next); }}
+        monthMode={monthMode}
+        setMonthMode={setMonthMode}
+        rangeLayout={rangeLayout}
+        setRangeLayout={setRangeLayout}
+      />}
 
       <PlannerQuickCapture
         open={captureOpen}

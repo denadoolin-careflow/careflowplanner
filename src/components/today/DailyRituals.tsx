@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Check, ChevronRight, Moon, Sunrise } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { loadCheckIn, type CheckInRecord } from "@/lib/daily-checkin-store";
+import { loadCheckIn, saveCheckIn, type CheckInRecord } from "@/lib/daily-checkin-store";
 import { useStore } from "@/lib/store";
 import { RitualStepsEditor } from "./RitualStepsEditor";
 import { RitualWeeklyHistory } from "./RitualWeeklyHistory";
@@ -15,7 +15,7 @@ export function DailyRituals({ date, onEveningReflection }: {
   onEveningReflection: () => void;
 }) {
   const iso = format(date, "yyyy-MM-dd");
-  const { state } = useStore();
+  const { state, addJournal } = useStore();
   const isMobile = useIsMobile();
   const [expanded, setExpanded] = useState<"morning" | "evening" | null>(null);
   const [morning, setMorning] = useState<CheckInRecord | null>(null);
@@ -38,6 +38,15 @@ export function DailyRituals({ date, onEveningReflection }: {
   );
   const morningDone = !!morning?.completed_at;
   const morningStarted = !!morning && !morningDone && !!(morning.mood || morning.capture_text || morning.ai_payload);
+  const completeMorning = async () => {
+    if (morningDone) return;
+    const record = await saveCheckIn(iso, { completed_at: new Date().toISOString() });
+    setMorning(record);
+  };
+  const completeEvening = async () => {
+    if (eveningDone) return;
+    await addJournal({ date: iso, type: "daily", template: "evening-reflection", title: `Evening Reflection — ${format(date, "MMM d")}`, body: "Evening reflection checklist completed.", tags: ["evening-reflection"] });
+  };
 
   if (isMobile) {
     const rituals = [
@@ -65,7 +74,7 @@ export function DailyRituals({ date, onEveningReflection }: {
               </button>
               {expanded === kind && (
                 <div className="border-t border-border/40 pt-1">
-                  <RitualStepsEditor kind={kind} iso={iso} />
+                   <RitualStepsEditor kind={kind} iso={iso} onComplete={kind === "morning" ? completeMorning : completeEvening} />
                   {kind === "morning" ? (
                     <Button asChild size="sm" className="mt-2 h-10 w-full rounded-xl"><Link to="/check-in">{morningDone ? "Review reset" : morningStarted ? "Continue reset" : "Start reset"}</Link></Button>
                   ) : (
@@ -101,7 +110,7 @@ export function DailyRituals({ date, onEveningReflection }: {
           </Link>
         </Button>
       </div>
-      <RitualStepsEditor kind="morning" iso={iso} />
+       <RitualStepsEditor kind="morning" iso={iso} onComplete={completeMorning} />
       </div>
 
       <div className="rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl"><div className="flex min-h-[80px] items-center gap-3">
@@ -119,7 +128,7 @@ export function DailyRituals({ date, onEveningReflection }: {
           <ChevronRight className="ml-1 h-3.5 w-3.5" aria-hidden />
         </Button>
       </div>
-      <RitualStepsEditor kind="evening" iso={iso} />
+       <RitualStepsEditor kind="evening" iso={iso} onComplete={completeEvening} />
       </div>
     </div>
     </section>

@@ -101,7 +101,7 @@ export function AppLayout() {
       </div>
       <QuickAddFab hideButton />
       <CareGuideFab hideButton />
-      <CombinedFab />
+      {!pathname.startsWith("/planner") && <CombinedFab />}
       <AddEventHost />
       <BottomNav />
       <CommandPalette />

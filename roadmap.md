@@ -28,10 +28,10 @@
 - [x] Intelligence panel: TOC auto-scroll, nicer look, richer linked tasks/links, search, cosmic events
 - [x] Auto moon phase + sign on notes with hover cosmic details
 - [x] Click a tag to view it above properties
-- [ ] Add touch-friendly preview/open actions for tag-gallery notes and tasks on mobile
-- [ ] Complete Morning Reset and Evening Reflection from their checklists with haptic animation
-- [ ] Enrich Today rhythm visuals and make each rhythm area collapsible
-- [ ] Improve Today Plan, Care, and Grow sections; move routines and habits into Grow
-- [ ] Add inline task creation to Today Home and cleaning checklists
-- [ ] Keep the Today greeting as the first visible page content
-- [ ] Choose and implement a mobile Day, 3 Days, Week, Month, and Year layout direction
+- [x] Add touch-friendly preview/open actions for tag-gallery notes and tasks on mobile
+- [x] Complete Morning Reset and Evening Reflection from their checklists with haptic animation
+- [x] Enrich Today rhythm visuals and make each rhythm area collapsible
+- [x] Improve Today Plan, Care, and Grow sections; move routines and habits into Grow
+- [x] Add inline task creation to Today Home and cleaning checklists
+- [x] Keep the Today greeting as the first visible page content
+- [x] Implement Integrated Botanical Hub layouts for mobile Day, 3 Days, Week, Month, and Year with radial view controls

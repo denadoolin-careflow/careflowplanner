@@ -1,22 +1,33 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
-import { Users, Home, HeartPulse, ChevronRight, Check } from "lucide-react";
+import { Users, Home, HeartPulse, ChevronRight, Check, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DashCard, EmptyLine } from "./DashCard";
 import { capacityLimit, useCapacity } from "./capacity-context";
 import { PersonCareCard } from "@/components/today/care/PersonCareCard";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTodayCarePeople } from "@/lib/today-care-people";
+import { inferCleaningZoneOr } from "@/lib/cleaning-zone-infer";
+import type { CleaningTask } from "@/lib/types";
+import { haptics } from "@/lib/haptics";
 
 
 export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (id: string) => void }) {
-  const { state, toggleCleaning, toggleHabit } = useStore();
+  const { state, toggleCleaning, toggleHabit, addCleaning } = useStore();
   const navigate = useNavigate();
   const capacity = useCapacity();
   const iso = format(date, "yyyy-MM-dd");
   const { selectedIds, toggle, clear, isAuto } = useTodayCarePeople();
+  const [homeDraft, setHomeDraft] = useState("");
+  const addHomeTask = async () => {
+    const title = homeDraft.trim();
+    if (!title) return;
+    setHomeDraft("");
+    await addCleaning({ title, zone: inferCleaningZoneOr(title, "Whole home") as CleaningTask["zone"], cadence: "daily" });
+    haptics.tap();
+  };
 
   const people = useMemo(() => (
     isAuto
@@ -132,7 +143,7 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
               <li key={c.id} className="flex items-start gap-2 text-[12.5px]">
                 <button
                   type="button"
-                  onClick={() => void toggleCleaning(c.id)}
+                   onClick={() => { haptics.success(); void toggleCleaning(c.id); }}
                   aria-label={`Mark ${c.title} done`}
                   className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent hover:bg-muted"
                 >
@@ -142,8 +153,12 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
                 <span className="text-[11px] text-muted-foreground">{c.zone}</span>
               </li>
             ))}
-          </ul>
+           </ul>
         )}
+         <form onSubmit={(e) => { e.preventDefault(); void addHomeTask(); }} className="mt-3 flex min-h-10 items-center gap-2 rounded-xl border border-border/50 bg-background/55 px-3">
+           <Plus className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+           <input value={homeDraft} onChange={(e) => setHomeDraft(e.target.value)} placeholder="Add a home task…" aria-label="Add a home task" className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-muted-foreground" />
+         </form>
       </DashCard>
 
       <DashCard eyebrow="Care" title="Health">
