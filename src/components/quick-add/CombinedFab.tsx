@@ -229,10 +229,8 @@ export function CombinedFab({ variant = "floating", className }: { variant?: "fl
           {ordered.map(({ key, label, icon: Icon, onClick, accent }, idx) => {
             const loading = (key === "photo" && busy === "photo") || (key === "pdf" && busy === "pdf");
             const isPinned = pinnedList.includes(key);
-            const showDivider = !editing && pinnedList.length > 0 && idx === pinnedList.length;
             return (
-              <div key={key} className={cn("relative", showDivider && "col-span-1")}>
-                {showDivider && idx % 3 !== 0 ? null : null}
+              <div key={key} className="relative">
               <button
                 type="button"
                 onClick={editing ? () => togglePin(key) : fire(onClick)}
