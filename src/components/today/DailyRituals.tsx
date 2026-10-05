@@ -9,7 +9,6 @@ import { RitualStepsEditor } from "./RitualStepsEditor";
 import { RitualWeeklyHistory } from "./RitualWeeklyHistory";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { haptics } from "@/lib/haptics";
 
 export function DailyRituals({ date, onEveningReflection }: {
   date: Date;
@@ -43,12 +42,10 @@ export function DailyRituals({ date, onEveningReflection }: {
     if (morningDone) return;
     const record = await saveCheckIn(iso, { completed_at: new Date().toISOString() });
     setMorning(record);
-    haptics.success();
   };
   const completeEvening = async () => {
     if (eveningDone) return;
     await addJournal({ date: iso, type: "daily", template: "evening-reflection", title: `Evening Reflection — ${format(date, "MMM d")}`, body: "Evening reflection checklist completed.", tags: ["evening-reflection"] });
-    haptics.success();
   };
 
   if (isMobile) {

@@ -37,6 +37,7 @@ import { TemplateGallery } from "@/components/today/TemplateGallery";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { GreetingBlock } from "@/components/today/dashboard/GreetingBlock";
+import { CalendarCheck, HeartHandshake, Sprout } from "lucide-react";
 
 export default function Today() {
   return (
@@ -190,7 +191,9 @@ function TodayInner() {
         ) : isMobile ? (
           <div className="animate-fade-in space-y-3">
             <div role="tablist" aria-label="Today sections" className="today-mobile-section-tabs grid grid-cols-3 gap-1 rounded-xl border border-border/60 bg-card/70 p-1 text-xs">
-              {(["plan", "care", "grow"] as const).map((t) => (
+              {([[
+                "plan", "Plan", "Shape the day", CalendarCheck,
+              ], ["care", "Care", "People & home", HeartHandshake], ["grow", "Grow", "Habits & reflection", Sprout]] as const).map(([t, label, detail, Icon]) => (
                 <button
                   key={t}
                   role="tab"
@@ -198,11 +201,12 @@ function TodayInner() {
                   type="button"
                   onClick={() => setMobileTab(t)}
                   className={cn(
-                    "min-h-11 rounded-lg capitalize transition-colors",
-                    mobileTab === t ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground",
+                    "flex min-h-14 items-center justify-center gap-2 rounded-lg px-1 text-left transition-colors",
+                    mobileTab === t ? "bg-primary/15 text-primary shadow-sm" : "text-muted-foreground",
                   )}
                 >
-                  {t}
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                  <span><span className="block text-xs font-semibold">{label}</span><span className="hidden text-[9px] leading-tight min-[370px]:block">{detail}</span></span>
                 </button>
               ))}
             </div>

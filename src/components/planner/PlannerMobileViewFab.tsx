@@ -37,9 +37,9 @@ export function PlannerMobileViewFab(props: Props) {
         : [["default", props.view === "year" ? "Year" : "3 Day", CalendarDays], ["list", "List", List], ["table", "Table", Table2]] as const;
   const currentMode = props.view === "day" ? props.period : props.view === "week" ? props.weekMode : props.view === "month" ? props.monthMode : props.rangeLayout;
   const setMode = (value: string) => {
-    if (props.view === "day") props.setPeriod(value);
+    if (props.view === "day") { props.setRangeLayout("default"); props.setPeriod(value); }
     else if (props.view === "week") props.setWeekMode(value as PlannerWeekMode);
-    else if (props.view === "month") props.setMonthMode(value);
+    else if (props.view === "month") { props.setRangeLayout("default"); props.setMonthMode(value); }
     else props.setRangeLayout(value);
     haptics.tap();
   };
