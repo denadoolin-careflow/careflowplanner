@@ -101,7 +101,9 @@ export function AppLayout() {
       </div>
       <QuickAddFab hideButton />
       <CareGuideFab hideButton />
-      {!pathname.startsWith("/planner") && <CombinedFab />}
+      {/* Quick actions live in the dock's raised center hub on mobile; a draggable FAB on desktop. */}
+      <CombinedFab variant="dock" />
+      {!pathname.startsWith("/planner") && <CombinedFab variant="floating" />}
       <AddEventHost />
       <BottomNav />
       <CommandPalette />
