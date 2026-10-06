@@ -34,6 +34,7 @@ import { TagFocusPanel } from "@/components/notes/TagFocusPanel";
 import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { useTags } from "@/hooks/use-tags";
 import { useStore } from "@/lib/store";
+import { appendDayRhythm } from "@/lib/notes/day-rhythm";
 import { copyToClipboard } from "@/lib/clipboard";
 import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
 import { NoteCoverPicker } from "@/components/notes/NoteCoverPicker";
@@ -478,6 +479,12 @@ export default function NoteDetail() {
           >
             {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
+          {note.kind === "daily" && note.date && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" title="Insert day's rhythm"
+              onClick={() => { const next = appendDayRhythm(body, state, note.date!); setBody(next); save({ body: next }); }}>
+              🌿 <span className="ml-1 hidden sm:inline">Day's rhythm</span>
+            </Button>
+          )}
           <NoteAIButton
             title={title}
             body={body}
