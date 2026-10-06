@@ -300,6 +300,22 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, on
                       {t.text || <em className="text-muted-foreground/70">empty</em>}
                     </span>
                   )}
+                  {!t.done && (["Today", "Tmrw"] as const).map((lbl, i) => (
+                    <button
+                      key={lbl}
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await addTask({ title: t.text, tags: uniq(["from-note", ...tags]), dueDate: format(addDays(new Date(), i), "yyyy-MM-dd") });
+                          toast.success(`Scheduled for ${i ? "tomorrow" : "today"}`);
+                        } catch { toast.error("Couldn't schedule"); }
+                      }}
+                      className="rounded border border-border/60 px-1 text-[10px] text-muted-foreground hover:border-primary/60 hover:text-foreground"
+                      aria-label={`Schedule "${t.text}" for ${i ? "tomorrow" : "today"}`}
+                    >
+                      {lbl}
+                    </button>
+                  ))}
                   <button
                     type="button"
                     onClick={() => { setEditingLine(t.line); setEditDraft(t.text); }}
