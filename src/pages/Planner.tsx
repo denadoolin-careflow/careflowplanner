@@ -2,6 +2,7 @@ import { MobileWeekAgendaStrip } from "@/components/planner/mobile/MobileWeekAge
 import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { weekKeyFor } from "@/lib/notes/periods";
 import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
+import { TodayJournalDrawer } from "@/components/planner/TodayJournalDrawer";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { addDays, addMonths, addYears, differenceInCalendarDays, endOfYear, format, getDaysInMonth, isValid, parseISO, startOfMonth, startOfWeek, startOfYear } from "date-fns";
@@ -306,6 +307,7 @@ export default function Planner() {
               </div>
             </SheetContent>
           </Sheet>
+          <TodayJournalDrawer compact />
            <Button size="icon" variant="ghost" className="h-10 w-10 shrink-0 rounded-full" onClick={() => step(-1)} aria-label="Previous period">
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -495,6 +497,7 @@ export default function Planner() {
             )}
             <ReminderCenter />
            <AutoScheduleSettings size="md" />
+            <TodayJournalDrawer />
             <Button
               size="icon"
               variant="ghost"
