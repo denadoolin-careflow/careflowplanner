@@ -712,7 +712,7 @@ function RowItem({
         className="mt-0.5 shrink-0"
         disabled={!row.editable}
       />
-      {(row.kind === "task" || row.kind === "care") && row.raw ? (
+      {row.kind === "task" && row.raw ? (
         <Checkbox
           checked={!!row.done}
           onCheckedChange={() => void toggleTask((row.raw as Task).id)}

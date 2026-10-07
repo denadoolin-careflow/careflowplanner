@@ -1013,6 +1013,11 @@ function Toolbar({
     const url = window.prompt("Link URL", previous ?? "https://");
     if (url === null) return;
     if (url === "") { editor.chain().focus().unsetLink().run(); return; }
+    const card = webLinkAttrs(url);
+    if (editor.state.selection.empty && card) {
+      editor.chain().focus().insertContent({ type: "webLinkCard", attrs: card }).insertContent({ type: "paragraph" }).run();
+      return;
+    }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
   const doIndent = () => {
@@ -3348,7 +3353,11 @@ export function BlockEditor({
               const url = window.prompt("Link URL", previous ?? "https://");
               if (url === null) return;
               if (url === "") editor.chain().focus().unsetLink().run();
-              else editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+              else {
+                const card = webLinkAttrs(url);
+                if (editor.state.selection.empty && card) editor.chain().focus().insertContent({ type: "webLinkCard", attrs: card }).insertContent({ type: "paragraph" }).run();
+                else editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+              }
             }}
             label="Link"
           ><LinkIcon className="h-3.5 w-3.5" /></ToolbarButton>

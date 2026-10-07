@@ -191,7 +191,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
              const rhythm = rhythmMarks.get(key);
              const habits = habitProgress((state.habits ?? []) as any, day);
              const dayMilestones = (state.projects ?? []).flatMap(p => (p.milestones ?? []).filter(m => m.date === key).map(m => ({ ...m, project: p })));
-            return <DayDropZone key={key} dateISO={key} className={cn("planner-month-day", dim && "planner-month-day--dim", selected && "planner-month-day--selected", current && "planner-month-day--today")}>
+             return <DayDropZone key={key} dateISO={key} className={cn("group planner-month-day", dim && "planner-month-day--dim", selected && "planner-month-day--selected", current && "planner-month-day--today")}>
               <button type="button" onClick={() => onSelectDay(day)} className="planner-month-day__header" aria-label={`Select ${format(day, "EEEE, MMMM d")}${rows.length ? `, ${rows.length} planned` : ""}`}>
                 <span className="planner-month-day__number">{format(day, "d")}</span>{current && <span className="planner-month-day__today-label">Today</span>}
                 <span className="ml-auto flex items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={11} />{cycle && <span className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>
