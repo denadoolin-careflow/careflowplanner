@@ -47,7 +47,9 @@ import type { NoteTitleSize } from "@/lib/editor-prefs";
 import { listNotes } from "@/lib/notes";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
-import { BacklinksSection } from "@/components/common/BacklinksSection";
+import { BacklinksSection, LinkedViewToggle, useLinkedView } from "@/components/common/BacklinksSection";
+import { NoteQuickEditSheet } from "@/components/notes/NoteQuickEditSheet";
+import { Pencil } from "lucide-react";
 import { SaveStatus, type SaveState } from "@/components/notes/SaveStatus";
 import { clearDraft, draftDiffers, loadDraft, pruneDrafts, saveDraft, type NoteDraft } from "@/lib/notes/drafts";
 import { NoteHistorySheet } from "@/components/notes/NoteHistorySheet";
@@ -718,9 +720,15 @@ export default function NoteDetail() {
             noteId={id}
             tags={note.tags}
             value={note.properties ?? []}
+            projectId={note.projectId ?? null}
             onChange={(next) => {
-              setNote({ ...note, properties: next });
-              void updateNote(id, { properties: next }).catch(() => toast.error("Save failed"));
+              // A Project property keeps the note's real project link in sync.
+              const proj = next.find(p => p.type === "project");
+              const prevProj = (note.properties ?? []).find(p => p.type === "project");
+              const patch: Partial<Note> = { properties: next };
+              if (proj && proj.value !== (prevProj?.value ?? undefined)) patch.projectId = (proj.value as string) || null;
+              setNote({ ...note, ...patch });
+              void updateNote(id, patch).catch(() => toast.error("Save failed"));
             }}
           />
         )}
@@ -781,18 +789,37 @@ export default function NoteDetail() {
             </section>
           )}
           {backlinks.length > 0 && (
-            <section className="rounded-2xl border border-border/60 bg-card/50 p-4">
+            <section className={cn("rounded-2xl border border-border/60 bg-card/50 p-4", backlinkView === "gallery" && "md:col-span-2")}>
               <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <Link2 className="h-3.5 w-3.5" /> Backlinks
+                <Link2 className="h-3.5 w-3.5" /> Backlinks · {backlinks.length}
+                <LinkedViewToggle view={backlinkView} onChange={setBacklinkView} />
               </h3>
-              <ul className="space-y-1 text-sm">
-                {backlinks.map(b => (
-                  <li key={b.id}>
-                    <Link to={`/notes/${b.id}`} className="text-primary hover:underline">
-                      {b.kind === "daily" && b.date ? format(parseISO(b.date), "EEE, MMM d") : (b.title || "Untitled")}
-                    </Link>
-                  </li>
-                ))}
+              <ul className={backlinkView === "gallery" ? "grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" : "space-y-1 text-sm"}>
+                {backlinks.map(b => {
+                  const label = b.kind === "daily" && b.date ? format(parseISO(b.date), "EEE, MMM d") : (b.title || "Untitled");
+                  const edit = (
+                    <button type="button" onClick={() => setEditBacklinkId(b.id)} aria-label={`Edit ${label}`}
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  );
+                  return backlinkView === "gallery" ? (
+                    <li key={b.id} className="relative flex min-h-[120px] flex-col overflow-hidden rounded-xl border border-border/60 bg-background/60 hover:border-primary/40">
+                      {b.coverUrl && <img src={b.coverUrl} alt="" className="h-16 w-full object-cover" />}
+                      <Link to={`/notes/${b.id}`} className="flex flex-1 flex-col gap-1 p-3 pr-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+                        <span className="line-clamp-2 font-display text-sm font-semibold">{label}</span>
+                        <span className="line-clamp-3 text-[12px] leading-relaxed text-muted-foreground">{(b.body || "").replace(/<[^>]+>/g, " ").replace(/[#*_>`\-[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 180) || "Empty note"}</span>
+                        <span className="mt-auto text-[10px] text-muted-foreground">{format(parseISO(b.updatedAt), "MMM d")}</span>
+                      </Link>
+                      <div className="absolute right-1 top-1">{edit}</div>
+                    </li>
+                  ) : (
+                    <li key={b.id} className="flex items-center gap-1">
+                      <Link to={`/notes/${b.id}`} className="min-w-0 flex-1 truncate text-primary hover:underline">{label}</Link>
+                      {edit}
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
