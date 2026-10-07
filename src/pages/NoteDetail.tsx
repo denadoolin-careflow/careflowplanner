@@ -90,6 +90,8 @@ export default function NoteDetail() {
     return () => document.removeEventListener("click", onClick, true);
   }, []);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
+  const [backlinkView, setBacklinkView] = useLinkedView();
+  const [editBacklinkId, setEditBacklinkId] = useState<string | null>(null);
   const saveTimer = useRef<number | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const savedFlashTimer = useRef<number | null>(null);
