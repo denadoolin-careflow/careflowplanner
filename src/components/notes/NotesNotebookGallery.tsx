@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, parseISO, startOfMonth, subMonths } from "date-fns";
-import { ArrowLeft, CalendarDays, ChevronRight, Flower2, Leaf, PenLine, Settings2, Snowflake, Sparkles, Sun } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowLeft, ArrowUpNarrowWide, CalendarDays, ChevronRight, Flower2, Leaf, PenLine, Settings2, Snowflake, Sparkles, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,6 +37,8 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [preferences, setPreferences] = useState(readNotebookPreferences);
   const [customizing, setCustomizing] = useState<MonthSummary | null>(null);
+  const [sortDir, setSortDir] = useState<"desc" | "asc">(() => (localStorage.getItem("careflow:notebook-sort") === "asc" ? "asc" : "desc"));
+  const toggleSort = () => setSortDir(d => { const next = d === "desc" ? "asc" : "desc"; localStorage.setItem("careflow:notebook-sort", next); return next; });
   const months = useMemo<MonthSummary[]>(() => {
     const current = startOfMonth(new Date());
     const keys = Array.from({ length: 12 }, (_, index) => monthKeyFor(subMonths(current, index)));
