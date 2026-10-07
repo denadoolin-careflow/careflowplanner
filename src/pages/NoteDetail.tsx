@@ -831,6 +831,8 @@ export default function NoteDetail() {
       <div className="mx-auto mt-4 w-full max-w-[760px] px-2">
         <NoteLinksSidebar noteId={note.id} />
         <BacklinksSection entityType="note" entityId={note.id} className="mt-3" />
+        <NoteQuickEditSheet noteId={editBacklinkId} onOpenChange={o => { if (!o) setEditBacklinkId(null); }}
+          onSaved={() => { const t = note.kind === "daily" && note.date ? note.date : note.title; if (t?.trim()) void findBacklinksTo(t).then(arr => setBacklinks(arr.filter(n => n.id !== note.id))); }} />
       </div>
       </div>
       {!focusMode && !sidebarHidden && (
