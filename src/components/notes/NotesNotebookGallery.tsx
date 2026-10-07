@@ -47,7 +47,7 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
       const key = monthKeyFor(parseISO(note.date));
       if (!keys.includes(key)) keys.push(key);
     }
-    return keys.sort((a, b) => b.localeCompare(a)).map(key => {
+    return keys.sort((a, b) => sortDir === "desc" ? b.localeCompare(a) : a.localeCompare(b)).map(key => {
       const entries = notes.filter(note => note.date && ["daily", "weekly", "monthly"].includes(note.kind) && monthKeyFor(parseISO(note.date)) === key);
       return {
         key,
