@@ -1,3 +1,5 @@
+import { openAppendTo } from "@/components/quick-add/AppendToDialog";
+import { ListPlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange, Salad, Droplets, Scale, Syringe, CalendarDays, CalendarPlus } from "lucide-react";
 import { openAddEvent } from "@/components/calendar/AddEventHost";
@@ -142,6 +144,7 @@ export function CombinedFab({ variant = "floating", className }: { variant?: "fl
     { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
     { key: "event", label: "Add event", icon: CalendarPlus, onClick: () => openAddEvent(), accent: true },
     { key: "planner", label: "Planner", icon: CalendarRange, onClick: () => navigate("/planner"), accent: true },
+    { key: "append", label: "Add to note/task", icon: ListPlus, onClick: () => openAppendTo() },
     { key: "note", label: "Note", icon: FileText, onClick: () => openNewNote() },
     { key: "daily", label: "Daily note", icon: CalendarDays, onClick: async () => { const n = await openDailyNoteWithTemplate(todayISO(), readDefaultDailyTemplate()); navigate(`/notes/${n.id}`); } },
     { key: "weekly", label: "Weekly note", icon: CalendarDays, onClick: async () => { const n = await openPeriodNoteWithTemplate("weekly", weekKeyFor(new Date()), readDefaultPeriodTemplate("weekly")); navigate(`/notes/${n.id}`); } },
