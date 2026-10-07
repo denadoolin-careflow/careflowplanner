@@ -47,5 +47,5 @@
 - [x] Add direct completion checkboxes to planner Agenda/List and Month rows
 - [x] Balance Month readability, quick planning, overflow, and rhythm/task progress
 - [x] A: Toggle Tab/Shift-Tab tuck + table summary row (Total/Average/Count)
-- [ ] B: Quick Add append to any note/task + Project note property
-- [ ] C: Backlinks gallery + inline edit; connected Spaces (notes/tasks/projects)
+- [x] B: Quick Add append to any note/task + Project note property
+- [x] C: Backlinks gallery + inline edit; connected Spaces (notes/tasks/projects)
