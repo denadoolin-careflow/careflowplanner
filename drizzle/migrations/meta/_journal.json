@@ -50,6 +50,13 @@
       "when": 1791164842877,
       "tag": "0006_add_dietary_to_people",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791410040413,
+      "tag": "0007_note_spaces",
+      "breakpoints": true
     }
   ]
 }

@@ -121,8 +121,8 @@ export default function Notes() {
   const [kindFilter, setKindFilter] = useState<"all" | "note" | "daily" | "weekly" | "monthly">("all");
   const [sideOpen, setSideOpen] = useState<boolean>(() => typeof window === "undefined" || localStorage.getItem(SIDE_NAV_KEY) !== "0");
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
-  const [customSpaces, setCustomSpaces] = useCustomSpaces();
-  const [activeSpace, setActiveSpace] = useState<{ name: string; tags: string[] } | null>(null);
+  const { spaces: customSpaces, create: createSpace, remove: removeSpace, update: updateSpace } = useCustomSpaces();
+  const [activeSpace, setActiveSpace] = useState<{ name: string; tags: string[]; customId?: string } | null>(null);
 
   useEffect(() => { localStorage.setItem("careflow.notes.previewLines", String(previewLines)); }, [previewLines]);
   useEffect(() => { localStorage.setItem(VIEW_KEY, view); }, [view]);
@@ -193,7 +193,7 @@ export default function Notes() {
     const used = new Set(notes.flatMap(n => n.tags ?? []).map(t => t.toLowerCase()));
     const tag = space.tags.find(t => used.has(t.toLowerCase())) ?? space.tags[0] ?? null;
     setActiveTag(tag); setSpacesOpen(false);
-    setActiveSpace(space.tags.length ? { name: space.name, tags: [...space.tags] } : null);
+    setActiveSpace(space.tags.length ? { name: space.name, tags: [...space.tags], customId: space.customId } : null);
   };
   const allSpaces: NoteSpace[] = [...SPACES, ...customSpaces.map(c => ({ name: c.name, icon: Sparkles, tags: c.tags, customId: c.id }))];
 
@@ -202,7 +202,7 @@ export default function Notes() {
       <div className="mx-auto w-full max-w-[1320px]">
         <header className="notes-header mb-4">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setSpacesOpen(true)} aria-label="Open note spaces" className="notes-icon-button md:hidden">
+            <Button variant="ghost" size="icon" onClick={() => setSpacesOpen(true)} aria-label="Open note spaces" className="notes-icon-button">
               <Menu className="h-5 w-5" />
             </Button>
             <div className="min-w-0 flex-1">
@@ -308,7 +308,7 @@ export default function Notes() {
                 </DropdownMenu>
               </div>
 
-              {activeSpace && activeTag && <SpaceHub name={activeSpace.name} tags={activeSpace.tags} notes={notes} onClose={() => { setActiveSpace(null); setActiveTag(null); }} />}
+              {activeSpace && activeTag && <SpaceHub name={activeSpace.name} tags={activeSpace.tags} notes={notes} space={customSpaces.find(c => c.id === activeSpace.customId)} onUpdate={updateSpace} onClose={() => { setActiveSpace(null); setActiveTag(null); }} />}
               {loading ? <NotesLoading /> : view === "notebook" ? (
                 <NotesNotebookGallery notes={filtered} selectedId={noteParam} onSelect={selectNote} onOpenMonth={async key => {
                   try { navigate(`/notes/${(await openPeriodNoteWithTemplate("monthly", key, readDefaultPeriodTemplate("monthly"))).id}`); }
@@ -333,7 +333,7 @@ export default function Notes() {
         </div>
       </div>
 
-      <SpacesSheet spaces={allSpaces} onCreateSpace={(c: CustomSpace) => setCustomSpaces([...customSpaces, c])} onDeleteSpace={(id: string) => setCustomSpaces(customSpaces.filter(c => c.id !== id))} open={spacesOpen} onOpenChange={setSpacesOpen} notes={notes} tags={tags} activeTag={activeTag} activeCollection={collection} onSpace={selectSpace} onTag={tag => { setCollection("all"); setActiveTag(tag); setSpacesOpen(false); }} onNewTag={() => { setSpacesOpen(false); setTagManagerOpen(true); }} onNew={() => void newNote()} />
+      <SpacesSheet spaces={allSpaces} onCreateSpace={(c) => void createSpace(c)} onDeleteSpace={(id: string) => void removeSpace(id)} open={spacesOpen} onOpenChange={setSpacesOpen} notes={notes} tags={tags} activeTag={activeTag} activeCollection={collection} onSpace={selectSpace} onTag={tag => { setCollection("all"); setActiveTag(tag); setSpacesOpen(false); }} onNewTag={() => { setSpacesOpen(false); setTagManagerOpen(true); }} onNew={() => void newNote()} />
       <NoteTemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
       <TagManagerDialog open={tagManagerOpen} onOpenChange={setTagManagerOpen} />
       {noteParam && <div className="fixed inset-x-0 bottom-24 z-40 max-h-[65vh] overflow-y-auto rounded-t-2xl border-t border-border bg-background shadow-float xl:hidden"><NoteContextRail noteId={noteParam} onClose={closeNote} projectsById={projectsById} tagsByName={tagsByName} /></div>}
