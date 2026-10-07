@@ -1,8 +1,9 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Clock3, Pin, Sun, Link2, Tag as TagIcon, Archive, Plus, FileQuestion, FolderOpen, List, ChevronDown,
   Users, HeartPulse, Home as HomeIcon, Stethoscope, GraduationCap, User as UserIcon, BookHeart, Images,
+  Search, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fallbackColorFor, type Tag } from "@/lib/tags";
