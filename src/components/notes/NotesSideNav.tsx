@@ -291,9 +291,9 @@ export function NotesSideNav({
           <ChevronDown className={cn("h-3 w-3 transition-transform", !openCare && "-rotate-90")} />
           <span className="flex-1 text-left">Caregiver</span>
         </button>
-        {openCare && (
+        {(openCare || q) && (
           <ul className="space-y-0.5">
-            {CAREGIVER_COLLECTIONS.map(c => {
+            {CAREGIVER_COLLECTIONS.filter(c => matchQ(c.label)).map(c => {
               const count = countCaregiverCollection(notes, c.tags);
               const active = activeTag !== null && c.tags.some(t => t.toLowerCase() === activeTag.toLowerCase());
               return (
@@ -326,8 +326,10 @@ export function NotesSideNav({
           </ul>
         )}
       </section>
+      )}
 
       {/* Tags */}
+      {(!q || sortedTags.some(t => matchQ(t.name))) && (
       <section>
         <div className="mb-1.5 flex items-center justify-between px-2">
           <button
