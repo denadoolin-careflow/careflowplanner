@@ -206,7 +206,7 @@ export function NotesSideNav({
         </Link>
       </section>
 
-      {spaces.length > 0 && (
+      {spaces.length > 0 && (!q || spaces.some(sp => matchQ(sp.name))) && (
       <section aria-labelledby="sidenav-spaces-heading">
         <h2 id="sidenav-spaces-heading" className="m-0">
         <button type="button" onClick={() => setOpenSpaces(o => !o)} aria-expanded={openSpaces} aria-controls="sidenav-spaces-list"
@@ -215,9 +215,9 @@ export function NotesSideNav({
           <span className="flex-1 text-left">Spaces</span>
         </button>
         </h2>
-        {openSpaces && (
+        {(openSpaces || q) && (
           <ul id="sidenav-spaces-list" className="space-y-0.5">
-            {spaces.map(sp => {
+            {spaces.filter(sp => matchQ(sp.name)).map(sp => {
               const active = sp.tags.length === 0 ? activeCollection === "all" && !activeTag && !activeSpaceName : activeSpaceName === sp.name;
               const count = spaceCount(sp);
               return (
@@ -237,6 +237,7 @@ export function NotesSideNav({
       )}
 
       {/* Smart collections */}
+      {(!q || COLLECTIONS.some(c => matchQ(c.label))) && (
       <section>
         <button
           type="button"
