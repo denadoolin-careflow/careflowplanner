@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { NoteCardV2 } from "@/components/notes/NoteCardV2";
 import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
 import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
-import { NotesSideNav, applyCollection, type SmartCollectionId } from "@/components/notes/NotesSideNav";
+import { type SideNavSpace, NotesSideNav, applyCollection, type SmartCollectionId } from "@/components/notes/NotesSideNav";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
@@ -261,7 +261,7 @@ export default function Notes() {
         <CompactInsights notes={notes} />
 
         <div className={cn("mt-5 grid gap-5", sideOpen ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-1", noteParam && sideOpen && "xl:grid-cols-[220px_minmax(0,1fr)_300px]", noteParam && !sideOpen && "xl:grid-cols-[minmax(0,1fr)_300px]")}>
-          {sideOpen && <aside className="hidden lg:block"><NotesSideNav notes={notes} tags={tags} activeCollection={collection} onCollectionChange={setCollection} activeTag={activeTag} onTagChange={setActiveTag} onNewTag={() => setTagManagerOpen(true)} spaces={allSpaces} activeSpaceName={activeSpace?.name ?? null} onSpaceSelect={(sp) => sp.tags.length ? selectSpace(sp as NoteSpace) : (setActiveSpace(null), setActiveTag(null), setCollection("all"))} /></aside>}
+          {sideOpen && <aside className="hidden lg:block"><NotesSideNav notes={notes} tags={tags} activeCollection={collection} onCollectionChange={setCollection} activeTag={activeTag} onTagChange={setActiveTag} onNewTag={() => setTagManagerOpen(true)} spaces={allSpaces as unknown as SideNavSpace[]} activeSpaceName={activeSpace?.name ?? null} onSpaceSelect={(sp) => sp.tags.length ? selectSpace(sp as NoteSpace) : (setActiveSpace(null), setActiveTag(null), setCollection("all"))} /></aside>}
           <main className="min-w-0">
             {pinnedStrip.length > 0 && collection !== "pinned" && !activeTag && (
               <section className="mb-6" aria-labelledby="pinned-heading">
