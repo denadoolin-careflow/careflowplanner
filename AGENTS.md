@@ -15,4 +15,4 @@
 - External note link cards persist as data-web-link-card HTML inside the existing markdown body so rich links round-trip without a schema change.
 - Note table summary rows are recognised by a last row labelled Total/Average/Count and recalculated into plain cell text, so they round-trip in the markdown body without a schema change.
 - A note's Project property mirrors notes.project_id (the property value is the project id), so project boards/backlinks keep using the existing column.
-- Custom note Spaces are device-local tag groups; Space hubs derive related tasks/projects from shared tags and note project links, with no new table.
+- Custom note Spaces sync via the note_spaces table (tags + explicit linked note/task/project ids + hidden ids for unlinks); legacy device-local spaces migrate on first load.
