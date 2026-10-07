@@ -135,7 +135,7 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
         <section key={key} aria-label={`${season.label} notebooks`}>
           <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-muted-foreground"><season.icon className="h-4 w-4 text-primary" aria-hidden />{season.label}</h3>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-      {yearMonths.map((month, index) => {
+      {season.months.map((month, index) => {
         const monthDate = parseISO(month.key);
         const current = month.key === monthKeyFor(new Date());
         const preference = preferences[month.key] ?? defaultNotebookPreference(monthDate);
@@ -150,7 +150,7 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
                 <SeasonIcon className="mt-10 h-5 w-5 shrink-0 text-primary" aria-hidden />
               </div>
               <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
-                {month.monthly?.body || (month.written ? `${month.written} written ${month.written === 1 ? "entry" : "entries"} across this month.` : "A quiet notebook ready for this month.")}
+                {(month.monthly?.body ? plainPreview(month.monthly.body) : "") || (month.written ? `${month.written} written ${month.written === 1 ? "entry" : "entries"} across this month.` : "A quiet notebook ready for this month.")}
               </p>
               <div className="mt-auto flex items-end justify-between gap-2 pt-4">
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><CalendarDays className="h-3.5 w-3.5" />{month.notes.length} {month.notes.length === 1 ? "note" : "notes"}</div>
