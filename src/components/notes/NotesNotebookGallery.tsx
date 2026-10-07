@@ -57,7 +57,17 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
         written: entries.filter(note => note.body.trim()).length,
       };
     });
-  }, [notes]);
+  }, [notes, sortDir]);
+
+  const years = useMemo(() => {
+    const groups = new Map<string, MonthSummary[]>();
+    for (const month of months) {
+      const year = month.key.slice(0, 4);
+      if (!groups.has(year)) groups.set(year, []);
+      groups.get(year)!.push(month);
+    }
+    return [...groups.entries()];
+  }, [months]);
 
   const active = selectedMonth ? months.find(month => month.key === selectedMonth) : undefined;
   if (active) {
