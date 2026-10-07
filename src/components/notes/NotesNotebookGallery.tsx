@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, parseISO, startOfMonth, subMonths } from "date-fns";
-import { ArrowLeft, CalendarDays, ChevronRight, Flower2, Leaf, PenLine, Settings2, Snowflake, Sparkles, Sun } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowLeft, ArrowUpNarrowWide, CalendarDays, ChevronRight, Flower2, Leaf, PenLine, Settings2, Snowflake, Sparkles, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,6 +37,8 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [preferences, setPreferences] = useState(readNotebookPreferences);
   const [customizing, setCustomizing] = useState<MonthSummary | null>(null);
+  const [sortDir, setSortDir] = useState<"desc" | "asc">(() => (localStorage.getItem("careflow:notebook-sort") === "asc" ? "asc" : "desc"));
+  const toggleSort = () => setSortDir(d => { const next = d === "desc" ? "asc" : "desc"; localStorage.setItem("careflow:notebook-sort", next); return next; });
   const months = useMemo<MonthSummary[]>(() => {
     const current = startOfMonth(new Date());
     const keys = Array.from({ length: 12 }, (_, index) => monthKeyFor(subMonths(current, index)));
@@ -45,7 +47,7 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
       const key = monthKeyFor(parseISO(note.date));
       if (!keys.includes(key)) keys.push(key);
     }
-    return keys.sort((a, b) => b.localeCompare(a)).map(key => {
+    return keys.sort((a, b) => sortDir === "desc" ? b.localeCompare(a) : a.localeCompare(b)).map(key => {
       const entries = notes.filter(note => note.date && ["daily", "weekly", "monthly"].includes(note.kind) && monthKeyFor(parseISO(note.date)) === key);
       return {
         key,
@@ -55,7 +57,17 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
         written: entries.filter(note => note.body.trim()).length,
       };
     });
-  }, [notes]);
+  }, [notes, sortDir]);
+
+  const years = useMemo(() => {
+    const groups = new Map<string, MonthSummary[]>();
+    for (const month of months) {
+      const year = month.key.slice(0, 4);
+      if (!groups.has(year)) groups.set(year, []);
+      groups.get(year)!.push(month);
+    }
+    return [...groups.entries()];
+  }, [months]);
 
   const active = selectedMonth ? months.find(month => month.key === selectedMonth) : undefined;
   if (active) {
@@ -77,8 +89,18 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-      {months.map((month, index) => {
+    <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <Button variant="ghost" size="sm" onClick={toggleSort} aria-label={sortDir === "desc" ? "Sorted newest first; switch to oldest first" : "Sorted oldest first; switch to newest first"} className="h-9 gap-1.5 rounded-full text-xs text-muted-foreground">
+          {sortDir === "desc" ? <ArrowDownWideNarrow className="h-3.5 w-3.5" /> : <ArrowUpNarrowWide className="h-3.5 w-3.5" />}
+          {sortDir === "desc" ? "Newest first" : "Oldest first"}
+        </Button>
+      </div>
+      {years.map(([year, yearMonths]) => (
+        <section key={year} aria-label={`${year} notebooks`}>
+          <h3 className="mb-3 font-display text-lg font-semibold text-muted-foreground">{year}</h3>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
+      {yearMonths.map((month, index) => {
         const monthDate = parseISO(month.key);
         const current = month.key === monthKeyFor(new Date());
         const preference = preferences[month.key] ?? defaultNotebookPreference(monthDate);
@@ -103,6 +125,9 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
           </article>
         );
       })}
+          </div>
+        </section>
+      ))}
       <NotebookCustomizeDialog month={customizing} preference={customizing ? preferences[customizing.key] ?? defaultNotebookPreference(parseISO(customizing.key)) : undefined} onClose={() => setCustomizing(null)} onSave={next => { if (!customizing) return; setPreferences(saveNotebookPreference(customizing.key, next)); setCustomizing(null); }} />
     </div>
   );
