@@ -352,11 +352,11 @@ export function NotesSideNav({
             </button>
           )}
         </div>
-        {openTags && (sortedTags.length === 0 ? (
+        {(openTags || q) && (sortedTags.length === 0 ? (
           <p className="px-2 text-xs italic text-muted-foreground/70">No tags yet.</p>
         ) : (
           <ul className="space-y-0.5">
-            {sortedTags.map(t => {
+            {sortedTags.filter(t => matchQ(t.name)).map(t => {
               const Icon = tagIconFor(t.icon);
               const active = activeTag?.toLowerCase() === t.name.toLowerCase();
               const count = tagCounts.get(t.name.toLowerCase()) ?? 0;
@@ -392,6 +392,10 @@ export function NotesSideNav({
           </ul>
         ))}
       </section>
+      )}
+      {q && !spaces.some(sp => matchQ(sp.name)) && !COLLECTIONS.some(c => matchQ(c.label)) && !CAREGIVER_COLLECTIONS.some(c => matchQ(c.label)) && !sortedTags.some(t => matchQ(t.name)) && (
+        <p className="px-2 text-xs italic text-muted-foreground/70">No matches for “{filter}”.</p>
+      )}
     </nav>
   );
 }
