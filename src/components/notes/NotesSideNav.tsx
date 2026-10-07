@@ -162,6 +162,32 @@ export function NotesSideNav({
 
   return (
     <nav aria-label="Notes spaces, collections, and tags" className="flex h-full w-full flex-col gap-5 overflow-y-auto pr-1">
+      {/* Sidebar filter */}
+      <div className="relative">
+        <Search aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <input
+          ref={filterRef}
+          type="search"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Escape") { setFilter(""); (e.target as HTMLInputElement).blur(); } }}
+          placeholder="Filter spaces & tags…"
+          aria-label="Filter spaces, collections, and tags"
+          className="h-9 w-full rounded-lg border border-border/50 bg-card/60 pl-8 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        {filter ? (
+          <button
+            type="button"
+            onClick={() => { setFilter(""); filterRef.current?.focus(); }}
+            aria-label="Clear filter"
+            className="absolute right-1.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        ) : (
+          <kbd aria-hidden className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border/60 bg-muted/50 px-1 text-[10px] font-mono text-muted-foreground">/</kbd>
+        )}
+      </div>
       {/* Quick actions */}
       <section className="space-y-1">
         <Link
