@@ -89,8 +89,18 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-      {months.map((month, index) => {
+    <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <Button variant="ghost" size="sm" onClick={toggleSort} aria-label={sortDir === "desc" ? "Sorted newest first; switch to oldest first" : "Sorted oldest first; switch to newest first"} className="h-9 gap-1.5 rounded-full text-xs text-muted-foreground">
+          {sortDir === "desc" ? <ArrowDownWideNarrow className="h-3.5 w-3.5" /> : <ArrowUpNarrowWide className="h-3.5 w-3.5" />}
+          {sortDir === "desc" ? "Newest first" : "Oldest first"}
+        </Button>
+      </div>
+      {years.map(([year, yearMonths]) => (
+        <section key={year} aria-label={`${year} notebooks`}>
+          <h3 className="mb-3 font-display text-lg font-semibold text-muted-foreground">{year}</h3>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
+      {yearMonths.map((month, index) => {
         const monthDate = parseISO(month.key);
         const current = month.key === monthKeyFor(new Date());
         const preference = preferences[month.key] ?? defaultNotebookPreference(monthDate);
