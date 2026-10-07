@@ -5070,6 +5070,45 @@ export type Database = {
           },
         ]
       }
+      note_spaces: {
+        Row: {
+          created_at: string
+          hidden_ids: string[]
+          id: string
+          name: string
+          note_ids: string[]
+          project_ids: string[]
+          tags: string[]
+          task_ids: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hidden_ids?: string[]
+          id?: string
+          name: string
+          note_ids?: string[]
+          project_ids?: string[]
+          tags?: string[]
+          task_ids?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hidden_ids?: string[]
+          id?: string
+          name?: string
+          note_ids?: string[]
+          project_ids?: string[]
+          tags?: string[]
+          task_ids?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       note_templates: {
         Row: {
           body: string
