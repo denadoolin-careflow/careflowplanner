@@ -12,6 +12,12 @@ const escapeHtml = (value: string) => value
 /** Turn live editor-only embeds into useful, non-interactive preview cards. */
 function expandEmbeds(source: string): string {
   return source
+    .replace(/<div\s+([^>]*data-web-link-card[^>]*)>[\s\S]*?<\/div>/gi, (_match, attrs: string) => {
+      const read = (name: string) => attrs.match(new RegExp(`data-${name}=["']([^"']*)["']`, "i"))?.[1] || "";
+      const label = read("label") || read("domain") || "Web link";
+      const domain = read("domain") || "External link";
+      return `<div class="note-preview-embed"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(domain)}</span></div>`;
+    })
     .replace(/<div\s+([^>]*data-query-block[^>]*)><\/div>/gi, (_match, attrs: string) => {
       const read = (name: string) => attrs.match(new RegExp(`data-${name}=["']([^"']*)["']`, "i"))?.[1];
       const label = read("label") || "Saved query";

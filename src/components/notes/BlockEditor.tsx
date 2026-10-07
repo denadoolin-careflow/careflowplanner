@@ -248,6 +248,7 @@ const turndown = new TurndownService({
         const mime = el.getAttribute("data-mime") || "";
         return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
       }
+      if (el.hasAttribute?.("data-web-link-card")) return `\n\n${el.outerHTML}\n\n`;
       // Generic safety net: any element carrying node metadata (data-* attrs)
       // or an embedded media/iframe child round-trips as raw HTML.
       if (hasNodeMetadata(el)) return `\n\n${el.outerHTML}\n\n`;
@@ -293,6 +294,10 @@ turndown.addRule("fileEmbed", {
     const mime = el.getAttribute("data-mime") || "";
     return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
   },
+});
+turndown.addRule("webLinkCard", {
+  filter: (node) => node.nodeName === "DIV" && (node as HTMLElement).hasAttribute("data-web-link-card"),
+  replacement: (_content, node) => `\n\n${(node as HTMLElement).outerHTML}\n\n`,
 });
 // Preserve inline entity cards as `[[Label]]` markdown tokens so notes stay
 // portable and re-open into the same node view.
@@ -567,6 +572,52 @@ const FileEmbed = TiptapNode.create({
     } as any;
   },
 });
+
+const WebLinkCard = TiptapNode.create({
+  name: "webLinkCard",
+  group: "block",
+  atom: true,
+  selectable: true,
+  draggable: true,
+  addAttributes() {
+    return {
+      href: { default: "", parseHTML: el => (el as HTMLElement).getAttribute("data-href") ?? "", renderHTML: () => ({}) },
+      label: { default: "", parseHTML: el => (el as HTMLElement).getAttribute("data-label") ?? "", renderHTML: () => ({}) },
+      domain: { default: "", parseHTML: el => (el as HTMLElement).getAttribute("data-domain") ?? "", renderHTML: () => ({}) },
+    };
+  },
+  parseHTML() { return [{ tag: "div[data-web-link-card]" }]; },
+  renderHTML({ node }) {
+    const href = String(node.attrs.href || "");
+    const domain = String(node.attrs.domain || "Link");
+    const label = String(node.attrs.label || domain);
+    return ["div", {
+      "data-web-link-card": "",
+      "data-href": href,
+      "data-label": label,
+      "data-domain": domain,
+      class: "cf-web-link-card not-prose my-3 rounded-lg border border-border/60 bg-card/75 p-3",
+    }, ["a", { href, target: "_blank", rel: "noopener noreferrer", class: "flex min-w-0 items-center gap-3" },
+      ["span", { class: "grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary" }, "↗"],
+      ["span", { class: "min-w-0 flex-1" },
+        ["strong", { class: "block truncate text-sm text-foreground" }, label],
+        ["span", { class: "mt-0.5 block truncate text-xs text-muted-foreground" }, domain],
+      ],
+    ]];
+  },
+  addCommands() {
+    return { setWebLinkCard: (attrs: { href: string; label: string; domain: string }) => ({ commands }: any) => commands.insertContent({ type: this.name, attrs }) } as any;
+  },
+});
+
+function webLinkAttrs(raw: string) {
+  try {
+    const url = new URL(raw);
+    const domain = url.hostname.replace(/^www\./, "");
+    const tail = decodeURIComponent(url.pathname).split("/").filter(Boolean).pop()?.replace(/[-_]+/g, " ");
+    return { href: url.href, domain, label: tail ? `${tail} · ${domain}` : domain };
+  } catch { return null; }
+}
 
 /* ------------------------------------------------------------------ */
 /*  Slash command list                                                */
@@ -2241,6 +2292,7 @@ export function BlockEditor({
         HTMLAttributes: { class: "cf-note-image" },
       }),
       FileEmbed,
+      WebLinkCard,
       InlineEntityCard,
       QueryBlock,
       GroceryBlock,
@@ -2270,9 +2322,16 @@ export function BlockEditor({
       },
       handlePaste: (_view, event) => {
         const files = Array.from(event.clipboardData?.files ?? []);
-        if (!files.length) return false;
+        if (files.length) {
+          event.preventDefault();
+          files.forEach(f => { void uploadAndInsertFile(f); });
+          return true;
+        }
+        const pasted = event.clipboardData?.getData("text/plain")?.trim() ?? "";
+        const card = /^https?:\/\/\S+$/i.test(pasted) ? webLinkAttrs(pasted) : null;
+        if (!card || !_view.state.selection.empty) return false;
         event.preventDefault();
-        files.forEach(f => { void uploadAndInsertFile(f); });
+        editorRef.current?.chain().focus().insertContent({ type: "webLinkCard", attrs: card }).insertContent({ type: "paragraph" }).run();
         return true;
       },
       handleDrop: (_view, event) => {

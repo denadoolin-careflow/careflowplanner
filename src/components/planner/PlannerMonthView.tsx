@@ -36,7 +36,6 @@ const MOBILE_VIEW_ITEMS = [
 function readMobileView(): MobileMonthView {
   try {
     const value = localStorage.getItem(MOBILE_VIEW_KEY);
-    if (value === "list") return "list";
     if (value === "calendar") return "calendar";
     if (value === "list") return "list";
     return "agenda";
@@ -197,6 +196,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
                 <span className="planner-month-day__number">{format(day, "d")}</span>{current && <span className="planner-month-day__today-label">Today</span>}
                 <span className="ml-auto flex items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={11} />{cycle && <span className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>
               </button>
+              {!isMobile && onCapture && <button type="button" onClick={() => { onChangeSelectedDate?.(day); onCapture(); }} className="planner-month-day__add" aria-label={`Add to ${format(day, "MMMM d")}`} title="Add to this day"><Plus className="h-3 w-3" /></button>}
               {(rhythm || dayMilestones.length > 0) && <span className="planner-month-day__rhythm" title={rhythm?.title}>
                 <span className="inline-flex items-center gap-0.5 font-medium">{rhythm?.moon && <span aria-hidden>{rhythm.moon}</span>}<span aria-hidden>{rhythm?.sign}</span></span>
                 {rhythm?.cycleGlyph && <span className="rounded bg-calendar-cosmic/10 px-1" aria-hidden>{rhythm.cycleGlyph}</span>}
@@ -204,7 +204,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
                 {habits.total > 0 && <span className="ml-auto inline-flex items-center gap-0.5 text-muted-foreground">🌱 {habits.done}/{habits.total}</span>}
               </span>}
                {!isMobile && <div className="planner-month-day__capacity"><CapacityIndicator minutes={dayLoad(rows)} compact />{tasks.length > 0 && <span className="text-[9px] text-muted-foreground">{completed}/{tasks.length}</span>}</div>}
-               {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.length > 0 && <span className="planner-month-day__count">{rows.length}</span>}<span className="planner-month-day__signals"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={9} />{cycle && <i className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span></button> : <div className="planner-month-day__items">{meals.length > 0 && <div className="flex flex-col gap-px rounded-md border border-border/40 bg-muted/30 px-1 py-0.5 text-[9px] leading-tight" aria-label="Meals">{meals.map(m => { const [slot, ...rest] = m.title.split(": "); return <button key={m.id} type="button" onClick={e => { e.stopPropagation(); handleOpen(m); }} title={m.title} className="flex min-w-0 items-baseline gap-1 text-left hover:text-foreground"><span className="shrink-0 font-semibold uppercase text-muted-foreground">{MEAL_ABBR[slot] ?? slot.slice(0, 1)}</span><span className="truncate">{rest.join(": ") || slot}</span></button>; })}</div>}{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{nonMeals.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{nonMeals.length - visible.length} more</button>}</div>}
+                {isMobile ? <button type="button" onClick={() => onSelectDay(day)} aria-label={`${rows.length} planned on ${format(day, "MMMM d")}`} className="planner-month-day__dots">{rows.length > 0 && <span className="planner-month-day__count">{completed > 0 ? `${completed}/${tasks.length}` : rows.length}</span>}<span className="planner-month-day__signals"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={9} />{cycle && <i className="h-1.5 w-1.5 rounded-full bg-calendar-cosmic" title={cycle.text} />}</span>{tasks.length > 0 && <span className="planner-month-day__task-progress" style={{ ["--task-progress" as string]: `${Math.round((completed / tasks.length) * 100)}%` }} />}</button> : <div className="planner-month-day__items">{meals.length > 0 && <div className="flex flex-col gap-px rounded-md border border-border/40 bg-muted/30 px-1 py-0.5 text-[9px] leading-tight" aria-label="Meals">{meals.map(m => { const [slot, ...rest] = m.title.split(": "); return <button key={m.id} type="button" onClick={e => { e.stopPropagation(); handleOpen(m); }} title={m.title} className="flex min-w-0 items-baseline gap-1 text-left hover:text-foreground"><span className="shrink-0 font-semibold uppercase text-muted-foreground">{MEAL_ABBR[slot] ?? slot.slice(0, 1)}</span><span className="truncate">{rest.join(": ") || slot}</span></button>; })}</div>}{visible.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}{nonMeals.length > visible.length && <button type="button" onClick={() => onSelectDay(day)} className="planner-month-more">+{nonMeals.length - visible.length} more</button>}</div>}
             </DayDropZone>;
           })}
         </div>
@@ -217,6 +217,8 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
 function MonthItem({ item, onOpen, compact }: { item: PlannerFeedItem; onOpen: (item: PlannerFeedItem) => void; compact?: boolean }) {
   const Icon = KIND_ICONS[item.kind];
   const drag = useDraggableCard(feedDragItem(item), { idPrefix: "month" });
+  const { toggleTask } = useStore();
+  const isTask = item.sourceRef.type === "task";
   const card = <div
     ref={drag.ref}
     {...drag.props}
@@ -226,7 +228,7 @@ function MonthItem({ item, onOpen, compact }: { item: PlannerFeedItem; onOpen: (
     onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); onOpen(item); } }}
     className={cn("planner-month-item", compact && "planner-month-item--compact", item.done && "opacity-50", drag.className)}
   >
-    {item.done ? <Check className="h-3 w-3 shrink-0" /> : <Icon className="h-3 w-3 shrink-0" style={{ color: item.color }} />}<span className="truncate">{item.time ? `${fmt12(item.time)} ` : ""}{item.title}</span>
+    {isTask ? <button type="button" className={cn("planner-month-item__checkbox", item.done && "planner-month-item__checkbox--done")} onPointerDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); void toggleTask(item.sourceRef.id); }} aria-label={item.done ? `Mark ${item.title} not done` : `Mark ${item.title} done`} aria-pressed={!!item.done}>{item.done && <Check className="h-2.5 w-2.5" strokeWidth={3} />}</button> : <Icon className="h-3 w-3 shrink-0" style={{ color: item.color }} />}<span className={cn("truncate", item.done && "line-through")}>{item.time ? `${fmt12(item.time)} ` : ""}{item.title}</span>
   </div>;
   return item.cosmicEvent ? <CosmicEventHover event={item.cosmicEvent}>{card}</CosmicEventHover> : card;
 }
