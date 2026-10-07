@@ -3,7 +3,9 @@
  * notes.properties; shared supertag fields (from the note's tags) render below.
  */
 import { useState } from "react";
-import { Plus, Trash2, Type, Hash, Calendar, ListChecks, Tags, CheckSquare, Link2, User, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Type, Hash, Calendar, ListChecks, Tags, CheckSquare, Link2, User, ChevronDown, ChevronRight, FolderKanban } from "lucide-react";
+import { Link as RouterLink } from "react-router-dom";
+import { useStore } from "@/lib/store";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +24,7 @@ const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
   { type: "checkbox", label: "Checkbox", icon: CheckSquare },
   { type: "url", label: "Link", icon: Link2 },
   { type: "person", label: "Person", icon: User },
+  { type: "project", label: "Project", icon: FolderKanban },
 ];
 const iconFor = (t: NotePropertyType) => TYPES.find(x => x.type === t)?.icon ?? Type;
 
@@ -38,8 +41,10 @@ export function OptionChip({ prop, option }: { prop: Pick<NoteProperty, "colors"
 export const createdDay = (createdAt?: string) => (createdAt ?? new Date().toISOString()).slice(0, 10);
 export const PROPERTY_TYPES = TYPES;
 
-export function NotePropertiesSection({ noteId, tags, value, onChange, className, createdAt }: {
+export function NotePropertiesSection({ noteId, tags, value, onChange, className, createdAt, projectId }: {
   noteId: string;
+  /** The note's current project link; seeds a newly added Project property. */
+  projectId?: string | null;
   createdAt?: string;
   tags?: string[];
   value: NoteProperty[];
@@ -55,7 +60,7 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
   const patch = (id: string, p: Partial<NoteProperty>) => onChange(value.map(v => v.id === id ? { ...v, ...p } : v));
   const add = (type: NotePropertyType) => {
     const label = name.trim() || TYPES.find(t => t.type === type)!.label;
-    onChange([...value, { id: crypto.randomUUID(), name: label, type, value: type === "checkbox" ? false : type === "multi" ? [] : type === "date" ? createdDay(createdAt) : null, options: [] }]);
+    onChange([...value, { id: crypto.randomUUID(), name: label, type, value: type === "checkbox" ? false : type === "multi" ? [] : type === "date" ? createdDay(createdAt) : type === "project" ? (projectId ?? null) : null, options: [] }]);
     setName(""); setAdding(false);
   };
 
@@ -129,6 +134,8 @@ export function PropValue({ prop, onChange }: { prop: NoteProperty; onChange: (p
     case "select":
     case "multi":
       return <OptionPicker prop={prop} onChange={onChange} />;
+    case "project":
+      return <ProjectValue prop={prop} onChange={onChange} />;
     case "person":
       return <PersonPicker value={(prop.value as string) ?? null} placeholder="Empty" className="min-h-7 border-0 bg-transparent px-1 text-xs"
         onChange={p => onChange({ value: p ? p.id : null })} />;
@@ -205,5 +212,21 @@ function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Pa
         )}
       </PopoverContent>
     </Popover>
+  );
+}
+
+function ProjectValue({ prop, onChange }: { prop: NoteProperty; onChange: (p: Partial<NoteProperty>) => void }) {
+  const { state } = useStore();
+  const projects = (state.projects ?? []).filter((p: any) => !p.archivedAt);
+  const current = prop.value ? String(prop.value) : "";
+  return (
+    <div className="flex items-center gap-1">
+      <select value={current} onChange={e => onChange({ value: e.target.value || null })} aria-label={prop.name}
+        className="h-7 w-full rounded bg-transparent px-1 text-xs outline-none hover:bg-muted/50 focus:bg-muted/60">
+        <option value="">No project</option>
+        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+      {current && <RouterLink to={`/projects/${current}`} aria-label="Open project" className="text-muted-foreground hover:text-foreground"><FolderKanban className="h-3.5 w-3.5" /></RouterLink>}
+    </div>
   );
 }

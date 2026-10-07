@@ -28,7 +28,7 @@ export interface Note {
   updatedAt: string;
 }
 
-export type NotePropertyType = "text" | "number" | "date" | "select" | "multi" | "checkbox" | "url" | "person";
+export type NotePropertyType = "text" | "number" | "date" | "select" | "multi" | "checkbox" | "url" | "person" | "project";
 export interface NoteProperty {
   id: string;
   name: string;
