@@ -20,6 +20,39 @@ type MonthSummary = {
 
 const SEASON_ICONS = { flower: Flower2, sun: Sun, leaf: Leaf, snowflake: Snowflake, sparkles: Sparkles } as const;
 
+/** Strip markdown syntax so previews read as plain prose. */
+function plainPreview(body: string): string {
+  return body
+    .replace(/<[^>]+>/g, " ")                       // html tags (embeds, link cards)
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")       // images → alt text
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")        // links → text
+    .replace(/^\s*#{1,6}\s+/gm, "")                 // headings
+    .replace(/^\s*[-*+]\s+\[[ xX]\]\s+/gm, "")      // checkboxes
+    .replace(/^\s*[-*+]\s+/gm, "")                  // bullets
+    .replace(/^\s*\d+\.\s+/gm, "")                  // numbered lists
+    .replace(/^\s*>\s?/gm, "")                      // quotes
+    .replace(/\s\^b-[a-z0-9]+/g, "")                // block id markers
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")             // bold
+    .replace(/(\*|_)(.*?)\1/g, "$2")                // italic
+    .replace(/~~(.*?)~~/g, "$1")                    // strikethrough
+    .replace(/`([^`]*)`/g, "$1")                    // inline code
+    .replace(/\|/g, " ")                            // table pipes
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const SEASONS = [
+  { id: "spring", label: "Spring", icon: Flower2, months: [2, 3, 4] },
+  { id: "summer", label: "Summer", icon: Sun, months: [5, 6, 7] },
+  { id: "autumn", label: "Autumn", icon: Leaf, months: [8, 9, 10] },
+  { id: "winter", label: "Winter", icon: Snowflake, months: [11, 0, 1] },
+] as const;
+
+function seasonFor(monthKey: string) {
+  const month = parseISO(monthKey).getMonth();
+  return SEASONS.find(s => (s.months as readonly number[]).includes(month)) ?? SEASONS[0];
+}
+
 function defaultNotebookPreference(date: Date): NotebookPreference {
   const month = date.getMonth();
   return {
@@ -59,12 +92,14 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
     });
   }, [notes, sortDir]);
 
-  const years = useMemo(() => {
-    const groups = new Map<string, MonthSummary[]>();
+  const seasons = useMemo(() => {
+    const groups = new Map<string, { label: string; icon: typeof Flower2; months: MonthSummary[] }>();
     for (const month of months) {
+      const season = seasonFor(month.key);
       const year = month.key.slice(0, 4);
-      if (!groups.has(year)) groups.set(year, []);
-      groups.get(year)!.push(month);
+      const key = `${season.id}-${year}`;
+      if (!groups.has(key)) groups.set(key, { label: `${season.label} ${year}`, icon: season.icon, months: [] });
+      groups.get(key)!.months.push(month);
     }
     return [...groups.entries()];
   }, [months]);
@@ -96,11 +131,11 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
           {sortDir === "desc" ? "Newest first" : "Oldest first"}
         </Button>
       </div>
-      {years.map(([year, yearMonths]) => (
-        <section key={year} aria-label={`${year} notebooks`}>
-          <h3 className="mb-3 font-display text-lg font-semibold text-muted-foreground">{year}</h3>
+      {seasons.map(([key, season]) => (
+        <section key={key} aria-label={`${season.label} notebooks`}>
+          <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-muted-foreground"><season.icon className="h-4 w-4 text-primary" aria-hidden />{season.label}</h3>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-      {yearMonths.map((month, index) => {
+      {season.months.map((month, index) => {
         const monthDate = parseISO(month.key);
         const current = month.key === monthKeyFor(new Date());
         const preference = preferences[month.key] ?? defaultNotebookPreference(monthDate);
@@ -115,7 +150,7 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
                 <SeasonIcon className="mt-10 h-5 w-5 shrink-0 text-primary" aria-hidden />
               </div>
               <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
-                {month.monthly?.body || (month.written ? `${month.written} written ${month.written === 1 ? "entry" : "entries"} across this month.` : "A quiet notebook ready for this month.")}
+                {(month.monthly?.body ? plainPreview(month.monthly.body) : "") || (month.written ? `${month.written} written ${month.written === 1 ? "entry" : "entries"} across this month.` : "A quiet notebook ready for this month.")}
               </p>
               <div className="mt-auto flex items-end justify-between gap-2 pt-4">
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><CalendarDays className="h-3.5 w-3.5" />{month.notes.length} {month.notes.length === 1 ? "note" : "notes"}</div>
