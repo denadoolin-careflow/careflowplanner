@@ -21,6 +21,7 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { WhatsNewPopover } from "@/components/updates/WhatsNewPopover";
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 import { GlobalTaskQuickEdit } from "@/components/tasks/GlobalTaskQuickEdit";
+import { AppendToDialog } from "@/components/quick-add/AppendToDialog";
 import { MobileBlockEditorHost } from "@/components/planner/mobile/MobileBlockEditorHost";
 import { UpgradePromptHost } from "@/components/UpgradePromptHost";
 import { WriteBlockSheet } from "@/components/planner/WriteBlockSheet";
@@ -111,6 +112,7 @@ export function AppLayout() {
       <FocusPanel />
       <GlobalTaskEditor />
       <GlobalTaskQuickEdit />
+      <AppendToDialog />
       <MobileBlockEditorHost />
       <WriteBlockSheet />
       <UpgradePromptHost />
