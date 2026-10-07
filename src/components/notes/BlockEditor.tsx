@@ -32,6 +32,8 @@ import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
+import { TableSummary, cycleTableSummary } from "@/components/notes/table-summary";
+import { Sigma } from "lucide-react";
 import Suggestion from "@tiptap/suggestion";
 import { Extension, Node as TiptapNode } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
@@ -1356,6 +1358,62 @@ function ColorPickerPopoverInner(editor: Editor, open: boolean, setOpen: (b: boo
       )}
     </div>
   );
+}
+
+/**
+ * Tab on a block sitting directly below a toggle moves that block (a
+ * paragraph, heading, quote, or a whole list) inside the toggle body, so it
+ * folds away with the toggle title. Opens the toggle and keeps the caret.
+ */
+function tuckIntoPreviousToggle(editor: Editor): boolean {
+  const { state } = editor;
+  const { $from } = state.selection;
+  for (let d = $from.depth; d > 0; d--) {
+    const parent = $from.node(d - 1);
+    const idx = $from.index(d - 1);
+    if (idx === 0) continue;
+    const prev = parent.child(idx - 1);
+    if (prev.type.name !== "details") continue;
+    const block = $from.node(d);
+    if (block.type.name === "detailsSummary" || block.type.name === "detailsContent") return false;
+    const blockStart = $from.before(d);
+    const offset = $from.pos - blockStart;
+    const content = prev.lastChild;
+    if (!content || content.type.name !== "detailsContent") return false;
+    const detailsStart = blockStart - prev.nodeSize;
+    const contentStart = blockStart - content.nodeSize; // first position inside detailsContent
+    const emptyBody = content.childCount === 1 && content.firstChild?.type.name === "paragraph" && content.firstChild.content.size === 0;
+    const tr = state.tr.delete(blockStart, blockStart + block.nodeSize);
+    let target: number;
+    if (emptyBody) { tr.replaceWith(contentStart, contentStart + 2, block); target = contentStart + offset; }
+    else { tr.insert(blockStart - 2, block); target = blockStart - 2 + offset; }
+    tr.setNodeMarkup(detailsStart, undefined, { ...prev.attrs, open: true });
+    tr.setSelection(TextSelection.create(tr.doc, Math.min(target, tr.doc.content.size)));
+    editor.view.dispatch(tr.scrollIntoView());
+    return true;
+  }
+  return false;
+}
+
+/** Shift-Tab on the last block inside a toggle body moves it back out below the toggle. */
+function liftOutOfToggle(editor: Editor): boolean {
+  const { state } = editor;
+  const { $from } = state.selection;
+  for (let d = $from.depth; d > 1; d--) {
+    const parent = $from.node(d - 1);
+    if (parent.type.name !== "detailsContent") continue;
+    if ($from.index(d - 1) !== parent.childCount - 1 || parent.childCount < 2) return false;
+    const block = $from.node(d);
+    const blockStart = $from.before(d);
+    const offset = $from.pos - blockStart;
+    const detailsEnd = $from.after(d - 2);
+    const tr = state.tr.insert(detailsEnd, block).delete(blockStart, blockStart + block.nodeSize);
+    const newStart = detailsEnd - block.nodeSize;
+    tr.setSelection(TextSelection.create(tr.doc, newStart + offset));
+    editor.view.dispatch(tr.scrollIntoView());
+    return true;
+  }
+  return false;
 }
 
 /* ------------------------------------------------------------------ */
