@@ -1909,15 +1909,17 @@ export function BlockEditor({
               if (editor.can().sinkListItem(node.type.name)) {
                 return editor.chain().focus().sinkListItem(node.type.name).run();
               }
+              if (tuckIntoPreviousToggle(editor as Editor)) return true;
               return convertListItemToDetails(editor as Editor);
             }
           }
-          return false;
+          // Paragraph / heading / quote right below a toggle → tuck it inside.
+          return tuckIntoPreviousToggle(editor as Editor);
         },
         "Shift-Tab": ({ editor }) => {
           if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
           if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
-          return false;
+          return liftOutOfToggle(editor as Editor);
         },
         "Alt-ArrowRight": ({ editor }) => {
           const { state } = editor;
@@ -2291,6 +2293,7 @@ export function BlockEditor({
       TableRow,
       TableHeader,
       TableCell,
+      TableSummary,
       Image.configure({
         inline: false,
         allowBase64: false,
@@ -3382,6 +3385,8 @@ export function BlockEditor({
               <ToolbarButton onClick={() => editor.chain().focus().deleteRow().run()} label="Delete row"><Minus className="h-3.5 w-3.5" /></ToolbarButton>
               <ToolbarButton onClick={() => editor.chain().focus().deleteColumn().run()} label="Delete column"><Minus className="h-3.5 w-3.5 rotate-90" /></ToolbarButton>
               <ToolbarButton onClick={() => editor.chain().focus().deleteTable().run()} label="Delete table"><Trash2 className="h-3.5 w-3.5" /></ToolbarButton>
+              <span className="mx-1 h-4 w-px bg-border" />
+              <ToolbarButton onClick={() => { const l = cycleTableSummary(editor); toast.message(l ? `Summary row: ${l}` : "Summary row removed"); }} label="Summary row (Total → Average → Count → off)"><Sigma className="h-3.5 w-3.5" /></ToolbarButton>
             </>
           )}
         </BubbleMenu>
