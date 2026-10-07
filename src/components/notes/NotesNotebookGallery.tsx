@@ -92,12 +92,14 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
     });
   }, [notes, sortDir]);
 
-  const years = useMemo(() => {
-    const groups = new Map<string, MonthSummary[]>();
+  const seasons = useMemo(() => {
+    const groups = new Map<string, { label: string; icon: typeof Flower2; months: MonthSummary[] }>();
     for (const month of months) {
+      const season = seasonFor(month.key);
       const year = month.key.slice(0, 4);
-      if (!groups.has(year)) groups.set(year, []);
-      groups.get(year)!.push(month);
+      const key = `${season.id}-${year}`;
+      if (!groups.has(key)) groups.set(key, { label: `${season.label} ${year}`, icon: season.icon, months: [] });
+      groups.get(key)!.months.push(month);
     }
     return [...groups.entries()];
   }, [months]);
