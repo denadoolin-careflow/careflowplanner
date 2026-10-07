@@ -111,6 +111,29 @@ export function readableTextOn(hex: string): string {
   return yiq >= 165 ? "#1a1a1a" : "#ffffff";
 }
 
+/**
+ * Darken a tag color enough to read as text on its own soft tinted
+ * background (e.g. `color + "24"`). Light pastels/yellows otherwise fail
+ * WCAG contrast. Returns the original hex when it is already dark enough.
+ */
+export function contrastTagText(hex: string): string {
+  const c = hex.replace("#", "");
+  if (c.length !== 6) return hex;
+  let r = parseInt(c.slice(0, 2), 16);
+  let g = parseInt(c.slice(2, 4), 16);
+  let b = parseInt(c.slice(4, 6), 16);
+  const lum = () => (r * 299 + g * 587 + b * 114) / 1000;
+  // Mix toward black until the color is dark enough for tinted-bg text.
+  let guard = 0;
+  while (lum() > 120 && guard++ < 8) {
+    r = Math.round(r * 0.72);
+    g = Math.round(g * 0.72);
+    b = Math.round(b * 0.72);
+  }
+  const h = (v: number) => v.toString(16).padStart(2, "0");
+  return `#${h(r)}${h(g)}${h(b)}`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  CRUD                                                               */
 /* ------------------------------------------------------------------ */

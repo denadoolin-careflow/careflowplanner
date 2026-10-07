@@ -1,8 +1,9 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Clock3, Pin, Sun, Link2, Tag as TagIcon, Archive, Plus, FileQuestion, FolderOpen, List, ChevronDown,
   Users, HeartPulse, Home as HomeIcon, Stethoscope, GraduationCap, User as UserIcon, BookHeart, Images,
+  Search, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fallbackColorFor, type Tag } from "@/lib/tags";
@@ -91,6 +92,28 @@ export function NotesSideNav({
     return localStorage.getItem("careflow.notes.sidenav.tags") !== "0";
   });
   const [openSpaces, setOpenSpaces] = useState<boolean>(() => typeof window === "undefined" || localStorage.getItem("careflow.notes.sidenav.spaces") !== "0");
+  const [filter, setFilter] = useState("");
+  const filterRef = useRef<HTMLInputElement>(null);
+
+  // "/" or Cmd/Ctrl+F focuses the sidebar filter (unless already typing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const inField = el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName));
+      const isSlash = e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey;
+      const isCmdF = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f";
+      if ((isSlash && !inField) || isCmdF) {
+        e.preventDefault();
+        filterRef.current?.focus();
+        filterRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const q = filter.trim().toLowerCase();
+  const matchQ = (s: string) => !q || s.toLowerCase().includes(q);
   useEffect(() => { localStorage.setItem("careflow.notes.sidenav.spaces", openSpaces ? "1" : "0"); }, [openSpaces]);
   const spaceCount = (sp: SideNavSpace) => sp.tags.length === 0 ? notes.length : notes.filter(n => (n.tags ?? []).some(t => sp.tags.some(x => x.toLowerCase() === t.toLowerCase()))).length;
   const plural = (n: number) => `${n} ${n === 1 ? "note" : "notes"}`;
@@ -139,6 +162,32 @@ export function NotesSideNav({
 
   return (
     <nav aria-label="Notes spaces, collections, and tags" className="flex h-full w-full flex-col gap-5 overflow-y-auto pr-1">
+      {/* Sidebar filter */}
+      <div className="relative">
+        <Search aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <input
+          ref={filterRef}
+          type="search"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Escape") { setFilter(""); (e.target as HTMLInputElement).blur(); } }}
+          placeholder="Filter spaces & tags…"
+          aria-label="Filter spaces, collections, and tags"
+          className="h-9 w-full rounded-lg border border-border/50 bg-card/60 pl-8 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        {filter ? (
+          <button
+            type="button"
+            onClick={() => { setFilter(""); filterRef.current?.focus(); }}
+            aria-label="Clear filter"
+            className="absolute right-1.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        ) : (
+          <kbd aria-hidden className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border/60 bg-muted/50 px-1 text-[10px] font-mono text-muted-foreground">/</kbd>
+        )}
+      </div>
       {/* Quick actions */}
       <section className="space-y-1">
         <Link
@@ -157,7 +206,7 @@ export function NotesSideNav({
         </Link>
       </section>
 
-      {spaces.length > 0 && (
+      {spaces.length > 0 && (!q || spaces.some(sp => matchQ(sp.name))) && (
       <section aria-labelledby="sidenav-spaces-heading">
         <h2 id="sidenav-spaces-heading" className="m-0">
         <button type="button" onClick={() => setOpenSpaces(o => !o)} aria-expanded={openSpaces} aria-controls="sidenav-spaces-list"
@@ -166,9 +215,9 @@ export function NotesSideNav({
           <span className="flex-1 text-left">Spaces</span>
         </button>
         </h2>
-        {openSpaces && (
+        {(openSpaces || q) && (
           <ul id="sidenav-spaces-list" className="space-y-0.5">
-            {spaces.map(sp => {
+            {spaces.filter(sp => matchQ(sp.name)).map(sp => {
               const active = sp.tags.length === 0 ? activeCollection === "all" && !activeTag && !activeSpaceName : activeSpaceName === sp.name;
               const count = spaceCount(sp);
               return (
@@ -188,6 +237,7 @@ export function NotesSideNav({
       )}
 
       {/* Smart collections */}
+      {(!q || COLLECTIONS.some(c => matchQ(c.label))) && (
       <section>
         <button
           type="button"
@@ -198,9 +248,9 @@ export function NotesSideNav({
           <ChevronDown className={cn("h-3 w-3 transition-transform", !openCollections && "-rotate-90")} />
           <span className="flex-1 text-left">Collections</span>
         </button>
-        {openCollections && (
+        {(openCollections || q) && (
         <ul className="space-y-0.5">
-          {COLLECTIONS.filter(c => c.id === "all" || collectionCount(c.id, notes) > 0).map(c => {
+          {COLLECTIONS.filter(c => (c.id === "all" || collectionCount(c.id, notes) > 0) && matchQ(c.label)).map(c => {
             const active = activeCollection === c.id && !activeTag;
             const count = collectionCount(c.id, notes);
             return (
@@ -227,8 +277,10 @@ export function NotesSideNav({
         </ul>
         )}
       </section>
+      )}
 
       {/* Caregiver collections */}
+      {(!q || CAREGIVER_COLLECTIONS.some(c => matchQ(c.label))) && (
       <section>
         <button
           type="button"
@@ -239,9 +291,9 @@ export function NotesSideNav({
           <ChevronDown className={cn("h-3 w-3 transition-transform", !openCare && "-rotate-90")} />
           <span className="flex-1 text-left">Caregiver</span>
         </button>
-        {openCare && (
+        {(openCare || q) && (
           <ul className="space-y-0.5">
-            {CAREGIVER_COLLECTIONS.map(c => {
+            {CAREGIVER_COLLECTIONS.filter(c => matchQ(c.label)).map(c => {
               const count = countCaregiverCollection(notes, c.tags);
               const active = activeTag !== null && c.tags.some(t => t.toLowerCase() === activeTag.toLowerCase());
               return (
@@ -274,8 +326,10 @@ export function NotesSideNav({
           </ul>
         )}
       </section>
+      )}
 
       {/* Tags */}
+      {(!q || sortedTags.some(t => matchQ(t.name))) && (
       <section>
         <div className="mb-1.5 flex items-center justify-between px-2">
           <button
@@ -298,11 +352,11 @@ export function NotesSideNav({
             </button>
           )}
         </div>
-        {openTags && (sortedTags.length === 0 ? (
+        {(openTags || q) && (sortedTags.length === 0 ? (
           <p className="px-2 text-xs italic text-muted-foreground/70">No tags yet.</p>
         ) : (
           <ul className="space-y-0.5">
-            {sortedTags.map(t => {
+            {sortedTags.filter(t => matchQ(t.name)).map(t => {
               const Icon = tagIconFor(t.icon);
               const active = activeTag?.toLowerCase() === t.name.toLowerCase();
               const count = tagCounts.get(t.name.toLowerCase()) ?? 0;
@@ -338,6 +392,10 @@ export function NotesSideNav({
           </ul>
         ))}
       </section>
+      )}
+      {q && !spaces.some(sp => matchQ(sp.name)) && !COLLECTIONS.some(c => matchQ(c.label)) && !CAREGIVER_COLLECTIONS.some(c => matchQ(c.label)) && !sortedTags.some(t => matchQ(t.name)) && (
+        <p className="px-2 text-xs italic text-muted-foreground/70">No matches for “{filter}”.</p>
+      )}
     </nav>
   );
 }
