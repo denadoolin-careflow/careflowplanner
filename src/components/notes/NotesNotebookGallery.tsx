@@ -131,9 +131,9 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
           {sortDir === "desc" ? "Newest first" : "Oldest first"}
         </Button>
       </div>
-      {years.map(([year, yearMonths]) => (
-        <section key={year} aria-label={`${year} notebooks`}>
-          <h3 className="mb-3 font-display text-lg font-semibold text-muted-foreground">{year}</h3>
+      {seasons.map(([key, season]) => (
+        <section key={key} aria-label={`${season.label} notebooks`}>
+          <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-muted-foreground"><season.icon className="h-4 w-4 text-primary" aria-hidden />{season.label}</h3>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
       {yearMonths.map((month, index) => {
         const monthDate = parseISO(month.key);
