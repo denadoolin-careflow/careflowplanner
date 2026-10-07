@@ -125,6 +125,9 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
           </article>
         );
       })}
+          </div>
+        </section>
+      ))}
       <NotebookCustomizeDialog month={customizing} preference={customizing ? preferences[customizing.key] ?? defaultNotebookPreference(parseISO(customizing.key)) : undefined} onClose={() => setCustomizing(null)} onSave={next => { if (!customizing) return; setPreferences(saveNotebookPreference(customizing.key, next)); setCustomizing(null); }} />
     </div>
   );
