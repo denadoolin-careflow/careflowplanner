@@ -61,10 +61,15 @@ export function applyCollection(id: SmartCollectionId, notes: Note[]): Note[] {
   }
 }
 
+export type SideNavSpace = { name: string; icon: React.ComponentType<{ className?: string }>; tags: string[]; customId?: string };
+
 export function NotesSideNav({
   notes, tags, activeCollection, onCollectionChange,
-  activeTag, onTagChange, onNewTag,
+  activeTag, onTagChange, onNewTag, spaces = [], activeSpaceName = null, onSpaceSelect,
 }: {
+  spaces?: SideNavSpace[];
+  activeSpaceName?: string | null;
+  onSpaceSelect?: (space: SideNavSpace) => void;
   notes: Note[];
   tags: Tag[];
   activeCollection: SmartCollectionId;
@@ -85,6 +90,10 @@ export function NotesSideNav({
     if (typeof window === "undefined") return true;
     return localStorage.getItem("careflow.notes.sidenav.tags") !== "0";
   });
+  const [openSpaces, setOpenSpaces] = useState<boolean>(() => typeof window === "undefined" || localStorage.getItem("careflow.notes.sidenav.spaces") !== "0");
+  useEffect(() => { localStorage.setItem("careflow.notes.sidenav.spaces", openSpaces ? "1" : "0"); }, [openSpaces]);
+  const spaceCount = (sp: SideNavSpace) => sp.tags.length === 0 ? notes.length : notes.filter(n => (n.tags ?? []).some(t => sp.tags.some(x => x.toLowerCase() === t.toLowerCase()))).length;
+  const plural = (n: number) => `${n} ${n === 1 ? "note" : "notes"}`;
   useEffect(() => { localStorage.setItem("careflow.notes.sidenav.collections", openCollections ? "1" : "0"); }, [openCollections]);
   useEffect(() => { localStorage.setItem("careflow.notes.sidenav.care", openCare ? "1" : "0"); }, [openCare]);
   useEffect(() => { localStorage.setItem("careflow.notes.sidenav.tags", openTags ? "1" : "0"); }, [openTags]);
@@ -129,7 +138,7 @@ export function NotesSideNav({
   }, [tags, tagCounts]);
 
   return (
-    <aside className="flex h-full w-full flex-col gap-5 overflow-y-auto pr-1">
+    <nav aria-label="Notes spaces, collections, and tags" className="flex h-full w-full flex-col gap-5 overflow-y-auto pr-1">
       {/* Quick actions */}
       <section className="space-y-1">
         <Link
@@ -147,6 +156,36 @@ export function NotesSideNav({
           Files & photos
         </Link>
       </section>
+
+      {spaces.length > 0 && (
+      <section aria-labelledby="sidenav-spaces-heading">
+        <h2 id="sidenav-spaces-heading" className="m-0">
+        <button type="button" onClick={() => setOpenSpaces(o => !o)} aria-expanded={openSpaces} aria-controls="sidenav-spaces-list"
+          className="mb-1.5 flex w-full items-center gap-1 rounded px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <ChevronDown aria-hidden className={cn("h-3 w-3 transition-transform", !openSpaces && "-rotate-90")} />
+          <span className="flex-1 text-left">Spaces</span>
+        </button>
+        </h2>
+        {openSpaces && (
+          <ul id="sidenav-spaces-list" className="space-y-0.5">
+            {spaces.map(sp => {
+              const active = sp.tags.length === 0 ? activeCollection === "all" && !activeTag && !activeSpaceName : activeSpaceName === sp.name;
+              const count = spaceCount(sp);
+              return (
+                <li key={sp.customId ?? sp.name}>
+                  <button type="button" onClick={() => onSpaceSelect?.(sp)} aria-current={active ? "page" : undefined} aria-label={`${sp.name} space, ${plural(count)}${active ? ", selected" : ""}`}
+                    className={cn("flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", active ? "bg-primary/15 text-foreground font-medium" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}>
+                    <sp.icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="flex-1 truncate text-left">{sp.name}</span>
+                    <span aria-hidden className="text-[10px] text-muted-foreground">{count}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+      )}
 
       {/* Smart collections */}
       <section>
@@ -169,6 +208,8 @@ export function NotesSideNav({
                 <button
                   type="button"
                   onClick={() => { onCollectionChange(c.id); onTagChange(null); }}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={`${c.label} collection, ${plural(count)}`}
                   className={cn(
                     "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                     active
@@ -178,7 +219,7 @@ export function NotesSideNav({
                 >
                   <c.icon className="h-3.5 w-3.5 shrink-0" />
                   <span className="flex-1 text-left">{c.label}</span>
-                  <span className="text-[10px] text-muted-foreground/70">{count}</span>
+                  <span className="text-[10px] text-muted-foreground" aria-hidden>{count}</span>
                 </button>
               </li>
             );
@@ -214,6 +255,8 @@ export function NotesSideNav({
                       onCollectionChange("all");
                       onTagChange(pick);
                     }}
+                    aria-current={active ? "page" : undefined}
+                    aria-label={`${c.label} caregiver collection, ${plural(count)}`}
                     className={cn(
                       "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                       active
@@ -223,7 +266,7 @@ export function NotesSideNav({
                   >
                     <c.icon className="h-3.5 w-3.5 shrink-0" />
                     <span className="flex-1 text-left">{c.label}</span>
-                    <span className="text-[10px] text-muted-foreground/70">{count}</span>
+                    <span className="text-[10px] text-muted-foreground" aria-hidden>{count}</span>
                   </button>
                 </li>
               );
@@ -268,6 +311,8 @@ export function NotesSideNav({
                   <button
                     type="button"
                     onClick={() => onTagChange(active ? null : t.name)}
+                    aria-pressed={active}
+                    aria-label={`Filter by ${t.name} tag, ${plural(count)}`}
                     className={cn(
                       "flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors min-w-0",
                       active
@@ -275,13 +320,13 @@ export function NotesSideNav({
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: t.color }} />
+                    <Icon aria-hidden className="h-3.5 w-3.5 shrink-0" style={{ color: t.color }} />
                     <span className="flex-1 truncate text-left">{t.name}</span>
-                    <span className="text-[10px] text-muted-foreground/70">{count}</span>
+                    <span className="text-[10px] text-muted-foreground" aria-hidden>{count}</span>
                   </button>
                   <Link
                     to={`/tags/${encodeURIComponent(t.name)}`}
-                    className="ml-0.5 hidden h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-muted/60 hover:text-foreground group-hover:grid"
+                    className="ml-0.5 hidden h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-muted/60 hover:text-foreground group-hover:grid group-focus-within:grid focus-visible:grid"
                     aria-label={`Open ${t.name} page`}
                     title="Open tag page"
                   >
@@ -293,6 +338,6 @@ export function NotesSideNav({
           </ul>
         ))}
       </section>
-    </aside>
+    </nav>
   );
 }
