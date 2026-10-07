@@ -248,9 +248,9 @@ export function NotesSideNav({
           <ChevronDown className={cn("h-3 w-3 transition-transform", !openCollections && "-rotate-90")} />
           <span className="flex-1 text-left">Collections</span>
         </button>
-        {openCollections && (
+        {(openCollections || q) && (
         <ul className="space-y-0.5">
-          {COLLECTIONS.filter(c => c.id === "all" || collectionCount(c.id, notes) > 0).map(c => {
+          {COLLECTIONS.filter(c => (c.id === "all" || collectionCount(c.id, notes) > 0) && matchQ(c.label)).map(c => {
             const active = activeCollection === c.id && !activeTag;
             const count = collectionCount(c.id, notes);
             return (
@@ -277,8 +277,10 @@ export function NotesSideNav({
         </ul>
         )}
       </section>
+      )}
 
       {/* Caregiver collections */}
+      {(!q || CAREGIVER_COLLECTIONS.some(c => matchQ(c.label))) && (
       <section>
         <button
           type="button"
