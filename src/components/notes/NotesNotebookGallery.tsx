@@ -20,6 +20,39 @@ type MonthSummary = {
 
 const SEASON_ICONS = { flower: Flower2, sun: Sun, leaf: Leaf, snowflake: Snowflake, sparkles: Sparkles } as const;
 
+/** Strip markdown syntax so previews read as plain prose. */
+function plainPreview(body: string): string {
+  return body
+    .replace(/<[^>]+>/g, " ")                       // html tags (embeds, link cards)
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")       // images → alt text
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")        // links → text
+    .replace(/^\s*#{1,6}\s+/gm, "")                 // headings
+    .replace(/^\s*[-*+]\s+\[[ xX]\]\s+/gm, "")      // checkboxes
+    .replace(/^\s*[-*+]\s+/gm, "")                  // bullets
+    .replace(/^\s*\d+\.\s+/gm, "")                  // numbered lists
+    .replace(/^\s*>\s?/gm, "")                      // quotes
+    .replace(/\s\^b-[a-z0-9]+/g, "")                // block id markers
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")             // bold
+    .replace(/(\*|_)(.*?)\1/g, "$2")                // italic
+    .replace(/~~(.*?)~~/g, "$1")                    // strikethrough
+    .replace(/`([^`]*)`/g, "$1")                    // inline code
+    .replace(/\|/g, " ")                            // table pipes
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const SEASONS = [
+  { id: "spring", label: "Spring", icon: Flower2, months: [2, 3, 4] },
+  { id: "summer", label: "Summer", icon: Sun, months: [5, 6, 7] },
+  { id: "autumn", label: "Autumn", icon: Leaf, months: [8, 9, 10] },
+  { id: "winter", label: "Winter", icon: Snowflake, months: [11, 0, 1] },
+] as const;
+
+function seasonFor(monthKey: string) {
+  const month = parseISO(monthKey).getMonth();
+  return SEASONS.find(s => (s.months as readonly number[]).includes(month)) ?? SEASONS[0];
+}
+
 function defaultNotebookPreference(date: Date): NotebookPreference {
   const month = date.getMonth();
   return {
