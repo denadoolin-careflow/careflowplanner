@@ -693,6 +693,7 @@ function RowItem({
   onReschedule: (iso: string) => void;
 }) {
   const [dateOpen, setDateOpen] = useState(false);
+  const { toggleTask } = useStore();
   const { colorOf } = useKindColors();
   const meta = KIND_META[row.kind];
   const Icon = meta.Icon;
@@ -711,7 +712,14 @@ function RowItem({
         className="mt-0.5 shrink-0"
         disabled={!row.editable}
       />
-      <span className="mt-2 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />
+      {row.kind === "task" && row.raw ? (
+        <Checkbox
+          checked={!!row.done}
+          onCheckedChange={() => void toggleTask((row.raw as Task).id)}
+          aria-label={row.done ? `Mark ${row.title} not done` : `Mark ${row.title} done`}
+          className="mt-0.5 shrink-0"
+        />
+      ) : <span className="mt-2 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />}
       <Icon className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <button
         type="button"

@@ -42,3 +42,7 @@
 - [ ] Add editable pre-save review to inline note/task capture and simplify its placeholder
 - [ ] Add remembered compact sizing choices for pinned notes
 - [ ] Add per-month notebook cover color, seasonal icon, and custom title
+- [x] Add rich inline editing to Today's Journal with reliable autosave on close
+- [x] Add round-trippable smart web link cards and richer note previews
+- [x] Add direct completion checkboxes to planner Agenda/List and Month rows
+- [x] Balance Month readability, quick planning, overflow, and rhythm/task progress

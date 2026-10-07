@@ -407,12 +407,15 @@
   .planner-month-day--today { @apply z-[1] bg-accent-soft/60 ring-2 ring-inset ring-accent/70 shadow-soft; }
   .planner-month-day--drop { @apply z-[2] bg-primary-soft ring-2 ring-inset ring-primary shadow-cozy; }
   .planner-month-day__header { @apply flex min-h-8 w-full items-center gap-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring; }
+  .planner-month-day__add { @apply absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-md border border-border/50 bg-card/90 text-muted-foreground opacity-0 shadow-sm transition hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100; }
   .planner-month-day__number { @apply grid h-7 w-7 place-items-center rounded-full text-xs font-semibold; }
   .planner-month-day__today-label { @apply rounded-full bg-accent px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] text-accent-foreground; }
   .planner-month-day__capacity { @apply flex min-h-5 items-center justify-between gap-1; }
   .planner-month-day__items { @apply mt-0.5 flex min-w-0 flex-col gap-0.5; }
   .planner-month-day__dots { @apply flex min-h-8 w-full flex-wrap items-start justify-center gap-1 pt-2; }
   .planner-month-item { @apply flex min-h-6 w-full min-w-0 items-center gap-1 rounded-sm border-l-2 border-primary/30 bg-muted/45 px-1.5 text-left text-[10px] leading-tight text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring; }
+  .planner-month-item__checkbox { @apply grid h-4 w-4 shrink-0 place-items-center rounded border border-muted-foreground/50 bg-background transition-colors hover:border-primary; }
+  .planner-month-item__checkbox--done { @apply border-primary bg-primary text-primary-foreground; }
   .planner-month-item--compact { @apply min-h-5 text-[9px]; }
   .planner-month-more { @apply min-h-6 px-1 text-left text-[9px] font-medium text-muted-foreground hover:text-foreground; }
   .planner-month-list-day { @apply rounded-md border border-border/60 bg-card/60 px-3; }
@@ -514,6 +517,8 @@
     .planner-month-day__dots { @apply flex min-h-6 items-center justify-center gap-1 p-0; }
     .planner-month-day__count { @apply inline-grid h-4 min-w-4 place-items-center rounded-full bg-muted px-1 text-[8px] font-semibold text-muted-foreground; }
     .planner-month-day__signals { @apply inline-flex items-center gap-0.5; }
+    .planner-month-day__task-progress { @apply absolute inset-x-1 bottom-1 h-0.5 overflow-hidden rounded-full bg-muted; }
+    .planner-month-day__task-progress::after { content: ""; @apply block h-full rounded-full bg-primary; width: var(--task-progress); }
     .planner-month-season > a > div { @apply px-3 py-2; }
     .planner-month-season p:last-of-type { @apply hidden; }
     .planner-moonscape { @apply p-3; }

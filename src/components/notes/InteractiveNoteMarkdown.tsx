@@ -7,6 +7,15 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { QuickPeek, inferPeek } from "@/components/notes/QuickPeek";
 
+function expandWebLinkCards(body: string): string {
+  return body.replace(/<div\s+([^>]*data-web-link-card[^>]*)>[\s\S]*?<\/div>/gi, (_match, attrs: string) => {
+    const read = (name: string) => attrs.match(new RegExp(`data-${name}=["']([^"']*)["']`, "i"))?.[1] ?? "";
+    const href = read("href");
+    const label = read("label") || read("domain") || "Open link";
+    return href ? `[${label}](${href})` : label;
+  });
+}
+
 /**
  * Interactive markdown renderer for modals/popovers.
  * - Internal links (starting with `/`) render as react-router <Link> and
@@ -16,7 +25,7 @@ import { QuickPeek, inferPeek } from "@/components/notes/QuickPeek";
  *   links so they participate in the same safe navigation flow.
  */
 function preprocess(body: string, projects: { id: string; name: string }[]): string {
-  let t = stripBlockMarkers(body);
+  let t = expandWebLinkCards(stripBlockMarkers(body));
   // [[Title]] → /notes?q=Title
   t = t.replace(/\[\[([^\]]+)\]\]/g, (_, title: string) => {
     const slug = encodeURIComponent(title.trim());

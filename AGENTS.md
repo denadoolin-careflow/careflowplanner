@@ -12,3 +12,4 @@
 - Note page properties are stored per note in notes.properties (jsonb); shared supertag fields reuse item_field_values with entity_type 'note'.
 - Note block IDs persist as trailing ` ^b-xxxxxx` markers in the markdown body (added only when first linked); block embeds/ref chips persist as data-* HTML so no schema change is needed.
 - Notes uses a page-scoped presentation layer derived from the active atmosphere; capture review, pinned density, and per-month notebook appearance are device-local while note/task content preserves existing synced models.
+- External note link cards persist as data-web-link-card HTML inside the existing markdown body so rich links round-trip without a schema change.
