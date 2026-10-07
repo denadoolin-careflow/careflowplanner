@@ -92,6 +92,28 @@ export function NotesSideNav({
     return localStorage.getItem("careflow.notes.sidenav.tags") !== "0";
   });
   const [openSpaces, setOpenSpaces] = useState<boolean>(() => typeof window === "undefined" || localStorage.getItem("careflow.notes.sidenav.spaces") !== "0");
+  const [filter, setFilter] = useState("");
+  const filterRef = useRef<HTMLInputElement>(null);
+
+  // "/" or Cmd/Ctrl+F focuses the sidebar filter (unless already typing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const inField = el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName));
+      const isSlash = e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey;
+      const isCmdF = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f";
+      if ((isSlash && !inField) || isCmdF) {
+        e.preventDefault();
+        filterRef.current?.focus();
+        filterRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const q = filter.trim().toLowerCase();
+  const matchQ = (s: string) => !q || s.toLowerCase().includes(q);
   useEffect(() => { localStorage.setItem("careflow.notes.sidenav.spaces", openSpaces ? "1" : "0"); }, [openSpaces]);
   const spaceCount = (sp: SideNavSpace) => sp.tags.length === 0 ? notes.length : notes.filter(n => (n.tags ?? []).some(t => sp.tags.some(x => x.toLowerCase() === t.toLowerCase()))).length;
   const plural = (n: number) => `${n} ${n === 1 ? "note" : "notes"}`;
