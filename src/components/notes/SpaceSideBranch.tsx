@@ -19,7 +19,7 @@ export function SpaceSideBranch({ space, custom, notes, active, onSelect, filter
   const has = (tags?: string[]) => (tags ?? []).some(t => space.tags.some(s => s.toLowerCase() === t.toLowerCase()));
   const linked = notes.filter(n => !hidden.has(n.id) && (custom?.noteIds?.includes(n.id) || has(n.tags)));
   const noteProjects = new Set(linked.map(n => n.projectId));
-  const projects = state.projects.filter(p => !p.archivedAt && !hidden.has(p.id) && (custom?.projectIds?.includes(p.id) || noteProjects.has(p.id) || space.tags.some(t => t.toLowerCase() === p.name.toLowerCase()) || has((p as { tags?: string[] }).tags)));
+  const projects = (state.projects ?? []).filter(p => !p.archivedAt && !hidden.has(p.id) && (custom?.projectIds?.includes(p.id) || noteProjects.has(p.id) || space.tags.some(t => t.toLowerCase() === p.name.toLowerCase()) || has((p as { tags?: string[] }).tags)));
   const q = filter.trim().toLowerCase();
   const nameMatches = !q || space.name.toLowerCase().includes(q);
   const shownNotes = linked.filter(n => nameMatches || noteDisplayTitle(n).toLowerCase().includes(q));
