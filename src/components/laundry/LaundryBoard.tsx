@@ -83,7 +83,7 @@ export function LaundryBoard({ compact = false }: { compact?: boolean }) {
         startTime: format(end, "HH:mm"),
         endTime: format(new Date(end.getTime() + 10 * 60000), "HH:mm"),
         tags: ["laundry"],
-        area: "home" as any,
+        area: "Home",
         skipChecklist: true,
       });
       if (id) patch.taskId = id;
