@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+import { NAV_SUBPAGES } from "@/lib/nav";
 import { NavLink, useLocation, Link } from "react-router-dom";
 import { NAV_GROUPS } from "@/lib/nav";
 import { useFlowAccents } from "@/lib/flow-accent";
@@ -1535,8 +1537,8 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 <div className="min-h-0 overflow-hidden">
                   <div className="mt-1 flex flex-col gap-0.5 pl-1">
                     {group.items.map(({ to, label, icon: Icon }) => (
+                      <Fragment key={to}>
                       <NavLink
-                        key={to}
                         to={to}
                         end={to === "/"}
                         onClick={handleNavClick(to)}
@@ -1551,6 +1553,24 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                         <Icon className="h-4 w-4 shrink-0" />
                         <span>{label}</span>
                       </NavLink>
+                      {NAV_SUBPAGES[to] && (
+                        <div role="group" aria-label={`${label} subpages`} className="ml-5 flex flex-col gap-0.5 border-l border-sidebar-border/60 pl-2">
+                          {NAV_SUBPAGES[to].filter(sp => !group.items.some(gi => gi.to === sp.to)).map(sp => (
+                            <NavLink
+                              key={sp.to}
+                              to={sp.to}
+                              onClick={handleNavClick(sp.to)}
+                              className={({ isActive }) => cn(
+                                "rounded-lg px-2.5 py-1.5 text-xs font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                isActive && "bg-primary-soft text-foreground ring-1 ring-inset ring-primary/30",
+                              )}
+                            >
+                              {sp.label}
+                            </NavLink>
+                          ))}
+                        </div>
+                      )}
+                      </Fragment>
                     ))}
                   </div>
                 </div>

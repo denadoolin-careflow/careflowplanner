@@ -1,4 +1,7 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { updateNote, type Note } from "@/lib/notes";
 import { FileText, X, ExternalLink, NotebookPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEntityNotes, linkNote, unlinkNote, type EntityType } from "@/lib/note-links";
@@ -18,7 +21,44 @@ interface Props {
 
 export function LinkedNotesPanel({ entityType, entityId, contextTitle, className, compact }: Props) {
   const nav = useNavigate();
-  const { notes, reload } = useEntityNotes(entityType, entityId);
+  const { notes: linked, reload: reloadLinked } = useEntityNotes(entityType, entityId);
+  const [propNotes, setPropNotes] = useState<Note[]>([]);
+
+  // Notes whose Project property points at this project (notes.project_id).
+  const loadProp = useCallback(async () => {
+    if (entityType !== "project" || !entityId) { setPropNotes([]); return; }
+    const { data } = await supabase.from("notes").select("*").eq("project_id", entityId).eq("archived", false).limit(200);
+    setPropNotes((data ?? []).map((r: any) => ({
+      id: r.id, userId: r.user_id, title: r.title ?? "", body: r.body ?? "", kind: r.kind,
+      date: r.date, projectId: r.project_id, pinned: !!r.pinned, archived: false,
+      properties: Array.isArray(r.properties) ? r.properties : [],
+      createdAt: r.created_at, updatedAt: r.updated_at,
+    })));
+  }, [entityType, entityId]);
+  useEffect(() => { void loadProp(); }, [loadProp]);
+  const reload = async () => { await Promise.all([reloadLinked(), loadProp()]); };
+
+  const linkedIds = useMemo(() => new Set(linked.map(n => n.id)), [linked]);
+  const propIds = useMemo(() => new Set(propNotes.map(n => n.id)), [propNotes]);
+  const notes = useMemo(() => {
+    const m = new Map<string, Note>();
+    [...linked, ...propNotes].forEach(n => m.set(n.id, n));
+    return [...m.values()].sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+  }, [linked, propNotes]);
+
+  /** Plain-text excerpt around where the note mentions this item, if it does. */
+  const referenceOf = (n: Note) => {
+    const text = (n.body ?? "").replace(/<[^>]+>/g, " ").replace(/[#*_>`|\[\]]/g, " ").replace(/\s+/g, " ").trim();
+    const needle = (contextTitle ?? "").trim().toLowerCase();
+    if (needle) {
+      const i = text.toLowerCase().indexOf(needle);
+      if (i >= 0) {
+        const start = Math.max(0, i - 40);
+        return (start > 0 ? "…" : "") + text.slice(start, i + needle.length + 60) + (i + needle.length + 60 < text.length ? "…" : "");
+      }
+    }
+    return text.slice(0, 100);
+  };
 
   const onLink = async (noteId: string) => {
     try {
@@ -30,7 +70,14 @@ export function LinkedNotesPanel({ entityType, entityId, contextTitle, className
 
   const onUnlink = async (noteId: string) => {
     try {
-      await unlinkNote(noteId, entityType, entityId);
+      if (linkedIds.has(noteId)) await unlinkNote(noteId, entityType, entityId);
+      if (propIds.has(noteId)) {
+        const n = propNotes.find(x => x.id === noteId);
+        await updateNote(noteId, {
+          projectId: null,
+          properties: (n?.properties ?? []).map(p => p.type === "project" ? { ...p, value: null } : p),
+        });
+      }
       await reload();
     } catch (e: any) { toast.error(e?.message ?? "Could not unlink"); }
   };
@@ -72,8 +119,12 @@ export function LinkedNotesPanel({ entityType, entityId, contextTitle, className
                 onClick={() => nav(`/notes/${n.id}`)}
               >
                 <span className="block truncate text-xs font-medium">{n.title || "Untitled"}</span>
+                <span className="mt-0.5 flex flex-wrap gap-1">
+                  {propIds.has(n.id) && <span className="rounded-full bg-primary/15 px-1.5 text-[10px] text-foreground">Project property</span>}
+                  {linkedIds.has(n.id) && <span className="rounded-full bg-muted px-1.5 text-[10px] text-foreground">Linked</span>}
+                </span>
                 {!compact && n.body && (
-                  <span className="block truncate text-[10px] text-muted-foreground">{n.body.slice(0, 100)}</span>
+                  <span className="mt-0.5 block line-clamp-2 text-[11px] italic text-muted-foreground">“{referenceOf(n)}”</span>
                 )}
               </button>
               <Button size="icon" variant="ghost" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => nav(`/notes/${n.id}`)} aria-label="Open note">
