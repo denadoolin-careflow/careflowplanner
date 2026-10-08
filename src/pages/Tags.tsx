@@ -386,7 +386,6 @@ export default function Tags() {
                       <div className="flex items-center gap-1.5">
                         <ExpandButton name={r.name} />
                         {appearance(r.name)}
-                {appearance(r.name)}
                         <Link to={`/tags/${encodeURIComponent(r.name)}`}><TagChip name={r.name} size="xs" /></Link>
                       </div>
                     </td>
