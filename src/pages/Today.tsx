@@ -26,6 +26,7 @@ import { GrowColumn } from "@/components/today/dashboard/GrowColumn";
 import { RhythmTodayCard } from "@/components/today/RhythmTodayCard";
 import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
 import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
+import { LaundryBoard } from "@/components/laundry/LaundryBoard";
 import { ConnectionsCard } from "@/components/today/ConnectionsCard";
 import { TodayNudgeStrip } from "@/components/today/TodayNudgeStrip";
 import { DailyRituals } from "@/components/today/DailyRituals";
@@ -134,6 +135,7 @@ function TodayInner() {
         <DinnerTonightCard date={day} />
         <CleaningTodayCard />
       </div>
+      <LaundryBoard compact />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <CareColumn date={day} onTaskClick={setEditTaskId} />
         <GrowColumn date={day} />
@@ -224,6 +226,7 @@ function TodayInner() {
                 <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
                 <DinnerTonightCard date={day} />
                 <CleaningTodayCard />
+                <LaundryBoard compact />
               </div>
             )}
 
