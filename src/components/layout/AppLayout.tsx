@@ -35,6 +35,7 @@ import { Link } from "react-router-dom";
 import { HeaderNowStrip } from "./HeaderNowStrip";
 import { CapacityChip } from "@/components/header/CapacityChip";
 import { TrayDock } from "@/components/tray/TrayDock";
+import { LaundryTimerWatcher } from "@/components/laundry/LaundryTimerWatcher";
 import { GmailBackgroundSync } from "@/components/gmail/GmailBackgroundSync";
 
 export function AppLayout() {
@@ -122,6 +123,7 @@ export function AppLayout() {
       <CareyChat />
       <TrayDock />
       <GmailBackgroundSync />
+      <LaundryTimerWatcher />
     </div>
   );
 }

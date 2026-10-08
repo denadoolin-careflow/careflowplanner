@@ -17,6 +17,7 @@ import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
 import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
 import { ConnectionsCard } from "@/components/today/ConnectionsCard";
 import { TodayNudgeStrip } from "@/components/today/TodayNudgeStrip";
+import { LaundryBoard } from "@/components/laundry/LaundryBoard";
 import { WellFlowTodayCard } from "@/components/today/WellFlowTodayCard";
 
 
@@ -67,6 +68,7 @@ export function TodayDashboard({
           <DinnerTonightCard date={date} />
           <CleaningTodayCard />
         </div>
+        <LaundryBoard compact />
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <WellFlowTodayCard />
         </div>

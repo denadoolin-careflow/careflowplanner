@@ -22,3 +22,4 @@
 - Tag appearance editing reuses the shared tag store; unused filtering counts the existing tasks, notes, projects, and grocery sources without deleting content.
 - Flow subpages are declared once in NAV_SUBPAGES (nav.ts) and drive both the indented sidebar branches and the connected page tabs, so the two never drift.
 - Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
+- Laundry board/timers are device-local (localStorage); dryer stage creates a planner task that auto-completes when the load moves on.
