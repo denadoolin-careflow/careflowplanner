@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { useTags } from "@/hooks/use-tags";
 import { listNotes, type Note } from "@/lib/notes";
+import { TagAppearancePopover } from "@/components/tags/TagAppearancePopover";
 import { TagChip } from "@/components/tags/TagChip";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { Button } from "@/components/ui/button";
@@ -67,14 +68,16 @@ interface TagRow {
 interface ChildNode { id: string; title: string; to: string; meta?: string; kind: "task" | "note" | "project" | "grocery" }
 
 export default function Tags() {
-  const { tags, loading, ensure, setPinned, byName } = useTags();
+  const { tags, loading, ensure, recolor, setPinned, byName } = useTags();
   const { state } = useStore();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [usage, setUsage] = useState<"all" | "unused">("all");
+  const [notesLoading, setNotesLoading] = useState(true);
   const [q, setQ] = useState("");
   const [manageOpen, setManageOpen] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(() => loadPrefs());
 
-  useEffect(() => { void listNotes().then(setNotes).catch(() => {}); }, []);
+  useEffect(() => { void listNotes().then(setNotes).catch(() => {}).finally(() => setNotesLoading(false)); }, []);
   const update = (patch: Partial<Prefs>) => setPrefs(p => { const next = { ...p, ...patch }; savePrefs(next); return next; });
   const toggleExpanded = (name: string) =>
     update({ expanded: prefs.expanded.includes(name) ? prefs.expanded.filter(n => n !== name) : [...prefs.expanded, name] });
@@ -91,7 +94,7 @@ export default function Tags() {
         .filter(n => (n.tags ?? []).some(t => t.toLowerCase() === lc))
         .map(n => ({ id: n.id, title: n.title || "Untitled note", to: `/notes/${n.id}`, kind: "note" as const })),
       ...(state.projects ?? [])
-        .filter(p => (p.notes ?? "").toLowerCase().includes(token))
+        .filter(p => ((p as { tags?: string[] }).tags ?? []).some(t => t.toLowerCase() === lc) || ((p.notes ?? "").match(/#[\w/-]+/g) ?? []).some(t => t.toLowerCase() === token))
         .map(p => ({ id: p.id, title: p.name, to: `/projects/${p.id}`, meta: p.status ?? undefined, kind: "project" as const })),
       ...(state.grocery ?? [])
         .filter(g => (g.tags ?? []).some(t => t.toLowerCase() === lc))
@@ -113,7 +116,7 @@ export default function Tags() {
       const tasks = (state.tasks ?? []).filter(t => (t.tags ?? []).some(n => n.toLowerCase() === lc));
       const noteCount = notes.filter(n => (n.tags ?? []).some(t => t.toLowerCase() === lc)).length;
       const grocery = (state.grocery ?? []).filter(g => (g.tags ?? []).some(t => t.toLowerCase() === lc)).length;
-      const projects = (state.projects ?? []).filter(p => (p.notes ?? "").toLowerCase().includes(`#${lc}`)).length;
+      const projects = (state.projects ?? []).filter(p => ((p as { tags?: string[] }).tags ?? []).some(t => t.toLowerCase() === lc) || ((p.notes ?? "").match(/#[\w/-]+/g) ?? []).some(t => t.toLowerCase() === `#${lc}`)).length;
       return {
         name,
         color: meta?.color || fallbackColorFor(name),
@@ -148,7 +151,7 @@ export default function Tags() {
 
   const filtered = useMemo(() => {
     const base = matchesByTag ? rows.filter(r => matchesByTag.has(r.name)) : rows;
-    const sorted = [...base];
+    const sorted = base.filter(r => usage === "all" || r.total === 0);
     sorted.sort((a, b) => {
       switch (prefs.sort) {
         case "items": return b.total - a.total || a.name.localeCompare(b.name);
@@ -158,7 +161,7 @@ export default function Tags() {
       }
     });
     return sorted;
-  }, [rows, matchesByTag, prefs.sort]);
+  }, [rows, matchesByTag, prefs.sort, usage]);
 
   const matchedItems = useMemo(
     () => (matchesByTag ? Array.from(matchesByTag.values()).reduce((a, b) => a + b, 0) : 0),
@@ -176,6 +179,8 @@ export default function Tags() {
       toast.success(tag.pinned ? `Unpinned #${name}` : `Pinned #${name}`);
     } catch { toast.error("Could not update pin"); }
   };
+
+  const appearance = (name: string) => <TagAppearancePopover name={name} color={byName(name)?.color ?? fallbackColorFor(name)} icon={byName(name)?.icon ?? "tag"} onSave={async patch => { const tag = byName(name) ?? await ensure(name); await recolor(tag.id, patch); }} />;
 
   const NestedList = ({ name }: { name: string }) => {
     const all = childrenFor(name);
@@ -282,17 +287,19 @@ export default function Tags() {
         </div>
       </div>
 
+      <div role="group" aria-label="Tag usage" className="flex gap-2">{(["all", "unused"] as const).map(value => <Button key={value} variant={usage === value ? "secondary" : "ghost"} aria-pressed={usage === value} disabled={notesLoading && value === "unused"} onClick={() => setUsage(value)} className="h-11 rounded-lg">{value === "all" ? `All tags · ${rows.length}` : `Unused · ${rows.filter(r => r.total === 0).length}`}</Button>)}</div>
+
       {term && (
         <p className="text-[11px] text-muted-foreground" role="status">
           {filtered.length} tag{filtered.length === 1 ? "" : "s"} · {matchedItems} matching item{matchedItems === 1 ? "" : "s"}
         </p>
       )}
 
-      {loading ? (
+      {loading || notesLoading ? (
         <div className="rounded-2xl border border-border/60 bg-card/50 p-8 text-center text-sm text-muted-foreground">Loading…</div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">
-          No tags yet. Add tags to a task or note to get started.
+          {usage === "unused" ? "No unused tags." : term ? "No tags match your search." : "No tags yet. Add tags to a task or note to get started."}
         </div>
       ) : prefs.view === "cards" ? (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -304,6 +311,7 @@ export default function Tags() {
               <span aria-hidden className="absolute inset-y-2 left-0.5 w-1 rounded-full" style={{ background: r.color }} />
               <div className="flex items-center gap-1.5 pl-1.5">
                 <ExpandButton name={r.name} />
+                {appearance(r.name)}
                 <Link to={`/tags/${encodeURIComponent(r.name)}`} className="min-w-0 flex-1">
                   <TagChip name={r.name} size="md" />
                 </Link>
@@ -338,6 +346,7 @@ export default function Tags() {
             <div key={r.name}>
               <div className="group flex items-center gap-2 px-2 py-2">
                 <ExpandButton name={r.name} />
+                {appearance(r.name)}
                 <Link to={`/tags/${encodeURIComponent(r.name)}`} className="min-w-0 flex-1"><TagChip name={r.name} size="sm" /></Link>
                 <span className="shrink-0 text-[11px] text-muted-foreground">
                   {r.total} item{r.total === 1 ? "" : "s"} · {r.openTasks} open
@@ -376,6 +385,8 @@ export default function Tags() {
                     <td className="px-2 py-1.5">
                       <div className="flex items-center gap-1.5">
                         <ExpandButton name={r.name} />
+                        {appearance(r.name)}
+                {appearance(r.name)}
                         <Link to={`/tags/${encodeURIComponent(r.name)}`}><TagChip name={r.name} size="xs" /></Link>
                       </div>
                     </td>
