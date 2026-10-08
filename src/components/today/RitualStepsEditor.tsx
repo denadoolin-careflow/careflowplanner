@@ -17,7 +17,7 @@ export function RitualStepsEditor({ kind, iso, onComplete }: { kind: RitualKind;
   const [celebrating, setCelebrating] = useState<string | null>(null);
   const completionVisual = useCompletionVisual();
   const reducedMotion = useReducedMotion();
-  const celebrationTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const celebrationTimer = useRef<number | null>(null);
   useEffect(() => () => {
     if (celebrationTimer.current !== null) window.clearTimeout(celebrationTimer.current);
   }, []);
