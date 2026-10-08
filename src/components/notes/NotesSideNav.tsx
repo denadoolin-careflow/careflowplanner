@@ -390,7 +390,7 @@ export function NotesSideNav({
         ))}
       </section>
       )}
-      {q && !spaces.some(sp => matchQ(sp.name)) && !COLLECTIONS.some(c => matchQ(c.label)) && !CAREGIVER_COLLECTIONS.some(c => matchQ(c.label)) && !sortedTags.some(t => matchQ(t.name)) && (
+      {q && !onSelectMonth && !spaces.some(sp => matchQ(sp.name)) && !COLLECTIONS.some(c => matchQ(c.label)) && !CAREGIVER_COLLECTIONS.some(c => matchQ(c.label)) && !sortedTags.some(t => matchQ(t.name)) && (
         <p className="px-2 text-xs italic text-muted-foreground/70">No matches for “{filter}”.</p>
       )}
     </nav>
