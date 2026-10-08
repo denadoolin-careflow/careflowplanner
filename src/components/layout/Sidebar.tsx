@@ -35,6 +35,7 @@ import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 import { useFlowSignals } from "@/lib/sidebar-signals";
 import { useSidebarDotsEnabled } from "@/lib/ui-prefs";
+import { SidebarNotebooks } from "./SidebarNotebooks";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon, paletteIndex: 0 },
@@ -1201,6 +1202,8 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             onNavigate={onNavigate}
           />
         )}
+
+        {!collapsed && <SidebarNotebooks onNavigate={onNavigate} />}
 
         {/* Areas → Projects tree */}
         {!collapsed && (

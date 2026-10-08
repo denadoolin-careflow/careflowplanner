@@ -16,6 +16,6 @@
 - Note table summary rows are recognised by a last row labelled Total/Average/Count and recalculated into plain cell text, so they round-trip in the markdown body without a schema change.
 - A note's Project property mirrors notes.project_id (the property value is the project id), so project boards/backlinks keep using the existing column.
 - Custom note Spaces sync via the note_spaces table (tags + explicit linked note/task/project ids + hidden ids for unlinks); legacy device-local spaces migrate on first load.
-- Notebook sidebar navigation controls the gallery's selected month through the Notes page and URL; year/season/month and Space expansion preferences stay device-local to avoid changing synced content.
+- Main and Notes sidebars reuse the same notebook date tree and control the gallery's selected month through the Notes URL; expansion preferences stay device-local and tree accessibility IDs are instance-unique to support both sidebars together.
 - Sidebar Space children use the same explicit links, tag matches, project links, and hidden-item exclusions as the Space hub, so linked navigation stays consistent.
 - Tag appearance editing reuses the shared tag store; unused filtering counts the existing tasks, notes, projects, and grocery sources without deleting content.
