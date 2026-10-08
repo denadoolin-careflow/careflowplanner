@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LaundryBoard } from "@/components/laundry/LaundryBoard";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
@@ -134,6 +135,7 @@ export default function HomeHub() {
        </div>
       </header>
       <FifteenMinuteReset />
+      <LaundryBoard />
 
       {/* Sticky tab strip — mobile-first, scrollable */}
       <div className="sticky top-0 z-20 -mx-4 bg-background/85 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/70">
