@@ -19,3 +19,5 @@
 - Main and Notes sidebars reuse the same notebook date tree and control the gallery's selected month through the Notes URL; expansion preferences stay device-local and tree accessibility IDs are instance-unique to support both sidebars together.
 - Sidebar Space children use the same explicit links, tag matches, project links, and hidden-item exclusions as the Space hub, so linked navigation stays consistent.
 - Tag appearance editing reuses the shared tag store; unused filtering counts the existing tasks, notes, projects, and grocery sources without deleting content.
+- Flow subpages are declared once in NAV_SUBPAGES (nav.ts) and drive both the indented sidebar branches and the connected page tabs, so the two never drift.
+- Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
