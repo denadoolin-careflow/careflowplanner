@@ -1,3 +1,4 @@
+import { FlowSubpageTabs } from "./FlowSubpageTabs";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Sidebar, MobileSidebarTrigger } from "./Sidebar";
@@ -93,6 +94,7 @@ export function AppLayout() {
                   style={{ willChange: "opacity" }}
                 >
                   <WorkspaceShell>
+                    <FlowSubpageTabs />
                     <Outlet />
                   </WorkspaceShell>
                 </motion.div>

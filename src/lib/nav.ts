@@ -199,9 +199,6 @@ export const NAV_GROUPS = [
     items: [
       { to: "/health", label: "Health", icon: HeartPulse },
       { to: "/wellflow", label: "Nutrition & GLP-1", icon: Salad },
-      { to: "/wellflow/plan", label: "Eating plan", icon: Salad },
-      { to: "/wellflow/report", label: "Weekly report", icon: Salad },
-      { to: "/wellflow/guide", label: "Nutrition guide", icon: Salad },
       { to: "/habits", label: "Habits", icon: Sparkles },
       { to: "/journal", label: "Journal", icon: BookHeart },
       { to: "/journal-flow", label: "Journal & Flow", icon: Wind },
@@ -270,8 +267,6 @@ export const NAV_GROUPS = [
     icon: Sparkles,
     items: [
       { to: "/cosmic-flow", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/cosmic-flow/timeline", label: "Transit Timeline", icon: CalendarDays },
-      { to: "/cosmic-flow/birth-chart", label: "Birth Chart", icon: Sparkle },
     ],
   },
   {
@@ -286,3 +281,46 @@ export const NAV_GROUPS = [
     ],
   },
 ] as const;
+
+/** Subpages nested under a parent flow page — shown indented in the sidebar and as connected tabs on the page. */
+export const NAV_SUBPAGES: Record<string, { to: string; label: string }[]> = {
+  "/wellflow": [
+    { to: "/wellflow/plan", label: "Eating plan" },
+    { to: "/wellflow/report", label: "Weekly report" },
+    { to: "/wellflow/guide", label: "Nutrition guide" },
+  ],
+  "/cosmic-flow": [
+    { to: "/cosmic-flow/timeline", label: "Transit Timeline" },
+    { to: "/cosmic-flow/calendar", label: "Calendar" },
+    { to: "/cosmic-flow/chapter", label: "Chapter" },
+    { to: "/cosmic-flow/predictive", label: "Predictive" },
+    { to: "/cosmic-flow/natal", label: "Natal" },
+    { to: "/cosmic-flow/birth-chart", label: "Birth Chart" },
+  ],
+  "/seasons": [
+    { to: "/seasons/celebrations", label: "Celebrations" },
+    { to: "/seasons/holidays", label: "Holidays" },
+    { to: "/seasons/traditions", label: "Traditions" },
+    { to: "/seasons/bucket-lists", label: "Bucket Lists" },
+    { to: "/seasons/remembrance", label: "Remembrance" },
+  ],
+  "/journal-flow": [{ to: "/journal", label: "Journal" }],
+  "/home-reset": [
+    { to: "/home-areas", label: "Home" },
+    { to: "/routines", label: "Routines" },
+  ],
+  "/meals": [
+    { to: "/meals/library", label: "Library" },
+    { to: "/pantry", label: "Inventory" },
+  ],
+};
+
+/** Find the parent flow page (and its subpages) that owns a path. */
+export function findSubpageFamily(pathname: string): { parent: string; label?: string; pages: { to: string; label: string }[] } | null {
+  for (const [parent, pages] of Object.entries(NAV_SUBPAGES)) {
+    if (pathname === parent || pages.some(p => pathname === p.to || pathname.startsWith(p.to + "/"))) {
+      return { parent, pages };
+    }
+  }
+  return null;
+}
