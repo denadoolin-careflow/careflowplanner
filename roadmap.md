@@ -53,4 +53,4 @@
 - [x] Add expandable Spaces with linked notes and projects
 - [x] Add inline tag icon/color editing and unused-tag filter
 - [x] Verify signed-in sidebar navigation and tag changes
-- [ ] Add the same notebook date tree to main sidebar navigation and verify month selection
+- [x] Add the same notebook date tree to main sidebar navigation and verify month selection
