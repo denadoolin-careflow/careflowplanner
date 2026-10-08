@@ -15,7 +15,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 export function readSteps(k: RitualKind): RitualStep[] {
   try { const raw = localStorage.getItem(stepsKey(k)); if (raw) return JSON.parse(raw); } catch { /* ignore */ }
-  return DEFAULTS[k].map(label => ({ id: uid(), label }));
+  return DEFAULTS[k].map((label, index) => ({ id: `default-${k}-${index}`, label }));
 }
 export function readDone(k: RitualKind, iso: string): string[] {
   try { return JSON.parse(localStorage.getItem(doneKey(k, iso)) ?? "[]"); } catch { return []; }

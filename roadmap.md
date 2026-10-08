@@ -54,3 +54,4 @@
 - [x] Add inline tag icon/color editing and unused-tag filter
 - [x] Verify signed-in sidebar navigation and tag changes
 - [x] Add the same notebook date tree to main sidebar navigation and verify month selection
+- [x] Verify atmosphere-aware ritual check-offs and persistent completion rings
