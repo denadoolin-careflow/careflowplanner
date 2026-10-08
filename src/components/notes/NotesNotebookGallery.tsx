@@ -61,13 +61,17 @@ function defaultNotebookPreference(date: Date): NotebookPreference {
   };
 }
 
-export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth }: {
+export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth, selectedMonth: controlledMonth, onMonthChange }: {
+  selectedMonth?: string | null;
+  onMonthChange?: (key: string | null) => void;
   notes: Note[];
   selectedId?: string | null;
   onSelect: (id: string) => void;
   onOpenMonth: (key: string) => void;
 }) {
-  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [localMonth, setLocalMonth] = useState<string | null>(null);
+  const selectedMonth = controlledMonth === undefined ? localMonth : controlledMonth;
+  const setSelectedMonth = (key: string | null) => { setLocalMonth(key); onMonthChange?.(key); };
   const [preferences, setPreferences] = useState(readNotebookPreferences);
   const [customizing, setCustomizing] = useState<MonthSummary | null>(null);
   const [sortDir, setSortDir] = useState<"desc" | "asc">(() => (localStorage.getItem("careflow:notebook-sort") === "asc" ? "asc" : "desc"));
@@ -80,6 +84,7 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
       const key = monthKeyFor(parseISO(note.date));
       if (!keys.includes(key)) keys.push(key);
     }
+    if (selectedMonth && !keys.includes(selectedMonth)) keys.push(selectedMonth);
     return keys.sort((a, b) => sortDir === "desc" ? b.localeCompare(a) : a.localeCompare(b)).map(key => {
       const entries = notes.filter(note => note.date && ["daily", "weekly", "monthly"].includes(note.kind) && monthKeyFor(parseISO(note.date)) === key);
       return {
@@ -90,7 +95,7 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
         written: entries.filter(note => note.body.trim()).length,
       };
     });
-  }, [notes, sortDir]);
+  }, [notes, sortDir, selectedMonth]);
 
   const seasons = useMemo(() => {
     const groups = new Map<string, { label: string; icon: typeof Flower2; months: MonthSummary[] }>();
@@ -99,7 +104,7 @@ export function NotesNotebookGallery({ notes, selectedId, onSelect, onOpenMonth 
       const year = month.key.slice(0, 4);
       const key = `${season.id}-${year}`;
       if (!groups.has(key)) groups.set(key, { label: `${season.label} ${year}`, icon: season.icon, months: [] });
-      groups.get(key)!.months.push(month);
+      groups.get(key)?.months.push(month);
     }
     return [...groups.entries()];
   }, [months]);

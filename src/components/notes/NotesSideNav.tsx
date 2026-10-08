@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 import { fallbackColorFor, type Tag } from "@/lib/tags";
 import { tagIconFor } from "@/components/tags/tag-icon";
 import type { Note } from "@/lib/notes";
+import { NotebookDateTree } from "./NotebookDateTree";
+import { SpaceSideBranch } from "./SpaceSideBranch";
+import type { CustomSpace } from "./SpaceHub";
 
 export type SmartCollectionId =
   | "all" | "recent" | "pinned" | "daily" | "linked" | "untagged" | "archived";
@@ -66,8 +69,11 @@ export type SideNavSpace = { name: string; icon: React.ComponentType<{ className
 
 export function NotesSideNav({
   notes, tags, activeCollection, onCollectionChange,
-  activeTag, onTagChange, onNewTag, spaces = [], activeSpaceName = null, onSpaceSelect,
+  activeTag, onTagChange, onNewTag, spaces = [], activeSpaceName = null, onSpaceSelect, customSpaces = [], selectedMonth, onSelectMonth,
 }: {
+  customSpaces?: CustomSpace[];
+  selectedMonth?: string | null;
+  onSelectMonth?: (key: string) => void;
   spaces?: SideNavSpace[];
   activeSpaceName?: string | null;
   onSpaceSelect?: (space: SideNavSpace) => void;
@@ -206,7 +212,7 @@ export function NotesSideNav({
         </Link>
       </section>
 
-      {spaces.length > 0 && (!q || spaces.some(sp => matchQ(sp.name))) && (
+      {spaces.length > 0 && (
       <section aria-labelledby="sidenav-spaces-heading">
         <h2 id="sidenav-spaces-heading" className="m-0">
         <button type="button" onClick={() => setOpenSpaces(o => !o)} aria-expanded={openSpaces} aria-controls="sidenav-spaces-list"
@@ -217,24 +223,15 @@ export function NotesSideNav({
         </h2>
         {(openSpaces || q) && (
           <ul id="sidenav-spaces-list" className="space-y-0.5">
-            {spaces.filter(sp => matchQ(sp.name)).map(sp => {
-              const active = sp.tags.length === 0 ? activeCollection === "all" && !activeTag && !activeSpaceName : activeSpaceName === sp.name;
-              const count = spaceCount(sp);
-              return (
-                <li key={sp.customId ?? sp.name}>
-                  <button type="button" onClick={() => onSpaceSelect?.(sp)} aria-current={active ? "page" : undefined} aria-label={`${sp.name} space, ${plural(count)}${active ? ", selected" : ""}`}
-                    className={cn("flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", active ? "bg-primary/15 text-foreground font-medium" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}>
-                    <sp.icon className="h-3.5 w-3.5 shrink-0" />
-                    <span className="flex-1 truncate text-left">{sp.name}</span>
-                    <span aria-hidden className="text-[10px] text-muted-foreground">{count}</span>
-                  </button>
-                </li>
-              );
-            })}
+            {spaces.map(sp => <SpaceSideBranch key={sp.customId ?? sp.name} space={sp} custom={customSpaces.find(c => c.id === sp.customId)} notes={notes} filter={filter}
+              active={sp.customId || sp.tags.length ? activeSpaceName === sp.name : activeCollection === "all" && !activeTag && !activeSpaceName}
+              onSelect={() => onSpaceSelect?.(sp)} />)}
           </ul>
         )}
       </section>
       )}
+
+      {onSelectMonth && <NotebookDateTree notes={notes} selectedMonth={selectedMonth} onSelectMonth={onSelectMonth} filter={filter} />}
 
       {/* Smart collections */}
       {(!q || COLLECTIONS.some(c => matchQ(c.label))) && (
@@ -261,7 +258,7 @@ export function NotesSideNav({
                   aria-current={active ? "page" : undefined}
                   aria-label={`${c.label} collection, ${plural(count)}`}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                    "flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                     active
                       ? "bg-primary/15 text-foreground font-medium"
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -310,7 +307,7 @@ export function NotesSideNav({
                     aria-current={active ? "page" : undefined}
                     aria-label={`${c.label} caregiver collection, ${plural(count)}`}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                      "flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                       active
                         ? "bg-primary/15 text-foreground font-medium"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -368,7 +365,7 @@ export function NotesSideNav({
                     aria-pressed={active}
                     aria-label={`Filter by ${t.name} tag, ${plural(count)}`}
                     className={cn(
-                      "flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors min-w-0",
+                      "flex min-h-11 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors min-w-0",
                       active
                         ? "bg-primary/15 text-foreground font-medium"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -393,7 +390,7 @@ export function NotesSideNav({
         ))}
       </section>
       )}
-      {q && !spaces.some(sp => matchQ(sp.name)) && !COLLECTIONS.some(c => matchQ(c.label)) && !CAREGIVER_COLLECTIONS.some(c => matchQ(c.label)) && !sortedTags.some(t => matchQ(t.name)) && (
+      {q && !onSelectMonth && !spaces.some(sp => matchQ(sp.name)) && !COLLECTIONS.some(c => matchQ(c.label)) && !CAREGIVER_COLLECTIONS.some(c => matchQ(c.label)) && !sortedTags.some(t => matchQ(t.name)) && (
         <p className="px-2 text-xs italic text-muted-foreground/70">No matches for “{filter}”.</p>
       )}
     </nav>

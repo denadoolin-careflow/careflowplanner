@@ -38,6 +38,8 @@ import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
 import { NotesOutlineView } from "@/components/notes/NotesOutlineView";
 import { NotesTableView } from "@/components/notes/NotesTableView";
 import { NotesCaptureBox } from "@/components/notes/NotesCaptureBox";
+import { NotebookDateTree } from "@/components/notes/NotebookDateTree";
+import { SpaceSideBranch } from "@/components/notes/SpaceSideBranch";
 import { NotesNotebookGallery } from "@/components/notes/NotesNotebookGallery";
 import { noteDisplayTitle, weekKeyFor, monthKeyFor } from "@/lib/notes/periods";
 import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate } from "@/lib/notes/daily";
@@ -122,6 +124,8 @@ export default function Notes() {
   const [sideOpen, setSideOpen] = useState<boolean>(() => typeof window === "undefined" || localStorage.getItem(SIDE_NAV_KEY) !== "0");
   const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const { spaces: customSpaces, create: createSpace, remove: removeSpace, update: updateSpace } = useCustomSpaces();
+  const [notebookMonth, setNotebookMonth] = useState<string | null>(params.get("month"));
+  const selectNotebookMonth = (key: string) => { setNotebookMonth(key); setView("notebook"); setCollection("all"); setActiveTag(null); setActiveSpace(null); setQ(""); setKindFilter("all"); setPinnedOnly(false); setSpacesOpen(false); };
   const [activeSpace, setActiveSpace] = useState<{ name: string; tags: string[]; customId?: string } | null>(null);
 
   useEffect(() => { localStorage.setItem("careflow.notes.previewLines", String(previewLines)); }, [previewLines]);
@@ -132,13 +136,14 @@ export default function Notes() {
   useEffect(() => {
     const next = new URLSearchParams(params);
     next.set("view", view);
+    if (notebookMonth) next.set("month", notebookMonth); else next.delete("month");
     next.set("collection", collection);
     if (activeTag) next.set("tag", activeTag); else next.delete("tag");
     if (q) next.set("q", q); else next.delete("q");
     if (noteParam) next.set("note", noteParam); else next.delete("note");
     setParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, collection, activeTag, q]);
+  }, [view, collection, activeTag, q, notebookMonth]);
 
   const refresh = async () => {
     setLoading(true);
@@ -193,7 +198,7 @@ export default function Notes() {
     const used = new Set(notes.flatMap(n => n.tags ?? []).map(t => t.toLowerCase()));
     const tag = space.tags.find(t => used.has(t.toLowerCase())) ?? space.tags[0] ?? null;
     setActiveTag(tag); setSpacesOpen(false);
-    setActiveSpace(space.tags.length ? { name: space.name, tags: [...space.tags], customId: space.customId } : null);
+    setActiveSpace(space.customId || space.tags.length ? { name: space.name, tags: [...space.tags], customId: space.customId } : null);
   };
   const allSpaces: NoteSpace[] = [...SPACES, ...customSpaces.map(c => ({ name: c.name, icon: Sparkles, tags: c.tags, customId: c.id }))];
 
@@ -261,7 +266,7 @@ export default function Notes() {
         <CompactInsights notes={notes} />
 
         <div className={cn("mt-5 grid gap-5", sideOpen ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-1", noteParam && sideOpen && "xl:grid-cols-[220px_minmax(0,1fr)_300px]", noteParam && !sideOpen && "xl:grid-cols-[minmax(0,1fr)_300px]")}>
-          {sideOpen && <aside className="hidden lg:block"><NotesSideNav notes={notes} tags={tags} activeCollection={collection} onCollectionChange={setCollection} activeTag={activeTag} onTagChange={setActiveTag} onNewTag={() => setTagManagerOpen(true)} spaces={allSpaces as unknown as SideNavSpace[]} activeSpaceName={activeSpace?.name ?? null} onSpaceSelect={(sp) => sp.tags.length ? selectSpace(sp as NoteSpace) : (setActiveSpace(null), setActiveTag(null), setCollection("all"))} /></aside>}
+          {sideOpen && <aside className="hidden lg:block"><NotesSideNav notes={notes} tags={tags} activeCollection={collection} onCollectionChange={setCollection} activeTag={activeTag} onTagChange={setActiveTag} onNewTag={() => setTagManagerOpen(true)} spaces={allSpaces as unknown as SideNavSpace[]} activeSpaceName={activeSpace?.name ?? null} customSpaces={customSpaces} selectedMonth={notebookMonth} onSelectMonth={selectNotebookMonth} onSpaceSelect={(sp) => selectSpace(sp as NoteSpace)} /></aside>}
           <main className="min-w-0">
             {pinnedStrip.length > 0 && collection !== "pinned" && !activeTag && (
               <section className="mb-6" aria-labelledby="pinned-heading">
@@ -308,9 +313,9 @@ export default function Notes() {
                 </DropdownMenu>
               </div>
 
-              {activeSpace && activeTag && <SpaceHub name={activeSpace.name} tags={activeSpace.tags} notes={notes} space={customSpaces.find(c => c.id === activeSpace.customId)} onUpdate={updateSpace} onClose={() => { setActiveSpace(null); setActiveTag(null); }} />}
+              {activeSpace && <SpaceHub name={activeSpace.name} tags={activeSpace.tags} notes={notes} space={customSpaces.find(c => c.id === activeSpace.customId)} onUpdate={updateSpace} onClose={() => { setActiveSpace(null); setActiveTag(null); }} />}
               {loading ? <NotesLoading /> : view === "notebook" ? (
-                <NotesNotebookGallery notes={filtered} selectedId={noteParam} onSelect={selectNote} onOpenMonth={async key => {
+                <NotesNotebookGallery selectedMonth={notebookMonth} onMonthChange={setNotebookMonth} notes={filtered} selectedId={noteParam} onSelect={selectNote} onOpenMonth={async key => {
                   try { navigate(`/notes/${(await openPeriodNoteWithTemplate("monthly", key, readDefaultPeriodTemplate("monthly"))).id}`); }
                   catch { toast.error("Could not open the month note"); }
                 }} />
@@ -333,7 +338,7 @@ export default function Notes() {
         </div>
       </div>
 
-      <SpacesSheet spaces={allSpaces} onCreateSpace={(c) => void createSpace(c)} onDeleteSpace={(id: string) => void removeSpace(id)} open={spacesOpen} onOpenChange={setSpacesOpen} notes={notes} tags={tags} activeTag={activeTag} activeCollection={collection} onSpace={selectSpace} onTag={tag => { setCollection("all"); setActiveTag(tag); setSpacesOpen(false); }} onNewTag={() => { setSpacesOpen(false); setTagManagerOpen(true); }} onNew={() => void newNote()} />
+      <SpacesSheet customSpaces={customSpaces} selectedMonth={notebookMonth} onSelectMonth={selectNotebookMonth} activeSpaceName={activeSpace?.name ?? null} spaces={allSpaces} onCreateSpace={(c) => void createSpace(c)} onDeleteSpace={(id: string) => void removeSpace(id)} open={spacesOpen} onOpenChange={setSpacesOpen} notes={notes} tags={tags} activeTag={activeTag} activeCollection={collection} onSpace={selectSpace} onTag={tag => { setCollection("all"); setActiveTag(tag); setSpacesOpen(false); }} onNewTag={() => { setSpacesOpen(false); setTagManagerOpen(true); }} onNew={() => void newNote()} />
       <NoteTemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
       <TagManagerDialog open={tagManagerOpen} onOpenChange={setTagManagerOpen} />
       {noteParam && <div className="fixed inset-x-0 bottom-24 z-40 max-h-[65vh] overflow-y-auto rounded-t-2xl border-t border-border bg-background shadow-float xl:hidden"><NoteContextRail noteId={noteParam} onClose={closeNote} projectsById={projectsById} tagsByName={tagsByName} /></div>}
@@ -391,7 +396,7 @@ function SortMenu({ sort, setSort }: { sort: Sort; setSort: (sort: Sort) => void
   return <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="notes-round-control h-10 w-10" aria-label="Sort notes"><ArrowDownUp className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Sort by</DropdownMenuLabel>{([{ id: "updated", label: "Recently updated" }, { id: "created", label: "Recently created" }, { id: "title", label: "Title (A–Z)" }, { id: "words", label: "Word count" }] as const).map(o => <DropdownMenuItem key={o.id} onClick={() => setSort(o.id)} className={cn(sort === o.id && "bg-primary/10")}>{o.label}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>;
 }
 
-function SpacesSheet({ spaces, onCreateSpace, onDeleteSpace, open, onOpenChange, notes, tags, activeTag, activeCollection, onSpace, onTag, onNewTag, onNew }: { spaces: NoteSpace[]; onCreateSpace: (c: CustomSpace) => void; onDeleteSpace: (id: string) => void; open: boolean; onOpenChange: (open: boolean) => void; notes: Note[]; tags: Tag[]; activeTag: string | null; activeCollection: SmartCollectionId; onSpace: (space: NoteSpace) => void; onTag: (tag: string) => void; onNewTag: () => void; onNew: () => void }) {
+function SpacesSheet({ customSpaces, selectedMonth, onSelectMonth, activeSpaceName, spaces, onCreateSpace, onDeleteSpace, open, onOpenChange, notes, tags, activeTag, activeCollection, onSpace, onTag, onNewTag, onNew }: { customSpaces: CustomSpace[]; selectedMonth: string | null; onSelectMonth: (key: string) => void; activeSpaceName: string | null; spaces: NoteSpace[]; onCreateSpace: (c: CustomSpace) => void; onDeleteSpace: (id: string) => void; open: boolean; onOpenChange: (open: boolean) => void; notes: Note[]; tags: Tag[]; activeTag: string | null; activeCollection: SmartCollectionId; onSpace: (space: NoteSpace) => void; onTag: (tag: string) => void; onNewTag: () => void; onNew: () => void }) {
   const [filter, setFilter] = useState("");
   const counts = (space: NoteSpace) => space.tags.length === 0 ? notes.length : notes.filter(n => (n.tags ?? []).some(t => space.tags.some(s => s.toLowerCase() === t.toLowerCase()))).length;
   const tagCounts = useMemo(() => { const out = new Map<string, number>(); notes.forEach(n => (n.tags ?? []).forEach(t => out.set(t.toLowerCase(), (out.get(t.toLowerCase()) ?? 0) + 1))); return out; }, [notes]);
@@ -400,7 +405,7 @@ function SpacesSheet({ spaces, onCreateSpace, onDeleteSpace, open, onOpenChange,
   const matchQ = (s: string) => !q || s.toLowerCase().includes(q);
   const visibleSpaces = spaces.filter(s => matchQ(s.name));
   const visibleTags = merged.filter(t => matchQ(t.name));
-  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side="left" className="notes-spaces-sheet w-[88vw] max-w-sm overflow-y-auto border-r p-5"><SheetHeader className="text-left"><SheetTitle className="font-display text-2xl">My Notes</SheetTitle><SheetDescription>Spaces and tags for everything you’re holding.</SheetDescription></SheetHeader><div className="relative mt-4"><Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input type="search" value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filter spaces & tags…" aria-label="Filter spaces and tags" className="h-11 rounded-full pl-9" /></div><Button onClick={onNew} className="mt-3 h-11 w-full gap-2 rounded-full"><Plus className="h-4 w-4" />New note</Button><section className="mt-6"><div className="mb-2 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase text-muted-foreground"><Pin className="mr-1 inline h-3.5 w-3.5" />Spaces</h2></div><ul className="space-y-1">{visibleSpaces.map(space => { const Icon=space.icon; const active=space.name === "All Notes" ? activeCollection === "all" && !activeTag : Boolean(activeTag && space.tags.includes(activeTag.toLowerCase())); return <li key={space.name}><Button variant="ghost" onClick={() => onSpace(space)} aria-current={active ? "page" : undefined} aria-label={`${space.name} space, ${counts(space)} notes`} className={cn("h-11 w-full justify-start gap-3 px-2", active && "bg-primary/15 text-foreground")}><Icon className="h-4 w-4 text-primary" /><span className="flex-1 text-left">{space.name}</span><span className="text-xs text-muted-foreground">{counts(space)}</span></Button>{space.customId && <Button variant="ghost" size="sm" className="mt-0.5 h-9 text-[11px] text-muted-foreground" onClick={() => onDeleteSpace(space.customId!)}>Remove {space.name}</Button>}</li>; })}</ul>{!q && <NewSpaceForm onCreate={onCreateSpace} />}</section><section className="mt-6 border-t border-border/50 pt-5"><div className="mb-3 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase text-muted-foreground"><Tags className="mr-1 inline h-3.5 w-3.5" />Tags</h2><Button variant="ghost" size="sm" onClick={onNewTag}>Edit</Button></div><div className="flex flex-wrap gap-2">{visibleTags.length ? visibleTags.map(t => <button type="button" key={t.id} onClick={() => onTag(t.name)} aria-pressed={activeTag?.toLowerCase() === t.name.toLowerCase()} aria-label={`Filter by ${t.name} tag, ${tagCounts.get(t.name.toLowerCase()) ?? 0} notes`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ backgroundColor: `${t.color}1f`, borderColor: `${t.color}55`, color: contrastTagText(t.color) }}><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t.color }} />#{t.name} · {tagCounts.get(t.name.toLowerCase()) ?? 0}</button>) : <p className="text-sm text-muted-foreground">{q ? `No tags match “${filter}”.` : "No tags yet."}</p>}</div></section></SheetContent></Sheet>;
+  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side="left" className="notes-spaces-sheet w-[88vw] max-w-sm overflow-y-auto border-r p-5"><SheetHeader className="text-left"><SheetTitle className="font-display text-2xl">My Notes</SheetTitle><SheetDescription>Spaces and tags for everything you’re holding.</SheetDescription></SheetHeader><div className="relative mt-4"><Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input type="search" value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filter spaces & tags…" aria-label="Filter spaces and tags" className="h-11 rounded-full pl-9" /></div><Button onClick={onNew} className="mt-3 h-11 w-full gap-2 rounded-full"><Plus className="h-4 w-4" />New note</Button><section className="mt-6"><div className="mb-2 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase text-muted-foreground"><Pin className="mr-1 inline h-3.5 w-3.5" />Spaces</h2></div><ul className="space-y-1">{spaces.map(space => <SpaceSideBranch key={space.customId ?? space.name} space={space} custom={customSpaces.find(c => c.id === space.customId)} notes={notes} filter={filter} active={activeSpaceName === space.name || (space.name === "All Notes" && !activeSpaceName && !activeTag)} onSelect={() => onSpace(space)} />)}</ul>{!q && <NewSpaceForm onCreate={onCreateSpace} />}</section><div className="mt-5"><NotebookDateTree notes={notes} selectedMonth={selectedMonth} onSelectMonth={onSelectMonth} filter={filter} /></div><section className="mt-6 border-t border-border/50 pt-5"><div className="mb-3 flex items-center justify-between"><h2 className="text-xs font-semibold uppercase text-muted-foreground"><Tags className="mr-1 inline h-3.5 w-3.5" />Tags</h2><Button variant="ghost" size="sm" onClick={onNewTag}>Edit</Button></div><div className="flex flex-wrap gap-2">{visibleTags.length ? visibleTags.map(t => <button type="button" key={t.id} onClick={() => onTag(t.name)} aria-pressed={activeTag?.toLowerCase() === t.name.toLowerCase()} aria-label={`Filter by ${t.name} tag, ${tagCounts.get(t.name.toLowerCase()) ?? 0} notes`} className={cn("inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", activeTag?.toLowerCase() === t.name.toLowerCase() && "ring-2 ring-ring")}><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t.color }} />#{t.name} · {tagCounts.get(t.name.toLowerCase()) ?? 0}</button>) : <p className="text-sm text-muted-foreground">{q ? `No tags match “${filter}”.` : "No tags yet."}</p>}</div></section></SheetContent></Sheet>;
 }
 
 function NotesLoading() { return <div className="notes-empty rounded-2xl border p-10 text-center text-sm text-muted-foreground" aria-live="polite">Loading your notes…</div>; }

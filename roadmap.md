@@ -49,3 +49,7 @@
 - [x] A: Toggle Tab/Shift-Tab tuck + table summary row (Total/Average/Count)
 - [x] B: Quick Add append to any note/task + Project note property
 - [x] C: Backlinks gallery + inline edit; connected Spaces (notes/tasks/projects)
+- [x] Add full year/season/month sidebar notebook tree with current-month highlight
+- [x] Add expandable Spaces with linked notes and projects
+- [x] Add inline tag icon/color editing and unused-tag filter
+- [x] Verify signed-in sidebar navigation and tag changes
