@@ -3981,6 +3981,24 @@ export type Database = {
         }
         Relationships: []
       }
+      laundry_state: {
+        Row: {
+          loads: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          loads?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          loads?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       lifetime_purchases: {
         Row: {
           created_at: string | null

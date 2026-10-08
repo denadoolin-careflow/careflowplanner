@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { readLoads, updateLoad } from "@/lib/laundry";
+import { readLoads, updateLoad, startLaundrySync } from "@/lib/laundry";
 import { playPomodoroChime } from "@/lib/pomodoro-chime";
 
 /** App-wide: chimes + notifies when a washer or dryer timer finishes. */
 export function LaundryTimerWatcher() {
   useEffect(() => {
+    void startLaundrySync();
     const tick = () => {
       const now = Date.now();
       for (const l of readLoads()) {
