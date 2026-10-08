@@ -26,6 +26,7 @@ import {
   IntentionCard, SuggestionCard, type ResetView,
 } from "@/components/reset/redesign/pieces";
 import { HeroBand } from "@/components/reset/redesign/HeroBand";
+import { LaundryBoard } from "@/components/laundry/LaundryBoard";
 import { RoomCard } from "@/components/reset/redesign/RoomCard";
 import { RoomCelebration } from "@/components/reset/redesign/RoomCelebration";
 import { ResetToolbar } from "@/components/reset/redesign/ResetToolbar";
@@ -412,6 +413,7 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
         onResetAll={resetEntireHome}
         canContinue={!!current && listStats(current, { lowEnergy }).nextUp !== undefined}
       />
+      <LaundryBoard />
 
       {/* ============ FOCUS + POMODORO STRIP ============ */}
       <FocusTimerStrip
