@@ -619,21 +619,7 @@ function InboxInner() {
               <Sparkles className="h-4 w-4 text-primary" />
               <h3 className="font-display text-lg tracking-tight">Quick Capture</h3>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-              onClick={() => {
-                if (items.length === 0) {
-                  toast.info("Nothing to organize yet — capture something first.");
-                  return;
-                }
-                setProcessOpen(true);
-              }}
-              className="h-9 gap-2 rounded-full bg-primary px-4 text-[13px] font-medium shadow-sm hover:shadow-md"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Organize for Me
-              </Button>
-            </div>
+
           </div>
 
           {/* Selected tag chips */}
