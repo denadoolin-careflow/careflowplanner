@@ -1959,7 +1959,7 @@ function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPa
                   {list.map((t: any) => (
                     <div key={t.id} className="min-w-0">
                       <InboxSortableRow task={t} autoDayPart={autoDayPart} compact={compact} />
-                      {onReflect && <div className="flex justify-end"><Button variant="ghost" size="sm" disabled={reflectionBusy} aria-label={`Reflect on ${t.title}`} onClick={() => onReflect(t)} className="h-10 gap-1.5 text-xs text-muted-foreground"><BookOpen className="h-3.5 w-3.5" />Add to reflection</Button></div>}
+                      {onReflect && <div className="flex justify-end"><Button variant="ghost" size="sm" disabled={reflectionBusy} aria-label={`Add ${t.title} to today's notebook note`} title="Adds a timestamped entry; the item stays in your inbox" onClick={() => onReflect(t)} className="h-10 gap-1.5 text-xs text-muted-foreground"><BookOpen className="h-3.5 w-3.5" />Add to today's note</Button></div>}
                     </div>
                   ))}
                   {list.length === 0 && (
