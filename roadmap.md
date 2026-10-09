@@ -55,5 +55,5 @@
 - [x] Verify signed-in sidebar navigation and tag changes
 - [x] Add the same notebook date tree to main sidebar navigation and verify month selection
 - [x] Verify atmosphere-aware ritual check-offs and persistent completion rings
-- [ ] Connect Inbox capture to the daily notebook note with a desktop split view
-- [ ] Add editable, reorderable, rich-formatted timestamped notebook entries and verify saving
+- [x] Connect Inbox capture to the daily notebook note with a desktop split view
+- [x] Add editable, reorderable, rich-formatted timestamped notebook entries and verify saving

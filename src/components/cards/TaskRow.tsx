@@ -83,10 +83,10 @@ const PRIORITY_STYLES: Record<Task["priority"], PriorityStyle> = {
 };
 
 export function TaskRow({
-  task, dense = false, showArea = true, draggable = false, variant = "row", tapAction = "none",
+  task, dense = false, showArea = true, draggable = false, variant = "row", tapAction = "none", showHoverActions = true,
 }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean; variant?: "row" | "card" | "ticktick";
   /** What a plain tap on the title does. "quickEdit" opens the compact editor. */
-  tapAction?: "none" | "quickEdit" }) {
+  tapAction?: "none" | "quickEdit"; showHoverActions?: boolean }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
   const selection = useTaskSelection();
   const isSelected = selection.isSelected(task.id);
@@ -569,11 +569,11 @@ export function TaskRow({
       )}
 
       {/* Desktop hover actions — plan, edit, snooze, move, details */}
-      <TaskHoverActions
+      {showHoverActions && <TaskHoverActions
         task={task}
         onEdit={() => setEditing(true)}
         onDetails={() => setQuickEditOpen(true)}
-      />
+      />}
 
       {celebrate && <CompletionBurst variant={celebrateVariant} />}
     </RowShell>

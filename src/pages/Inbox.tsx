@@ -1432,6 +1432,7 @@ function InboxInner() {
               updateTask={updateTask}
               onReflect={(task) => { void addReflection([task.title, task.notes].filter(Boolean).join("\n\n")); }}
               reflectionBusy={addingReflection}
+              compact={notebookVisible || scheduleOpen}
               onAddToBucket={async (b) => {
                 const today = format(new Date(), "yyyy-MM-dd");
                 const t = await addTask({
@@ -1743,7 +1744,7 @@ function DropZone({ id, children, className, activeClassName }: {
   );
 }
 
-function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPart, updateTask, onAddToBucket, onProcess, onReflect, reflectionBusy }: {
+function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPart, updateTask, onAddToBucket, onProcess, onReflect, reflectionBusy, compact }: {
   items: any[];
   allTasks?: any[];
   appointments?: any[];
@@ -1753,6 +1754,7 @@ function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPa
   onProcess?: () => void;
   onReflect?: (task: any) => void;
   reflectionBusy?: boolean;
+  compact?: boolean;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -1956,7 +1958,7 @@ function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPa
                 <div className="space-y-2 sm:space-y-3">
                   {list.map((t: any) => (
                     <div key={t.id} className="min-w-0">
-                      <InboxSortableRow task={t} autoDayPart={autoDayPart} />
+                      <InboxSortableRow task={t} autoDayPart={autoDayPart} compact={compact} />
                       {onReflect && <div className="flex justify-end"><Button variant="ghost" size="sm" disabled={reflectionBusy} aria-label={`Reflect on ${t.title}`} onClick={() => onReflect(t)} className="h-10 gap-1.5 text-xs text-muted-foreground"><BookOpen className="h-3.5 w-3.5" />Add to reflection</Button></div>}
                     </div>
                   ))}
