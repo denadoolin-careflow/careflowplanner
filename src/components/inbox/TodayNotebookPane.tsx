@@ -21,7 +21,7 @@ export function TodayNotebookPane({ notebook }: { notebook: ReturnType<typeof us
       {notebook.note ? <>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Button variant="outline" size="sm" aria-expanded={orderOpen} onClick={() => setOrderOpen(v => !v)}>Timestamped entries ({entries.length})</Button>
-          <Button asChild variant="ghost" size="sm"><Link to={`/notes?view=notebooks&month=${format(new Date(), "yyyy-MM")}`}><ExternalLink className="mr-1 h-3.5 w-3.5" />Notebook</Link></Button>
+          <Button asChild variant="ghost" size="sm"><Link to={`/notes?view=notebook&month=${format(new Date(), "yyyy-MM")}`}><ExternalLink className="mr-1 h-3.5 w-3.5" />Notebook</Link></Button>
         </div>
         {orderOpen && <ol aria-label="Timestamped entries" className="space-y-2 border-b border-border pb-3">
           {entries.map((entry, index) => <li key={index} className="flex items-center gap-1.5">
@@ -32,7 +32,7 @@ export function TodayNotebookPane({ notebook }: { notebook: ReturnType<typeof us
         </ol>}
         <BlockEditor body={notebook.body} noteId={notebook.note.id} defaultDueDate={notebook.note.date} showFooter={false} minHeight="min-h-[340px]" toolbarPlacement="top" onChange={notebook.changeBody} />
         <Button asChild variant="ghost" size="sm"><Link to={`/notes/${notebook.note.id}`}>Open full note<ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link></Button>
-      </> : <div className="py-8 text-sm text-muted-foreground">Opening today's notebook note…<Button variant="ghost" size="sm" onClick={() => { void notebook.load(); }}>Retry</Button></div>}
+      </> : <div className="py-8 text-sm text-muted-foreground">Opening today's notebook note…<Button variant="ghost" size="sm" onClick={() => { void notebook.load().catch(() => {}); }}>Retry</Button></div>}
     </section>
   );
 }

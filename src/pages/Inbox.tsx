@@ -33,10 +33,9 @@ import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReview
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
-import { createNote, getOrCreateDailyNote, updateNote } from "@/lib/notes";
+import { createNote } from "@/lib/notes";
 import { TodayNotebookPane } from "@/components/inbox/TodayNotebookPane";
 import { useTodayNotebook } from "@/hooks/useTodayNotebook";
-import { notifyDailyNotesChanged } from "@/lib/notes/daily";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";

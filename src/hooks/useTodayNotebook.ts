@@ -19,7 +19,15 @@ export function useTodayNotebook() {
 
   const load = useCallback(async () => {
     if (noteRef.current) return noteRef.current;
-    loading.current ??= getOrCreateDailyNote(format(new Date(), "yyyy-MM-dd"));
+    loading.current ??= (async () => {
+      for (let attempt = 0; ; attempt++) {
+        try { return await getOrCreateDailyNote(format(new Date(), "yyyy-MM-dd")); }
+        catch (error) {
+          if (attempt >= 4) throw error;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    })();
     try {
       const n = await loading.current;
       if (!noteRef.current) {
