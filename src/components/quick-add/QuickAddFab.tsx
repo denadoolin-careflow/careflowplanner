@@ -749,9 +749,9 @@ function BrainDumpForm({ onClose, initialText }: { onClose: () => void; initialT
       if (autoTriage) {
         // Fire-and-forget — the inbox will reflect updated suggestions next time it's opened.
         import("@/lib/ai-invoke").then(({ aiInvoke }) =>
-          aiInvoke("ai-inbox-triage", { body: {} }).then(({ error, quotaExceeded }) => {
+          aiInvoke("ai-inbox-triage", { body: {} }).then(({ data, error, quotaExceeded }) => {
             if (quotaExceeded) return;
-            if (error) {
+            if (error || (data as any)?.busy) {
               toast.message("Smart triage is busy — try Process inbox in a moment.");
               return;
             }
