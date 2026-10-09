@@ -11,7 +11,7 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { notifyDailyNotesChanged } from "@/lib/notes/daily";
 
 /** Side drawer with today's Daily Note, editable next to the planner timeline. */
-export function TodayJournalDrawer({ compact }: { compact?: boolean }) {
+export function TodayJournalDrawer({ compact, label = "Journal", triggerClassName }: { compact?: boolean; label?: string; triggerClassName?: string }) {
   const { state } = useStore();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
@@ -65,12 +65,12 @@ export function TodayJournalDrawer({ compact }: { compact?: boolean }) {
         <Button
           size={compact ? "icon" : "sm"}
           variant="outline"
-          className={compact ? "h-10 w-10 shrink-0 rounded-full" : "h-8 rounded-full"}
+          className={triggerClassName ?? (compact ? "h-10 w-10 shrink-0 rounded-full" : "h-8 rounded-full")}
           aria-label="Open today's journal"
           title="Today's journal"
         >
           <BookOpen className="h-4 w-4" />
-          {!compact && <span className="ml-1.5">Journal</span>}
+          {!compact && <span className="ml-1.5">{label}</span>}
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="notes-editor-experience flex w-[96vw] max-w-[560px] flex-col gap-3 overflow-hidden sm:max-w-[560px]">

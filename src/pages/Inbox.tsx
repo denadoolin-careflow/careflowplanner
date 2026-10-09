@@ -33,7 +33,9 @@ import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReview
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
-import { createNote, getOrCreateDailyNote } from "@/lib/notes";
+import { createNote, getOrCreateDailyNote, updateNote } from "@/lib/notes";
+import { TodayJournalDrawer } from "@/components/planner/TodayJournalDrawer";
+import { notifyDailyNotesChanged } from "@/lib/notes/daily";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
@@ -688,20 +690,31 @@ function InboxInner() {
                 <ChevronDown className={cn("h-3 w-3 transition-transform", kindsOpen && "rotate-180")} />
               </button>
             </div>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const iso = format(new Date(), "yyyy-MM-dd");
-                  const n = await getOrCreateDailyNote(iso);
-                  navigate(`/notes/${n.id}`);
-                } catch { toast.error("Couldn't open today's note"); }
-              }}
-              className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
-            >
-              <FileText className="h-3 w-3" />
-              Today's note
-            </button>
+            <div className="ml-auto inline-flex items-center gap-1">
+              {draft.trim() && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const n = await getOrCreateDailyNote(format(new Date(), "yyyy-MM-dd"));
+                      const stamp = format(new Date(), "h:mm a");
+                      await updateNote(n.id, { body: `${(n.body ?? "").replace(/\s+$/, "")}\n\n- ${stamp} — ${draft.trim()}` });
+                      notifyDailyNotesChanged();
+                      setDraft("");
+                      toast.success("Added to today's note");
+                    } catch { toast.error("Couldn't add to today's note"); }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] text-primary transition hover:bg-primary/15"
+                >
+                  <FileText className="h-3 w-3" />
+                  Add to today's note
+                </button>
+              )}
+              <TodayJournalDrawer
+                label="Today's note"
+                triggerClassName="h-6 rounded-full px-2 text-[11px]"
+              />
+            </div>
           </div>
 
           {/* Where it lands */}
