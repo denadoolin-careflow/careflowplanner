@@ -202,6 +202,7 @@ function InboxInner() {
   const [plannerDate, setPlannerDate] = useState<Date>(() => startOfDay(new Date()));
   const [planDayOpen, setPlanDayOpen] = useState(false);
   const scheduleOpen = viewMode === "schedule";
+  const [focusFilter, setFocusFilter] = useState<"all" | "quick" | "date" | "category" | "recent">("all");
 
   // Hold-to-record state
   const [holdActive, setHoldActive] = useState(false);
@@ -563,20 +564,52 @@ function InboxInner() {
     const quickWins = items.filter((t: any) => (t.estMinutes ?? 99) <= 10).length;
     const needScheduling = items.filter((t: any) => !t.dueDate).length;
     const needCategory = items.filter((t: any) => !t.area).length;
-    return { total, quickWins, needScheduling, needCategory };
+    const dayAgo = Date.now() - 24 * 3600 * 1000;
+    const recent = items.filter((t: any) => t.createdAt && new Date(t.createdAt).getTime() >= dayAgo).length;
+    return { total, quickWins, needScheduling, needCategory, recent };
   }, [items]);
+
+  const filteredItems = useMemo(() => {
+    const dayAgo = Date.now() - 24 * 3600 * 1000;
+    switch (focusFilter) {
+      case "quick": return items.filter((t: any) => (t.estMinutes ?? 99) <= 10);
+      case "date": return items.filter((t: any) => !t.dueDate);
+      case "category": return items.filter((t: any) => !t.area);
+      case "recent": return items.filter((t: any) => t.createdAt && new Date(t.createdAt).getTime() >= dayAgo);
+      default: return items;
+    }
+  }, [items, focusFilter]);
+
+  const openProcess = () => {
+    if (items.length === 0) { toast.info("Nothing to organize yet — capture something first."); return; }
+    setProcessOpen(true);
+  };
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,hsl(var(--primary)/0.06),transparent_70%)]">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-2 py-6 sm:px-4 md:px-8 md:py-10">
-        {/* ────────── Compact header ────────── */}
-        <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 animate-fade-in">
-          <h1 className="font-display text-2xl tracking-tight text-foreground md:text-3xl">Inbox</h1>
-          <p className="text-sm text-muted-foreground">
-            {items.length === 0
-              ? "Your mental unloading zone."
-              : `${items.length} ${items.length === 1 ? "thing" : "things"} held gently.`}
-          </p>
+      <div className="mx-auto w-full max-w-6xl space-y-5 px-2 py-6 sm:px-4 md:px-8 md:py-10">
+        {/* ────────── Header + triage bar ────────── */}
+        <header className="space-y-2 animate-fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h1 className="font-display text-2xl tracking-tight text-foreground md:text-3xl">Inbox</h1>
+              <p className="text-sm text-muted-foreground">
+                {items.length === 0
+                  ? "Your mental unloading zone."
+                  : `${items.length} ${items.length === 1 ? "thing" : "things"} held gently.`}
+              </p>
+            </div>
+            <Button onClick={openProcess} className="h-10 gap-2 rounded-full px-4 text-[13px] font-medium shadow-sm">
+              <Sparkles className="h-3.5 w-3.5" /> Process inbox <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          {items.length > 0 && (
+            <p className="text-[12.5px] text-muted-foreground">
+              <span className="font-medium text-foreground">{stats.quickWins}</span> quick {stats.quickWins === 1 ? "win" : "wins"}
+              {" · "}<span className="font-medium text-foreground">{stats.needScheduling}</span> need a date
+              {" · "}<span className="font-medium text-foreground">{stats.needCategory}</span> need a category
+            </p>
+          )}
         </header>
 
         {/* ────────── Quick Capture ────────── */}
@@ -586,21 +619,7 @@ function InboxInner() {
               <Sparkles className="h-4 w-4 text-primary" />
               <h3 className="font-display text-lg tracking-tight">Quick Capture</h3>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-              onClick={() => {
-                if (items.length === 0) {
-                  toast.info("Nothing to organize yet — capture something first.");
-                  return;
-                }
-                setProcessOpen(true);
-              }}
-              className="h-9 gap-2 rounded-full bg-primary px-4 text-[13px] font-medium shadow-sm hover:shadow-md"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Organize for Me
-              </Button>
-            </div>
+
           </div>
 
           {/* Selected tag chips */}
@@ -1315,23 +1334,38 @@ function InboxInner() {
           </Button>
         </div>
 
-        {/* ────────── Today / Upcoming / Needs scheduling ────────── */}
-        {scheduleOpen && !isMobile ? (
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
-            <div className="min-w-0">
-              <InboxOverview />
-            </div>
-            <InboxSchedulePane
-              date={plannerDate}
-              onDateChange={setPlannerDate}
-              className="max-h-[80vh] lg:sticky lg:top-6"
-            />
+        {/* ────────── Smart focus filters ────────── */}
+        {items.length > 0 && (
+          <div role="group" aria-label="Filter inbox" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar">
+            {([
+              { id: "all", label: "All", Icon: InboxIcon, n: stats.total },
+              { id: "quick", label: "Quick wins", Icon: Zap, n: stats.quickWins },
+              { id: "date", label: "Needs date", Icon: CalendarIcon, n: stats.needScheduling },
+              { id: "category", label: "Needs category", Icon: TagIcon, n: stats.needCategory },
+              { id: "recent", label: "Just captured", Icon: Sparkles, n: stats.recent },
+            ] as const).map(({ id, label, Icon, n }) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={focusFilter === id}
+                onClick={() => setFocusFilter(id)}
+                className={cn(
+                  "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium transition-colors",
+                  focusFilter === id
+                    ? "border-primary/40 bg-primary/12 text-foreground"
+                    : "border-border/60 bg-card/60 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" /> {label}
+                <span className="tabular-nums opacity-70">{n}</span>
+              </button>
+            ))}
           </div>
-        ) : (
-          <InboxOverview />
         )}
 
-        {/* ────────── Current Inbox Items (only when present) ────────── */}
+        {/* ────────── Inbox list (+ split schedule pane on tablet/desktop) ────────── */}
+        <div className={cn(scheduleOpen && !isMobile && "grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(280px,2fr)]")}>
+        <div className="min-w-0 space-y-6">
         {items.length > 0 ? (
           <section id="inbox-held" className="scroll-mt-24 rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
             <InboxHeldHeader />
@@ -1353,8 +1387,11 @@ function InboxInner() {
                 <span className="text-[10.5px] text-muted-foreground">Enter to save · Esc to cancel</span>
               </div>
             )}
+            {filteredItems.length === 0 && (
+              <p className="py-6 text-center text-[13px] text-muted-foreground">Nothing matches this filter.</p>
+            )}
             <SectionedInboxList
-              items={items}
+              items={filteredItems}
               allTasks={state.tasks ?? []}
               appointments={state.appointments ?? []}
               autoDayPart={autoDayPart}
@@ -1402,36 +1439,26 @@ function InboxInner() {
             </p>
           </section>
         )}
+        </div>
+        {scheduleOpen && !isMobile && (
+          <InboxSchedulePane
+            date={plannerDate}
+            onDateChange={setPlannerDate}
+            className="max-h-[80vh] md:sticky md:top-16"
+          />
+        )}
+        </div>
 
-        {/* ────────── Inbox at a Glance ────────── */}
-        <section className="rounded-[24px] border border-border/50 bg-card/60 p-5 backdrop-blur-md md:p-6">
-          <h3 className="mb-4 font-display text-lg tracking-tight">Inbox at a Glance</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <GlanceCard icon={<InboxIcon className="h-4 w-4" />} tint="bg-stone-50 text-stone-600" value={stats.total} label="Inbox Items" hint="waiting" />
-            <GlanceCard icon={<Zap className="h-4 w-4" />} tint="bg-amber-50 text-amber-700" value={stats.quickWins} label="Quick Wins" hint="easy to clear" />
-            <GlanceCard icon={<CalendarIcon className="h-4 w-4" />} tint="bg-emerald-50 text-emerald-700" value={stats.needScheduling} label="Need Scheduling" hint="no date yet" />
-            <GlanceCard icon={<TagIcon className="h-4 w-4" />} tint="bg-rose-50 text-rose-600" value={stats.needCategory} label="Need Categories" hint="needs a home" />
-            <button
-              type="button"
-              onClick={() => {
-                if (items.length === 0) {
-                  toast.info("Nothing to organize yet — capture something first.");
-                  return;
-                }
-                setProcessOpen(true);
-              }}
-              className="group flex flex-col justify-between rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-4 text-left text-primary-foreground shadow-[0_15px_40px_-20px_hsl(var(--primary)/0.7)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_hsl(var(--primary)/0.8)]"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-display text-base tracking-tight">Process Inbox</span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </div>
-              <p className="mt-3 text-[11.5px] leading-relaxed opacity-85">
-                Review and organize your items step by step.
-              </p>
-            </button>
-          </div>
-        </section>
+        {/* Today & upcoming (planned tasks) — tucked away so the inbox stays the focus */}
+        {!scheduleOpen && (
+          <details className="group rounded-[24px] border border-border/50 bg-card/50 p-4 backdrop-blur-md md:p-5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-display text-lg tracking-tight">
+              Today &amp; upcoming
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-3"><InboxOverview /></div>
+          </details>
+        )}
 
         {/* ────────── Gentle Reminder ────────── */}
         <section className="overflow-hidden rounded-[24px] border border-border/40 bg-gradient-to-br from-[hsl(150_35%_96%)] via-card to-[hsl(36_55%_97%)] p-5 shadow-sm md:p-6 dark:from-card dark:to-card">
