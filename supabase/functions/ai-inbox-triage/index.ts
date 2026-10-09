@@ -82,8 +82,10 @@ Only include task_ids from the input list.`;
       }),
     });
     if (aiRes.status === 429) {
-      return new Response(JSON.stringify({ error: "Rate limited — please try again shortly." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      // Soft-fail with 200 so the app can fall back gracefully instead of
+      // surfacing a failed request as a crash.
+      return new Response(JSON.stringify({ suggestions: [], busy: true, message: "Smart triage is busy — try again in a moment." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     if (aiRes.status === 402) {
       return new Response(JSON.stringify({ error: "AI credits exhausted." }),

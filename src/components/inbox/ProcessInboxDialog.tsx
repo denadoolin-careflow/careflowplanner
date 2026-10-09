@@ -93,7 +93,8 @@ export function ProcessInboxDialog({ open, onOpenChange, items, updateTask, dele
     setTriaging(true);
     try {
       const { data, error } = await aiInvoke("ai-inbox-triage", { body: {} });
-      if (error) throw error;
+      if (error) throw new Error(error?.error ?? error?.message ?? "Couldn't organize right now");
+      if ((data as any)?.busy) toast.message("Smart triage is busy", { description: "Using your own sorting for now — try again in a moment." });
       const map: Record<string, Suggestion> = {};
       const seed: Record<string, Decision> = {};
       for (const s of (data as any)?.suggestions ?? []) {
