@@ -36,7 +36,7 @@ export function TodayNotebookPane({ notebook }: { notebook: ReturnType<typeof us
             <Button variant="ghost" size="icon" disabled={index === entries.length - 1} aria-label={`Move entry ${index + 1} down`} title="Move entry down" onClick={() => notebook.changeBody(moveTimestampedEntry(notebook.body, index, 1), { checkpoint: true })}><ArrowDown className="h-4 w-4" /></Button>
           </li>)}
         </ol>}
-        <BlockEditor body={notebook.body} noteId={notebook.note.id} defaultDueDate={notebook.note.date} showFooter={false} minHeight="min-h-[340px]" toolbarPlacement="top" onChange={notebook.changeBody} />
+        <BlockEditor body={notebook.body} noteId={notebook.note.id} defaultDueDate={notebook.note.date} showFooter={false} minHeight="min-h-[340px]" toolbarPlacement="top" onChange={md => notebook.changeBody(md)} />
         <Button asChild variant="ghost" size="sm"><Link to={`/notes/${notebook.note.id}`}>Open full note<ExternalLink className="ml-1.5 h-3.5 w-3.5" /></Link></Button>
       </> : <div className="py-8 text-sm text-muted-foreground">Opening today's notebook note…<Button variant="ghost" size="sm" onClick={() => { void notebook.load().catch(() => {}); }}>Retry</Button></div>}
     </section>
