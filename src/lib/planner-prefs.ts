@@ -70,16 +70,16 @@ export const usePlannerMonthMode = () => useLS<PlannerMonthMode>(MONTH_MODE_KEY,
 /** Device-local choice for how completed planner task titles are displayed. */
 export const usePlannerCompletedStrikethrough = () => useLS<boolean>(COMPLETED_STRIKETHROUGH_KEY, true);
 
-export type PlannerPanelId = "task" | "focus" | "context";
+export type PlannerPanelId = "task" | "focus" | "context" | "notes";
 export type PlannerPanelPrefs = Record<PlannerView, Record<PlannerPanelId, boolean>>;
 
 /** Panel visibility is remembered per range so switching views never silently overrides a choice. */
 export const DEFAULT_PLANNER_PANELS: PlannerPanelPrefs = {
-  day: { task: true, focus: true, context: true },
-  "3day": { task: false, focus: false, context: true },
-  week: { task: false, focus: false, context: false },
-  month: { task: false, focus: false, context: false },
-  year: { task: false, focus: false, context: false },
+  day: { task: true, focus: true, context: true, notes: true },
+  "3day": { task: false, focus: false, context: true, notes: true },
+  week: { task: false, focus: false, context: false, notes: false },
+  month: { task: false, focus: false, context: false, notes: false },
+  year: { task: false, focus: false, context: false, notes: false },
 };
 
 export function usePlannerPanels(): [PlannerPanelPrefs, (view: PlannerView, panel: PlannerPanelId, on: boolean) => void] {

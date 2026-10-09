@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import {
   Search, FileText, CheckSquare, Folder, Hash, Sparkles, Calendar,
-  Mic, ShoppingBasket, Plus, ArrowRight, CornerDownLeft, Compass,
+  Mic, ShoppingBasket, Plus, ArrowRight, CornerDownLeft, Compass, BookOpen,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import { upcomingEvents, type CosmicEvent } from "@/lib/cosmic/events";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { NAV, NAV_GROUPS, NAV_DESCRIPTIONS } from "@/lib/nav";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
+import { openNoteBesideSchedule } from "@/lib/schedule-note-pane";
 
 type ResultKind = "page" | "task" | "note" | "project" | "tag" | "event" | "appointment";
 
@@ -147,6 +149,7 @@ export function GlobalSearchDialog({
   const [active, setActive] = useState(0);
   const [noteHits, setNoteHits] = useState<Array<{ id: string; title: string; body: string; tags: string[] | null }>>([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const { state, addGrocery } = useStore();
   const { tags } = useTags();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -444,7 +447,15 @@ export function GlobalSearchDialog({
 
           {/* Right: preview */}
           <div className="hidden min-w-0 flex-col overflow-hidden md:flex">
-            {selected ? <Preview r={selected} onOpen={() => go(selected.to)} /> : <PreviewEmpty hasQuery={!!term} />}
+            {selected ? <Preview
+              r={selected}
+              onOpen={() => go(selected.to)}
+              onOpenBeside={selected.kind === "note" && (location.pathname === "/inbox" || location.pathname.startsWith("/planner")) ? () => {
+                openNoteBesideSchedule(selected.raw.id);
+                onOpenChange(false);
+                setQ("");
+              } : undefined}
+            /> : <PreviewEmpty hasQuery={!!term} />}
           </div>
         </div>
       </DialogContent>
@@ -452,7 +463,7 @@ export function GlobalSearchDialog({
   );
 }
 
-function Preview({ r, onOpen }: { r: SearchResult; onOpen: () => void }) {
+function Preview({ r, onOpen, onOpenBeside }: { r: SearchResult; onOpen: () => void; onOpenBeside?: () => void }) {
   const Icon = KIND_ICON[r.kind];
   return (
     <div className="flex h-full flex-col">
@@ -465,9 +476,10 @@ function Preview({ r, onOpen }: { r: SearchResult; onOpen: () => void }) {
           <h2 className="line-clamp-2 font-display text-base font-semibold leading-snug">{r.title}</h2>
           {r.meta && <p className="mt-0.5 text-[11px] text-muted-foreground">{r.meta}</p>}
         </div>
-        <Button size="sm" className="gap-1.5 rounded-xl" onClick={onOpen}>
-          Open <ArrowRight className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {onOpenBeside && <Button size="sm" variant="secondary" className="gap-1.5 rounded-xl" onClick={onOpenBeside}><BookOpen className="h-3.5 w-3.5" /> Beside schedule</Button>}
+          <Button size="sm" className="gap-1.5 rounded-xl" onClick={onOpen}>Open <ArrowRight className="h-3.5 w-3.5" /></Button>
+        </div>
       </header>
 
       <ScrollArea className="min-h-0 flex-1 px-5 py-4">
