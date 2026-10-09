@@ -748,10 +748,16 @@ function BrainDumpForm({ onClose, initialText }: { onClose: () => void; initialT
       });
       if (autoTriage) {
         // Fire-and-forget — the inbox will reflect updated suggestions next time it's opened.
-        supabase.functions
-          .invoke("ai-inbox-triage", { body: {} })
-          .then(() => toast.success("Smart triage ready in Inbox"))
-          .catch(() => {});
+        import("@/lib/ai-invoke").then(({ aiInvoke }) =>
+          aiInvoke("ai-inbox-triage", { body: {} }).then(({ error, quotaExceeded }) => {
+            if (quotaExceeded) return;
+            if (error) {
+              toast.message("Smart triage is busy — try Process inbox in a moment.");
+              return;
+            }
+            toast.success("Smart triage ready in Inbox");
+          }),
+        ).catch(() => {});
       }
       haptics.tap();
       onClose();

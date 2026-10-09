@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchAIWithRetry } from "../_shared/ai-fetch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,7 +69,7 @@ ${JSON.stringify(items.map((t: any) => ({ id: t.id, title: t.title })))}
 Return JSON: { "suggestions": [ { "task_id": "...", "area": "...", "project_id": null|"<id>", "status": "...", "priority": "...", "suggested_due_date": null|"YYYY-MM-DD" } ] }
 Only include task_ids from the input list.`;
 
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    const aiRes = await fetchAIWithRetry("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
