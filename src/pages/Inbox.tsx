@@ -34,7 +34,8 @@ import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
 import { createNote, getOrCreateDailyNote, updateNote } from "@/lib/notes";
-import { TodayJournalDrawer } from "@/components/planner/TodayJournalDrawer";
+import { TodayNotebookPane } from "@/components/inbox/TodayNotebookPane";
+import { useTodayNotebook } from "@/hooks/useTodayNotebook";
 import { notifyDailyNotesChanged } from "@/lib/notes/daily";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
@@ -200,6 +201,33 @@ function InboxInner() {
 
   // ── Planner integration ──
   const isMobile = useIsMobile();
+  const notebook = useTodayNotebook();
+  const [noteOpen, setNoteOpen] = useState(true);
+  const [noteSheetOpen, setNoteSheetOpen] = useState(false);
+  const [addingReflection, setAddingReflection] = useState(false);
+  const notebookVisible = !isMobile && noteOpen;
+  useEffect(() => {
+    if (notebookVisible || noteSheetOpen) void notebook.load().catch(() => toast.error("Couldn't open today's notebook note"));
+  }, [notebookVisible, noteSheetOpen, notebook.load]);
+  const openNotebook = () => {
+    if (isMobile) setNoteSheetOpen(true);
+    else {
+      setNoteOpen(true);
+      setViewMode("list");
+      requestAnimationFrame(() => document.getElementById("inbox-notebook")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+  };
+  const addReflection = async (text: string) => {
+    if (addingReflection) return false;
+    setAddingReflection(true);
+    try {
+      await notebook.append(text);
+      openNotebook();
+      toast.success("Added to today's notebook note");
+      return true;
+    } catch { toast.error("Couldn't save your reflection. Your text is still here."); return false; }
+    finally { setAddingReflection(false); }
+  };
   const [viewMode, setViewMode] = useInboxViewMode();
   const [plannerDate, setPlannerDate] = useState<Date>(() => startOfDay(new Date()));
   const [planDayOpen, setPlanDayOpen] = useState(false);
@@ -692,28 +720,21 @@ function InboxInner() {
             </div>
             <div className="ml-auto inline-flex items-center gap-1">
               {draft.trim() && (
-                <button
+                <Button variant="outline" size="sm" disabled={addingReflection}
                   type="button"
                   onClick={async () => {
-                    try {
-                      const n = await getOrCreateDailyNote(format(new Date(), "yyyy-MM-dd"));
-                      const stamp = format(new Date(), "h:mm a");
-                      await updateNote(n.id, { body: `${(n.body ?? "").replace(/\s+$/, "")}\n\n- ${stamp} — ${draft.trim()}` });
-                      notifyDailyNotesChanged();
+                    if (await addReflection([draft.trim(), details.trim()].filter(Boolean).join("\n\n"))) {
                       setDraft("");
-                      toast.success("Added to today's note");
-                    } catch { toast.error("Couldn't add to today's note"); }
+                      setDetails("");
+                    }
                   }}
-                  className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] text-primary transition hover:bg-primary/15"
+                  className="h-10 gap-1 text-xs"
                 >
                   <FileText className="h-3 w-3" />
                   Add to today's note
-                </button>
+                </Button>
               )}
-              <TodayJournalDrawer
-                label="Today's note"
-                triggerClassName="h-6 rounded-full px-2 text-[11px]"
-              />
+              <Button variant="outline" size="sm" className="h-10 gap-1 text-xs" onClick={openNotebook}><BookOpen className="h-3.5 w-3.5" />Today's notebook note</Button>
             </div>
           </div>
 
@@ -1336,6 +1357,7 @@ function InboxInner() {
             >
               <CalendarClock className="h-3.5 w-3.5" /> Schedule
             </button>
+            {!isMobile && <Button variant={notebookVisible && !scheduleOpen ? "secondary" : "ghost"} size="sm" aria-pressed={notebookVisible && !scheduleOpen} onClick={() => { setViewMode("list"); setNoteOpen(!notebookVisible || scheduleOpen); }} className="gap-1.5"><BookOpen className="h-3.5 w-3.5" />Notebook split</Button>}
           </div>
           <Button
             variant="outline"
@@ -1377,7 +1399,7 @@ function InboxInner() {
         )}
 
         {/* ────────── Inbox list (+ split schedule pane on tablet/desktop) ────────── */}
-        <div className={cn(scheduleOpen && !isMobile && "grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(280px,2fr)]")}>
+        <div className={cn((scheduleOpen && !isMobile || notebookVisible) && "grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,1fr)]")}>
         <div className="min-w-0 space-y-6">
         {items.length > 0 ? (
           <section id="inbox-held" className="scroll-mt-24 rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
@@ -1409,6 +1431,8 @@ function InboxInner() {
               appointments={state.appointments ?? []}
               autoDayPart={autoDayPart}
               updateTask={updateTask}
+              onReflect={(task) => { void addReflection([task.title, task.notes].filter(Boolean).join("\n\n")); }}
+              reflectionBusy={addingReflection}
               onAddToBucket={async (b) => {
                 const today = format(new Date(), "yyyy-MM-dd");
                 const t = await addTask({
@@ -1460,6 +1484,7 @@ function InboxInner() {
             className="max-h-[80vh] md:sticky md:top-16"
           />
         )}
+        {notebookVisible && !scheduleOpen && <aside id="inbox-notebook" className="min-w-0 scroll-mt-20 border-l border-border pl-4 md:sticky md:top-16 md:max-h-[80vh] md:overflow-y-auto"><TodayNotebookPane notebook={notebook} /></aside>}
         </div>
 
         {/* Today & upcoming (planned tasks) — tucked away so the inbox stays the focus */}
@@ -1517,6 +1542,12 @@ function InboxInner() {
       />
 
       {/* Mobile: timeline as a bottom sheet */}
+      <Sheet open={noteSheetOpen && isMobile} onOpenChange={open => { if (!open) void notebook.flush(); setNoteSheetOpen(open); }}>
+        <SheetContent side="right" className="w-[96vw] overflow-y-auto pt-12">
+          <SheetTitle className="sr-only">Today's notebook note</SheetTitle>
+          <TodayNotebookPane notebook={notebook} />
+        </SheetContent>
+      </Sheet>
       <Sheet open={scheduleOpen && isMobile} onOpenChange={(o) => { if (!o) setViewMode("list"); }}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-[24px] p-3">
           <SheetTitle className="sr-only">Drop into day</SheetTitle>
@@ -1713,7 +1744,7 @@ function DropZone({ id, children, className, activeClassName }: {
   );
 }
 
-function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPart, updateTask, onAddToBucket, onProcess }: {
+function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPart, updateTask, onAddToBucket, onProcess, onReflect, reflectionBusy }: {
   items: any[];
   allTasks?: any[];
   appointments?: any[];
@@ -1721,6 +1752,8 @@ function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPa
   updateTask: (id: string, patch: any) => Promise<void> | void;
   onAddToBucket?: (b: Bucket) => void | Promise<void>;
   onProcess?: () => void;
+  onReflect?: (task: any) => void;
+  reflectionBusy?: boolean;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -1923,7 +1956,10 @@ function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPa
               <SortableContext items={ids} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2 sm:space-y-3">
                   {list.map((t: any) => (
-                    <InboxSortableRow key={t.id} task={t} autoDayPart={autoDayPart} />
+                    <div key={t.id} className="min-w-0">
+                      <InboxSortableRow task={t} autoDayPart={autoDayPart} />
+                      {onReflect && <div className="flex justify-end"><Button variant="ghost" size="sm" disabled={reflectionBusy} aria-label={`Reflect on ${t.title}`} onClick={() => onReflect(t)} className="h-10 gap-1.5 text-xs text-muted-foreground"><BookOpen className="h-3.5 w-3.5" />Add to reflection</Button></div>}
+                    </div>
                   ))}
                   {list.length === 0 && (
                     <div className="rounded-xl border border-dashed border-border/60 px-3 py-4 text-center text-[11.5px] text-muted-foreground">
