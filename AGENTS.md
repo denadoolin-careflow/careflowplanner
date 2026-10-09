@@ -14,6 +14,7 @@
 - Note block IDs persist as trailing ` ^b-xxxxxx` markers in the markdown body (added only when first linked); block embeds/ref chips persist as data-* HTML so no schema change is needed.
 - Notes uses a page-scoped presentation layer derived from the active atmosphere; capture review, pinned density, and per-month notebook appearance are device-local while note/task content preserves existing synced models.
 - External note link cards persist as data-web-link-card HTML inside the existing markdown body so rich links round-trip without a schema change.
+- Inbox split writing reuses the notebook's daily note and shared rich editor; timestamp sections remain ordinary markdown, with local draft recovery and serialized autosaves to preserve reflections without a new store.
 - Note table summary rows are recognised by a last row labelled Total/Average/Count and recalculated into plain cell text, so they round-trip in the markdown body without a schema change.
 - A note's Project property mirrors notes.project_id (the property value is the project id), so project boards/backlinks keep using the existing column.
 - Custom note Spaces sync via the note_spaces table (tags + explicit linked note/task/project ids + hidden ids for unlinks); legacy device-local spaces migrate on first load.

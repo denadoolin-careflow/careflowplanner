@@ -16,13 +16,14 @@ import { TaskQuickActions } from "@/components/tasks/TaskQuickActions";
 interface Props {
   task: Task;
   autoDayPart: DayPart;
+  compact?: boolean;
 }
 
 /**
  * Inbox row wrapper: selection checkbox on the left
  * + one-tap "When" reschedule popover on the right.
  */
-export function InboxSortableRow({ task, autoDayPart }: Props) {
+export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) {
   const { updateTask } = useStore() as any;
   const { isSelected, toggle } = useTaskSelection();
   const [rowStyle] = useInboxRowStyle();
@@ -98,7 +99,7 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <TaskRow task={task} variant="card" tapAction="quickEdit" />
+          <TaskRow task={task} variant={compact ? "ticktick" : "card"} showHoverActions={!compact} tapAction="quickEdit" />
         </div>
         {/* Tiny native HTML5 drag handle to drop the task on schedule targets
             (e.g. Needs Scheduling card). Uses HTML5 drag so it doesn't fight
@@ -122,7 +123,7 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
       {/* Meta row below the task: source + age (left), When picker (right) */}
       <div
         className={cn(
-          "flex items-center justify-between gap-2",
+          "flex flex-wrap items-center justify-between gap-2",
           rowStyle === "minimal"
             ? "pt-1"
             : "border-t border-border/40 pt-3",
