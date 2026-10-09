@@ -50,6 +50,7 @@ import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
 import { useInboxViewMode } from "@/lib/inbox-planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { List as ListIcon, CalendarClock } from "lucide-react";
+import { ScheduleNotePane } from "@/components/notes/ScheduleNotePane";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
   closestCenter, useDroppable, DragOverlay, type DragEndEvent, type DragStartEvent,
@@ -203,6 +204,7 @@ function InboxInner() {
   const notebook = useTodayNotebook();
   const [noteOpen, setNoteOpen] = useState(true);
   const [noteSheetOpen, setNoteSheetOpen] = useState(false);
+  const [mobileCompanion, setMobileCompanion] = useState<"schedule" | "notebook">("schedule");
   const [addingReflection, setAddingReflection] = useState(false);
   const notebookVisible = !isMobile && noteOpen;
   useEffect(() => {
@@ -1356,7 +1358,7 @@ function InboxInner() {
             >
               <CalendarClock className="h-3.5 w-3.5" /> Schedule
             </button>
-            {!isMobile && <Button variant={notebookVisible && !scheduleOpen ? "secondary" : "ghost"} size="sm" aria-pressed={notebookVisible && !scheduleOpen} onClick={() => { setViewMode("list"); setNoteOpen(!notebookVisible || scheduleOpen); }} className="gap-1.5"><BookOpen className="h-3.5 w-3.5" />Notebook split</Button>}
+            {!isMobile && <Button variant={notebookVisible ? "secondary" : "ghost"} size="sm" aria-pressed={notebookVisible} onClick={() => setNoteOpen(v => !v)} className="gap-1.5"><BookOpen className="h-3.5 w-3.5" />Notebook</Button>}
           </div>
           <Button
             variant="outline"
@@ -1398,7 +1400,7 @@ function InboxInner() {
         )}
 
         {/* ────────── Inbox list (+ split schedule pane on tablet/desktop) ────────── */}
-        <div className={cn((scheduleOpen && !isMobile || notebookVisible) && "grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,1fr)]")}>
+        <div className={cn((scheduleOpen && !isMobile || notebookVisible) && "grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(320px,1fr)]")}>
         <div className="min-w-0 space-y-6">
         {items.length > 0 ? (
           <section id="inbox-held" className="scroll-mt-24 rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
@@ -1477,14 +1479,12 @@ function InboxInner() {
           </section>
         )}
         </div>
-        {scheduleOpen && !isMobile && (
-          <InboxSchedulePane
-            date={plannerDate}
-            onDateChange={setPlannerDate}
-            className="max-h-[80vh] md:sticky md:top-16"
-          />
+        {!isMobile && (scheduleOpen || notebookVisible) && (
+          <div id="inbox-notebook" className="min-w-0 space-y-3 md:sticky md:top-16 md:max-h-[82vh] md:overflow-y-auto">
+            {scheduleOpen && <InboxSchedulePane date={plannerDate} onDateChange={setPlannerDate} className={notebookVisible ? "h-[39vh] min-h-[320px]" : "max-h-[80vh]"} />}
+            {notebookVisible && <ScheduleNotePane date={plannerDate} storageKey="careflow:inbox:schedule-note" onClose={() => setNoteOpen(false)} className={scheduleOpen ? "h-[39vh] min-h-[320px]" : "max-h-[80vh]"} />}
+          </div>
         )}
-        {notebookVisible && !scheduleOpen && <aside id="inbox-notebook" className="min-w-0 scroll-mt-20 border-l border-border pl-4 md:sticky md:top-16 md:max-h-[80vh] md:overflow-y-auto"><TodayNotebookPane notebook={notebook} /></aside>}
         </div>
 
         {/* Today & upcoming (planned tasks) — tucked away so the inbox stays the focus */}
@@ -1551,11 +1551,11 @@ function InboxInner() {
       <Sheet open={scheduleOpen && isMobile} onOpenChange={(o) => { if (!o) setViewMode("list"); }}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-[24px] p-3">
           <SheetTitle className="sr-only">Drop into day</SheetTitle>
-          <InboxSchedulePane
-            date={plannerDate}
-            onDateChange={setPlannerDate}
-            className="h-full border-0 bg-transparent backdrop-blur-none"
-          />
+          <div className="mb-2 inline-flex rounded-full border border-border/60 bg-card/70 p-1">
+            <Button size="sm" variant={mobileCompanion === "schedule" ? "secondary" : "ghost"} className="rounded-full" onClick={() => setMobileCompanion("schedule")}><CalendarClock className="mr-1.5 h-3.5 w-3.5" />Schedule</Button>
+            <Button size="sm" variant={mobileCompanion === "notebook" ? "secondary" : "ghost"} className="rounded-full" onClick={() => setMobileCompanion("notebook")}><BookOpen className="mr-1.5 h-3.5 w-3.5" />Notebook</Button>
+          </div>
+          {mobileCompanion === "schedule" ? <InboxSchedulePane date={plannerDate} onDateChange={setPlannerDate} className="h-[calc(100%-3rem)] border-0 bg-transparent backdrop-blur-none" /> : <ScheduleNotePane date={plannerDate} storageKey="careflow:inbox:schedule-note" className="h-[calc(100%-3rem)]" />}
         </SheetContent>
       </Sheet>
 

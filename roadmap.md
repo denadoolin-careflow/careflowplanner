@@ -57,4 +57,4 @@
 - [x] Verify atmosphere-aware ritual check-offs and persistent completion rings
 - [x] Connect Inbox capture to the daily notebook note with a desktop split view
 - [x] Add editable, reorderable, rich-formatted timestamped notebook entries and verify saving
-- [ ] Show a searchable selected notebook beside Inbox and Planner schedules across desktop and mobile
+- [x] Show a searchable selected notebook beside Inbox and Planner schedules across desktop and mobile

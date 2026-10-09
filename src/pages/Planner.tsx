@@ -3,10 +3,12 @@ import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { weekKeyFor } from "@/lib/notes/periods";
 import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
 import { TodayJournalDrawer } from "@/components/planner/TodayJournalDrawer";
+import { ScheduleNotePane } from "@/components/notes/ScheduleNotePane";
+import { OPEN_SCHEDULE_NOTE_EVENT } from "@/lib/schedule-note-pane";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { addDays, addMonths, addYears, differenceInCalendarDays, endOfYear, format, getDaysInMonth, isValid, parseISO, startOfMonth, startOfWeek, startOfYear } from "date-fns";
-import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
@@ -153,6 +155,11 @@ export default function Planner() {
   }, []);
   const [panels, setPanel] = usePlannerPanels();
   const panel = panels[view];
+  useEffect(() => {
+    const openNotes = () => setPanel(view, "notes", true);
+    window.addEventListener(OPEN_SCHEDULE_NOTE_EVENT, openNotes);
+    return () => window.removeEventListener(OPEN_SCHEDULE_NOTE_EVENT, openNotes);
+  }, [view, setPanel]);
 
   const [taskPanelWidth, setTaskPanelWidth] = useState<number>(() => {
     if (typeof window === "undefined") return 280;
@@ -251,6 +258,7 @@ export default function Planner() {
   const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
   const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
   const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
+  const showNotesPanel = !isMobile && panel.notes && (view === "day" || view === "3day") && shellWidth >= 900;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const activeWeekMode = isMobile ? mobileWeekMode : weekMode;
   // List / Table can stand in for the native day, 3-day, month, or year view.
@@ -495,6 +503,18 @@ export default function Planner() {
                 {panel.context ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
               </Button>
             )}
+            {(view === "day" || view === "3day") && (
+              <Button
+                size="icon"
+                variant="outline"
+                className={`h-8 w-8 rounded-full ${panel.notes ? "text-primary" : ""}`}
+                onClick={() => setPanel(view, "notes", !panel.notes)}
+                aria-pressed={panel.notes}
+                aria-label={panel.notes ? "Hide notebook panel" : "Show notebook panel"}
+              >
+                <BookOpen className="h-4 w-4" />
+              </Button>
+            )}
             <ReminderCenter />
            <AutoScheduleSettings size="md" />
             <TodayJournalDrawer />
@@ -540,6 +560,7 @@ export default function Planner() {
           gridTemplateColumns: [
             showTaskPanel ? `${taskPanelWidth}px 12px` : null,
             "minmax(0,1fr)",
+            showNotesPanel ? "minmax(300px,360px)" : null,
             showFocusPanel ? "230px" : null,
             showContextPanel ? "300px" : null,
           ].filter(Boolean).join(" "),
@@ -735,6 +756,9 @@ export default function Planner() {
             </div>
           )}
         </div>
+        {showNotesPanel && (
+          <ScheduleNotePane date={day} storageKey="careflow:planner:schedule-note" onClose={() => setPanel(view, "notes", false)} className={SIDE_COL} />
+        )}
         {showFocusPanel && (
           <div className={SIDE_COL}>
             <PlannerFocusPanel date={day} className="self-start" />
