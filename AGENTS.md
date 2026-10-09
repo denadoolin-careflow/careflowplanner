@@ -24,3 +24,4 @@
 - Flow subpages are declared once in NAV_SUBPAGES (nav.ts) and drive both the indented sidebar branches and the connected page tabs, so the two never drift.
 - Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
+- Inbox and Planner share a selected-note schedule pane; the chosen ordinary note is device-local while daily-note following uses the active schedule date.
