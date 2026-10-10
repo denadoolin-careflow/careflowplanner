@@ -25,3 +25,4 @@
 - Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
 - Inbox and Planner share a selected-note schedule pane; the chosen ordinary note is device-local while daily-note following uses the active schedule date.
+- My Focus pinboard columns and pins are device-local (localStorage) references to existing task ids, so tasks stay in their original project/area without a schema change.

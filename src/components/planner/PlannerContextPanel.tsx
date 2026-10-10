@@ -10,6 +10,7 @@ import { DayPulseCard } from "./DayPulseCard";
 import { MoonEnergyCard } from "./MoonEnergyCard";
 import { TodayIntentionCard } from "./TodayIntentionCard";
 import { TopPrioritiesCard } from "./TopPrioritiesCard";
+import { FocusPinboard } from "./FocusPinboard";
 import { usePlannerFeed } from "@/lib/planner/feed";
 
 interface Props {
@@ -29,6 +30,7 @@ export function PlannerContextPanel({ date, onChangeDate }: Props) {
       <DayPulseCard date={date} />
       <TodayIntentionCard date={date} />
       <TopPrioritiesCard date={date} />
+      <FocusPinboard />
       <ActiveFocusMini />
       <AgendaAhead date={date} onChangeDate={onChangeDate} />
       <button
