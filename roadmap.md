@@ -58,3 +58,4 @@
 - [x] Connect Inbox capture to the daily notebook note with a desktop split view
 - [x] Add editable, reorderable, rich-formatted timestamped notebook entries and verify saving
 - [x] Show a searchable selected notebook beside Inbox and Planner schedules across desktop and mobile
+- [ ] Keep notes steady during sync, refine toggle spacing, and add individual/multi-line editing controls
