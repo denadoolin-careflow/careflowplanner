@@ -9,9 +9,8 @@ const roundedMap: Record<Rounded, string> = {
 };
 
 /**
- * CareFlow brand mark — renders the official 3D yin-yang brand icon
- * (sage + cream) as a rounded plate. The image is baked pixel art,
- * so it stays visually consistent across atmospheres and dark mode.
+ * CareFlow brand mark — renders the official burgundy heart and olive
+ * checkmark SVG, consistently across atmospheres and dark mode.
  */
 export function CareFlowMark({
   size = 36,
@@ -37,7 +36,7 @@ export function CareFlowMark({
       style={{ width: size, height: size, background: "hsl(var(--card))" }}
     >
       <img
-        src="/icons/icon-512.png"
+        src="/brand/careflow-mark.svg"
         alt=""
         width={size}
         height={size}
