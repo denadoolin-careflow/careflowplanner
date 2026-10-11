@@ -285,6 +285,20 @@
   }
 }
 
+/* Shared brand lockups also include legacy landing/sidebar text wrappers. */
+[aria-label="CareFlow"]:has(> img[src="/brand/careflow-mark.svg"]) + .min-w-0 > :is(.font-brand, .font-display) {
+  font-family: "DM Serif Display", 'Lora', ui-serif, Georgia, serif;
+  font-weight: 400;
+  font-synthesis-weight: none;
+  letter-spacing: 0;
+  color: hsl(var(--foreground));
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+[aria-label="CareFlow"]:has(> img[src="/brand/careflow-mark.svg"]) + .min-w-0 > .uppercase:not(.flex) {
+  color: hsl(var(--accent));
+}
+
 /* Independent sidebar color-scheme overrides (set on the <aside> element). */
 .sidebar-force-light {
   /* Sidebar tokens */
