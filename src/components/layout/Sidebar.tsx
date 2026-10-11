@@ -38,6 +38,7 @@ import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 import { useFlowSignals } from "@/lib/sidebar-signals";
 import { useSidebarDotsEnabled } from "@/lib/ui-prefs";
 import { SidebarNotebooks } from "./SidebarNotebooks";
+import { FlowNavigationHover } from "./FlowNavigationHover";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon, paletteIndex: 0 },
@@ -1433,13 +1434,18 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             return (
               <div key={group.id} className="flex flex-col items-center gap-1.5">
                 <div className="relative">
-                  <RailButton
-                    to={`/flow/${group.id}`}
-                    label={signal?.count ? `${group.label} · ${signal.count} today` : group.label}
-                    icon={GroupIcon}
-                    accentColor={accent.color}
-                    onClick={handleNavClick(`/flow/${group.id}`)}
-                  />
+                  <FlowNavigationHover group={group} side={side === "left" ? "right" : "left"} onNavigate={handleNavClick}>
+                    <NavLink
+                      to={`/flow/${group.id}`}
+                      onClick={handleNavClick(`/flow/${group.id}`)}
+                      className={cn(
+                        "relative grid h-12 w-12 place-items-center rounded-xl text-sidebar-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        (hasActive || pathname === `/flow/${group.id}` || group.items.some(item => NAV_SUBPAGES[item.to]?.some(page => page.to === pathname))) && "bg-primary-soft text-foreground ring-1 ring-inset ring-primary/30",
+                      )}
+                    >
+                      <GroupIcon className="h-5 w-5" />
+                    </NavLink>
+                  </FlowNavigationHover>
                   {sidebarDotsEnabled && signal && signal.count > 0 && (
                     <span
                       aria-hidden
@@ -1481,6 +1487,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
               }}
             >
               <div className="flex w-full items-start gap-1">
+                <FlowNavigationHover group={group} side={side === "left" ? "right" : "left"} onNavigate={handleNavClick}>
                 <Link
                   to={`/flow/${group.id}`}
                   onClick={handleNavClick(`/flow/${group.id}`)}
@@ -1512,6 +1519,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                     ) : null}
                   </span>
                 </Link>
+                </FlowNavigationHover>
                 <button
                   type="button"
                   onClick={() => toggle(group.id)}
