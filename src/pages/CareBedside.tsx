@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Mail, Phone, Pill, Plus, Trash2, HeartHandshake } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/lib/store";
+import { BedsidePersonPlan } from "@/components/care/BedsidePersonPlan";
 
 const COMFORT = ["Repositioned", "Mouth care", "Lip balm", "Skin check", "Sips / ice chips", "Music / reading", "Calm breathing", "Restless"];
 const ROLES = ["Hospice nurse", "Hospice on-call", "Doctor", "Social worker", "Chaplain", "Aide", "Volunteer", "Pharmacy", "Funeral home", "Other"];
@@ -32,19 +34,25 @@ export default function CareBedside() {
   const [med, setMed] = useState(""); const [dose, setDose] = useState("");
   const [m, setM] = useState({ name: "", role: ROLES[0], phone: "", email: "", notes: "" });
   const [adding, setAdding] = useState(false);
+  const { state } = useStore() as any;
+  const recipients: { id: string; name: string }[] = state.recipients ?? [];
+  const [personId, setPersonId] = useState<string>(() => localStorage.getItem("careflow:bedside-person") ?? "");
+  useEffect(() => { if (!personId && recipients[0]) setPersonId(recipients[0].id); }, [recipients, personId]);
+  useEffect(() => { if (personId) localStorage.setItem("careflow:bedside-person", personId); }, [personId]);
+  const person = recipients.find(r => r.id === personId);
 
   const load = useCallback(async () => {
     const since = new Date(Date.now() - 3 * 86400000).toISOString();
     const [{ data: l }, { data: t }] = await Promise.all([
-      supabase.from("bedside_logs").select("*").gte("logged_at", since).order("logged_at", { ascending: false }),
+      (personId ? supabase.from("bedside_logs").select("*").eq("recipient_id", personId) : supabase.from("bedside_logs").select("*")).neq("kind", "note").gte("logged_at", since).order("logged_at", { ascending: false }),
       supabase.from("care_providers").select("id,name,role,phone,email,notes").order("name"),
     ]);
     setLogs((l ?? []) as Log[]); setTeam((t ?? []) as Member[]);
-  }, []);
+  }, [personId]);
   useEffect(() => { void load(); }, [load]);
 
   const log = async (row: Partial<Log>) => {
-    const { error } = await supabase.from("bedside_logs").insert(row as any);
+    const { error } = await supabase.from("bedside_logs").insert({ ...row, recipient_id: personId || null } as any);
     if (error) return toast.error("Couldn't save");
     toast.success("Logged"); void load();
   };
@@ -72,6 +80,14 @@ export default function CareBedside() {
           <span className="rounded-full border border-border bg-card px-3 py-1">Last relief medicine: <strong>{lastMed ? `${lastMed.label} · ${ago(lastMed.logged_at)}` : "—"}</strong></span>
         </div>
       </header>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">Caring for</span>
+        {recipients.length === 0 ? <a href="/caregiving" className="text-sm text-primary underline">Add a person in Caregiving</a> : recipients.map(r => (
+          <button key={r.id} type="button" aria-pressed={r.id === personId} onClick={() => setPersonId(r.id)}
+            className={cn("min-h-10 rounded-full border px-4 text-sm", r.id === personId ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{r.name}</button>
+        ))}
+      </div>
 
       <SectionCard title="Comfort check" subtitle="Tap what you just did">
         <div className="flex flex-wrap gap-2">
@@ -101,6 +117,8 @@ export default function CareBedside() {
             <Pill className="mr-1 h-4 w-4" />Log dose</Button>
         </div>
       </SectionCard>
+
+      {person && <BedsidePersonPlan personId={person.id} personName={person.name} />}
 
       <SectionCard title="Last 3 days" subtitle="Newest first">
         {logs.length === 0 ? <EmptyState title="Nothing logged yet" hint="Comfort checks and doses will appear here." /> : (
