@@ -64,6 +64,13 @@
       "when": 1791489604270,
       "tag": "0008_laundry_state",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792058405511,
+      "tag": "0009_bedside_logs",
+      "breakpoints": true
     }
   ]
 }
