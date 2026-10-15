@@ -170,6 +170,7 @@ export const NAV_GROUPS = [
     items: [
       { to: "/care", label: "CARE Hub", icon: Flower2 },
       { to: "/caregiving", label: "Caregiving", icon: HeartHandshake },
+      { to: "/care/bedside", label: "Bedside care", icon: HeartHandshake },
       { to: "/family", label: "Family & sharing", icon: Users },
       { to: "/mental-load", label: "Mental Load", icon: Leaf },
     ],
