@@ -391,6 +391,45 @@ export type Database = {
         }
         Relationships: []
       }
+      bedside_logs: {
+        Row: {
+          created_at: string
+          dose: string | null
+          id: string
+          kind: string
+          label: string
+          logged_at: string
+          note: string | null
+          pain: number | null
+          recipient_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dose?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          logged_at?: string
+          note?: string | null
+          pain?: number | null
+          recipient_id?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          dose?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          logged_at?: string
+          note?: string | null
+          pain?: number | null
+          recipient_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       billing_subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
