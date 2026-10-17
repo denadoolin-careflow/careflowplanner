@@ -4122,6 +4122,38 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_completion_logs: {
+        Row: {
+          done: boolean
+          meal_id: string
+          scheduled_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          done?: boolean
+          meal_id: string
+          scheduled_date: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          done?: boolean
+          meal_id?: string
+          scheduled_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_completion_logs_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_people: {
         Row: {
           created_at: string
