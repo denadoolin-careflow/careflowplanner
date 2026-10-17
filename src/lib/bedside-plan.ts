@@ -1,8 +1,15 @@
-import { format } from "date-fns";
-import type { Task } from "./types";
+import { format, parseISO } from "date-fns";
+import { expandRecurrence } from "./recurrence";
+import type { Task, Meal } from "./types";
 import type { Medication } from "./medications";
 
 export const localCareDate = (date = new Date()) => format(date, "yyyy-MM-dd");
+
+export function mealsOnCareDate(meals: Meal[], date: string) {
+  return meals.filter(meal => meal.recurrenceRule
+    ? expandRecurrence(meal.date, meal.recurrenceRule, parseISO(date), parseISO(date)).includes(date)
+    : meal.date === date);
+}
 
 export function parseDoseTimes(value: string): string[] {
   const values = value.split(",").map(time => time.trim());

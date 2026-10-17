@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { legacyMedicineReminders, localCareDate, parseDoseTimes } from "./bedside-plan";
+import { legacyMedicineReminders, localCareDate, parseDoseTimes, mealsOnCareDate } from "./bedside-plan";
+import type { Meal } from "./types";
 import type { Task } from "./types";
 import type { Medication } from "./medications";
 
 describe("bedside planning", () => {
+  it("shows a person's daily recurring meal on subsequent days", () => {
+    const meal = { id: "meal", name: "Soup", date: "2026-10-17", slot: "Lunch", recurrenceRule: { freq: "daily" } } as Meal;
+    expect(mealsOnCareDate([meal], "2026-10-18").map(m => m.id)).toEqual(["meal"]);
+    expect(mealsOnCareDate([{ ...meal, recurrenceRule: undefined }], "2026-10-18")).toEqual([]);
+  });
   it("accepts daily dose times and rejects impossible clock times", () => {
     expect(parseDoseTimes("8:00, 20:00, 08:00")).toEqual(["08:00", "20:00"]);
     expect(parseDoseTimes("25:00")).toEqual([]);
