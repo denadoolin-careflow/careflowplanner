@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
 import type { Meal } from "@/lib/types";
+import { useMealCompletion } from "@/lib/meal-completion";
+import { mealsOnCareDate } from "@/lib/bedside-plan";
 
 const SLOTS: Meal["slot"][] = ["Breakfast", "Lunch", "Dinner"];
 
@@ -128,12 +130,12 @@ export function MealsPlannedWidget({ date }: { date: Date }) {
   const { state } = useStore();
   const iso = format(date, "yyyy-MM-dd");
   const meals = useMemo(
-    () => Object.fromEntries(state.meals.filter(m => m.date === iso).map(m => [m.slot, m])),
+    () => Object.fromEntries(mealsOnCareDate(state.meals, iso).map(m => [m.slot, m])),
     [state.meals, iso],
   ) as Partial<Record<Meal["slot"], Meal>>;
-  const { done, toggle } = useMealDone();
+  const { done, toggle } = useMealCompletion(iso);
   const plannedCount = SLOTS.filter(s => meals[s]).length;
-  const completedCount = SLOTS.filter(s => meals[s] && done[meals[s]!.id]).length;
+  const completedCount = SLOTS.filter(s => { const meal = meals[s]; return meal && done[meal.id]; }).length;
 
   return (
     <section className="cozy-card overflow-hidden p-4">

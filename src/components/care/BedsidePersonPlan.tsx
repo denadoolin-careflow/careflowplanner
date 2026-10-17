@@ -1,7 +1,7 @@
 /**
  * Per-person bedside plan: care notes, recurring medicine reminders and
  * today's meals for one care recipient. Meds reuse `medications` +
- * `medication_logs`; reminders become daily recurring planner tasks; meals are
+ * `medication_logs`; reminders use the shared medication scheduler; meals are
  * planner meals linked to the person via meal_people.
  */
 import { useEffect, useMemo, useState } from "react";
@@ -77,7 +77,7 @@ export function BedsidePersonPlan({ personId, personName }: { personId: string; 
 
   const addPersonMeal = async () => {
     if (!mealForm.name.trim()) return toast.error("Add what they're eating");
-    const id = await addMeal({ name: mealForm.name.trim(), date: today, slot: mealForm.slot, recurrenceRule: mealForm.repeat ? { freq: "daily", interval: 1 } : undefined, recurrenceSeriesId: mealForm.repeat ? crypto.randomUUID() : undefined });
+    const id = await addMeal({ name: `${personName} · ${mealForm.name.trim()}`, date: today, slot: mealForm.slot, recurrenceRule: mealForm.repeat ? { freq: "daily", interval: 1 } : undefined, recurrenceSeriesId: mealForm.repeat ? crypto.randomUUID() : undefined });
     if (!id) return toast.error("Couldn't save");
     await linkMealPerson({ mealId: id, personId, personKind: "recipient", serveTime: mealForm.time || null });
     setMealForm({ name: "", slot: mealForm.slot, time: "", repeat: mealForm.repeat });

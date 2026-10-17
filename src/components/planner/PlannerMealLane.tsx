@@ -3,6 +3,7 @@ import { MealPickerPopover } from "@/components/meals/MealPickerPopover";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { Meal } from "@/lib/types";
+import { mealsOnCareDate } from "@/lib/bedside-plan";
 
 export const MEAL_SLOTS: { slot: Meal["slot"]; label: string; atMin: number; band: string }[] = [
   { slot: "Breakfast", label: "Breakfast", atMin: 7 * 60 + 30, band: "morning" },
@@ -12,7 +13,7 @@ export const MEAL_SLOTS: { slot: Meal["slot"]; label: string; atMin: number; ban
 
 function MealChip({ iso, slot, label, style }: { iso: string; slot: Meal["slot"]; label: string; style: React.CSSProperties }) {
   const { state, addMeal, updateMeal } = useStore();
-  const meal = state.meals.find(m => m.date === iso && m.slot === slot);
+  const meal = mealsOnCareDate(state.meals, iso).find(m => m.slot === slot);
 
   return (
     <MealPickerPopover
