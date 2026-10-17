@@ -12,7 +12,8 @@ import { useMealPeople, linkMealPerson } from "@/lib/meal-people";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Pill, Plus, Trash2, Utensils, CalendarPlus } from "lucide-react";
+import { Check, Pill, Plus, Trash2, Utensils, CalendarPlus, Pencil } from "lucide-react";
+import { BedsideEntryEditor } from "@/components/care/BedsideEntryEditor";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,6 +31,7 @@ export function BedsidePersonPlan({ personId, personName }: { personId: string; 
 
   const [notes, setNotes] = useState<{ id: string; note: string; logged_at: string }[]>([]);
   const [noteText, setNoteText] = useState("");
+  const [editingNote, setEditingNote] = useState<string | null>(null);
   const [medForm, setMedForm] = useState({ name: "", dose: "", times: "08:00" });
   const [mealForm, setMealForm] = useState({ name: "", slot: "Lunch" as (typeof SLOTS)[number], time: "", repeat: false });
   const [saving, setSaving] = useState(false);
@@ -153,10 +155,16 @@ export function BedsidePersonPlan({ personId, personName }: { personId: string; 
         </div>
         {notes.length > 0 && (
           <ul className="mt-3 space-y-1.5">
-            {notes.map(n => (
-              <li key={n.id} className="flex gap-2 rounded-lg border border-border/60 bg-card/60 px-3 py-2 text-sm">
+            {notes.map(n => editingNote === n.id ? (
+              <li key={n.id} className="rounded-lg border border-primary/40 bg-card/60 px-3 py-2 text-sm">
+                <BedsideEntryEditor entry={n} requireNote onCancel={() => setEditingNote(null)}
+                  onSaved={next => { setNotes(x => x.map(y => y.id === n.id ? { ...y, logged_at: next.logged_at, note: next.note ?? "" } : y).sort((a, b) => b.logged_at.localeCompare(a.logged_at))); setEditingNote(null); }} />
+              </li>
+            ) : (
+              <li key={n.id} className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/60 px-3 py-2 text-sm">
                 <span className="flex-1">{n.note}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">{new Date(n.logged_at).toLocaleDateString([], { month: "short", day: "numeric" })}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{new Date(n.logged_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                <Button variant="ghost" size="icon" aria-label="Edit note" onClick={() => setEditingNote(n.id)} className="text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" aria-label="Remove note" onClick={() => void run(async () => { const { error } = await supabase.from("bedside_logs").delete().eq("id", n.id); if (error) throw error; setNotes(x => x.filter(y => y.id !== n.id)); })} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
               </li>
             ))}
