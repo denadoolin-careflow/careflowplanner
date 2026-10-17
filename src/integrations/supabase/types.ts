@@ -2575,6 +2575,93 @@ export type Database = {
           },
         ]
       }
+      eol_checklist_items: {
+        Row: {
+          created_at: string
+          document_id: string | null
+          done: boolean
+          group: string
+          id: string
+          notes: string | null
+          phase: string
+          recipient_id: string | null
+          sort: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id?: string | null
+          done?: boolean
+          group: string
+          id?: string
+          notes?: string | null
+          phase: string
+          recipient_id?: string | null
+          sort?: number
+          title: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string | null
+          done?: boolean
+          group?: string
+          id?: string
+          notes?: string | null
+          phase?: string
+          recipient_id?: string | null
+          sort?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      eol_documents: {
+        Row: {
+          category: string
+          created_at: string
+          doc_date: string | null
+          file_path: string
+          id: string
+          mime: string | null
+          notes: string | null
+          original_location: string | null
+          recipient_id: string | null
+          size: number | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          doc_date?: string | null
+          file_path: string
+          id?: string
+          mime?: string | null
+          notes?: string | null
+          original_location?: string | null
+          recipient_id?: string | null
+          size?: number | null
+          title?: string
+          user_id?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          doc_date?: string | null
+          file_path?: string
+          id?: string
+          mime?: string | null
+          notes?: string | null
+          original_location?: string | null
+          recipient_id?: string | null
+          size?: number | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorite_meals: {
         Row: {
           created_at: string
