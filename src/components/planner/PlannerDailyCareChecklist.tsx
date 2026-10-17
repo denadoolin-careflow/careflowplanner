@@ -5,6 +5,7 @@ import { useMealCompletion } from "@/lib/meal-completion";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
+import { mealsOnCareDate } from "@/lib/bedside-plan";
 
 function timeLabel(value: string) {
   const [hours, minutes] = value.split(":").map(Number);
@@ -16,9 +17,9 @@ export function PlannerDailyCareChecklist({ iso, compact = false, className }: {
   const { medications } = useMedications();
   const { statusOf, setStatus } = useMedicationLogs(iso);
   const { state } = useStore();
-  const { done: mealsDone, toggle: toggleMeal } = useMealCompletion();
+  const { done: mealsDone, toggle: toggleMeal } = useMealCompletion(iso);
   const meds = useMemo(() => doseSlots(medications), [medications]);
-  const meals = useMemo(() => state.meals.filter(meal => meal.date === iso), [state.meals, iso]);
+  const meals = useMemo(() => mealsOnCareDate(state.meals, iso), [state.meals, iso]);
   if (!meds.length && !meals.length) {
     return compact ? <div className={cn("min-w-0 p-2", className)} aria-label="No meds or meals planned" /> : null;
   }

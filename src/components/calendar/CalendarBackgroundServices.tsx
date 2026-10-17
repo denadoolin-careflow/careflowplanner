@@ -7,6 +7,7 @@ import {
 import { initPomodoroTracking } from "@/lib/pomodoro-tracking";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 import { ShortcutsPopover } from "./ShortcutsPopover";
+import { useMedications, scheduleMedicationReminders } from "@/lib/medications";
 
 /**
  * Mounted once inside the authed shell — starts the reminder scheduler,
@@ -18,6 +19,13 @@ export function CalendarBackgroundServices() {
   const navigate = useNavigate();
   const [helpOpen, setHelpOpen] = useState(false);
   const [nonce, setNonce] = useState(0);
+  const { medications } = useMedications();
+  useEffect(() => {
+    const run = () => { void scheduleMedicationReminders(medications); };
+    run();
+    const timer = setInterval(run, 15 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [medications]);
 
   useGlobalShortcuts(() => setHelpOpen(true));
 

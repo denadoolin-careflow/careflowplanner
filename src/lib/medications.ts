@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { localCareDate } from "./bedside-plan";
 
 export interface Medication {
   id: string;
@@ -36,7 +37,8 @@ export interface MedicationLog {
   taken_at: string | null;
 }
 
-export const todayISO = () => new Date().toISOString().slice(0, 10);
+export const todayISO = localCareDate;
+const LOGS_CHANGED = "careflow:medication-logs-changed";
 
 /* ---------------- shared cache ---------------- */
 
@@ -73,7 +75,7 @@ export const medications = {
   async create(input: Partial<Medication> & { name: string }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("medications").insert({
+    const { data, error } = await supabase.from("medications").insert({
       user_id: user.id,
       name: input.name,
       dose: input.dose ?? null,
@@ -83,7 +85,9 @@ export const medications = {
       recipient_id: input.recipient_id ?? null,
       kind: input.kind ?? "medication",
     } as any).select().single();
+    if (error) throw error;
     if (data) { meds = [...meds, mapMed(data)].sort((a, b) => a.name.localeCompare(b.name)); emit(); }
+    return data?.id;
   },
   async update(id: string, patch: Partial<Medication>) {
     const row: Record<string, unknown> = {};
@@ -94,9 +98,10 @@ export const medications = {
     if (patch.active !== undefined) row.active = patch.active;
     if (patch.recipient_id !== undefined) row.recipient_id = patch.recipient_id;
     if (patch.kind !== undefined) row.kind = patch.kind;
+    const { error } = await supabase.from("medications").update(row as any).eq("id", id);
+    if (error) throw error;
     meds = meds.map(m => m.id === id ? { ...m, ...patch } : m);
     emit();
-    await supabase.from("medications").update(row as any).eq("id", id);
   },
   async remove(id: string) {
     meds = meds.filter(m => m.id !== id);
@@ -133,17 +138,24 @@ export function useMedicationLogs(dateISO: string) {
     })));
   }, [dateISO]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const refresh = () => { void load(); };
+    refresh();
+    window.addEventListener(LOGS_CHANGED, refresh);
+    const interval = setInterval(refresh, 30_000);
+    return () => { window.removeEventListener(LOGS_CHANGED, refresh); clearInterval(interval); };
+  }, [load]);
 
   const setStatus = useCallback(async (medId: string, time: string, status: DoseStatus | null) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const t = normalizeTime(time);
     if (status === null) {
-      await supabase.from("medication_logs").delete()
+      const { error } = await supabase.from("medication_logs").delete()
         .eq("medication_id", medId).eq("scheduled_date", dateISO).eq("scheduled_time", `${t}:00`);
+      if (error) throw error;
     } else {
-      await supabase.from("medication_logs").upsert({
+      const { error } = await supabase.from("medication_logs").upsert({
         user_id: user.id,
         medication_id: medId,
         scheduled_date: dateISO,
@@ -151,7 +163,9 @@ export function useMedicationLogs(dateISO: string) {
         status,
         taken_at: status === "taken" ? new Date().toISOString() : null,
       } as any, { onConflict: "medication_id,scheduled_date,scheduled_time" } as any);
+      if (error) throw error;
     }
+    window.dispatchEvent(new Event(LOGS_CHANGED));
     await load();
   }, [dateISO, load]);
 
@@ -203,10 +217,13 @@ export async function scheduleMedicationReminders(list: Medication[] = meds) {
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
   for (const slot of doseSlots(list)) {
-    const delta = (slot.minutes - nowMin) * 60_000;
-    if (delta < 0 || delta > 12 * 60 * 60_000) continue;
+    const delta = (slot.minutes - nowMin) * 60_000 - now.getSeconds() * 1000;
+    if (delta < 0) continue;
     const key = `med-${slot.med.id}-${slot.time}`;
-    medTimers.set(key, setTimeout(() => {
+    medTimers.set(key, setTimeout(async () => {
+      const { data } = await supabase.from("medication_logs").select("status")
+        .eq("medication_id", slot.med.id).eq("scheduled_date", todayISO()).eq("scheduled_time", `${slot.time}:00`).maybeSingle();
+      if (data?.status === "taken" || data?.status === "skipped") return;
       notifyReminder(
         `Medication — ${slot.med.name}`,
         `${slot.time}${slot.med.dose ? ` · ${slot.med.dose}` : ""}`,

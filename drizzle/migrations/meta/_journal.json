@@ -71,6 +71,13 @@
       "when": 1792058405511,
       "tag": "0009_bedside_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792232108091,
+      "tag": "0010_meal_occurrence_completion",
+      "breakpoints": true
     }
   ]
 }
