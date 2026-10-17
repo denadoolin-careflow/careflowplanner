@@ -16,7 +16,7 @@ function writeDone(value: Record<string, boolean>) {
 }
 
 export function useMealCompletion(dateISO = localCareDate()) {
-  const [done, setDone] = useState<Record<string, boolean>>(() => readDone());
+  const [done, setDone] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let active = true;
