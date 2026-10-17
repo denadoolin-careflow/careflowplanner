@@ -78,6 +78,13 @@
       "when": 1792232108091,
       "tag": "0010_meal_occurrence_completion",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792233026735,
+      "tag": "0011_eol_guide",
+      "breakpoints": true
     }
   ]
 }
