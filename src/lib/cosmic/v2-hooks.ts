@@ -118,6 +118,9 @@ export interface Chapter {
   generated_at?: string;
 }
 
+let chapterInFlight: Promise<{ data: any; error: any }> | null = null;
+let chapterCooldownUntil = 0;
+
 export function useCurrentChapter(chart: NatalChartV2 | null) {
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [loading, setLoading] = useState(false);
@@ -170,8 +173,22 @@ export function useCurrentChapter(chart: NatalChartV2 | null) {
         eclipses,
         journalThemes,
       };
-      const { data: ai, error: err } = await aiInvoke("ai-cosmic-chapter", { body: payload });
-      if (err || !ai) { setError("Couldn't generate chapter right now."); setLoading(false); return; }
+      if (Date.now() < chapterCooldownUntil) {
+        setError("The reading service is busy — please try again in a minute."); setLoading(false); return;
+      }
+      // Share one in-flight request so repeated renders don't flood the AI service.
+      if (!chapterInFlight) {
+        chapterInFlight = aiInvoke("ai-cosmic-chapter", { body: payload }).finally(() => {
+          setTimeout(() => { chapterInFlight = null; }, 0);
+        });
+      }
+      const { data: ai, error: err } = await chapterInFlight;
+      if (err || !ai) {
+        const busy = /rate|429|busy/i.test(JSON.stringify(err ?? ""));
+        chapterCooldownUntil = Date.now() + (busy ? 60_000 : 15_000);
+        setError(busy ? "The reading service is busy — please try again in a minute." : "Couldn't generate chapter right now.");
+        setLoading(false); return;
+      }
       const validFrom = todayISO;
       const validTo = new Date(today.getTime() + 7 * 86400000).toISOString().slice(0, 10);
       const row = {
