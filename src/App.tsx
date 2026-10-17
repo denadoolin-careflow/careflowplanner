@@ -74,6 +74,7 @@ import Memories from "./pages/Memories";
 import CareLoop from "./pages/CareLoop";
 import CareHub from "./pages/CareHub";
 import CareBedside from "./pages/CareBedside";
+import CareEndOfLife from "./pages/CareEndOfLife";
 import CareRhythm from "./pages/CareRhythm";
 import CareExhale from "./pages/CareExhale";
 import Automations from "./pages/Automations";
@@ -216,6 +217,7 @@ const App = () => (
                 <Route path="/mental-load" element={<MentalLoad />} />
                 <Route path="/care" element={<CareHub />} />
                 <Route path="/care/bedside" element={<CareBedside />} />
+                <Route path="/care/end-of-life" element={<CareEndOfLife />} />
                 <Route path="/care/rhythm" element={<CareRhythm />} />
                 <Route path="/care/exhale" element={<CareExhale />} />
                 <Route path="/care-loop" element={<CareLoop />} />
