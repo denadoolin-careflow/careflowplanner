@@ -8,11 +8,12 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { EmptyState } from "@/components/cards/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Phone, Pill, Plus, Trash2, HeartHandshake } from "lucide-react";
+import { Mail, Phone, Pill, Plus, Trash2, HeartHandshake, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { BedsidePersonPlan } from "@/components/care/BedsidePersonPlan";
+import { BedsideEntryEditor } from "@/components/care/BedsideEntryEditor";
 
 const COMFORT = ["Repositioned", "Mouth care", "Lip balm", "Skin check", "Sips / ice chips", "Music / reading", "Calm breathing", "Restless"];
 const ROLES = ["Hospice nurse", "Hospice on-call", "Doctor", "Social worker", "Chaplain", "Aide", "Volunteer", "Pharmacy", "Funeral home", "Other"];
@@ -34,6 +35,7 @@ export default function CareBedside() {
   const [med, setMed] = useState(""); const [dose, setDose] = useState("");
   const [m, setM] = useState({ name: "", role: ROLES[0], phone: "", email: "", notes: "" });
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const { state } = useStore() as any;
   const recipients: { id: string; name: string }[] = state.recipients ?? [];
   const [personId, setPersonId] = useState<string>(() => localStorage.getItem("careflow:bedside-person") ?? "");
@@ -123,7 +125,13 @@ export default function CareBedside() {
       <SectionCard title="Last 3 days" subtitle="Newest first">
         {logs.length === 0 ? <EmptyState title="Nothing logged yet" hint="Comfort checks and doses will appear here." /> : (
           <ul className="space-y-1.5">
-            {logs.map(l => (
+            {logs.map(l => editingId === l.id ? (
+              <li key={l.id} className="rounded-xl border border-primary/40 bg-card/60 px-3 py-2 text-sm">
+                <div className="mb-1 font-semibold">{l.label}</div>
+                <BedsideEntryEditor entry={l} showDose={l.kind === "med"} onCancel={() => setEditingId(null)}
+                  onSaved={next => { setLogs(x => x.map(y => y.id === l.id ? { ...y, ...next } : y).sort((a, b) => b.logged_at.localeCompare(a.logged_at))); setEditingId(null); }} />
+              </li>
+            ) : (
               <li key={l.id} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-3 py-2 text-sm">
                 {l.kind === "med" ? <Pill className="h-4 w-4 text-primary" /> : <HeartHandshake className="h-4 w-4 text-secondary-foreground" />}
                 <span className="min-w-0 flex-1 truncate">
@@ -131,6 +139,7 @@ export default function CareBedside() {
                   {l.note && <span className="text-muted-foreground"> — {l.note}</span>}
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">{fmt(l.logged_at)}</span>
+                <button aria-label="Edit entry" onClick={() => setEditingId(l.id)} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button>
                 <button aria-label="Remove entry" onClick={() => void remove(l.id)} className="p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
               </li>
             ))}
