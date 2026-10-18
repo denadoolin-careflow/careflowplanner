@@ -116,6 +116,11 @@ import CosmicCalendar from "./pages/CosmicCalendar";
 import CosmicTarot from "./pages/CosmicTarot";
 import CosmicMoon from "./pages/CosmicMoon";
 import CosmicAlmanac from "./pages/CosmicAlmanac";
+import CosmicSky from "./pages/CosmicSky";
+import CosmicGrid from "./pages/CosmicGrid";
+import CosmicHouses from "./pages/CosmicHouses";
+import CosmicSearch from "./pages/CosmicSearch";
+import CosmicCompare from "./pages/CosmicCompare";
 import Carey from "./pages/Carey";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
@@ -264,6 +269,11 @@ const App = () => (
                 <Route path="/cosmic-flow/tarot" element={<CosmicTarot />} />
                 <Route path="/cosmic-flow/moon" element={<CosmicMoon />} />
                 <Route path="/cosmic-flow/almanac" element={<CosmicAlmanac />} />
+                <Route path="/cosmic-flow/sky" element={<CosmicSky />} />
+                <Route path="/cosmic-flow/grid" element={<CosmicGrid />} />
+                <Route path="/cosmic-flow/houses" element={<CosmicHouses />} />
+                <Route path="/cosmic-flow/search" element={<CosmicSearch />} />
+                <Route path="/cosmic-flow/compare" element={<CosmicCompare />} />
                 <Route path="/carey" element={<Carey />} />
                 <Route path="/carey/:threadId" element={<Carey />} />
               </Route>
