@@ -16,6 +16,7 @@ import { PlainMeaning } from "@/components/cosmic/PlainMeaning";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { isVoidOfCourse } from "@/lib/transits";
 import { MOON_PLAIN, VOC_ADVICE } from "@/lib/rhythm-guidance";
+import { DailyTarotPull } from "@/components/astro-suite/DailyTarotPull";
 import { AlignFocusCard } from "@/components/cosmic/AlignFocusCard";
 import { AdvancedAstrologyRow } from "@/components/cosmic/AdvancedAstrologyRow";
 

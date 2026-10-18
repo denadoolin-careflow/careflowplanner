@@ -292,6 +292,9 @@ export const NAV_SUBPAGES: Record<string, { to: string; label: string }[]> = {
     { to: "/wellflow/guide", label: "Nutrition guide" },
   ],
   "/cosmic-flow": [
+    { to: "/cosmic-flow/tarot", label: "Tarot" },
+    { to: "/cosmic-flow/moon", label: "Moon & Rituals" },
+    { to: "/cosmic-flow/almanac", label: "Almanac" },
     { to: "/cosmic-flow/timeline", label: "Transit Timeline" },
     { to: "/cosmic-flow/calendar", label: "Calendar" },
     { to: "/cosmic-flow/chapter", label: "Chapter" },

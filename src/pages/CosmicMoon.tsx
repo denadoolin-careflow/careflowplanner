@@ -96,7 +96,10 @@ export default function CosmicMoon() {
       {guide && (
         <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <h2 className="font-display text-lg">Moon in {sign.sign} today</h2>
-          <pre className="mt-1 whitespace-pre-wrap font-sans text-sm text-foreground/85">{Object.values(guide).filter(v => typeof v === "string").join("\n")}</pre>
+          <p className="mt-1 text-sm">{guide.vibe}</p>
+          <p className="text-sm text-muted-foreground">{guide.body}</p>
+          <ul className="mt-2 list-disc pl-4 text-sm">{guide.actions.map(a => <li key={a}>{a}</li>)}</ul>
+          <p className="mt-2 text-sm"><span className="text-muted-foreground">Ease off:</span> {guide.avoid}</p>
         </section>
       )}
     </div>
