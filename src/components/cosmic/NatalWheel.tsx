@@ -59,7 +59,7 @@ function fmtDeg(lon: number) {
 
 function spread<T extends { lon: number }>(items: T[], minSep: number): (T & { shown: number })[] {
   const out = [...items].sort((a, b) => a.lon - b.lon).map(i => ({ ...i, shown: i.lon }));
-  for (let pass = 0; pass < 8; pass++) {
+  for (let pass = 0; pass < 60; pass++) {
     for (let i = 0; i < out.length && out.length > 1; i++) {
       const a = out[i], b = out[(i + 1) % out.length];
       const gap = (b.shown - a.shown + 360) % 360;
