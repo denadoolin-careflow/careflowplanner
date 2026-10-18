@@ -58,19 +58,33 @@ function fmtDeg(lon: number) {
 }
 
 function spread<T extends { lon: number }>(items: T[], minSep: number): (T & { shown: number })[] {
-  const out = [...items].sort((a, b) => a.lon - b.lon).map(i => ({ ...i, shown: i.lon }));
-  for (let pass = 0; pass < 60; pass++) {
-    for (let i = 0; i < out.length && out.length > 1; i++) {
-      const a = out[i], b = out[(i + 1) % out.length];
-      const gap = (b.shown - a.shown + 360) % 360;
-      if (gap < minSep) {
-        const push = (minSep - gap) / 2;
-        a.shown = (a.shown - push + 360) % 360;
-        b.shown = (b.shown + push) % 360;
+  const sorted = [...items].sort((a, b) => a.lon - b.lon);
+  if (sorted.length < 2) return sorted.map(i => ({ ...i, shown: i.lon }));
+  // rotate so we start after the widest gap (avoids wrap issues)
+  let gi = 0, gmax = -1;
+  sorted.forEach((it, i) => { const nx = sorted[(i + 1) % sorted.length]; const g = (nx.lon - it.lon + 360) % 360; if (g > gmax) { gmax = g; gi = i; } });
+  const ord = [...sorted.slice(gi + 1), ...sorted.slice(0, gi + 1)];
+  let base = ord[0].lon;
+  const lin = ord.map(it => { const u = ((it.lon - base) % 360 + 360) % 360; return u; });
+  // cluster merge: each cluster is centered on its members' mean, spaced minSep
+  type C = { start: number; n: number; sum: number };
+  let clusters: C[] = lin.map(u => ({ start: u, n: 1, sum: u }));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 0; i < clusters.length - 1; i++) {
+      const a = clusters[i], b = clusters[i + 1];
+      if (a.start + (a.n - 1) * minSep + minSep > b.start) {
+        const n = a.n + b.n, sum = a.sum + b.sum;
+        const firstMean = (sum - minSep * (n * (n - 1)) / 2) / n;
+        clusters.splice(i, 2, { start: firstMean, n, sum });
+        changed = true; break;
       }
     }
   }
-  return out;
+  const shown: number[] = [];
+  clusters.forEach(c => { for (let k = 0; k < c.n; k++) shown.push(c.start + k * minSep); });
+  return ord.map((it, i) => ({ ...it, shown: (shown[i] + base + 360) % 360 }));
 }
 
 export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
