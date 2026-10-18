@@ -62,4 +62,4 @@
 - [x] Finish and verify bedside person notes, recurring medicine reminders, recurring meals, and planner check-offs
 
 - [x] Planner Phase B: collapsible task tray rail, streamlined day context, habits & meds ribbon, mobile Arrange sheet
-- [ ] Planner Phase C: Plan My Day guided ritual
+- [x] Planner Phase C: Plan My Day guided ritual

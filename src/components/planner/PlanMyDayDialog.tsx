@@ -18,16 +18,17 @@ import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { PlannerTimeline } from "./PlannerTimeline";
 import { PlannerTaskRow } from "./PlannerTaskRow";
-import { Star, Sparkles, Leaf, Sunrise } from "lucide-react";
+import { Star, Sparkles, Leaf, Sunrise, Lock, Wand2, CalendarArrowDown } from "lucide-react";
+import { autoSlot, toMin } from "@/lib/planner/auto-slot";
 import { toast } from "sonner";
 import type { Task } from "@/lib/types";
 
 type Step = 0 | 1 | 2 | 3;
 const STEPS = [
-  { label: "Capture", prompt: "What's on your mind?", Icon: Sunrise },
-  { label: "Anchor", prompt: "What needs to stay steady today?", Icon: Star },
-  { label: "Rhythm", prompt: "Let's shape the day around real life.", Icon: Sparkles },
-  { label: "Exhale", prompt: "Does this day feel doable?", Icon: Leaf },
+  { label: "Review", prompt: "What's carried over, and what's on your mind?", Icon: Sunrise },
+  { label: "Estimate", prompt: "How long will each thing take?", Icon: Star },
+  { label: "Arrange", prompt: "Let's place it around real life.", Icon: Sparkles },
+  { label: "Lock in", prompt: "Does this day feel doable?", Icon: Leaf },
 ];
 
 export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; onOpenChange: (o: boolean) => void; date: Date }) {
@@ -97,6 +98,32 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
     setConfirm(null);
   };
 
+  const overdue = useMemo(() => state.tasks.filter(t => !t.done && t.dueDate && t.dueDate < iso), [state.tasks, iso]);
+  const lockKey = `careflow:planner:locked:${iso}`;
+  const [locked, setLocked] = useState(() => { try { return !!localStorage.getItem(lockKey); } catch { return false; } });
+
+  const runAutoSlot = async () => {
+    const busy = [
+      ...scheduled.map(t => ({ start: toMin(t.startTime!), end: toMin(t.startTime!) + (t.estMinutes ?? 30) })),
+      ...appts.filter(a => a.time).map(a => ({ start: toMin(a.time!), end: toMin(a.time!) + 60 })),
+    ];
+    const now = new Date();
+    const isToday = format(now, "yyyy-MM-dd") === iso;
+    const ordered = [...unscheduled].sort((a, b) => Number(!!b.isTopThree) - Number(!!a.isTopThree));
+    const placed = autoSlot(ordered.map(t => ({ id: t.id, minutes: t.estMinutes ?? 30 })), busy,
+      { notBefore: isToday ? now.getHours() * 60 + now.getMinutes() : 0, gap: 5 });
+    for (const p of placed) await updateTask(p.id, { startTime: p.startTime });
+    const left = unscheduled.length - placed.length;
+    toast.success(`Placed ${placed.length} task${placed.length === 1 ? "" : "s"}${left ? ` · ${left} didn't fit` : ""}`);
+  };
+
+  const lockIn = () => {
+    try { localStorage.setItem(lockKey, new Date().toISOString()); } catch {}
+    setLocked(true);
+    toast.success("Day locked in 🌿");
+    onOpenChange(false);
+  };
+
   const S = STEPS[step];
 
   return (
@@ -118,6 +145,19 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
         <div className="max-h-[60vh] overflow-y-auto p-5">
           {step === 0 && (
             <div className="space-y-2">
+              <section className="mb-3">
+                <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Overdue · {overdue.length}</h4>
+                {overdue.length === 0 ? <p className="text-xs text-muted-foreground">Nothing carried over.</p> : (
+                  <ul className="max-h-48 space-y-1 overflow-y-auto">{overdue.map(t => (
+                    <li key={t.id} className="flex items-center gap-2 rounded-md border border-border/50 bg-card/60 px-2 py-1.5 text-sm">
+                      <span className="min-w-0 flex-1 truncate">{t.title}</span>
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => updateTask(t.id, { dueDate: iso })}>Today</Button>
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => updateTask(t.id, { dueDate: undefined, startTime: undefined } as any)}>Someday</Button>
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => updateTask(t.id, { done: true })}>Done</Button>
+                    </li>
+                  ))}</ul>
+                )}
+              </section>
               <p className="text-xs text-muted-foreground">One thought per line. Enter to add. Use <code>#tag @area p1</code> for quick metadata.</p>
               <textarea value={captureText} onChange={(e) => setCaptureText(e.target.value)}
                 rows={6} placeholder="Grocery run&#10;Call insurance about claim p1&#10;Read 20m #focus"
@@ -133,10 +173,14 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
                   <ul className="space-y-1">{appts.map(a => <li key={a.id} className="rounded-md border border-border/50 bg-violet-50/60 px-2 py-1.5 text-sm dark:bg-violet-900/20">{a.time ? `${a.time} · ` : ""}{a.title}</li>)}</ul>}
               </section>
               <section>
-                <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Flexible tasks — tap to mark a Top 3</h4>
-                {dayTasks.length === 0 ? <p className="text-xs text-muted-foreground">Nothing scheduled yet.</p> :
-                  <ul className="grid gap-1 sm:grid-cols-2">{dayTasks.map(t => (
-                    <li key={t.id}>
+                <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Today's tasks — pick a time estimate, star up to 3</h4>
+                {dayTasks.length === 0 ? <p className="text-xs text-muted-foreground">Nothing for today yet.</p> :
+                  <ul className="space-y-1">{dayTasks.map(t => (
+                    <li key={t.id} className="flex items-center gap-1.5">
+                      <div className="flex shrink-0 gap-0.5">{[15, 30, 60, 90].map(m => (
+                        <button key={m} type="button" onClick={() => updateTask(t.id, { estMinutes: m })} aria-pressed={t.estMinutes === m}
+                          className={cn("h-7 min-w-9 rounded-full border px-1.5 text-[11px] font-mono", t.estMinutes === m ? "border-primary bg-primary text-primary-foreground" : "border-border/60 hover:border-primary/50")}>{m}m</button>
+                      ))}</div>
                       <button onClick={() => togglePriority(t)}
                         className={cn("flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-sm transition-colors",
                           t.isTopThree ? "border-amber-400 bg-amber-50/70 dark:bg-amber-900/20" : "border-border/50 bg-card/60 hover:border-primary/40")}>
@@ -152,6 +196,9 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
             <div className="grid gap-3 lg:grid-cols-[220px_1fr]">
               <div className="max-h-[50vh] space-y-1 overflow-y-auto pr-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Unscheduled</p>
+                {unscheduled.length > 0 && (
+                  <Button size="sm" className="mb-1 w-full" onClick={runAutoSlot}><Wand2 className="mr-1.5 h-3.5 w-3.5" />Auto-slot into free time</Button>
+                )}
                 {unscheduled.length === 0 ? <p className="text-xs text-muted-foreground">All placed 🌿</p> :
                   unscheduled.map(t => <PlannerTaskRow key={t.id} task={t} />)}
               </div>
@@ -177,6 +224,7 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
                 {load === "Balanced" && <p className="mt-1 text-sm text-muted-foreground">Nicely paced.</p>}
                 {load === "Light" && <p className="mt-1 text-sm text-muted-foreground">A gentle day. Space to move slow.</p>}
               </div>
+              {locked && <p className="flex items-center gap-1.5 text-sm text-secondary"><Lock className="h-3.5 w-3.5" />This day is locked in.</p>}
               {(load === "Full" || load === "Overloaded") && (
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" disabled={lightenPreview.length === 0} onClick={() => setConfirm("lighten")}>Lighten my day</Button>
@@ -192,7 +240,7 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
           {step < 3 ? (
             <Button size="sm" onClick={() => setStep((s) => ((s + 1) as Step))}>Next: {STEPS[step + 1].label}</Button>
           ) : (
-            <Button size="sm" onClick={() => onOpenChange(false)}>Looks good</Button>
+            <Button size="sm" onClick={lockIn}><Lock className="mr-1.5 h-3.5 w-3.5" />{locked ? "Lock in again" : "Lock in my day"}</Button>
           )}
         </div>
 
