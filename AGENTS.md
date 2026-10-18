@@ -29,3 +29,4 @@
 - My Focus pinboard columns and pins are device-local (localStorage) references to existing task ids, so tasks stay in their original project/area without a schema change.
 - Bedside medication reminders use the shared medication scheduler and dose logs rather than duplicate recurring tasks, so stopping medication cancels reminders without losing dose history.
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
+- Agenda/List views share src/lib/planner/agenda-rows.ts to build one ordered day list (overdue, all-day, timed, unscheduled), so views stay consistent.
