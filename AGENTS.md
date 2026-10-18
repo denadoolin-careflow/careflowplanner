@@ -20,7 +20,7 @@
 - Custom note Spaces sync via the note_spaces table (tags + explicit linked note/task/project ids + hidden ids for unlinks); legacy device-local spaces migrate on first load.
 - Main and Notes sidebars reuse the same notebook date tree and control the gallery's selected month through the Notes URL; expansion preferences stay device-local and tree accessibility IDs are instance-unique to support both sidebars together.
 - Sidebar Space children use the same explicit links, tag matches, project links, and hidden-item exclusions as the Space hub, so linked navigation stays consistent.
-- Tag appearance editing reuses the shared tag store; unused filtering counts the existing tasks, notes, projects, and grocery sources without deleting content.
+- Tag appearance editing reuses the shared tag store; unused filtering counts existing sources without deleting content.
 - Flow subpages are declared once in NAV_SUBPAGES (nav.ts) and drive both the indented sidebar branches and the connected page tabs, so the two never drift.
 - Sidebar flow hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portalled flyout so links stay reachable outside the scrolling sidebar.
 - Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
@@ -31,3 +31,4 @@
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
 - Agenda/List views build day lists via src/lib/planner/agenda-rows.ts so they stay consistent.
 - Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
+- Astro views (sky, grid, houses, search, compare) compute on-device via src/lib/cosmic/sky.ts; no AI calls, so they never rate-limit.
