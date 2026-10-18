@@ -17,6 +17,7 @@ import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { PhaseWheel } from "./PhaseWheel";
 import { Droplet, Sparkles, Heart, Brain, Activity, Moon } from "lucide-react";
 import { toast } from "sonner";
+import { PhaseGroceryButton } from "@/components/cycle/PhaseGroceryButton";
 
 const PHASE_GUIDANCE: Record<
   CyclePhase,
@@ -342,6 +343,7 @@ export default function CyclicalLivingPage() {
       </div>
 
       {/* PERIOD HISTORY */}
+      {info && <SectionCard title="Shop for this phase" accent="warm"><PhaseGroceryButton phase={info.phase} /></SectionCard>}
       <SectionCard title="Recent cycles" accent="calm">
         {periods.length === 0 ? (
           <p className="text-sm text-muted-foreground">
