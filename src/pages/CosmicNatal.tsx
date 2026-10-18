@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { timeLordReport } from "@/lib/cosmic/year-chapter";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Sun, Moon, Sparkles, Flame, Droplets, Wind, Leaf, ArrowUpRight, Share2, Printer, Crown, Download } from "lucide-react";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useBirthChart } from "@/lib/cosmic/hooks";
 import { useNatalChart } from "@/lib/cosmic/v2-hooks";
-import { NatalWheel } from "@/components/cosmic/NatalWheel";
+import { InteractiveNatalWheel } from "@/components/cosmic/InteractiveNatalWheel";
 import { PlacementDetailDialog } from "@/components/cosmic/PlacementDetailDialog";
 import { SignDetailDialog } from "@/components/cosmic/SignDetailDialog";
 import { HouseDetailDialog, HOUSE_TITLE } from "@/components/cosmic/HouseDetailDialog";
@@ -89,7 +89,6 @@ export default function CosmicNatal() {
   const [selected, setSelected] = useState<NatalPlanet | null>(null);
   const todayIso = new Date().toLocaleDateString("en-CA");
   const [showTransits, setShowTransits] = useState(true);
-  const wheelRef = useRef<SVGSVGElement>(null);
   const [renderedAt] = useState(() => new Date());
   const [transitDate, setTransitDate] = useState(todayIso);
   const [open, setOpen] = useState(false);
@@ -189,8 +188,8 @@ export default function CosmicNatal() {
             {showTransits && <Link to="/cosmic-flow/grid" className="text-primary hover:underline">Open transit grid</Link>}
           </div>
           <ChartCorners row={row} transitDate={transitDate} showTransits={showTransits} />
-          <NatalWheel
-            ref={wheelRef}
+          <InteractiveNatalWheel
+            updatedAt={renderedAt}
             chart={chart}
             highlightHouse={timeLordHouse}
             transitPlanets={showTransits ? transitPoints : undefined}
@@ -198,10 +197,6 @@ export default function CosmicNatal() {
             onSelectSign={(s) => { setSelectedSign(s); setSignOpen(true); }}
             onSelectHouse={(h) => { setSelectedHouse(h); setHouseOpen(true); }}
           />
-          <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-            <span>Last updated: {renderedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}</span>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-full" onClick={() => wheelRef.current && downloadWheel(wheelRef.current)}><Download className="h-3.5 w-3.5" />Save image</Button>
-          </div>
           {!row.birth_time || !row.birth_place ? (
             <p className="mt-2 text-[11.5px] text-muted-foreground">Houses are counted from your Sun sign. <Link to="/cosmic-flow/birth-chart" className="text-primary hover:underline">Add your birth time and place</Link> to show your rising sign.</p>
           ) : null}
@@ -633,33 +628,3 @@ function ChartCorners({ row, transitDate, showTransits }: { row: { birth_date: s
   );
 }
 
-function downloadWheel(svg: SVGSVGElement) {
-  const clone = svg.cloneNode(true) as SVGSVGElement;
-  // inline resolved colors so the exported image keeps its palette
-  const src = svg.querySelectorAll<SVGElement>("*");
-  const dst = clone.querySelectorAll<SVGElement>("*");
-  src.forEach((el, i) => {
-    const cs = getComputedStyle(el);
-    dst[i].setAttribute("fill", cs.fill);
-    dst[i].setAttribute("stroke", cs.stroke);
-  });
-  const size = 1440;
-  clone.setAttribute("width", String(size));
-  clone.setAttribute("height", String(size));
-  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" }));
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement("canvas");
-    c.width = size; c.height = size;
-    c.getContext("2d")!.drawImage(img, 0, 0, size, size);
-    URL.revokeObjectURL(url);
-    c.toBlob(b => {
-      if (!b) return;
-      const u = URL.createObjectURL(b);
-      const a = document.createElement("a");
-      a.href = u; a.download = "natal-chart.png"; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(u), 30000);
-    }, "image/png");
-  };
-  img.src = url;
-}

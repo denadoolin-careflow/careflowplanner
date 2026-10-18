@@ -63,3 +63,5 @@
 
 - [x] Planner Phase B: collapsible task tray rail, streamlined day context, habits & meds ribbon, mobile Arrange sheet
 - [x] Planner Phase C: Plan My Day guided ritual
+
+- [x] Verify natal chart PNG saving on desktop/mobile and add zoom/pan controls
