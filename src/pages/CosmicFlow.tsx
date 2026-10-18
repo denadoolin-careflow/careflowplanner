@@ -16,6 +16,7 @@ import { PlainMeaning } from "@/components/cosmic/PlainMeaning";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { isVoidOfCourse } from "@/lib/transits";
 import { MOON_PLAIN, VOC_ADVICE } from "@/lib/rhythm-guidance";
+import { AlignFocusCard } from "@/components/cosmic/AlignFocusCard";
 import { AdvancedAstrologyRow } from "@/components/cosmic/AdvancedAstrologyRow";
 
 export default function CosmicFlow() {
@@ -63,6 +64,7 @@ export default function CosmicFlow() {
         </div>
 
         <div className="space-y-3 sm:space-y-4">
+          <AlignFocusCard date={date} />
           <JournalWithTheSkyCard date={date} />
           <PredictiveSnapshotList from={date} />
         </div>

@@ -81,3 +81,28 @@ export function plainAspect(a: string, aspect: string, b: string): string {
   const verb = ASPECT_PLAIN[aspect] ?? "connect —";
   return `${a} and ${b} ${verb} ${pa} and ${pb}.`;
 }
+
+/** Classical weekday rulers (Sunday = 0). */
+export const DAY_RULERS = [
+  { planet: "Sun", focus: "something that lets you shine or recharge", words: ["create", "present", "share", "rest", "self", "joy", "play", "personal"] },
+  { planet: "Moon", focus: "home, family and caring", words: ["home", "family", "care", "cook", "meal", "clean", "kids", "mom", "dad", "laundry", "health"] },
+  { planet: "Mars", focus: "the hard task you've been avoiding", words: ["workout", "exercise", "fix", "repair", "finish", "tough", "deadline", "move", "gym", "walk"] },
+  { planet: "Mercury", focus: "messages, errands and paperwork", words: ["call", "email", "text", "write", "errand", "form", "paper", "plan", "schedule", "reply", "book", "work"] },
+  { planet: "Jupiter", focus: "learning and long-term goals", words: ["learn", "study", "class", "read", "goal", "grow", "teach", "course", "project"] },
+  { planet: "Venus", focus: "people, beauty and money", words: ["friend", "date", "gift", "money", "budget", "pay", "bill", "decor", "garden", "beauty", "finance"] },
+  { planet: "Saturn", focus: "structure, chores and commitments", words: ["organize", "routine", "chore", "tax", "admin", "file", "declutter", "review", "clean", "bill"] },
+] as const;
+
+export function rulerFor(date: Date) { return DAY_RULERS[date.getDay()]; }
+
+/** Best-matching task for a day's ruler; null when none match any word. */
+export function pickRulerTask<T extends { id: string; title: string; area?: string | null }>(date: Date, tasks: T[]): T | null {
+  const words = rulerFor(date).words as readonly string[];
+  let best: T | null = null, bestScore = 0;
+  for (const t of tasks) {
+    const hay = `${t.title} ${t.area ?? ""}`.toLowerCase();
+    const score = words.reduce((n, w) => n + (hay.includes(w) ? 1 : 0), 0);
+    if (score > bestScore) { best = t; bestScore = score; }
+  }
+  return best;
+}
