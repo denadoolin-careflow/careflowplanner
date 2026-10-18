@@ -81,7 +81,7 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
   const [hoverHouse, setHoverHouse] = useState<number | null>(null);
   const anchor = chart.houses ? chart.houses.ascendant : Math.floor((chart.planets.find(p => p.body === "Sun")?.longitude ?? 0) / 30) * 30;
 
-  const ang = (lon: number) => ((180 - (((lon - anchor) % 360) + 360) % 360) * Math.PI) / 180;
+  const ang = (lon: number) => ((180 + (((lon - anchor) % 360) + 360) % 360) * Math.PI) / 180;
   const pt = (lon: number, r: number) => { const a = ang(lon); return { x: CX + r * Math.cos(a), y: CY - r * Math.sin(a) }; };
   const rotFor = (lon: number) => {
     // text rotation so labels read along the radius, never upside-down
@@ -97,8 +97,8 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
     return `M${p1.x},${p1.y} A${rOut},${rOut} 0 ${large} 0 ${p2.x},${p2.y} L${p3.x},${p3.y} A${rIn},${rIn} 0 ${large} 1 ${p4.x},${p4.y} Z`;
   };
 
-  const natal = useMemo(() => spread(chart.planets.map(p => ({ p, lon: p.longitude })), 7), [chart.planets]);
-  const transits = useMemo(() => spread((transitPlanets ?? []).map(t => ({ t, lon: t.longitude })), 7), [transitPlanets]);
+  const natal = useMemo(() => spread(chart.planets.map(p => ({ p, lon: p.longitude })), 10), [chart.planets]);
+  const transits = useMemo(() => spread((transitPlanets ?? []).map(t => ({ t, lon: t.longitude })), 9), [transitPlanets]);
 
   const cusps = chart.houses?.cusps ?? Array.from({ length: 12 }, (_, i) => (anchor + i * 30) % 360);
   const line = "hsl(var(--chart-line))";
