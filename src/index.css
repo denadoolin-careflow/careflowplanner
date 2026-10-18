@@ -3836,3 +3836,205 @@ body.planner-dragging [data-radix-dialog-overlay] {
   --gradient-warm: linear-gradient(135deg, hsl(240 10% 12%), hsl(280 10% 14%));
   --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.2), 0 4px 20px -4px hsl(var(--primary) / 0.3);
 }
+
+/* ════ Seasonal atmospheres (round two) ════ */
+:root[data-atmosphere="tulip-garden"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 345 60% 97%; --foreground: 345 30% 16%;
+  --card: 345 60% 99%; --card-foreground: 345 30% 16%; --popover: 345 60% 99%; --popover-foreground: 345 30% 16%;
+  --primary: 345 62% 46%; --primary-foreground: 345 60% 98%; --primary-soft: 345 50% 92%;
+  --secondary: 105 30% 80%; --secondary-foreground: 345 30% 16%; --secondary-soft: 105 40% 92%;
+  --accent: 42 80% 62%; --accent-foreground: 345 30% 16%; --accent-soft: 42 60% 93%;
+  --muted: 345 24% 92%; --muted-foreground: 345 16% 34%;
+  --border: 345 24% 83%; --input: 345 24% 83%; --ring: 345 62% 46%;
+  --gradient-dawn: linear-gradient(160deg, hsl(345 60% 97%) 0%, hsl(105 40% 92%) 55%, hsl(42 60% 93%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(345 62% 46% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 92%, hsl(42 80% 62% / 0.2), transparent 72%);
+}
+.dark[data-atmosphere="tulip-garden"] {
+  --background: 345 18% 9%; --foreground: 345 30% 93%;
+  --card: 345 20% 12%; --card-foreground: 345 30% 93%; --popover: 345 20% 13%; --popover-foreground: 345 30% 93%;
+  --primary: 345 60% 66%; --primary-foreground: 345 30% 8%; --primary-soft: 345 30% 20%;
+  --secondary: 105 18% 24%; --secondary-foreground: 345 30% 93%;
+  --accent: 42 70% 60%; --accent-foreground: 345 30% 8%;
+  --muted: 345 16% 16%; --muted-foreground: 345 14% 70%;
+  --border: 345 16% 21%; --input: 345 16% 21%; --ring: 345 60% 66%;
+  --gradient-dawn: linear-gradient(160deg, hsl(345 18% 9%) 0%, hsl(345 26% 14%) 55%, hsl(42 24% 13%) 100%);
+}
+:root[data-atmosphere="rain-garden"] {
+  --atmo-font-display: 'Playfair Display', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 190 18% 95%; --foreground: 200 30% 14%;
+  --card: 190 60% 99%; --card-foreground: 200 30% 14%; --popover: 190 60% 99%; --popover-foreground: 200 30% 14%;
+  --primary: 198 22% 38%; --primary-foreground: 190 60% 98%; --primary-soft: 198 50% 92%;
+  --secondary: 110 20% 76%; --secondary-foreground: 200 30% 14%; --secondary-soft: 110 40% 92%;
+  --accent: 42 38% 64%; --accent-foreground: 200 30% 14%; --accent-soft: 42 60% 93%;
+  --muted: 190 24% 92%; --muted-foreground: 200 16% 34%;
+  --border: 190 24% 83%; --input: 190 24% 83%; --ring: 198 22% 38%;
+  --gradient-dawn: linear-gradient(160deg, hsl(190 18% 95%) 0%, hsl(110 40% 92%) 55%, hsl(42 60% 93%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(198 22% 38% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 92%, hsl(42 38% 64% / 0.2), transparent 72%);
+}
+.dark[data-atmosphere="rain-garden"] {
+  --background: 200 22% 9%; --foreground: 190 30% 93%;
+  --card: 200 20% 12%; --card-foreground: 190 30% 93%; --popover: 200 20% 13%; --popover-foreground: 190 30% 93%;
+  --primary: 190 24% 60%; --primary-foreground: 200 30% 8%; --primary-soft: 190 30% 20%;
+  --secondary: 110 18% 24%; --secondary-foreground: 190 30% 93%;
+  --accent: 42 38% 58%; --accent-foreground: 200 30% 8%;
+  --muted: 200 16% 16%; --muted-foreground: 190 14% 70%;
+  --border: 200 16% 21%; --input: 200 16% 21%; --ring: 190 24% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(200 22% 9%) 0%, hsl(190 26% 14%) 55%, hsl(42 24% 13%) 100%);
+}
+:root[data-atmosphere="lemon-grove"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 52 70% 96%; --foreground: 60 30% 13%;
+  --card: 52 60% 99%; --card-foreground: 60 30% 13%; --popover: 52 60% 99%; --popover-foreground: 60 30% 13%;
+  --primary: 70 36% 34%; --primary-foreground: 52 60% 98%; --primary-soft: 70 50% 92%;
+  --secondary: 50 70% 74%; --secondary-foreground: 60 30% 13%; --secondary-soft: 50 40% 92%;
+  --accent: 36 80% 56%; --accent-foreground: 60 30% 13%; --accent-soft: 36 60% 93%;
+  --muted: 52 24% 92%; --muted-foreground: 60 16% 34%;
+  --border: 52 24% 83%; --input: 52 24% 83%; --ring: 70 36% 34%;
+  --gradient-dawn: linear-gradient(160deg, hsl(52 70% 96%) 0%, hsl(50 40% 92%) 55%, hsl(36 60% 93%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(70 36% 34% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 92%, hsl(36 80% 56% / 0.2), transparent 72%);
+}
+.dark[data-atmosphere="lemon-grove"] {
+  --background: 60 18% 9%; --foreground: 52 30% 93%;
+  --card: 60 20% 12%; --card-foreground: 52 30% 93%; --popover: 60 20% 13%; --popover-foreground: 52 30% 93%;
+  --primary: 62 46% 60%; --primary-foreground: 60 30% 8%; --primary-soft: 62 30% 20%;
+  --secondary: 50 18% 24%; --secondary-foreground: 52 30% 93%;
+  --accent: 48 80% 62%; --accent-foreground: 60 30% 8%;
+  --muted: 60 16% 16%; --muted-foreground: 52 14% 70%;
+  --border: 60 16% 21%; --input: 60 16% 21%; --ring: 62 46% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(60 18% 9%) 0%, hsl(62 26% 14%) 55%, hsl(48 24% 13%) 100%);
+}
+:root[data-atmosphere="firefly-nights"] {
+  --atmo-font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 232 40% 95%; --foreground: 234 40% 16%;
+  --card: 232 60% 99%; --card-foreground: 234 40% 16%; --popover: 232 60% 99%; --popover-foreground: 234 40% 16%;
+  --primary: 234 42% 40%; --primary-foreground: 232 60% 98%; --primary-soft: 234 50% 92%;
+  --secondary: 222 40% 82%; --secondary-foreground: 234 40% 16%; --secondary-soft: 222 40% 92%;
+  --accent: 44 82% 60%; --accent-foreground: 234 40% 16%; --accent-soft: 44 60% 93%;
+  --muted: 232 24% 92%; --muted-foreground: 234 16% 34%;
+  --border: 232 24% 83%; --input: 232 24% 83%; --ring: 234 42% 40%;
+  --gradient-dawn: linear-gradient(160deg, hsl(232 40% 95%) 0%, hsl(222 40% 92%) 55%, hsl(44 60% 93%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(234 42% 40% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 92%, hsl(44 82% 60% / 0.2), transparent 72%);
+}
+.dark[data-atmosphere="firefly-nights"] {
+  --background: 234 42% 9%; --foreground: 232 30% 93%;
+  --card: 234 20% 12%; --card-foreground: 232 30% 93%; --popover: 234 20% 13%; --popover-foreground: 232 30% 93%;
+  --primary: 44 82% 64%; --primary-foreground: 234 30% 8%; --primary-soft: 44 30% 20%;
+  --secondary: 222 18% 24%; --secondary-foreground: 232 30% 93%;
+  --accent: 222 50% 72%; --accent-foreground: 234 30% 8%;
+  --muted: 234 16% 16%; --muted-foreground: 232 14% 70%;
+  --border: 234 16% 21%; --input: 234 16% 21%; --ring: 44 82% 64%;
+  --gradient-dawn: linear-gradient(160deg, hsl(234 42% 9%) 0%, hsl(44 26% 14%) 55%, hsl(222 24% 13%) 100%);
+}
+:root[data-atmosphere="apple-orchard"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 38 55% 95%; --foreground: 18 38% 14%;
+  --card: 38 60% 99%; --card-foreground: 18 38% 14%; --popover: 38 60% 99%; --popover-foreground: 18 38% 14%;
+  --primary: 2 62% 42%; --primary-foreground: 38 60% 98%; --primary-soft: 2 50% 92%;
+  --secondary: 88 36% 74%; --secondary-foreground: 18 38% 14%; --secondary-soft: 88 40% 92%;
+  --accent: 42 70% 62%; --accent-foreground: 18 38% 14%; --accent-soft: 42 60% 93%;
+  --muted: 38 24% 92%; --muted-foreground: 18 16% 34%;
+  --border: 38 24% 83%; --input: 38 24% 83%; --ring: 2 62% 42%;
+  --gradient-dawn: linear-gradient(160deg, hsl(38 55% 95%) 0%, hsl(88 40% 92%) 55%, hsl(42 60% 93%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(2 62% 42% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 92%, hsl(42 70% 62% / 0.2), transparent 72%);
+}
+.dark[data-atmosphere="apple-orchard"] {
+  --background: 18 24% 9%; --foreground: 38 30% 93%;
+  --card: 18 20% 12%; --card-foreground: 38 30% 93%; --popover: 18 20% 13%; --popover-foreground: 38 30% 93%;
+  --primary: 4 60% 60%; --primary-foreground: 18 30% 8%; --primary-soft: 4 30% 20%;
+  --secondary: 88 18% 24%; --secondary-foreground: 38 30% 93%;
+  --accent: 88 40% 56%; --accent-foreground: 18 30% 8%;
+  --muted: 18 16% 16%; --muted-foreground: 38 14% 70%;
+  --border: 18 16% 21%; --input: 18 16% 21%; --ring: 4 60% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(18 24% 9%) 0%, hsl(4 26% 14%) 55%, hsl(88 24% 13%) 100%);
+}
+:root[data-atmosphere="pumpkin-patch"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --background: 34 60% 94%; --foreground: 22 44% 13%;
+  --card: 34 60% 99%; --card-foreground: 22 44% 13%; --popover: 34 60% 99%; --popover-foreground: 22 44% 13%;
+  --primary: 24 76% 44%; --primary-foreground: 34 60% 98%; --primary-soft: 24 50% 92%;
+  --secondary: 42 52% 72%; --secondary-foreground: 22 44% 13%; --secondary-soft: 42 40% 92%;
+  --accent: 42 58% 54%; --accent-foreground: 22 44% 13%; --accent-soft: 42 60% 93%;
+  --muted: 34 24% 92%; --muted-foreground: 22 16% 34%;
+  --border: 34 24% 83%; --input: 34 24% 83%; --ring: 24 76% 44%;
+  --gradient-dawn: linear-gradient(160deg, hsl(34 60% 94%) 0%, hsl(42 40% 92%) 55%, hsl(42 60% 93%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(24 76% 44% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 92%, hsl(42 58% 54% / 0.2), transparent 72%);
+}
+.dark[data-atmosphere="pumpkin-patch"] {
+  --background: 22 30% 8%; --foreground: 34 30% 93%;
+  --card: 22 20% 12%; --card-foreground: 34 30% 93%; --popover: 22 20% 13%; --popover-foreground: 34 30% 93%;
+  --primary: 26 80% 58%; --primary-foreground: 22 30% 8%; --primary-soft: 26 30% 20%;
+  --secondary: 42 18% 24%; --secondary-foreground: 34 30% 93%;
+  --accent: 42 58% 56%; --accent-foreground: 22 30% 8%;
+  --muted: 22 16% 16%; --muted-foreground: 34 14% 70%;
+  --border: 22 16% 21%; --input: 22 16% 21%; --ring: 26 80% 58%;
+  --gradient-dawn: linear-gradient(160deg, hsl(22 30% 8%) 0%, hsl(26 26% 14%) 55%, hsl(42 24% 13%) 100%);
+}
+:root[data-atmosphere="christmas-time"] {
+  --atmo-font-display: 'Playfair Display', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --background: 40 50% 96%; --foreground: 150 40% 12%;
+  --card: 40 60% 99%; --card-foreground: 150 40% 12%; --popover: 40 60% 99%; --popover-foreground: 150 40% 12%;
+  --primary: 354 70% 41%; --primary-foreground: 40 60% 98%; --primary-soft: 354 50% 92%;
+  --secondary: 150 30% 74%; --secondary-foreground: 150 40% 12%; --secondary-soft: 150 40% 92%;
+  --accent: 44 66% 56%; --accent-foreground: 150 40% 12%; --accent-soft: 44 60% 93%;
+  --muted: 40 24% 92%; --muted-foreground: 150 16% 34%;
+  --border: 40 24% 83%; --input: 40 24% 83%; --ring: 354 70% 41%;
+  --gradient-dawn: linear-gradient(160deg, hsl(40 50% 96%) 0%, hsl(150 40% 92%) 55%, hsl(44 60% 93%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(354 70% 41% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 92%, hsl(44 66% 56% / 0.2), transparent 72%);
+}
+.dark[data-atmosphere="christmas-time"] {
+  --background: 150 34% 8%; --foreground: 40 30% 93%;
+  --card: 150 20% 12%; --card-foreground: 40 30% 93%; --popover: 150 20% 13%; --popover-foreground: 40 30% 93%;
+  --primary: 354 66% 60%; --primary-foreground: 150 30% 8%; --primary-soft: 354 30% 20%;
+  --secondary: 150 18% 24%; --secondary-foreground: 40 30% 93%;
+  --accent: 44 70% 60%; --accent-foreground: 150 30% 8%;
+  --muted: 150 16% 16%; --muted-foreground: 40 14% 70%;
+  --border: 150 16% 21%; --input: 150 16% 21%; --ring: 354 66% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(150 34% 8%) 0%, hsl(354 26% 14%) 55%, hsl(44 24% 13%) 100%);
+}
+:root[data-atmosphere="cocoa-quilts"] {
+  --atmo-font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 30 40% 94%; --foreground: 20 36% 14%;
+  --card: 30 60% 99%; --card-foreground: 20 36% 14%; --popover: 30 60% 99%; --popover-foreground: 20 36% 14%;
+  --primary: 20 38% 32%; --primary-foreground: 30 60% 98%; --primary-soft: 20 50% 92%;
+  --secondary: 24 30% 76%; --secondary-foreground: 20 36% 14%; --secondary-soft: 24 40% 92%;
+  --accent: 4 52% 50%; --accent-foreground: 20 36% 14%; --accent-soft: 4 60% 93%;
+  --muted: 30 24% 92%; --muted-foreground: 20 16% 34%;
+  --border: 30 24% 83%; --input: 30 24% 83%; --ring: 20 38% 32%;
+  --gradient-dawn: linear-gradient(160deg, hsl(30 40% 94%) 0%, hsl(24 40% 92%) 55%, hsl(4 60% 93%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(20 38% 32% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 92%, hsl(4 52% 50% / 0.2), transparent 72%);
+}
+.dark[data-atmosphere="cocoa-quilts"] {
+  --background: 20 24% 8%; --foreground: 30 30% 93%;
+  --card: 20 20% 12%; --card-foreground: 30 30% 93%; --popover: 20 20% 13%; --popover-foreground: 30 30% 93%;
+  --primary: 24 40% 62%; --primary-foreground: 20 30% 8%; --primary-soft: 24 30% 20%;
+  --secondary: 24 18% 24%; --secondary-foreground: 30 30% 93%;
+  --accent: 4 52% 58%; --accent-foreground: 20 30% 8%;
+  --muted: 20 16% 16%; --muted-foreground: 30 14% 70%;
+  --border: 20 16% 21%; --input: 20 16% 21%; --ring: 24 40% 62%;
+  --gradient-dawn: linear-gradient(160deg, hsl(20 24% 8%) 0%, hsl(24 26% 14%) 55%, hsl(4 24% 13%) 100%);
+}
+
+/* CareFlow rhythm phase colors (Plan → Grow → Care → Let go) */
+:root {
+  --rhythm-plan: 97 43% 59%;   --rhythm-plan-tint: 92 50% 89%;   --rhythm-plan-deep: 104 49% 32%;
+  --rhythm-grow: 45 84% 68%;   --rhythm-grow-tint: 48 82% 90%;   --rhythm-grow-deep: 44 77% 31%;
+  --rhythm-care: 30 86% 65%;   --rhythm-care-tint: 28 80% 91%;   --rhythm-care-deep: 24 76% 34%;
+  --rhythm-letgo: 0 69% 67%;   --rhythm-letgo-tint: 0 70% 94%;   --rhythm-letgo-deep: 0 51% 46%;
+}
