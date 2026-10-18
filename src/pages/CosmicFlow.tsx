@@ -70,8 +70,8 @@ export default function CosmicFlow() {
         )}
       </div>
 
-      <nav aria-label="Cosmic tools" className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
-        <ul className="flex gap-2 pb-1 sm:flex-wrap">
+      <nav aria-label="Cosmic tools" className="-mx-3 overflow-x-auto px-3 lg:mx-0 lg:px-0">
+        <ul className="flex gap-2 pb-1 lg:flex-wrap">
           {TOOLS.map(({ to, label, icon: Icon }) => (
             <li key={to} className="shrink-0">
               <Link to={to} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-sm hover:bg-muted">
