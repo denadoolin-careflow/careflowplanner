@@ -150,6 +150,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
   const scrollRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
+  const [resizeLive, setResizeLive] = useState<{ id: string; dur: number } | null>(null);
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
   const [movePreview, setMovePreview] = useState<number | null>(null);
   const [quickAdd, setQuickAdd] = useState<{
@@ -639,7 +640,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       const dy = e.clientY - resizing.startY;
       const deltaMin = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
       const el = document.getElementById(`plnr-block-${resizing.id}`);
-      if (el) el.style.height = `${Math.max(SNAP_MIN, resizing.startDur + deltaMin) * (HOUR_PX / 60)}px`;
+      const live = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
+      if (el) el.style.height = `${live * (HOUR_PX / 60)}px`;
+      setResizeLive((prev) => (prev?.dur === live ? prev : { id: resizing.id, dur: live }));
     };
     const onUp = async (e: PointerEvent) => {
       const dy = e.clientY - resizing.startY;
@@ -660,6 +663,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       suppressClickRef.current = true;
       setTimeout(() => { suppressClickRef.current = false; }, 200);
       setResizing(null);
+      setResizeLive(null);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp, { once: true });
