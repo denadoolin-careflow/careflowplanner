@@ -44,6 +44,8 @@ interface Props {
   onSelectPlanet?: (p: NatalPlanet) => void;
   onSelectSign?: (sign: Sign) => void;
   onSelectHouse?: (house: number) => void;
+  onSelectAngle?: (angle: "As" | "Mc") => void;
+  onSelectTransit?: (t: TransitPoint) => void;
   showAspects?: boolean;
   transitPlanets?: TransitPoint[];
   highlightHouse?: number;
@@ -88,7 +90,7 @@ function spread<T extends { lon: number }>(items: T[], minSep: number): (T & { s
 }
 
 export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
-  { chart, onSelectPlanet, onSelectSign, onSelectHouse, showAspects = true, transitPlanets, highlightHouse },
+  { chart, onSelectPlanet, onSelectSign, onSelectHouse, onSelectAngle, onSelectTransit, showAspects = true, transitPlanets, highlightHouse },
   ref,
 ) {
   const [hover, setHover] = useState<string | null>(null);
@@ -244,7 +246,7 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
         const sign = SIGNS[Math.floor(((t.longitude % 360) + 360) % 360 / 30)];
         const color = elColor(sign);
         return (
-          <g key={`tr-${t.body}`}>
+          <g key={`tr-${t.body}`} onClick={() => onSelectTransit?.(t)} className={onSelectTransit ? "cursor-pointer" : undefined}>
             <title>{`Transiting ${t.body} ${fmtDeg(t.longitude)} ${sign}${t.retrograde ? " (retrograde)" : ""}`}</title>
             <line x1={t1.x} y1={t1.y} x2={t2.x} y2={t2.y} stroke="hsl(var(--foreground))" strokeWidth={1.2} />
             <line x1={t2.x} y1={t2.y} x2={lead.x} y2={lead.y} stroke={color} strokeDasharray="2 2" strokeWidth={0.8} />
@@ -261,7 +263,7 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
         const g = pt(a.lon, R_N_GLYPH - 2), lb = pt(a.lon + 5, R_N_LABEL + 4);
         const t1 = pt(a.lon, R_HUB), t2 = pt(a.lon, R_MID);
         return (
-          <g key={a.label}>
+          <g key={a.label} onClick={() => onSelectAngle?.(a.label as "As" | "Mc")} className={onSelectAngle ? "cursor-pointer" : undefined}>
             <line x1={t1.x} y1={t1.y} x2={t2.x} y2={t2.y} stroke="hsl(var(--foreground))" strokeWidth={1.6} />
             <text x={g.x} y={g.y} textAnchor="middle" dominantBaseline="central" fontSize={22} fontWeight={700} fill="hsl(var(--foreground))" fontFamily="'DM Serif Display', serif">{a.label}</text>
             <text x={lb.x} y={lb.y} textAnchor="middle" dominantBaseline="central" fontSize={10.5} fill="hsl(var(--foreground) / 0.75)" transform={`rotate(${rotFor(a.lon + 5)} ${lb.x} ${lb.y})`}>{fmtDeg(a.lon)}</text>
