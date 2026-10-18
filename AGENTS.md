@@ -27,6 +27,6 @@
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
 - Inbox and Planner share a selected-note schedule pane; the chosen ordinary note is device-local while daily-note following uses the active schedule date.
 - My Focus pinboard columns and pins are device-local (localStorage) references to existing task ids, so tasks stay in their original project/area without a schema change.
-- Bedside medication reminders use the shared medication scheduler and dose logs rather than duplicate recurring tasks, so stopping medication cancels reminders without losing dose history.
+- Bedside med reminders use the shared medication scheduler and dose logs (not duplicate tasks), so stopping a med cancels reminders but keeps history.
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
-- Agenda/List views share src/lib/planner/agenda-rows.ts to build one ordered day list (overdue, all-day, timed, unscheduled), so views stay consistent.
+- Agenda/List views build day lists via src/lib/planner/agenda-rows.ts so they stay consistent.
