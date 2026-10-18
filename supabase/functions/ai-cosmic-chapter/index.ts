@@ -13,6 +13,7 @@ interface Body {
   returns?: { nextSolarReturn?: string; nextSaturnReturn?: string; nextJupiterReturn?: string };
   eclipses?: Array<{ date: string; type: string; sign: string; degree: number; nature: string }>;
   journalThemes?: string[];
+  year?: { timeLord?: string; profectedHouse?: number; timeLordNow?: string; solarReturn?: { sunHouse?: number; rising?: string | null; moonSign?: string; angular?: string[] }; progressedPhase?: string };
 }
 
 Deno.serve(async (req) => {
@@ -42,6 +43,8 @@ PROFECTION: house ${prof.house ?? "?"} (${prof.sign ?? ""}); time-lord ${prof.ti
 RETURNS: next solar return ${ret.nextSolarReturn ?? "?"}; next Saturn return ${ret.nextSaturnReturn ?? "?"}; next Jupiter return ${ret.nextJupiterReturn ?? "?"}.
 ECLIPSES NEARBY:
 ${eclipses || "(none)"}
+
+YEAR CONTEXT: time lord ${body.year?.timeLord ?? "?"} (profected house ${body.year?.profectedHouse ?? "?"}), now in ${body.year?.timeLordNow ?? "?"}. Solar return: Sun in house ${body.year?.solarReturn?.sunHouse ?? "?"}, ${body.year?.solarReturn?.rising ?? "?"} rising, Moon in ${body.year?.solarReturn?.moonSign ?? "?"}, angular: ${(body.year?.solarReturn?.angular ?? []).join(", ") || "none"}. Progressed lunation phase: ${body.year?.progressedPhase ?? "?"}.
 
 RECENT JOURNAL THEMES:
 ${journal || "(none provided)"}
