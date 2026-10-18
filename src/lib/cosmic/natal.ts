@@ -7,6 +7,7 @@
  */
 import { getMoonSign } from "@/lib/zodiac";
 import { planetSign, type Sign, type Planet } from "@/lib/transits";
+import { computeNatalV2 } from "@/lib/cosmic/chart";
 
 export interface BirthInfo {
   date: string;            // yyyy-mm-dd
@@ -41,16 +42,12 @@ export function computeNatal(birth: BirthInfo): NatalSnapshot {
   const sun = planetSign("Sun", date);
   const moon = (getMoonSign(date)?.name ?? "Aries") as Sign;
 
-  // Ascendant approx: sidereal time at birth + 90° (rough). Only meaningful
-  // when birth time + lng provided; otherwise omitted.
+  // Ascendant comes from the same whole-sign house engine as the Natal page,
+  // so every Cosmic Flow surface agrees on the rising sign.
   let asc: Sign | undefined;
-  if (birth.time && birth.lng != null) {
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545.0) / 36525;
-    const gmst = 280.46061837 + 360.98564736629 * (jd - 2451545)
-      + 0.000387933 * T * T - (T * T * T) / 38710000;
-    const lst = ((gmst + birth.lng) % 360 + 360) % 360;
-    asc = SIGNS[Math.floor(lst / 30) % 12];
+  if (birth.time && birth.lat != null && birth.lng != null) {
+    const full = computeNatalV2({ date: birth.date, time: birth.time, tz: birth.tz, lat: birth.lat, lng: birth.lng, house_system: "whole-sign" });
+    asc = full.houses?.ascendantSign as Sign | undefined;
   }
   return { sun, moon, ascendant: asc, planets };
 }

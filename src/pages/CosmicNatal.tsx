@@ -178,7 +178,12 @@ export default function CosmicNatal() {
           <div className="flex items-baseline justify-between mb-2">
             <div>
               <p className="font-display text-base">Whole Sign Houses</p>
-              <p className="text-[11px] text-muted-foreground">{ascSign ?? "—"} Rising</p>
+              <p className="text-[11px] text-muted-foreground">
+                {chart.houses
+                  ? <>{ascSign} {Math.floor(chart.houses.ascendant % 30)}° Rising · House 1 = all of {ascSign} · Midheaven {chart.houses.midheavenSign} {Math.floor(chart.houses.midheaven % 30)}° (house {(((Math.floor(chart.houses.midheaven / 30) - Math.floor(chart.houses.ascendant / 30)) % 12 + 12) % 12) + 1})
+                      {(chart.houses.ascendant % 30 < 3 || chart.houses.ascendant % 30 > 27) && " · Ascendant is near a sign change — check your birth time"}</>
+                  : "Rising unknown — houses counted from your Sun sign"}
+              </p>
             </div>
             <p className="text-[11px] text-muted-foreground">Tap a planet, sign, or house</p>
           </div>
@@ -197,7 +202,7 @@ export default function CosmicNatal() {
             onSelectSign={(s) => { setSelectedSign(s); setSignOpen(true); }}
             onSelectHouse={(h) => { setSelectedHouse(h); setHouseOpen(true); }}
           />
-          {!row.birth_time || !row.birth_place ? (
+          {!chart.houses ? (
             <p className="mt-2 text-[11.5px] text-muted-foreground">Houses are counted from your Sun sign. <Link to="/cosmic-flow/birth-chart" className="text-primary hover:underline">Add your birth time and place</Link> to show your rising sign.</p>
           ) : null}
           {/* Aspect legend */}
