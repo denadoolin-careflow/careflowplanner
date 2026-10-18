@@ -48,7 +48,7 @@ export function buildAgendaDay(input: {
   const top = tasks.filter(t => !t.parentTaskId);
   for (const t of top.filter(t => t.dueDate === iso)) {
     const s = hmToMin(blockStart?.get(t.id) ?? t.startTime);
-    const e = hmToMin(t.endTime) ?? (s != null && t.durationMinutes ? s + t.durationMinutes : null);
+    const e = hmToMin(t.endTime) ?? (s != null && t.estMinutes ? s + t.estMinutes : null);
     rows.push({ key: `t:${t.id}`, kind: "task", title: t.title, start: s, end: e, done: !!t.done, task: t });
   }
   const day = parseISO(iso);
