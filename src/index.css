@@ -4030,3 +4030,11 @@ body.planner-dragging [data-radix-dialog-overlay] {
   --border: 20 16% 21%; --input: 20 16% 21%; --ring: 24 40% 62%;
   --gradient-dawn: linear-gradient(160deg, hsl(20 24% 8%) 0%, hsl(24 26% 14%) 55%, hsl(4 24% 13%) 100%);
 }
+
+/* CareFlow rhythm phase colors (Plan → Grow → Care → Let go) */
+:root {
+  --rhythm-plan: 97 43% 59%;   --rhythm-plan-tint: 92 50% 89%;   --rhythm-plan-deep: 104 49% 32%;
+  --rhythm-grow: 45 84% 68%;   --rhythm-grow-tint: 48 82% 90%;   --rhythm-grow-deep: 44 77% 31%;
+  --rhythm-care: 30 86% 65%;   --rhythm-care-tint: 28 80% 91%;   --rhythm-care-deep: 24 76% 34%;
+  --rhythm-letgo: 0 69% 67%;   --rhythm-letgo-tint: 0 70% 94%;   --rhythm-letgo-deep: 0 51% 46%;
+}
