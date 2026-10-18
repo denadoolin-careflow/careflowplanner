@@ -58,6 +58,7 @@ export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "pl
   const s = useMemo(() => summarizeBudget(cats, txs, monthKey(new Date()), targets), [cats, txs, targets]);
   const assets = goals.reduce((a, g) => a + (Number(g.current_amount) || 0), 0);
   const liabilities = debts.reduce((a, d) => a + (Number(d.balance) || 0), 0);
+  const nw = netWorthChange(assets, liabilities, prevSnap);
   const top = [...s.expenseRows].filter((r) => r.limit > 0).sort((a, b) => b.spent / b.limit - a.spent / a.limit).slice(0, 5);
   const flowMax = Math.max(s.income, s.expenses, 1);
   const today = new Date().toISOString().slice(0, 10);
@@ -66,7 +67,15 @@ export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "pl
     <div className="grid gap-4 lg:grid-cols-3">
       <section className="cozy-card p-5">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">Net worth</p>
-        <p className="font-display text-3xl tabular-nums">{fmtMoney(assets - liabilities)}</p>
+        <p className="font-display text-3xl tabular-nums">{fmtMoney(nw.now)}</p>
+        {prevSnap ? (
+          <p className={cn("mt-1 flex items-center gap-1 text-sm tabular-nums", nw.change! > 0 ? "text-secondary" : nw.change! < 0 ? "text-destructive" : "text-muted-foreground")}>
+            {nw.change! > 0 ? <ArrowUpRight className="h-4 w-4" /> : nw.change! < 0 ? <ArrowDownRight className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+            {nw.change! >= 0 ? "+" : "−"}{fmtMoney(Math.abs(nw.change!))} this month
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">A snapshot saves each month so the change can show here.</p>
+        )}
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div><p className="text-xs text-muted-foreground">Savings</p><p className="tabular-nums">{fmtMoney(assets)}</p></div>
           <div><p className="text-xs text-muted-foreground">Debts</p><p className="tabular-nums">{fmtMoney(liabilities)}</p></div>
