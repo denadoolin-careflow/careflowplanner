@@ -17,7 +17,7 @@ const PHASES = ["New", "Crescent", "First Quarter", "Gibbous", "Full", "Dissemin
 const ord = (n: number) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`;
 
 export default function CosmicChapter() {
-  const { row } = useBirthChart();
+  const { row, loading: rowLoading } = useBirthChart();
   const birth = useMemo(() => row ? { date: row.birth_date, time: row.birth_time, tz: row.birth_tz, lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place, house_system: "whole-sign" as const } : null,
     [row?.birth_date, row?.birth_time, row?.birth_tz, row?.birth_lat, row?.birth_lng]);
   const chart = useNatalChart(birth);
@@ -38,7 +38,9 @@ export default function CosmicChapter() {
         <Button asChild variant="ghost" size="sm" className="h-8 px-2"><Link to="/cosmic-flow"><ArrowLeft className="h-4 w-4 mr-1" />Back</Link></Button>
       </header>
 
-      {!chart || !year ? (
+      {rowLoading && !row ? (
+        <div className="cozy-card p-5 text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Reading your year…</div>
+      ) : !chart || !year ? (
         <div className="cozy-card p-5 text-sm">
           <p className="font-medium">Add your birth details to read your year.</p>
           <Button asChild size="sm" className="mt-3"><Link to="/cosmic-flow/birth-chart">Add birth chart</Link></Button>
