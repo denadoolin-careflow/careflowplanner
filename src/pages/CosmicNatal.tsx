@@ -175,7 +175,7 @@ export default function CosmicNatal() {
 
       <div className="grid gap-4 md:grid-cols-5">
         {/* Chart wheel: 3 cols on desktop */}
-        <section className={`cozy-card p-4 sm:p-5 md:col-span-3 ${tab!=="chart" ? "hidden md:block" : ""}`}>
+        <section className={`cozy-card p-4 sm:p-5 md:col-span-5 ${tab!=="chart" ? "hidden md:block" : ""}`}>
           <div className="flex items-baseline justify-between mb-2">
             <div>
               <p className="font-display text-base">Whole Sign Houses</p>
@@ -217,7 +217,7 @@ export default function CosmicNatal() {
         </section>
 
         {/* Right rail: Big three + dominants */}
-        <section className={`space-y-3 md:col-span-2 ${tab!=="chart" ? "hidden md:block" : ""}`}>
+        <section className={`grid gap-3 md:col-span-5 md:grid-cols-3 md:items-start [&>*]:min-w-0 ${tab!=="chart" ? "hidden md:block" : ""}`}>
           {/* Big Three */}
           <div className="cozy-card p-4">
             <p className="text-xs text-muted-foreground mb-3">Big Three</p>
@@ -624,7 +624,7 @@ function ChartCorners({ row, transitDate, showTransits }: { row: { birth_date: s
           <p className="flex items-center gap-1.5 border-b border-border/50 bg-muted/40 px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-wider text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-secondary" />Current transits</p>
           <div className="px-3 py-2 font-mono">
             <p className="text-[14px] text-secondary">{tLabel}</p>
-            <p className="text-[12px] text-muted-foreground">Geocentric{"\n"}</p>
+            <p className="text-[12px] text-muted-foreground">Geocentric</p>
             <p className="text-[12px] text-muted-foreground">Tropical</p>
           </div>
         </div>
