@@ -99,6 +99,13 @@
       "when": 1792337026308,
       "tag": "0013_cosmic_compare_charts",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792357691754,
+      "tag": "0014_budget_month_targets",
+      "breakpoints": true
     }
   ]
 }

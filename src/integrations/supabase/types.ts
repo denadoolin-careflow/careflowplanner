@@ -699,6 +699,44 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_month_targets: {
+        Row: {
+          amount: number
+          category_id: string
+          created_at: string
+          id: string
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category_id: string
+          created_at?: string
+          id?: string
+          month: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string
+          created_at?: string
+          id?: string
+          month?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_month_targets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "budget_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_ai_notes: {
         Row: {
           body: string
