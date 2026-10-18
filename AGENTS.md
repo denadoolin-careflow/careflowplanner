@@ -4,8 +4,8 @@
 - Past-day routine step completions read/write routine_completions; today's live done flags stay on routines.items. Habit weeklyTarget and skip dates live in habits.meta; routine skips in routines.meta — no schema change.
 - Daily rituals reuse daily_checkins for Morning Reset and dated journal entries tagged with the evening-reflection template for Evening Reflection completion, avoiding a duplicate ritual store.
 - Ritual step lists (Morning Reset / Evening Reflection) and their per-date check-offs are device-local (localStorage) presentation data; ritual completion itself stays in daily_checkins / journal.
-- Ritual steps reuse shared completion visuals and atmosphere chimes, with stable default step IDs so untouched checklists retain check-offs across renders.
-- Completed-task strikethrough is a device-local planner presentation preference shared across scheduled, all-day, and list task surfaces.
+- Ritual steps reuse shared completion visuals and chimes; stable default step IDs preserve check-offs across renders.
+- Completed-task strikethrough is a device-local planner preference shared across all task surfaces.
 - Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
 - Today and Planner use page-scoped Soft Botanical mobile presentation tokens and Outfit/Figtree typography, preserving the app-wide theme.
 - Planner range and layout selectors reuse the shared ViewPills control so Today and Planner remain visually consistent.
@@ -33,3 +33,4 @@
 - Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
 - Astro calculations are local; chapters share panel readings, cached by birth/date/version to avoid stale text.
 - Natal PNGs are prepared before saving for iOS activation; zoom uses react-zoom-pan-pinch, separate from the exported SVG.
+- Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.
