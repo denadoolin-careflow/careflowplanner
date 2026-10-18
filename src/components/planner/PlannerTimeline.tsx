@@ -150,6 +150,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
   const scrollRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
+  const [resizeLive, setResizeLive] = useState<{ id: string; dur: number } | null>(null);
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
   const [movePreview, setMovePreview] = useState<number | null>(null);
   const [quickAdd, setQuickAdd] = useState<{
@@ -639,7 +640,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       const dy = e.clientY - resizing.startY;
       const deltaMin = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
       const el = document.getElementById(`plnr-block-${resizing.id}`);
-      if (el) el.style.height = `${Math.max(SNAP_MIN, resizing.startDur + deltaMin) * (HOUR_PX / 60)}px`;
+      const live = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
+      if (el) el.style.height = `${live * (HOUR_PX / 60)}px`;
+      setResizeLive((prev) => (prev?.dur === live ? prev : { id: resizing.id, dur: live }));
     };
     const onUp = async (e: PointerEvent) => {
       const dy = e.clientY - resizing.startY;
@@ -660,6 +663,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
       suppressClickRef.current = true;
       setTimeout(() => { suppressClickRef.current = false; }, 200);
       setResizing(null);
+      setResizeLive(null);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp, { once: true });
@@ -1559,6 +1563,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                       className="absolute bottom-0 left-0 right-0 flex h-3 items-center justify-center cursor-ns-resize touch-none opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:bg-foreground/10"
                     >
                       <span aria-hidden className="h-[3px] w-8 rounded-full bg-foreground/30" />
+                      {resizeLive?.id === it.id && (
+                        <span role="status" className="pointer-events-none absolute -bottom-7 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-md">
+                          {fmtMinutesShort(resizeLive.dur)}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
