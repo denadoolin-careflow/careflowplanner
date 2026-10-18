@@ -15,6 +15,8 @@ export function InteractiveNatalWheel({ updatedAt, ...props }: Props) {
   const [imageError, setImageError] = useState(false);
   const [retry, setRetry] = useState(0);
   const [scale, setScale] = useState(1);
+  const suppressClick = useRef(false);
+  const panStart = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     let cancelled = false;
@@ -33,8 +35,16 @@ export function InteractiveNatalWheel({ updatedAt, ...props }: Props) {
   return (
     <div>
       <TransformWrapper minScale={1} maxScale={4} initialScale={1} centerOnInit
-        wheel={{ step: 0.08 }} doubleClick={{ disabled: true }}
-        onTransformed={(_, state) => setScale(state.scale)}>
+        wheel={{ step: 0.0015 }} doubleClick={{ disabled: true }}
+        onPanningStart={({ state }) => {
+          suppressClick.current = false;
+          panStart.current = { x: state.positionX, y: state.positionY };
+        }}
+        onPanning={({ state }) => {
+          if (Math.hypot(state.positionX - panStart.current.x, state.positionY - panStart.current.y) > 4) suppressClick.current = true;
+        }}
+        onPinchStart={() => { suppressClick.current = true; }}
+        onTransform={(_, state) => setScale(state.scale)}>
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
             <div className="mb-2 flex items-center justify-center gap-1">
@@ -54,7 +64,11 @@ export function InteractiveNatalWheel({ updatedAt, ...props }: Props) {
               ))}
               <output aria-label="Chart zoom" className="w-14 text-center text-xs tabular-nums text-muted-foreground">{Math.round(scale * 100)}%</output>
             </div>
-            <div className="mx-auto aspect-square w-full max-w-[720px] overflow-hidden touch-none" aria-label="Interactive natal chart">
+            <div className="mx-auto aspect-square w-full max-w-[720px] overflow-hidden touch-none" aria-label="Interactive natal chart"
+              onPointerDown={() => { suppressClick.current = false; }}
+              onClickCapture={event => {
+                if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); suppressClick.current = false; }
+              }}>
               <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: "100%", height: "100%" }}>
                 <NatalWheel {...props} ref={svgRef} />
               </TransformComponent>
