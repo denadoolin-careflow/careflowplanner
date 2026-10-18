@@ -5309,6 +5309,36 @@ export type Database = {
         }
         Relationships: []
       }
+      net_worth_snapshots: {
+        Row: {
+          assets: number
+          created_at: string
+          id: string
+          liabilities: number
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assets?: number
+          created_at?: string
+          id?: string
+          liabilities?: number
+          month: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assets?: number
+          created_at?: string
+          id?: string
+          liabilities?: number
+          month?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       note_links: {
         Row: {
           created_at: string
