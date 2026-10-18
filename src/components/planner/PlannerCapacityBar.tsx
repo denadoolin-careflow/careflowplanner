@@ -11,6 +11,9 @@ import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { dominantCondition, condTint } from "@/lib/planner/hour-weather";
 import { ConditionIcon } from "@/components/weather/ConditionIcon";
 import { isSameDay } from "date-fns";
+import { useCycleDot } from "@/lib/planner/day-rhythm";
+import { CYCLE_CAPACITY_FACTOR } from "@/lib/rhythm-guidance";
+import type { CyclePhase } from "@/lib/cycle";
 
 const BANDS: { id: BandId; part: DayPart; label: string; startH: number; endH: number }[] = [
   { id: "morning", part: "morning", label: "Morning", startH: 5, endH: 12 },
@@ -47,6 +50,8 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
   const weatherSnap = useWeatherSnapshot();
   const [unit] = useTempUnit();
   const isToday = isSameDay(date, new Date());
+  const cyclePhase = (useCycleDot(date) as { phase?: CyclePhase } | null)?.phase ?? null;
+  const factor = cyclePhase ? CYCLE_CAPACITY_FACTOR[cyclePhase] : 1;
 
   /** Dominant forecast hour for each band — matches the timeline's hourly colors. */
   const bandWeather = useMemo(() => {
@@ -80,7 +85,7 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
       spans.push({ start: s, dur: Math.max(15, (e ?? s + 30) - s) });
     }
     return BANDS.map(b => {
-      const available = (b.endH - b.startH) * 60;
+      const available = Math.round(((b.endH - b.startH) * 60 * factor) / 15) * 15;
       let planned = 0;
       for (const s of spans) {
         const overlap = Math.min(s.start + s.dur, b.endH * 60) - Math.max(s.start, b.startH * 60);
@@ -88,7 +93,7 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
       }
       return { ...b, available, planned };
     });
-  }, [state.tasks, state.appointments, blocks, iso]);
+  }, [state.tasks, state.appointments, blocks, iso, factor]);
 
   const shown = part ? rows.filter(r => r.part === part) : rows;
   const planned = shown.reduce((s, r) => s + r.planned, 0);
@@ -126,6 +131,11 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
             <span className="font-medium text-foreground">{hrs(planned)}</span> planned · {hrs(Math.max(0, available - planned))} free
           </p>
         </div>
+      )}
+      {!compact && factor < 1 && cyclePhase && (
+        <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+          Limit lowered to {Math.round(factor * 100)}% for your {cyclePhase} phase.
+        </p>
       )}
       <div className={cn(compact ? "grid grid-cols-1 gap-2" : "mt-1.5 grid grid-cols-3 gap-2")}>
         {shown.map(r => {
