@@ -95,7 +95,7 @@ export function PlannerDayRhythm({ date, onSelectDate, className }: {
           <div role="tabpanel">
             {activeTab === "moon" && <PlannerMoonInsight date={date} onSelectDate={onSelectDate} className={embedded} />}
             {activeTab === "season" && <SolarSeasonGuide date={date} className={embedded} />}
-            {activeTab === "cycle" && <CyclePlanningGuide date={date} className={embedded} />}
+            {activeTab === "cycle" && <><CyclePlanningGuide date={date} className={embedded} />{cyclePhase && <PhaseGroceryButton phase={cyclePhase} className="px-4 pb-3" />}</>}
             {activeTab === "capacity" && <div className="p-2"><PlannerCapacityBar date={date} className="border-0 bg-transparent" /></div>}
           </div>
         </div>
