@@ -16,6 +16,7 @@ import { PlainMeaning } from "@/components/cosmic/PlainMeaning";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { isVoidOfCourse } from "@/lib/transits";
 import { MOON_PLAIN, VOC_ADVICE } from "@/lib/rhythm-guidance";
+import { DailyTarotPull } from "@/components/astro-suite/DailyTarotPull";
 import { AlignFocusCard } from "@/components/cosmic/AlignFocusCard";
 import { AdvancedAstrologyRow } from "@/components/cosmic/AdvancedAstrologyRow";
 
@@ -64,6 +65,15 @@ export default function CosmicFlow() {
         </div>
 
         <div className="space-y-3 sm:space-y-4">
+          <DailyTarotPull compact />
+          <section className="cozy-card p-4 space-y-2" aria-label="Astro Suite">
+            <p className="text-sm font-medium">Astro Suite</p>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <Link to="/cosmic-flow/tarot" className="rounded-xl bg-muted p-3 hover:bg-muted/70">🔮<br />Tarot</Link>
+              <Link to="/cosmic-flow/moon" className="rounded-xl bg-muted p-3 hover:bg-muted/70">🌙<br />Moon</Link>
+              <Link to="/cosmic-flow/almanac" className="rounded-xl bg-muted p-3 hover:bg-muted/70">📖<br />Almanac</Link>
+            </div>
+          </section>
           <AlignFocusCard date={date} />
           <JournalWithTheSkyCard date={date} />
           <PredictiveSnapshotList from={date} />
