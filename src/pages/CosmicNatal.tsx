@@ -10,6 +10,7 @@ import { InteractiveNatalWheel } from "@/components/cosmic/InteractiveNatalWheel
 import { PlacementDetailDialog } from "@/components/cosmic/PlacementDetailDialog";
 import { SignDetailDialog } from "@/components/cosmic/SignDetailDialog";
 import { HouseDetailDialog, HOUSE_TITLE } from "@/components/cosmic/HouseDetailDialog";
+import { ChartPointDialog, type ChartPoint } from "@/components/cosmic/ChartPointDialog";
 import { AspectDetailDialog } from "@/components/cosmic/AspectDetailDialog";
 import { RetrogradeBadge } from "@/components/cosmic/RetrogradeBadge";
 import type { NatalPlanet, NatalChartV2 } from "@/lib/cosmic/chart";
@@ -100,7 +101,14 @@ export default function CosmicNatal() {
   const [aspectOpen, setAspectOpen] = useState(false);
   const [tab, setTab] = useState<"chart" | "houses" | "planets" | "aspects" | "insights">("chart");
 
-  const openPlanet = (p: NatalPlanet) => { setSelected(p); setOpen(true); };
+  const [point, setPoint] = useState<ChartPoint | null>(null);
+  const [pointOpen, setPointOpen] = useState(false);
+  const closeAll = () => { setOpen(false); setSignOpen(false); setHouseOpen(false); setPointOpen(false); setAspectOpen(false); };
+  const openPlanet = (p: NatalPlanet) => { closeAll(); setTimeout(() => { setSelected(p); setOpen(true); }, 0); };
+  const openSign = (s: Sign) => { closeAll(); setTimeout(() => { setSelectedSign(s); setSignOpen(true); }, 0); };
+  const openHouse = (h: number) => { closeAll(); setTimeout(() => { setSelectedHouse(h); setHouseOpen(true); }, 0); };
+  const openPoint = (p: ChartPoint) => { closeAll(); setTimeout(() => { setPoint(p); setPointOpen(true); }, 0); };
+  const openRising = () => openPoint({ kind: "angle", angle: "As" });
   const openAspect = (a: AspectRow) => { setSelectedAspect(a); setAspectOpen(true); };
 
   const sun = chart?.planets.find(p => p.body === "Sun");
@@ -199,8 +207,10 @@ export default function CosmicNatal() {
             highlightHouse={timeLordHouse}
             transitPlanets={showTransits ? transitPoints : undefined}
             onSelectPlanet={openPlanet}
-            onSelectSign={(s) => { setSelectedSign(s); setSignOpen(true); }}
-            onSelectHouse={(h) => { setSelectedHouse(h); setHouseOpen(true); }}
+            onSelectSign={openSign}
+            onSelectHouse={openHouse}
+            onSelectAngle={(a) => openPoint({ kind: "angle", angle: a })}
+            onSelectTransit={(t) => openPoint({ kind: "transit", point: t })}
           />
           {!chart.houses ? (
             <p className="mt-2 text-[11.5px] text-muted-foreground">Houses are counted from your Sun sign. <Link to="/cosmic-flow/birth-chart" className="text-primary hover:underline">Add your birth time and place</Link> to show your rising sign.</p>
@@ -224,7 +234,7 @@ export default function CosmicNatal() {
             <div className="grid grid-cols-3 gap-2">
               <BigThreeTile icon={<Sun className="h-5 w-5" />} label="Sun" sign={sun?.sign} degree={sun?.degreeInSign} tint="--element-fire" onClick={() => sun && openPlanet(sun)} />
               <BigThreeTile icon={<Moon className="h-5 w-5" />} label="Moon" sign={moon?.sign} degree={moon?.degreeInSign} tint="--element-water" onClick={() => moon && openPlanet(moon)} />
-              <BigThreeTile icon={<ArrowUpRight className="h-5 w-5" />} label="Ascendant" sign={ascSign} degree={chart.houses ? chart.houses.ascendant % 30 : undefined} tint="--primary" onClick={() => ascSign && (setSelectedSign(ascSign), setSignOpen(true))} />
+              <BigThreeTile icon={<ArrowUpRight className="h-5 w-5" />} label="Rising" sign={ascSign} degree={chart.houses ? chart.houses.ascendant % 30 : undefined} tint="--primary" onClick={openRising} />
             </div>
           </div>
 
@@ -285,9 +295,9 @@ export default function CosmicNatal() {
 
       {/* Big Three trait cards */}
       <section className={`grid gap-3 sm:grid-cols-3 ${tab!=="chart" && tab!=="insights" ? "hidden md:grid" : ""}`}>
-        {ascSign && <TraitCard title={`${ascSign} Rising`} traits={SIGN_TRAITS[ascSign]} blurb="The mask you wear and how you greet the world." glyph={SIGN_GLYPH[ascSign]} sign={ascSign} onClick={() => { setSelectedSign(ascSign); setSignOpen(true); }} />}
-        {sun && <TraitCard title={`Sun in ${sun.sign}`} traits={SIGN_TRAITS[sun.sign]} blurb="Your core identity and what makes you shine." glyph={SIGN_GLYPH[sun.sign]} sign={sun.sign} onClick={() => openPlanet(sun)} />}
+                {sun && <TraitCard title={`Sun in ${sun.sign}`} traits={SIGN_TRAITS[sun.sign]} blurb="Your core identity and what makes you shine." glyph={SIGN_GLYPH[sun.sign]} sign={sun.sign} onClick={() => openPlanet(sun)} />}
         {moon && <TraitCard title={`Moon in ${moon.sign}`} traits={SIGN_TRAITS[moon.sign]} blurb="Your inner world and emotional needs." glyph={SIGN_GLYPH[moon.sign]} sign={moon.sign} onClick={() => openPlanet(moon)} />}
+        {ascSign && <TraitCard title={`${ascSign} Rising`} traits={SIGN_TRAITS[ascSign]} blurb="The mask you wear and how you greet the world." glyph={SIGN_GLYPH[ascSign]} sign={ascSign} onClick={openRising} />}
       </section>
 
       {/* Planetary Placements */}
@@ -471,8 +481,12 @@ export default function CosmicNatal() {
         onOpenChange={setOpen}
         onSelectPlanet={(p) => { setOpen(false); setTimeout(() => openPlanet(p), 120); }}
         onSelectAspect={(a) => { setOpen(false); setTimeout(() => openAspect(a), 120); }}
+        onSelectSign={openSign}
+        onSelectHouse={openHouse}
       />
-      <SignDetailDialog chart={chart} sign={selectedSign} open={signOpen} onOpenChange={setSignOpen} />
+      <SignDetailDialog chart={chart} sign={selectedSign} open={signOpen} onOpenChange={setSignOpen} onSelectPlanet={openPlanet} onSelectHouse={openHouse} />
+      <ChartPointDialog chart={chart} point={point} open={pointOpen} onOpenChange={setPointOpen} transits={transitPoints}
+        approximateTime={!row.birth_time} onSelectPlanet={openPlanet} onSelectSign={openSign} onSelectHouse={openHouse} />
       <HouseDetailDialog
         chart={chart}
         house={selectedHouse}

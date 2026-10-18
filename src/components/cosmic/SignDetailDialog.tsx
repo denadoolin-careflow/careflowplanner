@@ -36,12 +36,19 @@ interface Props {
   sign: Sign | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onSelectPlanet?: (p: NatalChartV2["planets"][number]) => void;
+  onSelectHouse?: (h: number) => void;
 }
 
-export function SignDetailDialog({ chart, sign, open, onOpenChange }: Props) {
+export function SignDetailDialog({ chart, sign, open, onOpenChange, onSelectPlanet, onSelectHouse }: Props) {
   if (!sign) return null;
   const placements = chart.planets.filter(p => p.sign === sign);
   const element = SIGN_ELEMENT[sign];
+  const ORDER = Object.keys(SIGN_RULER) as Sign[];
+  const anchor = chart.houses?.ascendantSign ?? chart.planets.find(p => p.body === "Sun")?.sign;
+  const house = anchor ? ((ORDER.indexOf(sign) - ORDER.indexOf(anchor as Sign) + 12) % 12) + 1 : null;
+  const rulerName = SIGN_RULER[sign].split(" / ")[0];
+  const ruler = chart.planets.find(p => p.body === rulerName);
   const colorVar = ELEMENT_VAR[element];
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,6 +64,10 @@ export function SignDetailDialog({ chart, sign, open, onOpenChange }: Props) {
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">{SIGN_VIBE[sign]}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {house && <button onClick={() => onSelectHouse?.(house)} className="rounded-full border border-border/50 px-2.5 py-1 text-xs hover:border-primary/50">{sign} is your House {house}{house === 1 ? " (rising)" : ""}</button>}
+            {ruler && <button onClick={() => onSelectPlanet?.(ruler)} className="rounded-full border border-border/50 px-2.5 py-1 text-xs hover:border-primary/50">Ruler: {PLANET_GLYPH[ruler.body]} {planetDisplay(ruler.body)} in {ruler.sign}{ruler.house ? ` · H${ruler.house}` : ""}</button>}
+          </div>
           <div>
             <p className="text-xs font-medium mb-1">Your placements in {sign}</p>
             {placements.length === 0 ? (
@@ -64,7 +75,7 @@ export function SignDetailDialog({ chart, sign, open, onOpenChange }: Props) {
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {placements.map(p => (
-                  <Badge key={p.body} variant="secondary" className="font-normal">
+                  <Badge key={p.body} variant="secondary" className="cursor-pointer font-normal" onClick={() => onSelectPlanet?.(p)}>
                     {PLANET_GLYPH[p.body] ?? ""} {planetDisplay(p.body)} {Math.floor(p.degreeInSign)}°
                     {p.house ? ` · H${p.house}` : ""}
                   </Badge>
