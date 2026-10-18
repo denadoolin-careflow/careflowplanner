@@ -210,7 +210,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
           })}
         </div>
       </div>
-      {isMobile && <DayDropZone dateISO={selectedKey} as="section" className="planner-month-agenda-day" aria-live="polite">
+      {isMobile && <DayDropZone dateISO={selectedKey} as="section" className="planner-month-agenda-day">
         <div className="flex items-start justify-between gap-2 border-b border-border/50 pb-2">
           <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(activeDate, "EEEE")}</p><h3 className="font-display text-lg">{format(activeDate, "MMMM d")}</h3><p className="text-xs text-muted-foreground">{activeRows.length ? `${activeRows.length} planned · ${activeRows.filter(r => r.done).length} done` : "Space to breathe"}</p></div>
           <div className="flex shrink-0 items-center gap-1">
