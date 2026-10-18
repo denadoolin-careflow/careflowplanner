@@ -68,9 +68,11 @@ interface Props {
   onSelectSign?: (sign: Sign) => void;
   onSelectHouse?: (house: number) => void;
   showAspects?: boolean;
+  /** Optional outer ring of transiting planets (bi-wheel). */
+  transitPlanets?: { body: string; glyph: string; longitude: number }[];
 }
 
-export function NatalWheel({ chart, onSelectPlanet, onSelectSign, onSelectHouse, showAspects = true }: Props) {
+export function NatalWheel({ chart, onSelectPlanet, onSelectSign, onSelectHouse, showAspects = true, transitPlanets }: Props) {
   const [hover, setHover] = useState<string | null>(null);
   const [hoverHouse, setHoverHouse] = useState<number | null>(null);
   const ascSignIndex = chart.houses ? Math.floor(chart.houses.ascendant / 30) % 12 : 0;
@@ -222,6 +224,31 @@ export function NatalWheel({ chart, onSelectPlanet, onSelectSign, onSelectHouse,
           </g>
         );
       })}
+
+      {/* transit ring (bi-wheel) */}
+      {transitPlanets && transitPlanets.length > 0 && (
+        <g aria-label="Transiting planets">
+          <circle cx={CX} cy={CY} r={R_HOUSE_INNER + 46} fill="none" stroke="hsl(var(--accent) / 0.5)" strokeDasharray="2 3" />
+          {transitPlanets.map(t => chart.planets.map(n => {
+            const sep = Math.abs((((t.longitude - n.longitude + 180) % 360) + 360) % 360 - 180);
+            const hit = [0, 60, 90, 120, 180].find(a => Math.abs(sep - a) <= 3);
+            if (hit === undefined) return null;
+            const a = polar(t.longitude, R_HOUSE_INNER + 40, ascSignIndex);
+            const b = polar(n.longitude, R_PLANET, ascSignIndex);
+            const color = hit === 90 || hit === 180 ? "--aspect-dynamic" : hit === 0 ? "--aspect-neutral" : "--aspect-harmonious";
+            return <line key={`${t.body}-${n.body}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={`hsl(var(${color}) / 0.55)`} strokeWidth={0.8} strokeDasharray="3 2" />;
+          }))}
+          {transitPlanets.map(t => {
+            const pt = polar(t.longitude, R_HOUSE_INNER + 46, ascSignIndex);
+            return (
+              <g key={t.body}>
+                <circle cx={pt.x} cy={pt.y} r={8} fill="hsl(var(--card))" stroke="hsl(var(--accent))" strokeWidth={1} />
+                <text x={pt.x} y={pt.y + 3.5} textAnchor="middle" fontSize={10} fill="hsl(var(--foreground))"><title>{`Transiting ${t.body}`}</title>{t.glyph}</text>
+              </g>
+            );
+          })}
+        </g>
+      )}
 
       {/* axis labels */}
       {chart.houses && (
