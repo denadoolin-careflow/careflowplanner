@@ -65,3 +65,5 @@
 - [x] Planner Phase C: Plan My Day guided ritual
 
 - [x] Verify natal chart PNG saving on desktop/mobile and add zoom/pan controls
+- [x] Align written Chapter with shared time lord, solar return and moon readings; tests and signed-in request verified
+- [ ] Verify generated Chapter save/readback — blocked by reading service rate limit

@@ -11,7 +11,7 @@ import { useNatalChart, useCurrentChapter, useJournalInsights } from "@/lib/cosm
 import { NatalWheel } from "@/components/cosmic/NatalWheel";
 import { DIGNITY_MEANING } from "@/lib/cosmic/sky";
 import { appendToTodaysNote } from "@/lib/astro-suite/tarot-pulls";
-import { chapterSummary, monthMoon, progressedLunation, solarReturnChart, timeLordReport } from "@/lib/cosmic/year-chapter";
+import { chapterReading } from "@/lib/cosmic/chapter-context";
 
 const PHASES = ["New", "Crescent", "First Quarter", "Gibbous", "Full", "Disseminating", "Last Quarter", "Balsamic"];
 const ord = (n: number) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`;
@@ -21,16 +21,14 @@ export default function CosmicChapter() {
   const birth = useMemo(() => row ? { date: row.birth_date, time: row.birth_time, tz: row.birth_tz, lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place, house_system: "whole-sign" as const } : null,
     [row?.birth_date, row?.birth_time, row?.birth_tz, row?.birth_lat, row?.birth_lng]);
   const chart = useNatalChart(birth);
-  const { chapter, loading, refresh } = useCurrentChapter(chart);
   const { insights } = useJournalInsights();
   const { addTask } = useStore() as any;
 
   const year = useMemo(() => {
     if (!chart) return null;
-    const on = new Date();
-    const tl = timeLordReport(chart, on), sr = solarReturnChart(chart, on), pl = progressedLunation(chart, on), mm = monthMoon(chart, on);
-    return { tl, sr, pl, mm, summary: chapterSummary(tl, sr, pl, mm) };
+    return chapterReading(chart);
   }, [chart]);
+  const { chapter, loading, error, refresh } = useCurrentChapter(chart, year);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-4 p-3 pb-28 sm:p-6">
@@ -126,10 +124,11 @@ export default function CosmicChapter() {
             <h2 className="font-display text-xl flex items-center gap-2 mt-1"><BookOpen className="h-4 w-4 text-primary" />{chapter?.chapter_theme ?? (loading ? "Synthesizing…" : "No chapter yet")}</h2>
             {chapter?.valid_from && <p className="text-xs text-muted-foreground mt-1">Chapter window: {chapter.valid_from} → {chapter.valid_to}</p>}
           </div>
-          <Button variant="outline" size="sm" onClick={() => refresh(true)} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => refresh(true)} disabled={loading || !year}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RefreshCw className="h-4 w-4 mr-1" />Regenerate</>}
           </Button>
         </div>
+        {error && <p role="status" className="mt-3 text-sm text-muted-foreground">{error}</p>}
         {chapter && <div className="prose prose-sm dark:prose-invert mt-4 max-w-none">{chapter.summary.split(/\n\n+/).map((p, i) => <p key={i}>{p}</p>)}</div>}
         {chapter && (
           <div className="mt-3 grid gap-3 md:grid-cols-2">
