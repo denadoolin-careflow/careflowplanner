@@ -42,6 +42,15 @@ export default function CosmicFlow() {
         </Button>
       </div>
 
+      {chart && (
+        <section className="cozy-card px-4 py-2.5 text-sm" aria-label="Your big three">
+          Sun in <strong>{chart.planets.find(p => p.body === "Sun")?.sign}</strong> · Moon in <strong>{chart.planets.find(p => p.body === "Moon")?.sign}</strong> ·{" "}
+          {chart.houses
+            ? <><strong>{chart.houses.ascendantSign} Rising</strong> · Chart ruler {chart.chartRuler} · Whole Sign houses</>
+            : <Link to="/cosmic-flow/birth-chart" className="text-primary hover:underline">Rising unknown — add birth time & place</Link>}
+        </section>
+      )}
+
       {!row && (
         <section className="cozy-card p-4 flex items-center justify-between gap-2">
           <div>
