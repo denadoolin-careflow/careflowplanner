@@ -58,6 +58,17 @@ export function summarizeBudget(cats: BudgetCategory[], txs: BudgetTx[], month: 
   };
 }
 
+export type NetWorthSnapshot = { month: string; assets: number; liabilities: number };
+
+/** Change in net worth versus last month's snapshot, or null when there is no snapshot to compare. */
+export function netWorthChange(assets: number, liabilities: number, prev?: NetWorthSnapshot | null) {
+  const now = assets - liabilities;
+  if (!prev) return { now, change: null as number | null, pct: null as number | null };
+  const before = (Number(prev.assets) || 0) - (Number(prev.liabilities) || 0);
+  const change = now - before;
+  return { now, change, pct: before !== 0 ? Math.round((change / Math.abs(before)) * 100) : null };
+}
+
 /** Percent of income kept after expenses, or null when there was no income to compare against. */
 export function savingsRate(income: number, expenses: number): number | null {
   if (income <= 0) return null;
