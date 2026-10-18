@@ -57,3 +57,16 @@ export function summarizeBudget(cats: BudgetCategory[], txs: BudgetTx[], month: 
     savingsRate: income > 0 ? Math.round(((income - expenses) / income) * 100) : 0,
   };
 }
+
+/** Spending per expense category for the `count` months ending at `endMonth` (oldest first). */
+export function spendingTrends(cats: BudgetCategory[], txs: BudgetTx[], endMonth: string, count = 6) {
+  const months = Array.from({ length: count }, (_, i) => shiftMonth(endMonth, i - count + 1));
+  const rows = cats.filter((c) => c.kind !== "income").map((c) => {
+    const values = months.map((m) => txs.filter((t) => t.kind !== "income" && t.category_id === c.id && t.date?.startsWith(m)).reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0));
+    const prev = values[count - 2] ?? 0, last = values[count - 1] ?? 0;
+    const average = values.reduce((a, b) => a + b, 0) / count;
+    return { ...c, values, average, change: last - prev, changePct: prev > 0 ? Math.round(((last - prev) / prev) * 100) : null };
+  });
+  const totals = months.map((_, i) => rows.reduce((s, r) => s + r.values[i], 0));
+  return { months, rows, totals };
+}
