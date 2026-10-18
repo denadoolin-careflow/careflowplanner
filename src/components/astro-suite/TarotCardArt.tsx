@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import type { TarotCard } from "@/lib/tarot";
+import type { TarotCard } from "@/lib/astro-suite/tarot";
 
 import backArt from "@/assets/tarot/back.jpg";
 import majorArt from "@/assets/tarot/major.jpg";

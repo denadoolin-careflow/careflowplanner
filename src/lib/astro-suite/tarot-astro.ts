@@ -7,9 +7,9 @@
  * in their natal chart.
  */
 
-import type { TarotCard, TarotSuit } from "@/lib/tarot";
-import type { ZodiacSign } from "@/lib/zodiac";
-import type { PlanetKey } from "@/lib/birth-chart";
+import type { TarotCard, TarotSuit } from "./tarot";
+import type { ZodiacSign } from "./zodiac";
+type PlanetKey = string;
 
 export type TarotAstroLink =
   | { kind: "planet"; planet: PlanetKey; label: string }
@@ -97,6 +97,6 @@ export function getTarotAstro(card: TarotCard): TarotAstroLink | null {
 
 /** Build a deep link to the birth chart page focused on the given target. */
 export function birthChartLinkFor(link: TarotAstroLink): string {
-  if (link.kind === "planet") return `/birth-chart?focus=${encodeURIComponent(link.planet)}`;
-  return `/birth-chart?sign=${encodeURIComponent(link.sign)}`;
+  if (link.kind === "planet") return `/cosmic-flow/almanac?focus=${encodeURIComponent(link.planet.toLowerCase())}`;
+  return `/cosmic-flow/almanac?focus=${encodeURIComponent(link.sign.toLowerCase())}`;
 }
