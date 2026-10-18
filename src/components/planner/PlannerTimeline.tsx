@@ -1563,6 +1563,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                       className="absolute bottom-0 left-0 right-0 flex h-3 items-center justify-center cursor-ns-resize touch-none opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:bg-foreground/10"
                     >
                       <span aria-hidden className="h-[3px] w-8 rounded-full bg-foreground/30" />
+                      {resizeLive?.id === it.id && (
+                        <span role="status" className="pointer-events-none absolute -bottom-7 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-md">
+                          {fmtMinutesShort(resizeLive.dur)}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

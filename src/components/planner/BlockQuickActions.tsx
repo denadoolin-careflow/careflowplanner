@@ -40,8 +40,11 @@ export function BlockQuickActions({ task, asMenuItems }: Props) {
   };
 
   const unschedule = async () => {
-    await updateTask(task.id, { startTime: undefined, inbox: !task.dueDate });
-    toast.success("Unscheduled");
+    const prev = { startTime: task.startTime, inbox: task.inbox };
+    await updateTask(task.id, { startTime: undefined, inbox: true } as any);
+    toast.success("Sent to Inbox", {
+      action: { label: "Undo", onClick: () => { void updateTask(task.id, prev as any); } },
+    });
     setConfirmUnschedule(false);
   };
 
@@ -57,7 +60,7 @@ export function BlockQuickActions({ task, asMenuItems }: Props) {
     { icon: Pencil, label: "Edit", onClick: () => openTaskEditor(task.id) },
     { icon: Copy, label: "Duplicate", onClick: () => duplicate() },
     { icon: CalendarDays, label: "Move to another day", onClick: () => setDatePickerOpen(true) },
-    { icon: XCircle, label: "Unschedule", onClick: () => setConfirmUnschedule(true) },
+    { icon: XCircle, label: "Send to Inbox", onClick: () => { void unschedule(); } },
     { icon: Trash2, label: "Delete", danger: true, onClick: () => setConfirmDelete(true) },
   ];
 
