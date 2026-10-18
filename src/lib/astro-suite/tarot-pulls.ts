@@ -3,6 +3,7 @@ import { TAROT_DECK, getCardById, type TarotCard, type TarotOrientation } from "
 import { getOrCreateDailyNote, updateNote } from "@/lib/notes";
 import { appendTimestampedEntry } from "@/lib/notes/timestamped-entries";
 import { notifyDailyNotesChanged } from "@/lib/notes/daily";
+import { pushAstroToAccount, syncAstroFromAccount } from "./astro-sync";
 
 export type SpreadKind = "single" | "three-time" | "three-self" | "moon";
 
@@ -20,11 +21,13 @@ const KEY = "careflow.tarot-pulls.v1";
 const MAX = 120;
 
 export function loadPulls(): TarotPull[] {
+  void syncAstroFromAccount();
   try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; }
 }
 function savePulls(p: TarotPull[]) {
   localStorage.setItem(KEY, JSON.stringify(p.slice(0, MAX)));
   window.dispatchEvent(new Event("careflow:tarot-pulls"));
+  pushAstroToAccount();
 }
 
 /** Draw N unique cards (shuffled with crypto when available). */

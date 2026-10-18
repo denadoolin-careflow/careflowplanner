@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Check, NotebookPen } from "lucide-react";
 import { format } from "date-fns";
@@ -10,6 +10,7 @@ import { MOON_RITUALS, PHASE_ORDER, getMoonPhase, type MoonPhase } from "@/lib/a
 import { getMoonSign, MOON_IN_SIGN_GUIDE } from "@/lib/astro-suite/zodiac";
 import { getIllumination, daysUntilFull, daysUntilNew } from "@/lib/moon";
 import { appendToTodaysNote } from "@/lib/astro-suite/tarot-pulls";
+import { pushAstroToAccount, syncAstroFromAccount } from "@/lib/astro-suite/astro-sync";
 
 const KEY = "careflow.moon-rituals.v1";
 type Store = { lowEnergy: boolean; done: Record<string, string[]> };
@@ -19,7 +20,19 @@ export default function CosmicMoon() {
   const today = getMoonPhase();
   const [phase, setPhase] = useState<MoonPhase>(today);
   const [store, setStore] = useState<Store>(load);
-  useEffect(() => { localStorage.setItem(KEY, JSON.stringify(store)); }, [store]);
+  const synced = useRef(false);
+  useEffect(() => {
+    const on = () => { synced.current = false; setStore(load()); };
+    window.addEventListener("careflow:moon-rituals", on);
+    void syncAstroFromAccount();
+    return () => window.removeEventListener("careflow:moon-rituals", on);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem(KEY, JSON.stringify(store));
+    // Skip echoing straight back after loading the account copy.
+    if (synced.current) pushAstroToAccount();
+    synced.current = true;
+  }, [store]);
 
   const r = MOON_RITUALS[phase];
   const items = store.lowEnergy ? r.lowEnergy : r.checklist;
