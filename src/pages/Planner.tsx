@@ -48,6 +48,7 @@ import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsShee
 import { ReminderCenter } from "@/components/planner/ReminderCenter";
 import { PlannerRhythmCard } from "@/components/planner/PlannerRhythmRow";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
+import { PlannerCareRibbon } from "@/components/planner/PlannerCareRibbon";
 import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMobileWeekMode, usePlannerMonthMode, usePlannerRangeLayout, usePlannerCompletedStrikethrough, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
 import { PlannerWeekFilterBar } from "@/components/planner/PlannerWeekFilterBar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -258,6 +259,8 @@ export default function Planner() {
   const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
   const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
   const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
+  const showTaskRail = !isMobile && !panel.task && shellWidth >= 900 && view !== "year";
+  const [arrangeOpen, setArrangeOpen] = useState(false);
   const showNotesPanel = !isMobile && panel.notes && (view === "day" || view === "3day") && shellWidth >= 900;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const activeWeekMode = isMobile ? mobileWeekMode : weekMode;
@@ -558,7 +561,7 @@ export default function Planner() {
         }
         style={{
           gridTemplateColumns: [
-            showTaskPanel ? `${taskPanelWidth}px 12px` : null,
+            showTaskPanel ? `${taskPanelWidth}px 12px` : showTaskRail ? "40px" : null,
             "minmax(0,1fr)",
             showNotesPanel ? "minmax(300px,360px)" : null,
             showFocusPanel ? "230px" : null,
@@ -566,6 +569,18 @@ export default function Planner() {
           ].filter(Boolean).join(" "),
         }}
       >
+        {showTaskRail && (
+          <button
+            type="button"
+            onClick={() => setPanel(view, "task", true)}
+            aria-label="Open task tray"
+            title="Open task tray"
+            className="sticky top-2 flex min-h-40 flex-col items-center gap-2 rounded-xl border border-border/60 bg-card/70 py-3 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+            <span className="text-[11px] font-medium [writing-mode:vertical-rl]">Tasks</span>
+          </button>
+        )}
         {showTaskPanel && (
           <>
             <div className={`${SIDE_COL} pr-1`}>
@@ -624,12 +639,19 @@ export default function Planner() {
                   </div>
                 </CollapsibleSection>
               ) : (
-                <>
+                <CollapsibleSection
+                  storageKey="careflow:planner:desktop-day-context"
+                  eyebrow="Day context"
+                  title="Rhythm, guidance & references"
+                  defaultCollapsed
+                >
+                  <div className="space-y-2 px-2 pb-2">
                     <PlannerDayRhythm date={day} onSelectDate={openDay} />
-                  <PlannerDayAssistant date={day} />
-                  <PlannerRhythmCard date={day} />
-                   <PlannerDayReferences date={day} />
-                </>
+                    <PlannerDayAssistant date={day} />
+                    <PlannerRhythmCard date={day} />
+                    <PlannerDayReferences date={day} />
+                  </div>
+                </CollapsibleSection>
               )}
               <PlannerEmptyDay
                 date={day}
@@ -671,7 +693,23 @@ export default function Planner() {
             )}
             {nativeRange && view === "day" && period === "grid" && (
               <div className={gridBox}>
+                <PlannerCareRibbon date={day} className="mb-2" />
                 <PlannerDailyCareChecklist iso={format(day, "yyyy-MM-dd")} />
+                {isMobile && (
+                  <Sheet open={arrangeOpen} onOpenChange={setArrangeOpen}>
+                    <SheetTrigger asChild>
+                      <Button size="sm" variant="outline" className="mb-2 h-10 w-full rounded-full">
+                        <ListTodo className="mr-1.5 h-4 w-4" /> Arrange tasks
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" data-planner-hide-on-drag className="h-[55vh] rounded-t-2xl p-3 transition-opacity duration-150">
+                      <p className="pb-1.5 text-[10.5px] text-muted-foreground">Press and hold a task, then drag it up onto the timeline.</p>
+                      <div className="h-[calc(100%-1.5rem)] overflow-hidden">
+                        <TaskSourcePanel selectedDate={day} onQuickAdd={() => { setArrangeOpen(false); setCaptureOpen(true); }} />
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                )}
                 <PlannerTimeline date={day} />
               </div>
             )}
