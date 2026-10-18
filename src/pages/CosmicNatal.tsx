@@ -15,6 +15,8 @@ import type { NatalPlanet, NatalChartV2 } from "@/lib/cosmic/chart";
 import type { Sign } from "@/lib/transits";
 import { SIGN_GLYPH, ASPECT_GLYPH, SIGN_ELEMENT, ELEMENT_VAR, ASPECT_COLOR_VAR, type Element } from "@/lib/cosmic/glyphs";
 import { toast } from "sonner";
+import { TRANSIT_BODIES } from "@/lib/cosmic/sky";
+import { bodyLongitude, BODY_GLYPHS } from "@/lib/cosmic/astro/bodies";
 
 type AspectRow = NatalChartV2["aspects"][number];
 
@@ -84,6 +86,9 @@ export default function CosmicNatal() {
   const { row } = useBirthChart();
   const chart = useNatalChart(row ? { date: row.birth_date, time: row.birth_time, tz: row.birth_tz, lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place, house_system: "whole-sign" } : null);
   const [selected, setSelected] = useState<NatalPlanet | null>(null);
+  const todayIso = new Date().toLocaleDateString("en-CA");
+  const [showTransits, setShowTransits] = useState(false);
+  const [transitDate, setTransitDate] = useState(todayIso);
   const [open, setOpen] = useState(false);
   const [selectedSign, setSelectedSign] = useState<Sign | null>(null);
   const [signOpen, setSignOpen] = useState(false);
@@ -160,8 +165,14 @@ export default function CosmicNatal() {
             </div>
             <p className="text-[11px] text-muted-foreground">Tap a planet, sign, or house</p>
           </div>
+          <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
+            <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={showTransits} onChange={e => setShowTransits(e.target.checked)} className="accent-[hsl(var(--primary))]" />Show transits</label>
+            {showTransits && <input type="date" value={transitDate} onChange={e => setTransitDate(e.target.value || todayIso)} className="rounded-md border border-border bg-background px-2 py-1" aria-label="Transit date" />}
+            {showTransits && <Link to="/cosmic-flow/grid" className="text-primary hover:underline">Open transit grid</Link>}
+          </div>
           <NatalWheel
             chart={chart}
+            transitPlanets={showTransits ? TRANSIT_BODIES.map(b => ({ body: b, glyph: BODY_GLYPHS[b], longitude: bodyLongitude(b, new Date(transitDate + "T12:00:00")) })) : undefined}
             onSelectPlanet={openPlanet}
             onSelectSign={(s) => { setSelectedSign(s); setSignOpen(true); }}
             onSelectHouse={(h) => { setSelectedHouse(h); setHouseOpen(true); }}

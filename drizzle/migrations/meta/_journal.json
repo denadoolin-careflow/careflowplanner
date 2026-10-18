@@ -92,6 +92,13 @@
       "when": 1792336726898,
       "tag": "0012_astro_suite_state",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792337026308,
+      "tag": "0013_cosmic_compare_charts",
+      "breakpoints": true
     }
   ]
 }
