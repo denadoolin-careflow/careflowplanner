@@ -30,3 +30,4 @@
 - Bedside med reminders use the shared medication scheduler and dose logs (not duplicate tasks), so stopping a med cancels reminders but keeps history.
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
 - Agenda/List views build day lists via src/lib/planner/agenda-rows.ts so they stay consistent.
+- Tarot pull history and moon ritual checklists sync per account via one astro_suite_state row (jsonb), merged with the localStorage cache on first load so devices never lose entries.
