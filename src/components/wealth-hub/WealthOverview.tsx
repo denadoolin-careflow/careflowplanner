@@ -16,13 +16,22 @@ export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "pl
   const [bills, setBills] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
+  const [prevSnap, setPrevSnap] = useState<{ month: string; assets: number; liabilities: number } | null>(null);
   useEffect(() => {
     const in14 = new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
     Promise.all([
       supabase.from("recurring_bills").select("id,name,amount,next_due_date,status,cadence,category_id,last_paid_at").eq("user_id", uid).lte("next_due_date", in14).order("next_due_date").limit(12),
       supabase.from("savings_goals").select("id,name,target_amount,current_amount,status").eq("user_id", uid).order("sort_order"),
       supabase.from("debts").select("id,name,balance").eq("user_id", uid),
-    ]).then(([b, g, d]) => { setBills(b.data ?? []); setGoals(g.data ?? []); setDebts(d.data ?? []); });
+    ]).then(([b, g, d]) => {
+      setBills(b.data ?? []); setGoals(g.data ?? []); setDebts(d.data ?? []);
+      const a = (g.data ?? []).reduce((x: number, r: any) => x + (Number(r.current_amount) || 0), 0);
+      const l = (d.data ?? []).reduce((x: number, r: any) => x + (Number(r.balance) || 0), 0);
+      const month = monthKey(new Date());
+      supabase.from("net_worth_snapshots").upsert({ user_id: uid, month, assets: a, liabilities: l }, { onConflict: "user_id,month" });
+      supabase.from("net_worth_snapshots").select("month,assets,liabilities").eq("user_id", uid).order("month", { ascending: false }).limit(13)
+        .then(({ data }) => setPrevSnap((data ?? []).find((s: any) => s.month !== month) ?? null));
+    });
   }, [uid, tick]);
 
   const markPaid = async (b: any) => {
