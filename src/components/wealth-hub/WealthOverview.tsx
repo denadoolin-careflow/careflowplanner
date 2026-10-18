@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { fmtMoney, advanceDate, todayISO } from "@/lib/wealth-utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { monthKey, summarizeBudget } from "@/lib/wealth-budget";
+import { monthKey, netWorthChange, summarizeBudget } from "@/lib/wealth-budget";
 import { barTone, useBudgetData } from "./BudgetPlanTab";
-import { ArrowDownRight, ArrowUpRight, CalendarClock, Check } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarClock, Check, Minus } from "lucide-react";
+
 
 export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "plan" | "transactions" | "bills" | "goals") => void }) {
   const { cats, txs, targets, reload } = useBudgetData(uid);
