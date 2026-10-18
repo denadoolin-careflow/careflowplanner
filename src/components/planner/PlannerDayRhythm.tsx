@@ -11,6 +11,10 @@ import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
 import { solarSeasonFor } from "@/lib/planner/solar-season";
 import { useCycleDot } from "@/lib/planner/day-rhythm";
 import { rhythmPhaseForMoon, RHYTHM_LABEL, todayFavors } from "@/lib/planner/rhythm-phase";
+import { isVoidOfCourse } from "@/lib/transits";
+import type { CyclePhase } from "@/lib/cycle";
+import { MOON_PLAIN, VOC_ADVICE, CAPACITY_NOTE, recommendedHours } from "@/lib/rhythm-guidance";
+import { PhaseGroceryButton } from "@/components/cycle/PhaseGroceryButton";
 
 const OPEN_KEY = "careflow:planner:day-rhythm-open";
 const TAB_KEY = "careflow:planner:day-rhythm-tab";
@@ -38,6 +42,8 @@ export function PlannerDayRhythm({ date, onSelectDate, className }: {
   const sign = useMemo(() => { try { return getMoonJournalContext(date).sign; } catch { return null; } }, [date]);
   const season = solarSeasonFor(date);
   const cycle = useCycleDot(date);
+  const cyclePhase = (cycle as { phase?: CyclePhase } | null)?.phase ?? null;
+  const voc = useMemo(() => { try { return isVoidOfCourse(date); } catch { return false; } }, [date]);
   const phase = rhythmPhaseForMoon(moon);
   const favors = todayFavors(phase, cycle?.label);
   const embedded = "rounded-none border-0 bg-transparent shadow-none";
@@ -60,10 +66,16 @@ export function PlannerDayRhythm({ date, onSelectDate, className }: {
             </span>
           </span>
           <span className="block text-[11.5px] text-muted-foreground">Today favors: {favors}.</span>
+          <span className="block text-[11.5px] text-foreground/80">In plain words: {MOON_PLAIN[moon]}</span>
+          {voc && <span className="block text-[11.5px] text-foreground/80">🌑 {VOC_ADVICE}</span>}
+          {cyclePhase && <span className="block text-[11.5px] text-foreground/80">
+            {CAPACITY_NOTE[cyclePhase]} Aim for about {recommendedHours(6, cyclePhase)}h of focused work.
+          </span>}
           <span className="flex gap-1.5 overflow-x-auto pb-0.5" onClick={e => e.stopPropagation()}>
             <span className={chip}>{info.glyph} {info.label}{sign ? ` · ${sign.symbol} ${sign.name}` : ""}</span>
             <span className={chip}>{season.glyph} {season.label}</span>
             {cycle && <span className={chip}>{cycle.label}</span>}
+            {voc && <span className={chip}>Void moon</span>}
           </span>
         </span>
         <PlannerCapacityBar date={date} compact className="hidden w-36 shrink-0 border-0 bg-transparent p-0 sm:block" />
