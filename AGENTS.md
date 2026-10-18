@@ -14,7 +14,7 @@
 - Note block IDs persist as trailing ` ^b-xxxxxx` markers in the markdown body (added only when first linked); block embeds/ref chips persist as data-* HTML so no schema change is needed.
 - Notes uses a page-scoped presentation layer derived from the active atmosphere; capture review, pinned density, and per-month notebook appearance are device-local while note/task content preserves existing synced models.
 - External note link cards persist as data-web-link-card HTML inside the existing markdown body so rich links round-trip without a schema change.
-- Inbox split writing reuses the notebook's daily note and shared rich editor; timestamp sections remain ordinary markdown, with local draft recovery and serialized autosaves to preserve reflections without a new store.
+- Inbox split writing reuses the daily note and rich editor; timestamp sections stay plain markdown with local drafts and serialized autosaves.
 - Note table summary rows are recognised by a last row labelled Total/Average/Count and recalculated into plain cell text, so they round-trip in the markdown body without a schema change.
 - A note's Project property mirrors notes.project_id (the property value is the project id), so project boards/backlinks keep using the existing column.
 - Custom note Spaces sync via the note_spaces table (tags + explicit linked note/task/project ids + hidden ids for unlinks); legacy device-local spaces migrate on first load.
@@ -22,7 +22,7 @@
 - Sidebar Space children use the same explicit links, tag matches, project links, and hidden-item exclusions as the Space hub, so linked navigation stays consistent.
 - Tag appearance editing reuses the shared tag store; unused filtering counts the existing tasks, notes, projects, and grocery sources without deleting content.
 - Flow subpages are declared once in NAV_SUBPAGES (nav.ts) and drive both the indented sidebar branches and the connected page tabs, so the two never drift.
-- Sidebar flow hover trees reuse NAV_GROUPS and NAV_SUBPAGES in a portalled flyout, so nested links remain reachable outside the scrolling sidebar without duplicating navigation definitions.
+- Sidebar flow hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portalled flyout so links stay reachable outside the scrolling sidebar.
 - Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
 - Inbox and Planner share a selected-note schedule pane; the chosen ordinary note is device-local while daily-note following uses the active schedule date.
@@ -30,4 +30,4 @@
 - Bedside med reminders use the shared medication scheduler and dose logs (not duplicate tasks), so stopping a med cancels reminders but keeps history.
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
 - Agenda/List views build day lists via src/lib/planner/agenda-rows.ts so they stay consistent.
-- Tarot pull history and moon ritual checklists sync per account via one astro_suite_state row (jsonb), merged with the localStorage cache on first load so devices never lose entries.
+- Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
