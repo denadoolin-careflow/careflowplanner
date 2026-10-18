@@ -30,7 +30,7 @@ export default function CosmicMoon() {
     return { ...s, done: { ...s.done, [dayKey]: cur.includes(i) ? cur.filter(x => x !== i) : [...cur, i] } };
   });
   const sign = getMoonSign();
-  const guide = MOON_IN_SIGN_GUIDE[sign.sign];
+  const guide = MOON_IN_SIGN_GUIDE[sign.name];
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 px-4 py-6">
@@ -39,7 +39,7 @@ export default function CosmicMoon() {
         <div>
           <h1 className="font-display text-2xl">Moon & Rituals</h1>
           <p className="text-sm text-muted-foreground">
-            {Math.round(getIllumination() * 100)}% lit · Moon in {sign.sign} · full in {daysUntilFull()}d · new in {daysUntilNew()}d
+            {Math.round(getIllumination() * 100)}% lit · Moon in {sign.name} · full in {daysUntilFull()}d · new in {daysUntilNew()}d
           </p>
         </div>
       </header>
@@ -95,7 +95,7 @@ export default function CosmicMoon() {
 
       {guide && (
         <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-          <h2 className="font-display text-lg">Moon in {sign.sign} today</h2>
+          <h2 className="font-display text-lg">Moon in {sign.name} today</h2>
           <p className="mt-1 text-sm">{guide.vibe}</p>
           <p className="text-sm text-muted-foreground">{guide.body}</p>
           <ul className="mt-2 list-disc pl-4 text-sm">{guide.actions.map(a => <li key={a}>{a}</li>)}</ul>
