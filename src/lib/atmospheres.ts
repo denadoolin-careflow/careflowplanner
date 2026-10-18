@@ -354,7 +354,7 @@ export const ATMOSPHERES: Atmosphere[] = [
     name: "Pumpkin Patch",
     tagline: "Hay bales and pumpkins at dusk.",
     mood: ["cozy", "playful", "golden"],
-    bestFor: ["Halloween prep", "Kids" activities", "Cozy weekends"],
+    bestFor: ["Halloween prep", "Kids' activities", "Cozy weekends"],
     palette: ["#E3782B", "#C9A24A", "#FBF0DF", "#6E4A2E", "#7E8A4A", "#2B1B12"],
     fontDisplay: "Fraunces",
     fontBody: "Inter",
