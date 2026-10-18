@@ -6,24 +6,27 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { fmtMoney } from "@/lib/wealth-utils";
 import { cn } from "@/lib/utils";
-import { monthKey, shiftMonth, summarizeBudget, type BudgetCategory, type BudgetTx, type CategoryRow } from "@/lib/wealth-budget";
+import { monthKey, shiftMonth, summarizeBudget, type BudgetCategory, type BudgetTx, type CategoryRow, type MonthTarget } from "@/lib/wealth-budget";
 
 export function useBudgetData(uid: string) {
   const [cats, setCats] = useState<BudgetCategory[]>([]);
   const [txs, setTxs] = useState<(BudgetTx & { id: string; note: string | null })[]>([]);
+  const [targets, setTargets] = useState<MonthTarget[]>([]);
   const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
     const since = shiftMonth(monthKey(new Date()), -12) + "-01";
-    const [c, t] = await Promise.all([
+    const [c, t, m] = await Promise.all([
       supabase.from("budget_categories").select("*").eq("user_id", uid).order("sort_order"),
       supabase.from("transactions").select("id,date,amount,kind,category_id,note").eq("user_id", uid).gte("date", since).order("date", { ascending: false }),
+      supabase.from("budget_month_targets").select("category_id,month,amount").eq("user_id", uid),
     ]);
+    setTargets(((m.data as any) ?? []).map((r: any) => ({ ...r, amount: Number(r.amount) })));
     setCats((c.data as any) ?? []);
     setTxs((t.data as any) ?? []);
     setLoading(false);
   }, [uid]);
   useEffect(() => { load(); }, [load]);
-  return { cats, txs, loading, reload: load };
+  return { cats, txs, targets, loading, reload: load };
 }
 
 export const barTone = (s: CategoryRow["status"]) =>
@@ -58,7 +61,7 @@ function LimitEditor({ row, onSave }: { row: CategoryRow; onSave: (v: number) =>
   );
 }
 
-function Row({ row, onSave }: { row: CategoryRow; onSave: (v: number) => void }) {
+function Row({ row, onSave, onReset }: { row: CategoryRow; onSave: (v: number) => void; onReset: () => void }) {
   const income = row.kind === "income";
   return (
     <div className="space-y-1.5 py-3">
@@ -66,6 +69,11 @@ function Row({ row, onSave }: { row: CategoryRow; onSave: (v: number) => void })
         <div className="flex min-w-0 items-center gap-2">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary" style={row.color ? { background: row.color } : undefined} />
           <span className="truncate text-sm font-medium">{row.name}</span>
+          {row.custom && (
+            <button onClick={onReset} title="Go back to the usual amount" className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground">
+              This month · reset
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="tabular-nums">{fmtMoney(row.spent)}</span>
@@ -88,15 +96,36 @@ function Row({ row, onSave }: { row: CategoryRow; onSave: (v: number) => void })
 }
 
 export function BudgetPlanTab({ uid }: { uid: string }) {
-  const { cats, txs, loading, reload } = useBudgetData(uid);
+  const { cats, txs, targets, loading, reload } = useBudgetData(uid);
   const [month, setMonth] = useState(monthKey(new Date()));
   const [newName, setNewName] = useState("");
   const [newKind, setNewKind] = useState<"expense" | "income">("expense");
-  const s = useMemo(() => summarizeBudget(cats, txs, month), [cats, txs, month]);
+  const s = useMemo(() => summarizeBudget(cats, txs, month, targets), [cats, txs, month, targets]);
 
   const saveLimit = async (id: string, v: number) => {
-    const { error } = await supabase.from("budget_categories").update({ monthly_limit: v }).eq("id", id);
+    const { error } = await supabase.from("budget_month_targets")
+      .upsert({ user_id: uid, category_id: id, month, amount: v, updated_at: new Date().toISOString() }, { onConflict: "user_id,category_id,month" });
     if (error) return toast.error("Couldn't save that budget");
+    reload();
+  };
+  const resetLimit = async (id: string) => {
+    await supabase.from("budget_month_targets").delete().eq("user_id", uid).eq("category_id", id).eq("month", month);
+    reload();
+  };
+  const copyLastMonth = async () => {
+    const prev = summarizeBudget(cats, txs, shiftMonth(month, -1), targets).rows;
+    const rows = prev.map((r) => ({ user_id: uid, category_id: r.id, month, amount: r.limit, updated_at: new Date().toISOString() }));
+    if (!rows.length) return;
+    const { error } = await supabase.from("budget_month_targets").upsert(rows, { onConflict: "user_id,category_id,month" });
+    if (error) return toast.error("Couldn't copy last month");
+    toast.success("Copied last month's budgets");
+    reload();
+  };
+  const makeDefault = async () => {
+    const res = await Promise.all(s.rows.map((r) => supabase.from("budget_categories").update({ monthly_limit: r.limit }).eq("id", r.id)));
+    if (res.some((r) => r.error)) return toast.error("Couldn't update the usual amounts");
+    await supabase.from("budget_month_targets").delete().eq("user_id", uid).eq("month", month);
+    toast.success("These amounts are now your usual budget");
     reload();
   };
   const addCat = async () => {
@@ -112,7 +141,12 @@ export function BudgetPlanTab({ uid }: { uid: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <MonthPicker month={month} onChange={setMonth} />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={copyLastMonth}>Copy last month</Button>
+          <Button variant="ghost" size="sm" onClick={makeDefault}>Use as usual budget</Button>
+        </div>
       </div>
+      <p className="-mt-2 text-xs text-muted-foreground">Amounts you set here apply to this month only. Months you haven't changed use your usual budget.</p>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="cozy-card p-4">
@@ -138,7 +172,7 @@ export function BudgetPlanTab({ uid }: { uid: string }) {
           <section className="cozy-card p-4">
             <h2 className="font-display text-lg">Expenses</h2>
             <div className="divide-y divide-border/60">
-              {s.expenseRows.map((r) => <Row key={r.id} row={r} onSave={(v) => saveLimit(r.id, v)} />)}
+              {s.expenseRows.map((r) => <Row key={r.id} row={r} onSave={(v) => saveLimit(r.id, v)} onReset={() => resetLimit(r.id)} />)}
               {s.expenseRows.length === 0 && <p className="py-3 text-sm text-muted-foreground">No spending categories yet. Add one below.</p>}
               {s.uncategorized > 0 && (
                 <div className="flex justify-between py-3 text-sm"><span className="text-muted-foreground">Uncategorized</span><span className="tabular-nums">{fmtMoney(s.uncategorized)}</span></div>
@@ -149,7 +183,7 @@ export function BudgetPlanTab({ uid }: { uid: string }) {
             <div>
               <h2 className="font-display text-lg">Income</h2>
               <div className="divide-y divide-border/60">
-                {s.incomeRows.map((r) => <Row key={r.id} row={r} onSave={(v) => saveLimit(r.id, v)} />)}
+                {s.incomeRows.map((r) => <Row key={r.id} row={r} onSave={(v) => saveLimit(r.id, v)} onReset={() => resetLimit(r.id)} />)}
                 {s.incomeRows.length === 0 && <p className="py-3 text-sm text-muted-foreground">Add an income category to plan what you expect to earn.</p>}
               </div>
             </div>

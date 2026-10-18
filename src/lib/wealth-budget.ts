@@ -17,9 +17,16 @@ export function budgetStatus(spent: number, limit: number): BudgetStatus {
   return "ok";
 }
 
-export type CategoryRow = BudgetCategory & { spent: number; limit: number; left: number; status: BudgetStatus; pct: number };
+export type CategoryRow = BudgetCategory & { spent: number; limit: number; left: number; status: BudgetStatus; pct: number; custom: boolean };
+export type MonthTarget = { category_id: string; month: string; amount: number };
 
-export function summarizeBudget(cats: BudgetCategory[], txs: BudgetTx[], month: string) {
+/** A month's own target wins; otherwise the category's default monthly amount applies. */
+export function targetFor(cat: BudgetCategory, month: string, targets: MonthTarget[] = []) {
+  const t = targets.find((x) => x.category_id === cat.id && x.month === month);
+  return t ? { amount: Number(t.amount) || 0, custom: true } : { amount: Number(cat.monthly_limit) || 0, custom: false };
+}
+
+export function summarizeBudget(cats: BudgetCategory[], txs: BudgetTx[], month: string, targets: MonthTarget[] = []) {
   const inMonth = txs.filter((t) => t.date?.startsWith(month));
   const byCat = new Map<string, number>();
   let income = 0, expenses = 0, uncategorized = 0;
@@ -34,9 +41,9 @@ export function summarizeBudget(cats: BudgetCategory[], txs: BudgetTx[], month: 
     if (t.kind === "income" && t.category_id) byCat.set(t.category_id, (byCat.get(t.category_id) ?? 0) + a);
   }
   const rows: CategoryRow[] = cats.map((c) => {
-    const limit = Number(c.monthly_limit) || 0;
+    const { amount: limit, custom } = targetFor(c, month, targets);
     const spent = byCat.get(c.id) ?? 0;
-    return { ...c, limit, spent, left: limit - spent, status: c.kind === "income" ? "ok" : budgetStatus(spent, limit), pct: limit ? Math.min(100, (spent / limit) * 100) : 0 };
+    return { ...c, custom, limit, spent, left: limit - spent, status: c.kind === "income" ? "ok" : budgetStatus(spent, limit), pct: limit ? Math.min(100, (spent / limit) * 100) : 0 };
   });
   const expenseRows = rows.filter((r) => r.kind !== "income");
   const incomeRows = rows.filter((r) => r.kind === "income");
