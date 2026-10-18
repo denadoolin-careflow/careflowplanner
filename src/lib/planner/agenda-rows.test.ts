@@ -27,6 +27,12 @@ describe("agenda rows", () => {
     const meals: any[] = [{ id: "m", name: "Soup", slot: "Lunch", date: "2026-10-01", recurrenceRule: { freq: "daily", interval: 1 } }];
     expect(buildAgendaDay({ ...base, tasks: [], meals }).allDay.map(r => r.mealId)).toEqual(["m"]);
   });
+  it("places medicine doses by time and habits all-day, filtered under Care", () => {
+    const d = buildAgendaDay({ ...base, tasks: [], meds: [{ id: "p", name: "Tylenol", time: "09:00", taken: true }], habits: [{ id: "h", name: "Walk", done: false }], filter: "care" });
+    expect(d.timed.map(r => [r.medId, r.done])).toEqual([["p", true]]);
+    expect(d.allDay.map(r => r.habitId)).toEqual(["h"]);
+    expect(buildAgendaDay({ ...base, tasks: [], habits: [{ id: "h", name: "Walk", done: false }], filter: "meals" }).allDay).toEqual([]);
+  });
   it("reads a typed time", () => {
     expect(parseTypedTime("call mom 3pm")).toEqual({ title: "call mom", time: "15:00" });
     expect(parseTypedTime("buy 2 eggs")).toEqual({ title: "buy 2 eggs", time: null });

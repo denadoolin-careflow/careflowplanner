@@ -2,8 +2,8 @@ import { parseISO } from "date-fns";
 import type { Appointment, Meal, Task } from "@/lib/types";
 import { expandRecurrence, expandAppointments } from "@/lib/recurrence";
 
-export type AgendaKind = "task" | "appt" | "meal";
-export type AgendaFilter = "all" | "tasks" | "events" | "meals";
+export type AgendaKind = "task" | "appt" | "meal" | "med" | "habit";
+export type AgendaFilter = "all" | "tasks" | "events" | "care" | "meals";
 
 export interface AgendaRow {
   key: string;
@@ -16,6 +16,9 @@ export interface AgendaRow {
   task?: Task;
   appt?: Appointment;
   mealId?: string;
+  medId?: string;
+  medTime?: string;
+  habitId?: string;
 }
 
 export interface AgendaDay {
@@ -35,15 +38,19 @@ const byOpenThen = (a: AgendaRow, b: AgendaRow) =>
   Number(a.done) - Number(b.done) || (a.start ?? 0) - (b.start ?? 0) || a.title.localeCompare(b.title);
 
 export function matchesFilter(kind: AgendaKind, f: AgendaFilter) {
-  return f === "all" || (f === "tasks" && kind === "task") || (f === "events" && kind === "appt") || (f === "meals" && kind === "meal");
+  return f === "all" || (f === "tasks" && kind === "task") || (f === "events" && kind === "appt") || (f === "meals" && kind === "meal") || (f === "care" && (kind === "med" || kind === "habit"));
 }
 
 /** Build one day's agenda: overdue (only on today) → all-day → timed → unscheduled. Done items sort after open ones. */
 export function buildAgendaDay(input: {
   iso: string; today: string; tasks: Task[]; appointments: Appointment[]; meals: Meal[];
   mealDone?: Record<string, boolean>; blockStart?: Map<string, string>; filter?: AgendaFilter;
+  /** Active Bedside medicine doses for the day with their "taken" state. */
+  meds?: { id: string; name: string; time: string; taken: boolean }[];
+  /** Habits due that day (already filtered by the caller). */
+  habits?: { id: string; name: string; done: boolean }[];
 }): AgendaDay {
-  const { iso, today, tasks, appointments, meals, mealDone = {}, blockStart, filter = "all" } = input;
+  const { iso, today, tasks, appointments, meals, mealDone = {}, blockStart, filter = "all", meds = [], habits = [] } = input;
   const rows: AgendaRow[] = [];
   const top = tasks.filter(t => !t.parentTaskId);
   for (const t of top.filter(t => t.dueDate === iso)) {
@@ -61,6 +68,8 @@ export function buildAgendaDay(input: {
     const on = m.recurrenceRule ? expandRecurrence(m.date, m.recurrenceRule, day, day).includes(iso) : m.date === iso;
     if (on) rows.push({ key: `m:${m.id}`, kind: "meal", title: `${m.slot}: ${m.name}`, start: null, end: null, done: !!mealDone[m.id], mealId: m.id });
   }
+  for (const d of meds) rows.push({ key: `d:${d.id}:${d.time}`, kind: "med", title: d.name, start: hmToMin(d.time), end: null, done: d.taken, medId: d.id, medTime: d.time });
+  for (const h of habits) rows.push({ key: `h:${h.id}`, kind: "habit", title: h.name, start: null, end: null, done: h.done, habitId: h.id });
   const shown = rows.filter(r => matchesFilter(r.kind, filter));
   const overdue = iso === today && matchesFilter("task", filter)
     ? top.filter(t => !t.done && t.dueDate && t.dueDate < today).sort((a, b) => a.dueDate!.localeCompare(b.dueDate!))
