@@ -41,6 +41,7 @@ export default function CosmicHouses() {
       <AstroPageHeader title="Houses" subtitle="Your chart, one area of life at a time." />
       {!chart ? <NeedsChart /> : !data ? <p className="text-sm text-muted-foreground">Add a birth time and place to see houses.</p> : (
         <>
+          <p className="text-sm"><strong>{chart.houses!.ascendantSign} Rising</strong> ({Math.floor(chart.houses!.ascendant % 30)}°) · Whole Sign houses: each house is one full sign, starting with {chart.houses!.ascendantSign} as house 1 · Chart ruler <strong>{chart.chartRuler}</strong>.</p>
           <p className="text-sm">This year ({data[0].prof.yearStarts} → {data[0].prof.yearEnds}) your profection lights up <strong>house {data[0].prof.house}</strong>, with <strong>{data[0].prof.timeLord}</strong> as the year's guide.</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {data.map(d => (
