@@ -181,7 +181,7 @@ export function useCurrentChapter(chart: NatalChartV2 | null, reading: ChapterRe
       };
       chapterCooldownUntil = Math.max(chapterCooldownUntil, Number(sessionStorage.getItem("careflow.chapter-cooldown") || 0));
       if (Date.now() < chapterCooldownUntil) {
-        setError("The reading service is busy — please try again in a minute."); setLoading(false); return;
+        setError("The reading service is busy — trying again automatically in a minute."); setLoading(false); return;
       }
       // Share one in-flight request so repeated renders don't flood the AI service.
       const requestKey = `${u.user.id}:${context.key}`;
@@ -197,7 +197,7 @@ export function useCurrentChapter(chart: NatalChartV2 | null, reading: ChapterRe
         const busy = /rate|429|busy/i.test(JSON.stringify(err ?? (ai as any)?.error ?? ""));
         chapterCooldownUntil = Date.now() + (busy ? 60_000 : 15_000);
         try { sessionStorage.setItem("careflow.chapter-cooldown", String(chapterCooldownUntil)); } catch { /* ignore */ }
-        setError(busy ? "The reading service is busy — please try again in a minute." : "Couldn't generate chapter right now.");
+        setError(busy ? "The reading service is busy — trying again automatically in a minute." : "Couldn't generate chapter right now.");
         setLoading(false); return;
       }
       const validFrom = todayISO;
@@ -223,6 +223,15 @@ export function useCurrentChapter(chart: NatalChartV2 | null, reading: ChapterRe
   }, [chart, reading]);
 
   useEffect(() => { if (chart) void refresh(false); }, [chart, refresh]);
+  // When the service is busy, quietly try again once the pause ends (max 3 automatic tries).
+  const autoTries = useRef(0);
+  useEffect(() => {
+    if (chapter) { autoTries.current = 0; return; }
+    if (!error || !/busy/i.test(error) || autoTries.current >= 3) return;
+    const wait = Math.max(5_000, chapterCooldownUntil - Date.now() + 500);
+    const t = setTimeout(() => { autoTries.current += 1; void refresh(true); }, wait);
+    return () => clearTimeout(t);
+  }, [error, chapter, refresh]);
   return { chapter, loading, error, refresh };
 }
 
