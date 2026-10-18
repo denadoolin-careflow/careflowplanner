@@ -60,3 +60,6 @@
 - [x] Show a searchable selected notebook beside Inbox and Planner schedules across desktop and mobile
 - [ ] Keep notes steady during sync, refine toggle spacing, and add individual/multi-line editing controls
 - [x] Finish and verify bedside person notes, recurring medicine reminders, recurring meals, and planner check-offs
+
+- [x] Planner Phase B: collapsible task tray rail, streamlined day context, habits & meds ribbon, mobile Arrange sheet
+- [ ] Planner Phase C: Plan My Day guided ritual
