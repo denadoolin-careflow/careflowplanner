@@ -8,6 +8,7 @@ import { TransitDetailSheet } from "./TransitDetailSheet";
 import type { CosmicEvent } from "@/lib/cosmic/events";
 import { ExternalLink } from "lucide-react";
 import { plainAspect } from "@/lib/rhythm-guidance";
+import { aspectTone, ASPECT_TONE_HINT, timingLabel, TERM_HELP } from "@/lib/cosmic/plain-language";
 
 const ACTION_TONE: Record<string, string> = {
   "Reach out":   "bg-primary/15 text-primary",
@@ -77,7 +78,11 @@ export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: 
                         <ExternalLink className="h-3 w-3" />
                       </Link>
                     </p>
-                    <p className="text-[11px] text-muted-foreground">{a.window}</p>
+                    <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <span title={ASPECT_TONE_HINT[aspectTone(a.aspect)]} className="rounded-full bg-muted px-1.5 py-px text-foreground/80">{aspectTone(a.aspect)}</span>
+                      <span title={a.motion === "applying" ? TERM_HELP.applying : TERM_HELP.separating}>{timingLabel(Math.abs(a.orb), a.motion === "applying")}</span>
+                      <span title={TERM_HELP.orb}>· {a.window}</span>
+                    </p>
                     <p className="mt-0.5 text-[12px] text-foreground/80"><span className="font-semibold">Today: </span>{plainAspect(a.a, a.aspect, a.b)}</p>
                   </div>
                   <div className="col-start-2 min-w-0 sm:col-start-3">

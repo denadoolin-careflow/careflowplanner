@@ -17,6 +17,8 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   onSelectPlanet?: (p: NatalPlanet) => void;
   onSelectAspect?: (a: AspectRow) => void;
+  onSelectSign?: (s: Sign) => void;
+  onSelectHouse?: (h: number) => void;
 }
 
 const HOUSE_TOPICS: Record<number, string> = {
@@ -100,7 +102,7 @@ function journalPrompts(planet: NatalPlanet): string[] {
   return prompts;
 }
 
-export function PlacementDetailDialog({ chart, planet, open, onOpenChange, onSelectPlanet, onSelectAspect }: Props) {
+export function PlacementDetailDialog({ chart, planet, open, onOpenChange, onSelectPlanet, onSelectAspect, onSelectSign, onSelectHouse }: Props) {
   if (!planet) return null;
   const aspects = chart.aspects
     .filter(a => a.a === planet.body || a.b === planet.body)
@@ -134,7 +136,8 @@ export function PlacementDetailDialog({ chart, planet, open, onOpenChange, onSel
         <div className="space-y-4 text-sm">
           <div className="flex flex-wrap gap-1.5">
             <Badge variant="secondary">{element}</Badge>
-            {planet.house && <Badge variant="outline">House {planet.house}</Badge>}
+            <button onClick={() => onSelectSign?.(planet.sign)} className="rounded-full border border-border/50 px-2.5 py-0.5 text-xs hover:border-primary/50">{SIGN_GLYPH[planet.sign]} {planet.sign} →</button>
+            {planet.house && <button onClick={() => onSelectHouse?.(planet.house!)} className="rounded-full border border-border/50 px-2.5 py-0.5 text-xs hover:border-primary/50">House {planet.house} →</button>}
             {planet.retrograde && <Badge variant="outline" className="text-destructive border-destructive/40">Retrograde</Badge>}
           </div>
 

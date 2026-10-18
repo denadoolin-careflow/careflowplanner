@@ -8,6 +8,7 @@ import { SIGN_GLYPH } from "@/lib/cosmic/glyphs";
 import { houseOf } from "@/lib/cosmic/astro/houses";
 import { SKY_BODIES, skyStatus, lunations } from "@/lib/cosmic/sky";
 import { useMyChart } from "@/lib/cosmic/use-my-chart";
+import { describeSkyPlacement, describeIngress, TERM_HELP } from "@/lib/cosmic/plain-language";
 
 const NAME: Record<string, string> = { NorthNode: "North Node" };
 const MEAN_SPEED: Record<string, number> = { Sun: 1, Moon: 13.2, Mercury: 1.38, Venus: 1.2, Mars: 0.52, Jupiter: 0.083, Saturn: 0.033, Uranus: 0.012, Neptune: 0.006, Pluto: 0.004, NorthNode: 0.053, Chiron: 0.02 };
@@ -39,16 +40,17 @@ export default function CosmicSky() {
               <li key={s.body} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <span className="w-6 text-center text-lg">{BODY_GLYPHS[s.body]}</span>
                 <div className="min-w-[9rem] flex-1">
-                  <p className="text-sm font-medium">{NAME[s.body] ?? s.body} {s.retrograde && <span className="ml-1 rounded bg-destructive/10 px-1 text-[10px] text-destructive">℞</span>}</p>
+                  <p className="text-sm font-medium">{NAME[s.body] ?? s.body} {s.retrograde && <span title={TERM_HELP.retrograde} className="ml-1 rounded bg-destructive/10 px-1 text-[10px] text-destructive">℞</span>}</p>
                   <p className="text-xs text-muted-foreground">{SIGN_GLYPH[s.sign]} {s.sign} {Math.floor(s.degree)}°</p>
+                  <p className="mt-0.5 text-[12px] leading-snug text-foreground/80">{describeSkyPlacement(s.body, s.sign, s.retrograde)}</p>
                 </div>
                 <div className="w-24" aria-label={`Speed ${speedPct}% of typical`}>
                   <div className="h-1.5 rounded-full bg-muted"><div className={cn("h-1.5 rounded-full", s.retrograde ? "bg-destructive/70" : "bg-secondary")} style={{ width: `${speedPct}%` }} /></div>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">{speedPct < 15 ? "Slowing — near a station" : s.retrograde ? "Moving backward" : "Moving forward"}</p>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">{speedPct < 15 ? "Slowing down — about to change direction" : s.retrograde ? "Looks like it moves backward" : "Moving forward"}</p>
                 </div>
                 <div className="min-w-[10rem] text-xs text-foreground/80">
-                  {s.nextIngress && <p>→ {s.nextIngress.sign} on {format(s.nextIngress.date, s.body === "Moon" ? "EEE h a" : "MMM d, yyyy")}</p>}
-                  {s.nextStation && <p className="text-muted-foreground">Turns {s.nextStation.turns} {format(s.nextStation.date, "MMM d, yyyy")}</p>}
+                  {s.nextIngress && <p>{describeIngress(s.body, s.nextIngress.sign, s.nextIngress.date)} <span className="text-muted-foreground">({format(s.nextIngress.date, s.body === "Moon" ? "EEE h a" : "MMM d")})</span></p>}
+                  {s.nextStation && <p className="text-muted-foreground">Changes direction ({s.nextStation.turns}) {format(s.nextStation.date, "MMM d, yyyy")}</p>}
                 </div>
               </li>
             );
