@@ -74,7 +74,7 @@ export function useDailyGuidance(chart: NatalChartV2 | null, date: Date = new Da
         profection: profection ? { house: profection.house, sign: profection.profectedSign, timeLord: profection.timeLord, topics: houseTopics(profection.house) } : undefined,
       };
       const { data: ai, error: err } = await aiInvoke("ai-cosmic-daily", { body: payload });
-      if (err || !ai) {
+      if (err || !ai || (ai as any).error) {
         const code = (err as any)?.error;
         setError(
           code === "rate_limited" || code === "upstream_unavailable"
@@ -173,6 +173,7 @@ export function useCurrentChapter(chart: NatalChartV2 | null) {
         eclipses,
         journalThemes,
       };
+      chapterCooldownUntil = Math.max(chapterCooldownUntil, Number(sessionStorage.getItem("careflow.chapter-cooldown") || 0));
       if (Date.now() < chapterCooldownUntil) {
         setError("The reading service is busy — please try again in a minute."); setLoading(false); return;
       }
@@ -183,9 +184,10 @@ export function useCurrentChapter(chart: NatalChartV2 | null) {
         });
       }
       const { data: ai, error: err } = await chapterInFlight;
-      if (err || !ai) {
-        const busy = /rate|429|busy/i.test(JSON.stringify(err ?? ""));
+      if (err || !ai || (ai as any).error) {
+        const busy = /rate|429|busy/i.test(JSON.stringify(err ?? (ai as any)?.error ?? ""));
         chapterCooldownUntil = Date.now() + (busy ? 60_000 : 15_000);
+        try { sessionStorage.setItem("careflow.chapter-cooldown", String(chapterCooldownUntil)); } catch { /* ignore */ }
         setError(busy ? "The reading service is busy — please try again in a minute." : "Couldn't generate chapter right now.");
         setLoading(false); return;
       }

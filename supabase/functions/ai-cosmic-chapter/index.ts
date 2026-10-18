@@ -61,7 +61,7 @@ Return JSON with EXACTLY these keys:
 ${COSMIC_TONE_REMINDER}`;
 
   try {
-    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+    const call = () => fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -73,7 +73,17 @@ ${COSMIC_TONE_REMINDER}`;
         response_format: { type: "json_object" },
       }),
     });
-    if (upstream.status === 429) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Bounded retry with backoff + jitter for transient rate limits.
+    let upstream = await call();
+    for (let attempt = 1; upstream.status === 429 && attempt <= 2; attempt++) {
+      const ra = Number(upstream.headers.get("retry-after"));
+      const wait = Number.isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 8000) : 1500 * 2 ** (attempt - 1) + Math.random() * 500;
+      await upstream.body?.cancel().catch(() => {});
+      await new Promise(r => setTimeout(r, wait));
+      upstream = await call();
+    }
+    // Still limited: answer 200 with a soft error so the app shows a calm "busy" state instead of crashing.
+    if (upstream.status === 429) return new Response(JSON.stringify({ error: "rate_limited", retryable: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (upstream.status === 402) return new Response(JSON.stringify({ error: "ai_quota_exceeded" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!upstream.ok) {
       const text = await upstream.text();
