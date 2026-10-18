@@ -71,11 +71,11 @@ Return JSON with EXACTLY these keys:
 ${COSMIC_TONE_REMINDER}`;
 
   try {
-    const call = () => fetch("https://api.openai.com/v1/chat/completions", {
+    const call = () => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { "Authorization": `Bearer ${LOVABLE_API_KEY}`, "Lovable-API-Key": LOVABLE_API_KEY, "X-Lovable-AIG-SDK": "fetch", "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-5",
+        model: "openai/gpt-5",
         messages: [
           { role: "system", content: COSMIC_SYSTEM_PROMPT },
           { role: "user", content: user },
