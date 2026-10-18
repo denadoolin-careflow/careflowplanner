@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, isSameDay, addDays } from "date-fns";
-import { AlertCircle, CalendarClock, Check, Inbox, Plus, Sun } from "lucide-react";
+import { AlertCircle, Pill, Sprout, CalendarClock, Check, Inbox, Plus, Sun } from "lucide-react";
 import { useStore, todayISO } from "@/lib/store";
 import { useTimeBlocks } from "@/lib/time-blocks";
 import { useMealCompletion } from "@/lib/meal-completion";
+import { doseSlots, useMedicationLogs, useMedications } from "@/lib/medications";
+import { habitCountsOn } from "./PlannerRhythmRow";
 import { PlannerTaskRow } from "./PlannerTaskRow";
 import { buildAgendaDay, label12, parseTypedTime, type AgendaFilter, type AgendaRow } from "@/lib/planner/agenda-rows";
 import { haptics } from "@/lib/haptics";
@@ -11,10 +13,10 @@ import { cn } from "@/lib/utils";
 
 const FILTER_KEY = "careflow:agenda-filter:v1";
 const FILTERS: { id: AgendaFilter; label: string }[] = [
-  { id: "all", label: "All" }, { id: "tasks", label: "Tasks" }, { id: "events", label: "Events" }, { id: "meals", label: "Meals" },
+  { id: "all", label: "All" }, { id: "tasks", label: "Tasks" }, { id: "events", label: "Events" }, { id: "care", label: "Care" }, { id: "meals", label: "Meals" },
 ];
 const EDGE: Record<AgendaRow["kind"], string> = {
-  task: "before:bg-primary/70", appt: "before:bg-accent", meal: "before:bg-secondary-foreground/60",
+  task: "before:bg-primary/70", appt: "before:bg-accent", meal: "before:bg-secondary-foreground/60", med: "before:bg-destructive/60", habit: "before:bg-secondary",
 };
 
 function dayLabel(d: Date) {
@@ -27,11 +29,13 @@ function dayLabel(d: Date) {
 
 /** Agenda ("Schedule") — everything for the day in one scannable, actionable list. */
 export function PlannerScheduleList({ date }: { date: Date }) {
-  const { state, addTask } = useStore();
+  const { state, addTask, toggleHabit } = useStore() as any;
   const iso = format(date, "yyyy-MM-dd");
   const today = todayISO();
   const { blocks } = useTimeBlocks(iso, iso);
   const meals = useMealCompletion(iso);
+  const { medications } = useMedications();
+  const medLogs = useMedicationLogs(iso);
   const [filter, setFilter] = useState<AgendaFilter>(() => (localStorage.getItem(FILTER_KEY) as AgendaFilter) || "all");
   const [draft, setDraft] = useState("");
   const [nowMin, setNowMin] = useState(() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); });
@@ -41,8 +45,10 @@ export function PlannerScheduleList({ date }: { date: Date }) {
   const agenda = useMemo(() => {
     const blockStart = new Map<string, string>();
     for (const b of blocks) if (b.taskId) blockStart.set(b.taskId, b.startTime);
-    return buildAgendaDay({ iso, today, tasks: state.tasks, appointments: state.appointments ?? [], meals: state.meals ?? [], mealDone: meals.done, blockStart, filter });
-  }, [state.tasks, state.appointments, state.meals, meals.done, blocks, iso, today, filter]);
+    return buildAgendaDay({ iso, today, tasks: state.tasks, appointments: state.appointments ?? [], meals: state.meals ?? [], mealDone: meals.done, blockStart, filter,
+      meds: doseSlots(medications).map(s => ({ id: s.med.id, name: `${s.med.name}${s.med.dose ? ` (${s.med.dose})` : ""}`, time: s.time, taken: medLogs.statusOf(s.med.id, s.time) === "taken" })),
+      habits: (state.habits ?? []).filter((h: any) => !h.archived && habitCountsOn(h, date)).map((h: any) => ({ id: h.id, name: h.name ?? h.title, done: !!h.log?.[iso] })) });
+  }, [state.tasks, state.appointments, state.meals, state.habits, meals.done, blocks, iso, today, filter, medications, medLogs.statusOf, date]);
 
   const all = [...agenda.allDay, ...agenda.timed, ...agenda.unscheduled];
   const doneCount = all.filter(r => r.done).length;
@@ -71,6 +77,15 @@ export function PlannerScheduleList({ date }: { date: Date }) {
                 {r.done && <Check className="h-3.5 w-3.5" />}
               </button>
             )}
+            {(r.kind === "med" || r.kind === "habit") && (
+              <button type="button" onClick={() => { haptics.tap(); if (r.kind === "med") void medLogs.setStatus(r.medId!, r.medTime!, r.done ? null : "taken"); else void toggleHabit(r.habitId!, iso); }}
+                aria-label={r.kind === "med" ? (r.done ? `Mark ${r.title} not given` : `Mark ${r.title} given`) : (r.done ? `Uncheck ${r.title}` : `Check off ${r.title}`)}
+                className={cn("grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition-colors", r.done ? "border-primary bg-primary text-primary-foreground" : "border-primary/50")}>
+                {r.done && <Check className="h-3.5 w-3.5" />}
+              </button>
+            )}
+            {r.kind === "med" && <Pill className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />}
+            {r.kind === "habit" && <Sprout className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />}
             {r.kind === "appt" && <CalendarClock className="h-4 w-4 shrink-0 text-accent" aria-hidden />}
             <span className={cn("min-w-0 flex-1 whitespace-normal break-words", r.done && "line-through text-muted-foreground")}>{r.title}</span>
             {r.appt?.location && <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{r.appt.location}</span>}
