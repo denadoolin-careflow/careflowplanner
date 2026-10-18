@@ -11,19 +11,21 @@ import { CalendarTab } from "@/components/wealth-hub/CalendarTab";
 import { AnalyticsTab } from "@/components/wealth-hub/AnalyticsTab";
 import { PayeeTab } from "@/components/wealth-hub/PayeeTab";
 import { BudgetPlanTab } from "@/components/wealth-hub/BudgetPlanTab";
+import { SpendingTrendsTab } from "@/components/wealth-hub/SpendingTrendsTab";
 import { WealthOverview } from "@/components/wealth-hub/WealthOverview";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Receipt, CalendarClock, Repeat, Sprout, TrendingDown,
-  CalendarDays, BarChart3, Eye, EyeOff, ShieldCheck, Home, PieChart,
+  CalendarDays, BarChart3, Eye, EyeOff, ShieldCheck, Home, PieChart, LineChart,
 } from "lucide-react";
 
-type TabId = "overview" | "plan" | "dashboard" | "transactions" | "bills" | "recurring" | "goals" | "debts" | "payee" | "calendar" | "analytics";
+type TabId = "overview" | "plan" | "trends" | "dashboard" | "transactions" | "bills" | "recurring" | "goals" | "debts" | "payee" | "calendar" | "analytics";
 
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon?: boolean }[] = [
   { id: "overview", label: "Overview", icon: Home },
   { id: "plan", label: "Plan", icon: PieChart },
+  { id: "trends", label: "Trends", icon: LineChart },
   { id: "bills", label: "Bills", icon: CalendarClock },
   { id: "transactions", label: "Transactions", icon: Receipt },
   { id: "recurring", label: "Recurring", icon: Repeat },
@@ -115,6 +117,7 @@ export default function WealthHub() {
         <>
           {tab === "overview" && <WealthOverview uid={uid} onOpen={setTab} />}
           {tab === "plan" && <BudgetPlanTab uid={uid} />}
+          {tab === "trends" && <SpendingTrendsTab uid={uid} />}
           {tab === "dashboard" && <CustomizableGrid pageKey="wealth-hub" />}
           {tab === "bills" && <BillsTab uid={uid} />}
           {tab === "transactions" && <TransactionsTab uid={uid} />}

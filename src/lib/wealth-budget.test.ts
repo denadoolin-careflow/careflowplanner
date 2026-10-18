@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { budgetStatus, summarizeBudget, shiftMonth, targetFor } from "./wealth-budget";
+import { budgetStatus, summarizeBudget, shiftMonth, targetFor, spendingTrends } from "./wealth-budget";
 
 describe("wealth budget", () => {
   it("flags near at 80% and over past 100%", () => {
@@ -31,5 +31,17 @@ describe("wealth budget", () => {
     expect(targetFor(cat, "2026-12", targets)).toEqual({ amount: 900, custom: true });
     expect(targetFor(cat, "2026-11", targets)).toEqual({ amount: 600, custom: false });
     expect(summarizeBudget([cat], [], "2026-12", targets).budgeted).toBe(900);
+  });
+  it("tracks six months of category spending and month-over-month change", () => {
+    const cat = { id: "g", name: "Groceries", monthly_limit: 0, kind: "expense", color: null };
+    const t = spendingTrends([cat], [
+      { date: "2026-09-10", amount: 400, kind: "expense", category_id: "g" },
+      { date: "2026-10-02", amount: 500, kind: "expense", category_id: "g" },
+      { date: "2026-04-01", amount: 999, kind: "expense", category_id: "g" },
+    ], "2026-10");
+    expect(t.months).toEqual(["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"]);
+    expect(t.rows[0].values).toEqual([0, 0, 0, 0, 400, 500]);
+    expect(t.rows[0].change).toBe(100);
+    expect(t.rows[0].changePct).toBe(25);
   });
 });
