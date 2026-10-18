@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { budgetStatus, summarizeBudget, shiftMonth, targetFor, spendingTrends, savingsRate } from "./wealth-budget";
+import { budgetStatus, summarizeBudget, shiftMonth, targetFor, spendingTrends, savingsRate, netWorthChange } from "./wealth-budget";
 
 describe("wealth budget", () => {
   it("flags near at 80% and over past 100%", () => {
@@ -36,6 +36,11 @@ describe("wealth budget", () => {
     expect(savingsRate(1000, 600)).toBe(40);
     expect(savingsRate(1000, 1200)).toBe(-20);
     expect(savingsRate(0, 300)).toBe(null);
+  });
+  it("measures net worth change against last month's snapshot", () => {
+    expect(netWorthChange(5000, 1000, { month: "2026-09", assets: 4500, liabilities: 1000 })).toMatchObject({ now: 4000, change: 500, pct: 14 });
+    expect(netWorthChange(5000, 2000, { month: "2026-09", assets: 5000, liabilities: 1000 })).toMatchObject({ change: -1000, pct: -25 });
+    expect(netWorthChange(4000, 1000, null)).toMatchObject({ now: 3000, change: null, pct: null });
   });
   it("tracks six months of category spending and month-over-month change", () => {
     const cat = { id: "g", name: "Groceries", monthly_limit: 0, kind: "expense", color: null };

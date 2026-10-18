@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { fmtMoney, advanceDate, todayISO } from "@/lib/wealth-utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { monthKey, summarizeBudget } from "@/lib/wealth-budget";
+import { monthKey, netWorthChange, summarizeBudget } from "@/lib/wealth-budget";
 import { barTone, useBudgetData } from "./BudgetPlanTab";
-import { ArrowDownRight, ArrowUpRight, CalendarClock, Check } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarClock, Check, Minus } from "lucide-react";
+
 
 export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "plan" | "transactions" | "bills" | "goals") => void }) {
   const { cats, txs, targets, reload } = useBudgetData(uid);
@@ -15,13 +16,22 @@ export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "pl
   const [bills, setBills] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
+  const [prevSnap, setPrevSnap] = useState<{ month: string; assets: number; liabilities: number } | null>(null);
   useEffect(() => {
     const in14 = new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
     Promise.all([
       supabase.from("recurring_bills").select("id,name,amount,next_due_date,status,cadence,category_id,last_paid_at").eq("user_id", uid).lte("next_due_date", in14).order("next_due_date").limit(12),
       supabase.from("savings_goals").select("id,name,target_amount,current_amount,status").eq("user_id", uid).order("sort_order"),
       supabase.from("debts").select("id,name,balance").eq("user_id", uid),
-    ]).then(([b, g, d]) => { setBills(b.data ?? []); setGoals(g.data ?? []); setDebts(d.data ?? []); });
+    ]).then(([b, g, d]) => {
+      setBills(b.data ?? []); setGoals(g.data ?? []); setDebts(d.data ?? []);
+      const a = (g.data ?? []).reduce((x: number, r: any) => x + (Number(r.current_amount) || 0), 0);
+      const l = (d.data ?? []).reduce((x: number, r: any) => x + (Number(r.balance) || 0), 0);
+      const month = monthKey(new Date());
+      supabase.from("net_worth_snapshots").upsert({ user_id: uid, month, assets: a, liabilities: l }, { onConflict: "user_id,month" });
+      supabase.from("net_worth_snapshots").select("month,assets,liabilities").eq("user_id", uid).order("month", { ascending: false }).limit(13)
+        .then(({ data }) => setPrevSnap((data ?? []).find((s: any) => s.month !== month) ?? null));
+    });
   }, [uid, tick]);
 
   const markPaid = async (b: any) => {
@@ -48,6 +58,7 @@ export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "pl
   const s = useMemo(() => summarizeBudget(cats, txs, monthKey(new Date()), targets), [cats, txs, targets]);
   const assets = goals.reduce((a, g) => a + (Number(g.current_amount) || 0), 0);
   const liabilities = debts.reduce((a, d) => a + (Number(d.balance) || 0), 0);
+  const nw = netWorthChange(assets, liabilities, prevSnap);
   const top = [...s.expenseRows].filter((r) => r.limit > 0).sort((a, b) => b.spent / b.limit - a.spent / a.limit).slice(0, 5);
   const flowMax = Math.max(s.income, s.expenses, 1);
   const today = new Date().toISOString().slice(0, 10);
@@ -56,7 +67,15 @@ export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "pl
     <div className="grid gap-4 lg:grid-cols-3">
       <section className="cozy-card p-5">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">Net worth</p>
-        <p className="font-display text-3xl tabular-nums">{fmtMoney(assets - liabilities)}</p>
+        <p className="font-display text-3xl tabular-nums">{fmtMoney(nw.now)}</p>
+        {prevSnap ? (
+          <p className={cn("mt-1 flex items-center gap-1 text-sm tabular-nums", nw.change! > 0 ? "text-secondary" : nw.change! < 0 ? "text-destructive" : "text-muted-foreground")}>
+            {nw.change! > 0 ? <ArrowUpRight className="h-4 w-4" /> : nw.change! < 0 ? <ArrowDownRight className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+            {nw.change! >= 0 ? "+" : "−"}{fmtMoney(Math.abs(nw.change!))} this month
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">A snapshot saves each month so the change can show here.</p>
+        )}
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div><p className="text-xs text-muted-foreground">Savings</p><p className="tabular-nums">{fmtMoney(assets)}</p></div>
           <div><p className="text-xs text-muted-foreground">Debts</p><p className="tabular-nums">{fmtMoney(liabilities)}</p></div>
