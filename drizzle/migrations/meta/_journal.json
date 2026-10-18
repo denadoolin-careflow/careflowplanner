@@ -85,6 +85,13 @@
       "when": 1792233026735,
       "tag": "0011_eol_guide",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792336726898,
+      "tag": "0012_astro_suite_state",
+      "breakpoints": true
     }
   ]
 }
