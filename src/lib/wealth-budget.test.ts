@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { budgetStatus, summarizeBudget, shiftMonth, targetFor, spendingTrends } from "./wealth-budget";
+import { budgetStatus, summarizeBudget, shiftMonth, targetFor, spendingTrends, savingsRate } from "./wealth-budget";
 
 describe("wealth budget", () => {
   it("flags near at 80% and over past 100%", () => {
