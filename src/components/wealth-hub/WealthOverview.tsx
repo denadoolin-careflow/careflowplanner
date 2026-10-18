@@ -8,7 +8,7 @@ import { barTone, useBudgetData } from "./BudgetPlanTab";
 import { ArrowDownRight, ArrowUpRight, CalendarClock } from "lucide-react";
 
 export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "plan" | "transactions" | "bills" | "goals") => void }) {
-  const { cats, txs } = useBudgetData(uid);
+  const { cats, txs, targets } = useBudgetData(uid);
   const [bills, setBills] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
@@ -21,7 +21,7 @@ export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "pl
     ]).then(([b, g, d]) => { setBills(b.data ?? []); setGoals(g.data ?? []); setDebts(d.data ?? []); });
   }, [uid]);
 
-  const s = useMemo(() => summarizeBudget(cats, txs, monthKey(new Date())), [cats, txs]);
+  const s = useMemo(() => summarizeBudget(cats, txs, monthKey(new Date()), targets), [cats, txs, targets]);
   const assets = goals.reduce((a, g) => a + (Number(g.current_amount) || 0), 0);
   const liabilities = debts.reduce((a, d) => a + (Number(d.balance) || 0), 0);
   const top = [...s.expenseRows].filter((r) => r.limit > 0).sort((a, b) => b.spent / b.limit - a.spent / a.limit).slice(0, 5);

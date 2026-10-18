@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { budgetStatus, summarizeBudget, shiftMonth } from "./wealth-budget";
+import { budgetStatus, summarizeBudget, shiftMonth, targetFor } from "./wealth-budget";
 
 describe("wealth budget", () => {
   it("flags near at 80% and over past 100%", () => {
@@ -24,5 +24,12 @@ describe("wealth budget", () => {
   });
   it("shifts months across years", () => {
     expect(shiftMonth("2026-01", -1)).toBe("2025-12");
+  });
+  it("uses a month's own target, else the default", () => {
+    const cat = { id: "g", name: "Groceries", monthly_limit: 600, kind: "expense", color: null };
+    const targets = [{ category_id: "g", month: "2026-12", amount: 900 }];
+    expect(targetFor(cat, "2026-12", targets)).toEqual({ amount: 900, custom: true });
+    expect(targetFor(cat, "2026-11", targets)).toEqual({ amount: 600, custom: false });
+    expect(summarizeBudget([cat], [], "2026-12", targets).budgeted).toBe(900);
   });
 });
