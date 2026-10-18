@@ -9,6 +9,7 @@ import { computeProfection, houseTopics } from "@/lib/cosmic/astro/profections";
 import { eclipseActivations, eclipsesBetween } from "@/lib/cosmic/astro/eclipses";
 import { nextSolarReturn, nextLunarReturn, nextSaturnReturn, nextJupiterReturn } from "@/lib/cosmic/astro/returns";
 import { format } from "date-fns";
+import { PlainMeaning } from "@/components/cosmic/PlainMeaning";
 
 export default function CosmicPredictive() {
   const { row } = useBirthChart();
@@ -51,6 +52,7 @@ export default function CosmicPredictive() {
         <p className="text-[13px] text-muted-foreground italic mt-3">
           This progressed lunation phase invites an inner rhythm of {prog.progressedMoon.lunarPhase.toLowerCase()} — a slower, decade-long current beneath the daily transits.
         </p>
+        <PlainMeaning label="In plain words">This is your slow inner mood over the next few years. It shapes what feels important more than what happens on any one day.</PlainMeaning>
       </section>
 
       {prof && (
@@ -58,6 +60,7 @@ export default function CosmicPredictive() {
           <h3 className="font-display text-base">Annual Profection (age {prof.age})</h3>
           <p className="text-sm mt-1">House {prof.house} · {prof.profectedSign} · time-lord <strong>{prof.timeLord}</strong></p>
           <p className="text-[13px] text-muted-foreground mt-1">This year highlights: {houseTopics(prof.house)}.</p>
+          <PlainMeaning label="In plain words">This year, give extra attention to {houseTopics(prof.house)}. Small steps there tend to pay off.</PlainMeaning>
           <p className="text-[12px] text-muted-foreground mt-2">{prof.yearStarts} → {prof.yearEnds}</p>
         </section>
       )}
@@ -76,12 +79,14 @@ export default function CosmicPredictive() {
         <h3 className="font-display text-base">Solar Return</h3>
         <p className="text-sm mt-1">Next: <strong>{solar ? format(solar, "EEEE, MMM d, yyyy") : "—"}</strong></p>
         <p className="text-[13px] text-muted-foreground mt-1">Your annual cosmic "new year" — the chart cast for this moment colors the next 12 months.</p>
+        <PlainMeaning label="In plain words">Your birthday is a good time to set one hope for the year ahead.</PlainMeaning>
       </section>
 
       <section id="lunar-return" className="cozy-card p-4 sm:p-5 scroll-mt-20">
         <h3 className="font-display text-base">Lunar Return</h3>
         <p className="text-sm mt-1">Next: <strong>{lunar ? format(lunar, "EEEE, MMM d, yyyy") : "—"}</strong></p>
         <p className="text-[13px] text-muted-foreground mt-1">Roughly every 27.3 days, the Moon returns to its natal degree — a monthly emotional reset.</p>
+        <PlainMeaning label="In plain words">Around this date, feelings may reset. Plan a quieter evening and check in with yourself.</PlainMeaning>
       </section>
 
       <section id="generational" className="cozy-card p-4 sm:p-5 scroll-mt-20">
@@ -89,6 +94,7 @@ export default function CosmicPredictive() {
         <p className="text-sm mt-1">Next Jupiter Return: <strong>{jupiter ? format(jupiter, "MMM yyyy") : "—"}</strong></p>
         <p className="text-sm">Next Saturn Return: <strong>{saturn ? format(saturn, "MMM yyyy") : "—"}</strong></p>
         <p className="text-[13px] text-muted-foreground mt-1">Jupiter returns (~12 yrs) open new chapters of growth; Saturn returns (~29 yrs) mature your structures.</p>
+        <PlainMeaning label="In plain words">These are big life seasons, years apart. Nothing to do today; just notice how you are growing.</PlainMeaning>
       </section>
 
       <section id="eclipses" className="cozy-card p-4 sm:p-5 scroll-mt-20">
@@ -105,6 +111,7 @@ export default function CosmicPredictive() {
             ))}
           </ul>
         )}
+        <PlainMeaning label="In plain words">Around eclipse dates, give big decisions an extra week before you commit.</PlainMeaning>
         {eclipseActivationsList.length > 0 && (
           <p className="text-[12.5px] text-muted-foreground mt-3">
             {eclipseActivationsList.length} eclipse{eclipseActivationsList.length > 1 ? "s" : ""} activating points in your chart — this is often a season of meaningful transitions.

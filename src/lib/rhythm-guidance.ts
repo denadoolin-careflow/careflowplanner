@@ -61,3 +61,23 @@ export function missingGroceries(phase: CyclePhase, existing: string[]) {
   const have = new Set(existing.map(n => n.trim().toLowerCase()));
   return PHASE_GROCERIES[phase].filter(g => !have.has(g.name.toLowerCase()));
 }
+
+const PLANET_PLAIN: Record<string, string> = {
+  Sun: "your energy and sense of self", Moon: "feelings and home life", Mercury: "messages, errands and plans",
+  Venus: "relationships, money and comfort", Mars: "drive and patience", Jupiter: "growth and generosity",
+  Saturn: "duties and limits", Uranus: "surprises and change", Neptune: "dreams and tiredness", Pluto: "deep feelings and control",
+};
+const ASPECT_PLAIN: Record<string, string> = {
+  conjunction: "are working together — focus on",
+  trine: "flow easily — a good day for",
+  sextile: "offer a small opening for",
+  square: "rub against each other — go slow with",
+  opposition: "pull in two directions — look for balance between",
+};
+
+/** Plain-language meaning of an aspect, e.g. "Mars square Saturn". */
+export function plainAspect(a: string, aspect: string, b: string): string {
+  const pa = PLANET_PLAIN[a] ?? a, pb = PLANET_PLAIN[b] ?? b;
+  const verb = ASPECT_PLAIN[aspect] ?? "connect —";
+  return `${a} and ${b} ${verb} ${pa} and ${pb}.`;
+}

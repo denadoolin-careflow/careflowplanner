@@ -12,6 +12,10 @@ import { CosmicTimelineTabs } from "@/components/cosmic/CosmicTimelineTabs";
 import { PredictiveSnapshotList } from "@/components/cosmic/PredictiveSnapshotList";
 import { PersonalGuidanceGrid } from "@/components/cosmic/PersonalGuidanceGrid";
 import { SuggestedCareflowActions } from "@/components/cosmic/SuggestedCareflowActions";
+import { PlainMeaning } from "@/components/cosmic/PlainMeaning";
+import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { isVoidOfCourse } from "@/lib/transits";
+import { MOON_PLAIN, VOC_ADVICE } from "@/lib/rhythm-guidance";
 import { AdvancedAstrologyRow } from "@/components/cosmic/AdvancedAstrologyRow";
 
 export default function CosmicFlow() {
@@ -49,6 +53,11 @@ export default function CosmicFlow() {
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-3 sm:space-y-4">
           <DailyOverviewCard date={date} />
+          <section className="cozy-card p-4" aria-label="What this means today">
+            <p className="text-sm font-medium">{MOON_INFO[getMoonPhase(date)].glyph} {MOON_INFO[getMoonPhase(date)].label}</p>
+            <PlainMeaning>{MOON_PLAIN[getMoonPhase(date)]}</PlainMeaning>
+            {isVoidOfCourse(date) && <PlainMeaning label="Void-of-course moon">{VOC_ADVICE.replace(/^Void-of-course moon: /, "")}</PlainMeaning>}
+          </section>
           <CurrentTransitsTable date={date} />
           <CosmicTimelineTabs from={date} />
         </div>
