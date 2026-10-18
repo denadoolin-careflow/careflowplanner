@@ -3,7 +3,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 import { COSMIC_SYSTEM_PROMPT, COSMIC_TONE_REMINDER } from "../_shared/cosmic-tone.ts";
 
-const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 interface Body {
   natal?: { sun?: string; moon?: string; ascendant?: string; chartRuler?: string; dominantElement?: string; dominantModality?: string };
