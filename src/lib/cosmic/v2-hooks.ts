@@ -2,7 +2,7 @@
  * Cosmic Flow v2 client hooks — chart cache, daily guidance, chapters,
  * journal insights, transit interpretations.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { chapterContext, chapterMatchesContext, type ChapterReading } from "@/lib/cosmic/chapter-context";
