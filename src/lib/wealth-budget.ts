@@ -58,7 +58,13 @@ export function summarizeBudget(cats: BudgetCategory[], txs: BudgetTx[], month: 
   };
 }
 
-/** Spending per expense category for the `count` months ending at `endMonth` (oldest first). */
+/** Percent of income kept after expenses, or null when there was no income to compare against. */
+export function savingsRate(income: number, expenses: number): number | null {
+  if (income <= 0) return null;
+  return Math.round(((income - expenses) / income) * 100);
+}
+
+/** Spending and income per month for the `count` months ending at `endMonth` (oldest first). */
 export function spendingTrends(cats: BudgetCategory[], txs: BudgetTx[], endMonth: string, count = 6) {
   const months = Array.from({ length: count }, (_, i) => shiftMonth(endMonth, i - count + 1));
   const rows = cats.filter((c) => c.kind !== "income").map((c) => {
@@ -68,5 +74,6 @@ export function spendingTrends(cats: BudgetCategory[], txs: BudgetTx[], endMonth
     return { ...c, values, average, change: last - prev, changePct: prev > 0 ? Math.round(((last - prev) / prev) * 100) : null };
   });
   const totals = months.map((_, i) => rows.reduce((s, r) => s + r.values[i], 0));
-  return { months, rows, totals };
+  const incomes = months.map((m) => txs.filter((t) => t.kind === "income" && t.date?.startsWith(m)).reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0));
+  return { months, rows, totals, incomes };
 }

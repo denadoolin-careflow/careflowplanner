@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { fmtMoney } from "@/lib/wealth-utils";
 import { cn } from "@/lib/utils";
-import { monthKey, spendingTrends } from "@/lib/wealth-budget";
+import { monthKey, savingsRate, spendingTrends } from "@/lib/wealth-budget";
 import { MonthPicker, useBudgetData } from "./BudgetPlanTab";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 
@@ -53,14 +53,22 @@ export function SpendingTrendsTab({ uid }: { uid: string }) {
           <Change change={last - prev} pct={prev > 0 ? Math.round(((last - prev) / prev) * 100) : null} />
         </div>
         <div className="flex h-36 items-end gap-2 sm:gap-4">
-          {t.totals.map((v, i) => (
-            <div key={i} className="flex flex-1 flex-col items-center gap-1">
-              <span className="text-[10px] tabular-nums text-muted-foreground">{fmtMoney(v)}</span>
-              <div className={cn("w-full rounded-t-md", i === 5 ? "bg-primary" : "bg-primary/30")} style={{ height: `${Math.max(3, (v / totalMax) * 100)}px` }} />
-              <span className="text-xs text-muted-foreground">{short(t.months[i])}</span>
-            </div>
-          ))}
+          {t.totals.map((v, i) => {
+            const rate = savingsRate(t.incomes[i], v);
+            return (
+              <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                <span className="text-[10px] tabular-nums text-muted-foreground">{fmtMoney(v)}</span>
+                <div className={cn("w-full rounded-t-md", i === 5 ? "bg-primary" : "bg-primary/30")} style={{ height: `${Math.max(3, (v / totalMax) * 100)}px` }} />
+                <span className="text-xs text-muted-foreground">{short(t.months[i])}</span>
+                <span className="text-[10px] tabular-nums text-muted-foreground">in {fmtMoney(t.incomes[i])}</span>
+                <span className={cn("text-[10px] font-medium tabular-nums", rate != null ? (rate >= 0 ? "text-secondary" : "text-destructive") : "text-muted-foreground")}>
+                  {rate != null ? `${rate}% saved` : "—"}
+                </span>
+              </div>
+            );
+          })}
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">Bars show spending. Under each month: income ("in") and the percent of income you kept.</p>
       </section>
 
       {loading ? <p className="p-4 text-sm text-muted-foreground">Loading…</p> : rows.length === 0 ? (
