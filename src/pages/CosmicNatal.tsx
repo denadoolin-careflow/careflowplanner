@@ -86,6 +86,9 @@ export default function CosmicNatal() {
   const { row } = useBirthChart();
   const chart = useNatalChart(row ? { date: row.birth_date, time: row.birth_time, tz: row.birth_tz, lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place, house_system: "whole-sign" } : null);
   const [selected, setSelected] = useState<NatalPlanet | null>(null);
+  const todayIso = new Date().toLocaleDateString("en-CA");
+  const [showTransits, setShowTransits] = useState(false);
+  const [transitDate, setTransitDate] = useState(todayIso);
   const [open, setOpen] = useState(false);
   const [selectedSign, setSelectedSign] = useState<Sign | null>(null);
   const [signOpen, setSignOpen] = useState(false);
