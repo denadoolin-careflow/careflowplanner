@@ -123,7 +123,10 @@ export function nextExact(body: ExtPlanet, natalLon: number, angle: number, from
     const t = new Date(from.getTime() + d * DAY);
     const o = aspectOrb(bodyLongitude(body, t), natalLon, angle);
     if (o < prevOrb) falling = true;
-    else if (falling && o > prevOrb) return prevOrb < 1 ? new Date(t.getTime() - step * DAY) : (falling = false, null) ?? null;
+    else if (falling && o > prevOrb) {
+      if (prevOrb < 1) return new Date(t.getTime() - step * DAY);
+      falling = false;
+    }
     prevOrb = o;
   }
   return null;
