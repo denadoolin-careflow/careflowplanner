@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { format, parseISO, isSameDay } from "date-fns";
+import { format, parseISO, isSameDay, addDays } from "date-fns";
 import { useStore } from "@/lib/store";
 import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
 import { CalendarClock, Check, Sunrise, Sun, Moon } from "lucide-react";
@@ -69,6 +69,7 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick, on
       if (!bucket) continue;
       bucket[partOf(r.time)].push(r);
     }
+    for (const b of m.values()) for (const k of Object.keys(b) as PartKey[]) b[k].sort((x, y) => Number(!!x.done) - Number(!!y.done));
     return Array.from(m.entries());
   }, [items, days]);
 
@@ -79,8 +80,15 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick, on
     onTaskDropAt(id, iso, 9);
   };
 
+  const hasToday = days.some(d => isSameDay(d, new Date()));
   return (
-    <div className="space-y-4">
+    <div className="relative space-y-4">
+      {hasToday && days.length > 1 && (
+        <button type="button" onClick={() => document.getElementById("agenda-today")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          className="sticky top-2 z-20 ml-auto flex min-h-9 items-center rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-md">
+          Jump to today
+        </button>
+      )}
       {grouped.map(([iso, rows]) => {
         const d = parseISO(iso);
         const today = isSameDay(d, new Date());
@@ -92,9 +100,9 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick, on
             onDrop={e => onDrop(e, iso)}
             className="rounded-xl border border-border/60 bg-card/60 p-3"
           >
-            <div className={cn("mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider", today ? "text-primary" : "text-muted-foreground")}>
+            <div id={today ? "agenda-today" : undefined} className={cn("sticky top-0 z-10 -mx-3 -mt-3 mb-2 flex items-center gap-2 rounded-t-xl border-b border-border/50 bg-card/95 px-3 py-2 text-xs font-semibold uppercase tracking-wider backdrop-blur", today ? "text-primary" : "text-muted-foreground")}>
               <CalendarClock className="h-3.5 w-3.5" />
-              {format(d, "EEEE, MMM d")} {today && <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] normal-case tracking-normal">Today</span>}
+              {isSameDay(d, addDays(new Date(), 1)) ? "Tomorrow · " : ""}{format(d, "EEEE, MMM d")} {today && <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] normal-case tracking-normal">Today</span>}<span className="ml-auto font-normal normal-case tracking-normal opacity-70">{total} item{total === 1 ? "" : "s"}</span>
             </div>
             <DayContextStrip date={d} onLunar={onLunarOpen} className="mb-2" />
             {total === 0 && (
@@ -121,7 +129,7 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick, on
                           <li key={i}
                             onClick={clickable ? () => onApptClick!(r.apptId!) : undefined}
                             className={cn(
-                              "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                              "flex min-h-11 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                               cls ? `${cls.bg} ${cls.text}` : "bg-muted/40",
                               clickable && "cursor-pointer hover:bg-primary/10",
                               isTask && r.done && "opacity-60"
@@ -131,7 +139,7 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick, on
                                 onClick={(e) => { e.stopPropagation(); void toggleTask(r.apptId!); }}
                                 aria-label={r.done ? "Mark task not done" : "Mark task done"}
                                 className={cn(
-                                  "group/cb grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+                                  "group/cb grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition-colors",
                                   r.done
                                     ? "border-primary bg-primary text-primary-foreground"
                                     : "border-primary/50 bg-background text-primary hover:bg-primary hover:text-primary-foreground"
