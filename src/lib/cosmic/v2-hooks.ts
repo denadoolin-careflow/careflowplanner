@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { aiInvoke } from "@/lib/ai-invoke";
-import { progressedLunation, solarReturnChart, timeLordReport } from "@/lib/cosmic/year-chapter";
+import { chapterContext, chapterMatchesContext, type ChapterReading } from "@/lib/cosmic/chapter-context";
 import { computeNatalV2, hashBirth, type BirthInputV2, type NatalChartV2 } from "@/lib/cosmic/chart";
 import { computeProgressions, progressedMoonNextIngress } from "@/lib/cosmic/astro/progressions";
 import { nextSolarReturn, nextLunarReturn, nextSaturnReturn, nextJupiterReturn } from "@/lib/cosmic/astro/returns";
@@ -119,27 +119,31 @@ export interface Chapter {
   generated_at?: string;
 }
 
-let chapterInFlight: Promise<{ data: any; error: any }> | null = null;
+const chapterInFlight = new Map<string, Promise<{ data: any; error: any }>>();
 let chapterCooldownUntil = 0;
 
-export function useCurrentChapter(chart: NatalChartV2 | null) {
+export function useCurrentChapter(chart: NatalChartV2 | null, reading: ChapterReading | null) {
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async (force = false) => {
+    if (!chart || !reading) return;
     setLoading(true); setError(null);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u?.user) { setLoading(false); return; }
-      const today = new Date();
+      const today = reading.on;
       const todayISO = today.toISOString().slice(0, 10);
+      const context = chapterContext(chart, reading);
       if (!force) {
         const { data: existing } = await (supabase as any)
           .from("cosmic_chapters").select("*")
-          .eq("user_id", u.user.id).gte("valid_to", todayISO)
-          .order("valid_from", { ascending: false }).limit(1).maybeSingle();
-        if (existing) { setChapter(existing as any); setLoading(false); return; }
+          .eq("user_id", u.user.id).lte("valid_from", todayISO).gte("valid_to", todayISO)
+          .order("generated_at", { ascending: false }).limit(10);
+        const matching = existing?.find((row: any) => chapterMatchesContext(row.source_signals, context.key));
+        if (matching) { setChapter(matching as Chapter); setLoading(false); return; }
+        setChapter(null);
       }
       const birthD = chart?.birth ? new Date(chart.birth.date) : new Date();
       const prof = chart?.houses ? computeProfection(birthD, chart.houses.ascendantSign, today) : null;
@@ -173,23 +177,22 @@ export function useCurrentChapter(chart: NatalChartV2 | null) {
         },
         eclipses,
         journalThemes,
-        year: chart ? (() => {
-          const tl = timeLordReport(chart, today), sr = solarReturnChart(chart, today), pl = progressedLunation(chart, today);
-          return { timeLord: tl.lord, profectedHouse: tl.profection.house, timeLordNow: `${tl.nowSign}${tl.nowRetrograde ? " retrograde" : ""}`,
-            solarReturn: { sunHouse: sr.sunHouse, rising: sr.rising, moonSign: sr.moonSign, angular: sr.angular }, progressedPhase: pl.phase };
-        })() : undefined,
+        readingContext: context,
       };
       chapterCooldownUntil = Math.max(chapterCooldownUntil, Number(sessionStorage.getItem("careflow.chapter-cooldown") || 0));
       if (Date.now() < chapterCooldownUntil) {
         setError("The reading service is busy — please try again in a minute."); setLoading(false); return;
       }
       // Share one in-flight request so repeated renders don't flood the AI service.
-      if (!chapterInFlight) {
-        chapterInFlight = aiInvoke("ai-cosmic-chapter", { body: payload }).finally(() => {
-          setTimeout(() => { chapterInFlight = null; }, 0);
-        });
+      const requestKey = `${u.user.id}:${context.key}`;
+      if (!chapterInFlight.has(requestKey)) {
+        chapterInFlight.set(requestKey, aiInvoke("ai-cosmic-chapter", { body: payload }).finally(() => {
+          setTimeout(() => { chapterInFlight.delete(requestKey); }, 0);
+        }));
       }
-      const { data: ai, error: err } = await chapterInFlight;
+      const pending = chapterInFlight.get(requestKey);
+      if (!pending) return;
+      const { data: ai, error: err } = await pending;
       if (err || !ai || (ai as any).error) {
         const busy = /rate|429|busy/i.test(JSON.stringify(err ?? (ai as any)?.error ?? ""));
         chapterCooldownUntil = Date.now() + (busy ? 60_000 : 15_000);
@@ -211,10 +214,13 @@ export function useCurrentChapter(chart: NatalChartV2 | null) {
         valid_from: validFrom,
         valid_to: validTo,
       };
-      const { data: inserted } = await (supabase as any).from("cosmic_chapters").insert(row).select("*").maybeSingle();
+      const { data: inserted, error: saveError } = await (supabase as any).from("cosmic_chapters").insert(row).select("*").maybeSingle();
+      if (saveError) setError("Your chapter is ready, but couldn't be saved. Please try again.");
       setChapter((inserted ?? row) as any);
+    } catch {
+      setError("Couldn't update your chapter right now. Please try again.");
     } finally { setLoading(false); }
-  }, [chart]);
+  }, [chart, reading]);
 
   useEffect(() => { if (chart) void refresh(false); }, [chart, refresh]);
   return { chapter, loading, error, refresh };
