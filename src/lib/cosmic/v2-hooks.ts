@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { progressedLunation, solarReturnChart, timeLordReport } from "@/lib/cosmic/year-chapter";
 import { computeNatalV2, hashBirth, type BirthInputV2, type NatalChartV2 } from "@/lib/cosmic/chart";
 import { computeProgressions, progressedMoonNextIngress } from "@/lib/cosmic/astro/progressions";
 import { nextSolarReturn, nextLunarReturn, nextSaturnReturn, nextJupiterReturn } from "@/lib/cosmic/astro/returns";
@@ -172,6 +173,11 @@ export function useCurrentChapter(chart: NatalChartV2 | null) {
         },
         eclipses,
         journalThemes,
+        year: chart ? (() => {
+          const tl = timeLordReport(chart, today), sr = solarReturnChart(chart, today), pl = progressedLunation(chart, today);
+          return { timeLord: tl.lord, profectedHouse: tl.profection.house, timeLordNow: `${tl.nowSign}${tl.nowRetrograde ? " retrograde" : ""}`,
+            solarReturn: { sunHouse: sr.sunHouse, rising: sr.rising, moonSign: sr.moonSign, angular: sr.angular }, progressedPhase: pl.phase };
+        })() : undefined,
       };
       chapterCooldownUntil = Math.max(chapterCooldownUntil, Number(sessionStorage.getItem("careflow.chapter-cooldown") || 0));
       if (Date.now() < chapterCooldownUntil) {
