@@ -1771,6 +1771,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cosmic_compare_charts: {
+        Row: {
+          birth_date: string
+          birth_lat: number | null
+          birth_lng: number | null
+          birth_place: string | null
+          birth_time: string | null
+          birth_tz: string | null
+          created_at: string
+          id: string
+          label: string
+          user_id: string
+        }
+        Insert: {
+          birth_date: string
+          birth_lat?: number | null
+          birth_lng?: number | null
+          birth_place?: string | null
+          birth_time?: string | null
+          birth_tz?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          user_id: string
+        }
+        Update: {
+          birth_date?: string
+          birth_lat?: number | null
+          birth_lng?: number | null
+          birth_place?: string | null
+          birth_time?: string | null
+          birth_tz?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cosmic_daily_guidance: {
         Row: {
           body: string
