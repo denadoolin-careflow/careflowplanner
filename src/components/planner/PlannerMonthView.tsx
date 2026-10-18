@@ -36,10 +36,10 @@ const MOBILE_VIEW_ITEMS = [
 function readMobileView(): MobileMonthView {
   try {
     const value = localStorage.getItem(MOBILE_VIEW_KEY);
-    if (value === "calendar") return "calendar";
+    if (value === "agenda") return "agenda";
     if (value === "list") return "list";
-    return "agenda";
-  } catch { return "agenda"; }
+    return "calendar";
+  } catch { return "calendar"; }
 }
 
 /** Wraps a day cell/section so it accepts drops through the shared drag layer. */
@@ -53,13 +53,14 @@ const MEAL_ORDER = ["Breakfast", "Lunch", "Dinner", "Snack", "Drink"];
 const MEAL_ABBR: Record<string, string> = { Breakfast: "B", Lunch: "L", Dinner: "D", Snack: "S", Drink: "Dr" };
 const mealRank = (item: PlannerFeedItem) => { const i = MEAL_ORDER.indexOf(item.title.split(": ")[0]); return i < 0 ? 99 : i; };
 
-export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSelectedDate, onCapture, onOpenItem }: {
+export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSelectedDate, onCapture, onOpenItem, onOpenDay }: {
   date: Date;
   selectedDate?: Date;
   onSelectDay: (d: Date) => void;
   onChangeSelectedDate?: (d: Date) => void;
   onCapture?: () => void;
   onOpenItem?: (item: PlannerFeedItem) => void;
+  onOpenDay?: (d: Date) => void;
 }) {
   const start = startOfWeek(startOfMonth(date), { weekStartsOn: 1 });
   const end = endOfWeek(endOfMonth(date), { weekStartsOn: 1 });
@@ -209,6 +210,16 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
           })}
         </div>
       </div>
+      {isMobile && <DayDropZone dateISO={selectedKey} as="section" className="planner-month-agenda-day">
+        <div className="flex items-start justify-between gap-2 border-b border-border/50 pb-2">
+          <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(activeDate, "EEEE")}</p><h3 className="font-display text-lg">{format(activeDate, "MMMM d")}</h3><p className="text-xs text-muted-foreground">{activeRows.length ? `${activeRows.length} planned · ${activeRows.filter(r => r.done).length} done` : "Space to breathe"}</p></div>
+          <div className="flex shrink-0 items-center gap-1">
+            {onCapture && <Button size="sm" variant="outline" className="h-10" onClick={onCapture} aria-label={`Add to ${format(activeDate, "MMMM d")}`}><Plus className="h-4 w-4" /></Button>}
+            <Button size="sm" className="h-10" onClick={() => (onOpenDay ?? onSelectDay)(activeDate)}>Open <ChevronRight className="ml-0.5 h-4 w-4" /></Button>
+          </div>
+        </div>
+        <div className="py-1">{activeRows.length ? activeRows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />) : <p className="py-6 text-center text-sm text-muted-foreground">Nothing planned. Tap + to add a gentle anchor.</p>}</div>
+      </DayDropZone>}
       {dialogs}
     </div>
   );
