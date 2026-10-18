@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { TransitDetailSheet } from "./TransitDetailSheet";
 import type { CosmicEvent } from "@/lib/cosmic/events";
 import { ExternalLink } from "lucide-react";
+import { plainAspect } from "@/lib/rhythm-guidance";
 
 const ACTION_TONE: Record<string, string> = {
   "Reach out":   "bg-primary/15 text-primary",
@@ -77,6 +78,7 @@ export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: 
                       </Link>
                     </p>
                     <p className="text-[11px] text-muted-foreground">{a.window}</p>
+                    <p className="mt-0.5 text-[12px] text-foreground/80"><span className="font-semibold">Today: </span>{plainAspect(a.a, a.aspect, a.b)}</p>
                   </div>
                   <div className="col-start-2 min-w-0 sm:col-start-3">
                     <p className="text-[12.5px] leading-snug">{a.meaning}</p>
