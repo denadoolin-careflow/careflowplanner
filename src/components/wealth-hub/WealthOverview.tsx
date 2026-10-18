@@ -1,25 +1,49 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { fmtMoney } from "@/lib/wealth-utils";
+import { fmtMoney, advanceDate, todayISO } from "@/lib/wealth-utils";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { monthKey, summarizeBudget } from "@/lib/wealth-budget";
 import { barTone, useBudgetData } from "./BudgetPlanTab";
-import { ArrowDownRight, ArrowUpRight, CalendarClock } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarClock, Check } from "lucide-react";
 
 export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "plan" | "transactions" | "bills" | "goals") => void }) {
-  const { cats, txs, targets } = useBudgetData(uid);
+  const { cats, txs, targets, reload } = useBudgetData(uid);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
   const [bills, setBills] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
   useEffect(() => {
     const in14 = new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
     Promise.all([
-      supabase.from("recurring_bills").select("id,name,amount,next_due_date,status").eq("user_id", uid).lte("next_due_date", in14).order("next_due_date").limit(12),
+      supabase.from("recurring_bills").select("id,name,amount,next_due_date,status,cadence,category_id,last_paid_at").eq("user_id", uid).lte("next_due_date", in14).order("next_due_date").limit(12),
       supabase.from("savings_goals").select("id,name,target_amount,current_amount,status").eq("user_id", uid).order("sort_order"),
       supabase.from("debts").select("id,name,balance").eq("user_id", uid),
     ]).then(([b, g, d]) => { setBills(b.data ?? []); setGoals(g.data ?? []); setDebts(d.data ?? []); });
-  }, [uid]);
+  }, [uid, tick]);
+
+  const markPaid = async (b: any) => {
+    setBusy(b.id);
+    const prev = { next_due_date: b.next_due_date, last_paid_at: b.last_paid_at };
+    const next = b.next_due_date ? advanceDate(b.next_due_date, b.cadence || "monthly") : null;
+    const { data: tx, error: txErr } = await supabase.from("transactions").insert({
+      user_id: uid, date: todayISO(), amount: Number(b.amount) || 0, kind: "expense",
+      category_id: b.category_id, note: `Paid: ${b.name}`, linked_bill_id: b.id,
+    } as any).select("id").single();
+    const { error } = await supabase.from("recurring_bills").update({ next_due_date: next, last_paid_at: new Date().toISOString() }).eq("id", b.id);
+    setBusy(null);
+    if (txErr || error) return toast.error("Couldn't mark that bill paid");
+    setTick((t) => t + 1); reload();
+    toast.success(`Paid ${b.name}${next ? ` · next due ${new Date(next + "T00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : ""}`, {
+      action: { label: "Undo", onClick: async () => {
+        await supabase.from("recurring_bills").update(prev).eq("id", b.id);
+        if (tx?.id) await supabase.from("transactions").delete().eq("id", tx.id);
+        setTick((t) => t + 1); reload();
+      } },
+    });
+  };
 
   const s = useMemo(() => summarizeBudget(cats, txs, monthKey(new Date()), targets), [cats, txs, targets]);
   const assets = goals.reduce((a, g) => a + (Number(g.current_amount) || 0), 0);
@@ -82,12 +106,16 @@ export function WealthOverview({ uid, onOpen }: { uid: string; onOpen: (tab: "pl
               return (
                 <li key={b.id} className="flex items-center justify-between gap-2 text-sm">
                   <span className="flex min-w-0 items-center gap-2"><CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="truncate">{b.name}</span></span>
-                  <span className="shrink-0 text-right">
+                  <span className="ml-auto shrink-0 text-right">
                     <span className="block tabular-nums">{fmtMoney(Number(b.amount) || 0)}</span>
                     <span className={cn("text-xs", late ? "text-destructive" : "text-muted-foreground")}>
                       {late ? "Overdue" : new Date(b.next_due_date + "T00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                     </span>
                   </span>
+                  <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" aria-label={`Mark ${b.name} paid`} title="Mark paid"
+                    disabled={busy === b.id} onClick={() => markPaid(b)}>
+                    <Check className="h-4 w-4" />
+                  </Button>
                 </li>
               );
             })}
