@@ -305,6 +305,27 @@ export type Database = {
         }
         Relationships: []
       }
+      astro_suite_state: {
+        Row: {
+          moon_rituals: Json
+          tarot_pulls: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          moon_rituals?: Json
+          tarot_pulls?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          moon_rituals?: Json
+          tarot_pulls?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       automation_runs: {
         Row: {
           automation_id: string
