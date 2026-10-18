@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { TonightDinnerHero } from "@/components/meals/TonightDinnerHero";
+import { CyclePhaseFoodStrip } from "@/components/meals/CyclePhaseFoodStrip";
 
 type ViewMode = "week" | "two" | "day";
 const VIEW_KEY = "meals.viewMode";
@@ -288,6 +289,7 @@ export default function Meals() {
   return (
     <div className="space-y-6">
       <TonightDinnerHero onOpen={setActiveMeal} />
+      <CyclePhaseFoodStrip />
       <div className="cozy-card gradient-warm flex flex-col gap-3 p-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="font-display text-3xl font-semibold">Meals this week</h2>
