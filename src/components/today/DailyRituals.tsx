@@ -7,6 +7,7 @@ import { loadCheckIn, saveCheckIn, type CheckInRecord } from "@/lib/daily-checki
 import { useStore } from "@/lib/store";
 import { RitualStepsEditor } from "./RitualStepsEditor";
 import { RitualWeeklyHistory } from "./RitualWeeklyHistory";
+import { RitualSkyPrompt } from "./RitualSkyPrompt";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +76,7 @@ export function DailyRituals({ date, onEveningReflection }: {
               {expanded === kind && (
                 <div className="border-t border-border/40 pt-1">
                    <RitualStepsEditor kind={kind} iso={iso} onComplete={kind === "morning" ? completeMorning : completeEvening} />
+                  <RitualSkyPrompt kind={kind} iso={iso} />
                   {kind === "morning" ? (
                     <Button asChild size="sm" className="mt-2 h-10 w-full rounded-xl"><Link to="/check-in">{morningDone ? "Review reset" : morningStarted ? "Continue reset" : "Start reset"}</Link></Button>
                   ) : (
@@ -111,6 +113,7 @@ export function DailyRituals({ date, onEveningReflection }: {
         </Button>
       </div>
        <RitualStepsEditor kind="morning" iso={iso} onComplete={completeMorning} />
+       <RitualSkyPrompt kind="morning" iso={iso} />
       </div>
 
       <div className="rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl"><div className="flex min-h-[80px] items-center gap-3">
@@ -129,6 +132,7 @@ export function DailyRituals({ date, onEveningReflection }: {
         </Button>
       </div>
        <RitualStepsEditor kind="evening" iso={iso} onComplete={completeEvening} />
+       <RitualSkyPrompt kind="evening" iso={iso} />
       </div>
     </div>
     </section>
