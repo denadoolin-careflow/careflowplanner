@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { timeLordReport } from "@/lib/cosmic/year-chapter";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Sun, Moon, Sparkles, Flame, Droplets, Wind, Leaf, ArrowUpRight, Share2, Printer, Crown } from "lucide-react";
+import { ArrowLeft, Sun, Moon, Sparkles, Flame, Droplets, Wind, Leaf, ArrowUpRight, Share2, Printer, Crown, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useBirthChart } from "@/lib/cosmic/hooks";
@@ -87,7 +88,9 @@ export default function CosmicNatal() {
   const chart = useNatalChart(row ? { date: row.birth_date, time: row.birth_time, tz: row.birth_tz, lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place, house_system: "whole-sign" } : null);
   const [selected, setSelected] = useState<NatalPlanet | null>(null);
   const todayIso = new Date().toLocaleDateString("en-CA");
-  const [showTransits, setShowTransits] = useState(false);
+  const [showTransits, setShowTransits] = useState(true);
+  const wheelRef = useRef<SVGSVGElement>(null);
+  const [renderedAt] = useState(() => new Date());
   const [transitDate, setTransitDate] = useState(todayIso);
   const [open, setOpen] = useState(false);
   const [selectedSign, setSelectedSign] = useState<Sign | null>(null);
@@ -116,6 +119,21 @@ export default function CosmicNatal() {
     const arr = Array(12).fill(0);
     chart.planets.forEach(p => { if (p.house) arr[p.house - 1]++; });
     return arr;
+  }, [chart]);
+
+  const transitPoints = useMemo(() => {
+    const d = new Date(transitDate + "T12:00:00");
+    const d2 = new Date(d.getTime() + 86400000);
+    return TRANSIT_BODIES.map(b => {
+      const l1 = bodyLongitude(b, d), l2 = bodyLongitude(b, d2);
+      const delta = ((l2 - l1 + 540) % 360) - 180;
+      return { body: b, glyph: BODY_GLYPHS[b], longitude: l1, retrograde: delta < 0 };
+    });
+  }, [transitDate]);
+
+  const timeLordHouse = useMemo(() => {
+    if (!chart) return undefined;
+    try { return timeLordReport(chart).profection.house; } catch { return undefined; }
   }, [chart]);
 
   if (!row) {
@@ -157,7 +175,7 @@ export default function CosmicNatal() {
 
       <div className="grid gap-4 md:grid-cols-5">
         {/* Chart wheel: 3 cols on desktop */}
-        <section className={`cozy-card p-4 sm:p-5 md:col-span-3 ${tab!=="chart" ? "hidden md:block" : ""}`}>
+        <section className={`cozy-card p-4 sm:p-5 md:col-span-5 ${tab!=="chart" ? "hidden md:block" : ""}`}>
           <div className="flex items-baseline justify-between mb-2">
             <div>
               <p className="font-display text-base">Whole Sign Houses</p>
@@ -165,18 +183,28 @@ export default function CosmicNatal() {
             </div>
             <p className="text-[11px] text-muted-foreground">Tap a planet, sign, or house</p>
           </div>
-          <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px]">
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px]">
             <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={showTransits} onChange={e => setShowTransits(e.target.checked)} className="accent-[hsl(var(--primary))]" />Show transits</label>
             {showTransits && <input type="date" value={transitDate} onChange={e => setTransitDate(e.target.value || todayIso)} className="rounded-md border border-border bg-background px-2 py-1" aria-label="Transit date" />}
             {showTransits && <Link to="/cosmic-flow/grid" className="text-primary hover:underline">Open transit grid</Link>}
           </div>
+          <ChartCorners row={row} transitDate={transitDate} showTransits={showTransits} />
           <NatalWheel
+            ref={wheelRef}
             chart={chart}
-            transitPlanets={showTransits ? TRANSIT_BODIES.map(b => ({ body: b, glyph: BODY_GLYPHS[b], longitude: bodyLongitude(b, new Date(transitDate + "T12:00:00")) })) : undefined}
+            highlightHouse={timeLordHouse}
+            transitPlanets={showTransits ? transitPoints : undefined}
             onSelectPlanet={openPlanet}
             onSelectSign={(s) => { setSelectedSign(s); setSignOpen(true); }}
             onSelectHouse={(h) => { setSelectedHouse(h); setHouseOpen(true); }}
           />
+          <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+            <span>Last updated: {renderedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}</span>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-full" onClick={() => wheelRef.current && downloadWheel(wheelRef.current)}><Download className="h-3.5 w-3.5" />Save image</Button>
+          </div>
+          {!row.birth_time || !row.birth_place ? (
+            <p className="mt-2 text-[11.5px] text-muted-foreground">Houses are counted from your Sun sign. <Link to="/cosmic-flow/birth-chart" className="text-primary hover:underline">Add your birth time and place</Link> to show your rising sign.</p>
+          ) : null}
           {/* Aspect legend */}
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 justify-center text-[10.5px] text-muted-foreground">
             {(["conjunction","sextile","square","trine","opposition","quincunx"] as const).map(k => (
@@ -189,7 +217,7 @@ export default function CosmicNatal() {
         </section>
 
         {/* Right rail: Big three + dominants */}
-        <section className={`space-y-3 md:col-span-2 ${tab!=="chart" ? "hidden md:block" : ""}`}>
+        <section className={`grid gap-3 md:col-span-5 md:grid-cols-3 md:items-start [&>*]:min-w-0 ${tab!=="chart" ? "hidden md:block" : ""}`}>
           {/* Big Three */}
           <div className="cozy-card p-4">
             <p className="text-xs text-muted-foreground mb-3">Big Three</p>
@@ -570,3 +598,68 @@ function InsightCard({ label, value, hint, icon, onClick }: { label: string; val
   );
 }
 
+
+function fmtRowDate(date: string, time?: string | null) {
+  const d = new Date(`${date}T${time || "12:00"}`);
+  const day = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return time ? `${day} @ ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase().replace(" ", "")}` : day;
+}
+
+function ChartCorners({ row, transitDate, showTransits }: { row: { birth_date: string; birth_time?: string | null; birth_place?: string | null }; transitDate: string; showTransits: boolean }) {
+  const now = new Date();
+  const isToday = transitDate === now.toLocaleDateString("en-CA");
+  const tLabel = isToday ? fmtRowDate(transitDate, now.toTimeString().slice(0, 5)) : fmtRowDate(transitDate);
+  const card = "rounded-xl border border-border/60 bg-card/80 overflow-hidden min-w-0";
+  return (
+    <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className={card}>
+        <p className="flex items-center gap-1.5 border-b border-border/50 bg-muted/40 px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-wider text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Natal</p>
+        <div className="px-3 py-2 font-mono">
+          <p className="text-[14px] text-primary">{fmtRowDate(row.birth_date, row.birth_time)}</p>
+          <p className="text-[12px] text-muted-foreground whitespace-pre-line">{row.birth_place || "Birthplace not set"}{"\n"}Tropical</p>
+        </div>
+      </div>
+      {showTransits && (
+        <div className={card}>
+          <p className="flex items-center gap-1.5 border-b border-border/50 bg-muted/40 px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-wider text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-secondary" />Current transits</p>
+          <div className="px-3 py-2 font-mono">
+            <p className="text-[14px] text-secondary">{tLabel}</p>
+            <p className="text-[12px] text-muted-foreground">Geocentric</p>
+            <p className="text-[12px] text-muted-foreground">Tropical</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function downloadWheel(svg: SVGSVGElement) {
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  // inline resolved colors so the exported image keeps its palette
+  const src = svg.querySelectorAll<SVGElement>("*");
+  const dst = clone.querySelectorAll<SVGElement>("*");
+  src.forEach((el, i) => {
+    const cs = getComputedStyle(el);
+    dst[i].setAttribute("fill", cs.fill);
+    dst[i].setAttribute("stroke", cs.stroke);
+  });
+  const size = 1440;
+  clone.setAttribute("width", String(size));
+  clone.setAttribute("height", String(size));
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" }));
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas");
+    c.width = size; c.height = size;
+    c.getContext("2d")!.drawImage(img, 0, 0, size, size);
+    URL.revokeObjectURL(url);
+    c.toBlob(b => {
+      if (!b) return;
+      const u = URL.createObjectURL(b);
+      const a = document.createElement("a");
+      a.href = u; a.download = "natal-chart.png"; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 30000);
+    }, "image/png");
+  };
+  img.src = url;
+}
