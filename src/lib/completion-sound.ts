@@ -200,6 +200,14 @@ export const CHIME_PRESET_LIST: ChimePreset[] = Object.values(CHIME_PRESETS);
 
 /** Default chime per atmosphere. */
 export const ATMOSPHERE_DEFAULT_CHIME: Record<AtmosphereId, ChimePresetKey> = {
+  "tulip-garden": "sage-bell",
+  "rain-garden": "mist-whisper",
+  "lemon-grove": "coastal-drop",
+  "firefly-nights": "plum-dream",
+  "apple-orchard": "hearth-warm",
+  "pumpkin-patch": "hearth-warm",
+  "christmas-time": "hearth-warm",
+  "cocoa-quilts": "linen-pad",
   "sage-sanctuary": "sage-bell",
   "moonlit-plum":   "plum-dream",
   "soft-linen":     "linen-pad",

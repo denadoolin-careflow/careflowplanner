@@ -22,7 +22,15 @@ export type AtmosphereId =
   | "foggy-pine"
   | "snowfall-hush"
   | "evergreen-hearth"
-  | "frosted-plum";
+  | "frosted-plum"
+  | "tulip-garden"
+  | "rain-garden"
+  | "lemon-grove"
+  | "firefly-nights"
+  | "apple-orchard"
+  | "pumpkin-patch"
+  | "christmas-time"
+  | "cocoa-quilts";
 
 export type AtmosphereVibe = {
   /** how strong the gradients feel */
@@ -286,6 +294,94 @@ export const ATMOSPHERES: Atmosphere[] = [
     fontBody: "DM Sans",
     vibe: { gradient: "rich", glow: "luminous", glass: true, prefersDark: true, animation: "drift" },
   },
+  {
+    id: "tulip-garden",
+    name: "Tulip Garden",
+    tagline: "Fresh tulips in morning light.",
+    mood: ["fresh", "hopeful", "bright"],
+    bestFor: ["Spring cleaning", "New beginnings", "Garden planning"],
+    palette: ["#E86A8A", "#F4B6C2", "#FFF6F3", "#6FA35A", "#F2C14E", "#3E2A30"],
+    fontDisplay: "Fraunces",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "soft", glow: "subtle", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "rain-garden",
+    name: "Rain Garden",
+    tagline: "Moss and wet stone after rain.",
+    mood: ["cool", "calm", "renewing"],
+    bestFor: ["Rainy days", "Deep focus", "Slow mornings"],
+    palette: ["#5E7A86", "#8FA88A", "#EEF2F0", "#A7B5AE", "#C9B78C", "#22313A"],
+    fontDisplay: "Playfair Display",
+    fontBody: "DM Sans",
+    vibe: { gradient: "soft", glow: "subtle", glass: true, prefersDark: false, animation: "drift" },
+  },
+  {
+    id: "lemon-grove",
+    name: "Lemon Grove",
+    tagline: "Citrus, linen and olive shade.",
+    mood: ["sunny", "light", "cheerful"],
+    bestFor: ["Summer mornings", "Hosting", "Errand days"],
+    palette: ["#F2D24B", "#8A9A4A", "#FFFCEF", "#E9A23B", "#5B6B2E", "#33301C"],
+    fontDisplay: "Fraunces",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "soft", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "firefly-nights",
+    name: "Firefly Nights",
+    tagline: "Warm glow on a summer night.",
+    mood: ["dreamy", "warm", "magical"],
+    bestFor: ["Evening reflection", "Night owls", "Stargazing"],
+    palette: ["#1E2350", "#2E3A6E", "#F4D27A", "#9AB0E0", "#6A5A9E", "#0F1230"],
+    fontDisplay: "Cormorant Garamond",
+    fontBody: "DM Sans",
+    vibe: { gradient: "cinematic", glow: "luminous", glass: true, prefersDark: true, animation: "drift" },
+  },
+  {
+    id: "apple-orchard",
+    name: "Apple Orchard",
+    tagline: "Red apples and wooden crates.",
+    mood: ["crisp", "abundant", "homey"],
+    bestFor: ["Fall baking", "Family outings", "Harvest planning"],
+    palette: ["#C2302E", "#7FA346", "#FAF3E6", "#B8834F", "#E8C26A", "#3A2418"],
+    fontDisplay: "Fraunces",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "rich", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "pumpkin-patch",
+    name: "Pumpkin Patch",
+    tagline: "Hay bales and pumpkins at dusk.",
+    mood: ["cozy", "playful", "golden"],
+    bestFor: ["Halloween prep", "Kids" activities", "Cozy weekends"],
+    palette: ["#E3782B", "#C9A24A", "#FBF0DF", "#6E4A2E", "#7E8A4A", "#2B1B12"],
+    fontDisplay: "Fraunces",
+    fontBody: "Inter",
+    vibe: { gradient: "rich", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "christmas-time",
+    name: "Christmas Time",
+    tagline: "Holly, pine and twinkle lights.",
+    mood: ["festive", "joyful", "warm"],
+    bestFor: ["Holiday planning", "Gift lists", "Family traditions"],
+    palette: ["#B3202E", "#1F5A3A", "#FBF4E8", "#D9B44A", "#E9D9B8", "#14261B"],
+    fontDisplay: "Playfair Display",
+    fontBody: "Inter",
+    vibe: { gradient: "rich", glow: "luminous", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "cocoa-quilts",
+    name: "Cocoa & Quilts",
+    tagline: "Hot cocoa under a plaid quilt.",
+    mood: ["snug", "comforting", "slow"],
+    bestFor: ["Snow days", "Reading nights", "Rest days"],
+    palette: ["#6B4330", "#A0715A", "#F7EEE4", "#B8443A", "#D9C2A6", "#2A1C16"],
+    fontDisplay: "Cormorant Garamond",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "soft", glow: "warm", glass: false, prefersDark: false, animation: "still" },
+  },
 ];
 
 export const DEFAULT_ATMOSPHERE: AtmosphereId = "sage-sanctuary";
@@ -298,25 +394,25 @@ export const SEASONS: Array<{ id: Season; label: string; emoji: string; atmosphe
     id: "spring",
     label: "Spring",
     emoji: "🌸",
-    atmospheres: ["cherry-mist", "meadow-dew", "lilac-rain", "blossom", "dawn"],
+    atmospheres: ["tulip-garden", "rain-garden", "cherry-mist", "meadow-dew", "lilac-rain", "blossom", "dawn"],
   },
   {
     id: "summer",
     label: "Summer",
     emoji: "☀️",
-    atmospheres: ["peony-bloom", "wisteria-drift", "hibiscus-coast", "coastal-calm"],
+    atmospheres: ["lemon-grove", "firefly-nights", "peony-bloom", "wisteria-drift", "hibiscus-coast", "coastal-calm"],
   },
   {
     id: "fall",
     label: "Fall",
     emoji: "🍂",
-    atmospheres: ["harvest-ember", "amber-orchard", "foggy-pine", "golden-hearth"],
+    atmospheres: ["apple-orchard", "pumpkin-patch", "harvest-ember", "amber-orchard", "foggy-pine", "golden-hearth"],
   },
   {
     id: "winter",
     label: "Winter",
     emoji: "❄️",
-    atmospheres: ["snowfall-hush", "evergreen-hearth", "frosted-plum", "mist", "moonlit-plum", "dark-sage-glass"],
+    atmospheres: ["christmas-time", "cocoa-quilts", "snowfall-hush", "evergreen-hearth", "frosted-plum", "mist", "moonlit-plum", "dark-sage-glass"],
   },
   {
     id: "anytime",
