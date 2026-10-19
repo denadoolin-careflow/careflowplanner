@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { AstroPageHeader, NeedsChart } from "@/components/cosmic/AstroPageHeader";
-import { OrbPeakChart } from "@/components/cosmic/OrbPeakChart";
+import { TransitGuideSheet } from "@/components/cosmic/TransitGuideSheet";
 import { SkyRowActions } from "@/components/cosmic/SkyRowActions";
 import { BODY_GLYPHS } from "@/lib/cosmic/astro/bodies";
 import { ASPECT_GLYPH } from "@/lib/cosmic/glyphs";
-import { MAJOR_ASPECTS, transitGrid, type TransitRow } from "@/lib/cosmic/sky";
+import { transitGrid, type TransitRow } from "@/lib/cosmic/sky";
 import { useMyChart } from "@/lib/cosmic/use-my-chart";
 
 type SortKey = "orb" | "transit" | "natal" | "exact";
@@ -28,6 +28,8 @@ export default function CosmicGrid() {
   [rows, hideMoon, tone, sort]);
 
   const natalLon = (id: string) => id === "Ascendant" ? chart?.houses?.ascendant : id === "Midheaven" ? chart?.houses?.midheaven : chart?.planets.find(p => p.body === id)?.longitude;
+
+  const natalHouse = (id: string): number | null => !chart?.houses ? null : id === "Ascendant" ? 1 : id === "Midheaven" ? 10 : chart.planets.find(p => p.body === id)?.house ?? null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 px-4 py-6 pb-28">
@@ -70,13 +72,7 @@ export default function CosmicGrid() {
               </tbody>
             </table>
           </div>
-          {open && natalLon(open.natal) != null && (
-            <section className="cozy-card p-4">
-              <p className="font-display text-base capitalize">{open.transit} {open.aspect} your {open.natal}</p>
-              <p className="text-xs text-muted-foreground">How this transit tightens and eases over the next {open.transit === "Moon" ? "week" : "6 months"}. Dots mark exact passes.</p>
-              <OrbPeakChart body={open.transit} natalLon={natalLon(open.natal)!} angle={MAJOR_ASPECTS.find(a => a.name === open.aspect)!.angle} from={on} days={open.transit === "Moon" ? 7 : 180} />
-            </section>
-          )}
+          <TransitGuideSheet row={open} natalLon={open ? natalLon(open.natal) ?? null : null} natalHouse={open ? natalHouse(open.natal) : null} on={on} onClose={() => setOpen(null)} />
         </>
       )}
     </div>
