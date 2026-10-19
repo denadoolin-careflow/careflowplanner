@@ -89,7 +89,7 @@ export function ChartPointDialog({ chart, point, open, onOpenChange, transits = 
             </div>
             {natalTouch.length > 0 && (
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">Natal planets touching it</p>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">Your planets touching it</p>
                 <ul className="space-y-1 text-xs">{natalTouch.slice(0, 5).map((a, i) => <li key={i}>{planetDisplay(a.body)} · <span className="capitalize">{a.aspect}</span> ({aspectTone(a.aspect)}, {a.orb.toFixed(1)}°)</li>)}</ul>
               </div>
             )}
@@ -121,7 +121,7 @@ export function ChartPointDialog({ chart, point, open, onOpenChange, transits = 
             <Chip onClick={() => onSelectHouse?.(house)}>Your House {house}</Chip>
           </div>
           <div>
-            <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">Touching your chart</p>
+            <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">How it touches your planets</p>
             {hits.length ? (
               <ul className="space-y-2 text-xs">{hits.slice(0, 6).map((a, i) => {
                 const d = describeTransit(t.body, a.aspect, a.body);
