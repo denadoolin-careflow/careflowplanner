@@ -64,6 +64,7 @@
 - [x] Planner Phase B: collapsible task tray rail, streamlined day context, habits & meds ribbon, mobile Arrange sheet
 - [x] Planner Phase C: Plan My Day guided ritual
 
+- [ ] Add four chart coloring modes and seasonal background settings; apply House with atmosphere-matched background to Natal and Houses; verify image export
 - [x] Verify natal chart PNG saving on desktop/mobile and add zoom/pan controls
 - [x] Align written Chapter with shared time lord, solar return and moon readings; tests and signed-in request verified
 - [ ] Verify generated Chapter save/readback — blocked by reading service rate limit
