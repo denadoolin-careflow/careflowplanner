@@ -74,11 +74,15 @@ interface Props {
 
 export function HouseDetailDialog({ chart, house, open, onOpenChange, onSelectPlanet }: Props) {
   if (!house) return null;
-  const cusp = chart.houses?.cusps[house - 1];
-  const cuspSignIdx = cusp != null ? Math.floor(cusp / 30) % 12 : null;
-  const cuspSign = cuspSignIdx != null ? SIGN_ORDER[cuspSignIdx] : null;
-  const planets = chart.planets.filter(p => p.house === house);
+  // Whole-sign: count from the rising sign, or from the Sun sign when no birth time.
+  const anchorLon = chart.houses ? chart.houses.ascendant : (chart.planets.find(p => p.body === "Sun")?.longitude ?? 0);
+  const anchorIdx = Math.floor((((anchorLon % 360) + 360) % 360) / 30);
+  const cuspSignIdx = (anchorIdx + house - 1) % 12;
+  const cuspSign = SIGN_ORDER[cuspSignIdx];
+  const houseOf = (lon: number) => ((Math.floor((((lon % 360) + 360) % 360) / 30) - anchorIdx + 12) % 12) + 1;
+  const planets = chart.planets.filter(p => (p.house ?? houseOf(p.longitude)) === house);
   const rulerName = cuspSign ? SIGN_RULER[cuspSign] : null;
+  const rulerPlanet = rulerName ? chart.planets.find(p => p.body === rulerName.split(" / ")[0]) : undefined;
   const colorVar = cuspSign ? ELEMENT_VAR[SIGN_ELEMENT[cuspSign]] : "--primary";
 
   return (
@@ -90,7 +94,7 @@ export function HouseDetailDialog({ chart, house, open, onOpenChange, onSelectPl
             House {house} · {HOUSE_TITLE[house]}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            {cuspSign ? <>Cusp in {cuspSign} · ruled by {rulerName}</> : "Whole sign house"}
+            Whole-sign house · all of {cuspSign} · ruled by {rulerName}{!chart.houses ? " · counted from your Sun sign" : ""}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 text-sm">
@@ -101,13 +105,18 @@ export function HouseDetailDialog({ chart, house, open, onOpenChange, onSelectPl
 
           {cuspSign && (
             <div className="rounded-lg border border-border/50 bg-card/50 p-3 space-y-1.5">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Sign on the cusp</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Sign on this house</p>
               <p className="leading-snug">
                 With <span className="font-medium">{cuspSign}</span> on this house, you tend to approach these themes {SIGN_FLAVOR[cuspSign]}.
               </p>
               <p className="text-[11.5px] text-muted-foreground">
                 The ruler of this house is <span className="text-foreground">{rulerName}</span> — wherever {rulerName} sits in your chart says a lot about how this house plays out.
               </p>
+              {rulerPlanet && (
+                <button onClick={() => onSelectPlanet?.(rulerPlanet)} className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background px-2.5 py-1 text-xs hover:border-primary/50">
+                  {PLANET_GLYPH[rulerPlanet.body] ?? ""} {planetDisplay(rulerPlanet.body)} is in {rulerPlanet.sign} · House {rulerPlanet.house ?? houseOf(rulerPlanet.longitude)} →
+                </button>
+              )}
             </div>
           )}
 
