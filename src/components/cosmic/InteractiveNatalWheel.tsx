@@ -6,6 +6,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { NatalWheel } from "@/components/cosmic/NatalWheel";
 import { chartImage, saveChartImage } from "@/lib/cosmic/chart-image";
 import { toast } from "sonner";
+import { useChartColorMode } from "@/lib/cosmic/chart-colors";
+import { useChartBackground } from "@/lib/cosmic/chart-backgrounds";
 
 type Props = ComponentProps<typeof NatalWheel> & { updatedAt: Date };
 
@@ -15,6 +17,8 @@ export function InteractiveNatalWheel({ updatedAt, ...props }: Props) {
   const [imageError, setImageError] = useState(false);
   const [retry, setRetry] = useState(0);
   const [scale, setScale] = useState(1);
+  const [colorMode] = useChartColorMode();
+  const { resolved, dark, current } = useChartBackground();
   const suppressClick = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
 
@@ -30,7 +34,7 @@ export function InteractiveNatalWheel({ updatedAt, ...props }: Props) {
       if (!cancelled) setImageError(true);
     });
     return () => { cancelled = true; };
-  }, [props.chart, props.transitPlanets, props.highlightHouse, retry]);
+  }, [props.chart, props.transitPlanets, props.highlightHouse, retry, colorMode, resolved, dark, current]);
 
   return (
     <div>

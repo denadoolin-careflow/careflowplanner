@@ -2,6 +2,7 @@ import { forwardRef, useMemo, useState } from "react";
 import type { NatalChartV2, NatalPlanet } from "@/lib/cosmic/chart";
 import { SIGN_GLYPH, ELEMENT_VAR, SIGN_ELEMENT } from "@/lib/cosmic/glyphs";
 import { useChartColorMode, signTintVar } from "@/lib/cosmic/chart-colors";
+import { useChartBackground } from "@/lib/cosmic/chart-backgrounds";
 import type { Sign } from "@/lib/transits";
 
 const SIGNS: Sign[] = [
@@ -120,7 +121,9 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
   const cusps = chart.houses?.cusps ?? Array.from({ length: 12 }, (_, i) => (anchor + i * 30) % 360);
   const line = "hsl(var(--chart-line))";
   const [colorMode] = useChartColorMode();
-  const elColor = (s: Sign) => `hsl(var(${ELEMENT_VAR[SIGN_ELEMENT[s]]}))`;
+  const { resolved, dark } = useChartBackground();
+  const houseFor = (longitude: number) => ((Math.floor(longitude / 30) - Math.floor(cusps[0] / 30) + 12) % 12) + 1;
+  const elColor = (s: Sign) => `hsl(var(${signTintVar(s, colorMode, houseFor(SIGNS.indexOf(s) * 30))}))`;
 
   // aspect lines (natal-natal + transit-natal)
   const aspectLines = useMemo(() => {
@@ -154,17 +157,19 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
       ref={ref}
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       xmlns="http://www.w3.org/2000/svg"
-      className="w-full max-w-[720px] mx-auto touch-manipulation select-none"
+      className="chart-appearance w-full max-w-[720px] mx-auto touch-manipulation select-none"
+      data-chart-background={resolved}
+      data-chart-dark={dark}
       role="img"
       aria-label="Natal chart wheel with transits"
       fontFamily="'Nunito Sans', system-ui, sans-serif"
     >
       {/* rings */}
-      <circle cx={CX} cy={CY} r={R_OUTER} fill="hsl(var(--card))" stroke={line} strokeWidth={1} />
+      <circle cx={CX} cy={CY} r={R_OUTER} fill="hsl(var(--chart-surface))" stroke={line} strokeWidth={1} />
       <circle cx={CX} cy={CY} r={R_SIGN_IN} fill="none" stroke={line} strokeWidth={0.8} />
       <circle cx={CX} cy={CY} r={R_MID} fill="none" stroke={line} strokeWidth={0.8} />
       <circle cx={CX} cy={CY} r={R_HOUSE} fill="none" stroke={line} strokeWidth={0.8} />
-      <circle cx={CX} cy={CY} r={R_HUB} fill="hsl(var(--card))" stroke={line} strokeWidth={0.8} />
+      <circle cx={CX} cy={CY} r={R_HUB} fill="hsl(var(--chart-surface))" stroke={line} strokeWidth={0.8} />
 
       {/* highlighted house (e.g. time-lord house) */}
       {highlightHouse && (
@@ -177,7 +182,7 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
         const b = pt(i * 30, R_OUTER), b2 = pt(i * 30, R_SIGN_IN);
         return (
           <g key={s} onClick={() => onSelectSign?.(s)} className={onSelectSign ? "cursor-pointer" : undefined}>
-            <path d={sector(i * 30, i * 30 + 30, R_SIGN_IN, R_OUTER)} fill={`hsl(var(${signTintVar(s, colorMode)}) / 0.16)`} />
+            <path d={sector(i * 30, i * 30 + 30, R_SIGN_IN, R_OUTER)} fill={`hsl(var(${signTintVar(s, colorMode, houseFor(i * 30))}) / 0.22)`} />
             <line x1={b.x} y1={b.y} x2={b2.x} y2={b2.y} stroke={line} strokeOpacity={0.5} strokeWidth={0.6} />
             <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={20} fill={elColor(s)}>{SIGN_GLYPH[s]}</text>
           </g>
@@ -194,8 +199,9 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
         return (
           <g key={`h-${i}`}>
             <path
-              d={sector(c, next, R_HUB, R_HOUSE)}
-              fill={isHover ? "hsl(var(--chart-highlight) / 0.5)" : `hsl(var(${signTintVar(SIGNS[Math.floor((((mid % 360) + 360) % 360) / 30)], colorMode)}) / 0.12)`}
+              d={sector(c, next, R_HUB, R_SIGN_IN)}
+              data-house={i + 1}
+              fill={`hsl(var(${signTintVar(SIGNS[Math.floor((((mid % 360) + 360) % 360) / 30)], colorMode, i + 1)}) / ${isHover ? 0.32 : 0.18})`}
               onClick={() => onSelectHouse?.(i + 1)}
               onMouseEnter={() => setHoverHouse(i + 1)}
               onMouseLeave={() => setHoverHouse(null)}
