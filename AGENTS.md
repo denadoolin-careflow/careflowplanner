@@ -34,3 +34,4 @@
 - Astro calculations are local; chapters share panel readings, cached by birth/date/version to avoid stale text.
 - Natal PNGs are prepared before saving for iOS activation; zoom uses react-zoom-pan-pinch, separate from the exported SVG.
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.
+- Natal chart color mode (sign/element) is device-local; chart surfaces use atmosphere card tokens so they follow themes.
