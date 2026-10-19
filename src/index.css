@@ -4056,3 +4056,99 @@ body.planner-dragging [data-radix-dialog-overlay] {
   --rhythm-care: 30 86% 65%;   --rhythm-care-tint: 28 80% 91%;   --rhythm-care-deep: 24 76% 34%;
   --rhythm-letgo: 0 69% 67%;   --rhythm-letgo-tint: 0 70% 94%;   --rhythm-letgo-deep: 0 51% 46%;
 }
+
+/* Chart-only appearance tokens: never recolor the app atmosphere. */
+:root {
+  --chart-house-1: 348.79 35.97% 50.39%;
+  --chart-house-2: 31.76 43.22% 46.27%;
+  --chart-house-3: 70.43 31.51% 42.94%;
+  --chart-house-4: 145.95 17.87% 40.59%;
+  --chart-house-5: 184.05 36.63% 39.61%;
+  --chart-house-6: 215.70 31.23% 50.39%;
+  --chart-house-7: 266.32 23.27% 51.96%;
+  --chart-house-8: 328.00 24.59% 52.16%;
+  --chart-house-9: 17.44 34.40% 50.98%;
+  --chart-house-10: 85.00 23.08% 40.78%;
+  --chart-house-11: 192.17 29.11% 46.47%;
+  --chart-house-12: 268.00 21.53% 59.02%;
+  --chart-modality-cardinal: 344.04 38.52% 47.84%;
+  --chart-modality-fixed: 114.71 16.19% 41.18%;
+  --chart-modality-mutable: 205.60 31.91% 46.08%;
+  --chart-element-fire: 6.21 45.67% 49.80%;
+  --chart-element-earth: 92.61 23.23% 38.82%;
+  --chart-element-air: 45.00 56.31% 40.39%;
+  --chart-element-water: 204.00 39.13% 45.10%;
+  --chart-bg-tulip-garden-light: 343.64 57.89% 96.27%;
+  --chart-bg-tulip-garden-dark: 321.43 20.00% 13.73%;
+  --chart-bg-rain-garden-light: 197.14 21.21% 93.53%;
+  --chart-bg-rain-garden-dark: 162.00 14.29% 13.73%;
+  --chart-bg-lemon-grove-light: 50.53 65.52% 94.31%;
+  --chart-bg-lemon-grove-dark: 73.85 18.84% 13.53%;
+  --chart-bg-firefly-nights-light: 46.67 29.03% 93.92%;
+  --chart-bg-firefly-nights-dark: 274.29 20.59% 13.33%;
+  --chart-bg-apple-orchard-light: 35.29 62.96% 94.71%;
+  --chart-bg-apple-orchard-dark: 130.91 15.94% 13.53%;
+  --chart-bg-pumpkin-patch-light: 30.00 73.33% 94.12%;
+  --chart-bg-pumpkin-patch-dark: 12.00 13.51% 14.51%;
+  --chart-bg-christmas-time-light: 42.86 46.67% 94.12%;
+  --chart-bg-christmas-time-dark: 138.46 22.03% 11.57%;
+  --chart-bg-cocoa-quilts-light: 28.00 51.72% 94.31%;
+  --chart-bg-cocoa-quilts-dark: 13.85 17.81% 14.31%;
+}
+.chart-appearance { --chart-surface: var(--card); --chart-line: var(--border); }
+.chart-appearance[data-chart-background]:not([data-chart-background="atmosphere"]) { --foreground: 140 22% 16%; --muted-foreground: 140 12% 32%; --chart-line: 140 10% 60%; }
+.chart-appearance[data-chart-dark="true"]:not([data-chart-background="atmosphere"]) { --foreground: 37 30% 94%; --muted-foreground: 37 15% 76%; --chart-line: 37 12% 48%; }
+.chart-appearance[data-chart-dark="true"] {
+  --chart-house-1: 348.79 35.97% 72%;
+  --chart-house-2: 31.76 43.22% 72%;
+  --chart-house-3: 70.43 31.51% 72%;
+  --chart-house-4: 145.95 17.87% 72%;
+  --chart-house-5: 184.05 36.63% 72%;
+  --chart-house-6: 215.70 31.23% 72%;
+  --chart-house-7: 266.32 23.27% 72%;
+  --chart-house-8: 328.00 24.59% 72%;
+  --chart-house-9: 17.44 34.40% 72%;
+  --chart-house-10: 85.00 23.08% 72%;
+  --chart-house-11: 192.17 29.11% 72%;
+  --chart-house-12: 268.00 21.53% 72%;
+  --chart-modality-cardinal: 344 36% 73%;
+  --chart-modality-fixed: 114 24% 72%;
+  --chart-modality-mutable: 205 32% 74%;
+  --chart-element-fire: 8 46% 73%;
+  --chart-element-earth: 92 24% 72%;
+  --chart-element-air: 44 45% 72%;
+  --chart-element-water: 204 38% 74%;
+}
+.chart-swatch { display: inline-block; width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid hsl(var(--border)); }
+.chart-appearance[data-chart-background="tulip-garden"] { --chart-surface: var(--chart-bg-tulip-garden-light); }
+.chart-appearance[data-chart-background="tulip-garden"][data-chart-dark="true"] { --chart-surface: var(--chart-bg-tulip-garden-dark); }
+.chart-swatch-tulip-garden-light { background: hsl(var(--chart-bg-tulip-garden-light)); }
+.chart-swatch-tulip-garden-dark { background: hsl(var(--chart-bg-tulip-garden-dark)); }
+.chart-appearance[data-chart-background="rain-garden"] { --chart-surface: var(--chart-bg-rain-garden-light); }
+.chart-appearance[data-chart-background="rain-garden"][data-chart-dark="true"] { --chart-surface: var(--chart-bg-rain-garden-dark); }
+.chart-swatch-rain-garden-light { background: hsl(var(--chart-bg-rain-garden-light)); }
+.chart-swatch-rain-garden-dark { background: hsl(var(--chart-bg-rain-garden-dark)); }
+.chart-appearance[data-chart-background="lemon-grove"] { --chart-surface: var(--chart-bg-lemon-grove-light); }
+.chart-appearance[data-chart-background="lemon-grove"][data-chart-dark="true"] { --chart-surface: var(--chart-bg-lemon-grove-dark); }
+.chart-swatch-lemon-grove-light { background: hsl(var(--chart-bg-lemon-grove-light)); }
+.chart-swatch-lemon-grove-dark { background: hsl(var(--chart-bg-lemon-grove-dark)); }
+.chart-appearance[data-chart-background="firefly-nights"] { --chart-surface: var(--chart-bg-firefly-nights-light); }
+.chart-appearance[data-chart-background="firefly-nights"][data-chart-dark="true"] { --chart-surface: var(--chart-bg-firefly-nights-dark); }
+.chart-swatch-firefly-nights-light { background: hsl(var(--chart-bg-firefly-nights-light)); }
+.chart-swatch-firefly-nights-dark { background: hsl(var(--chart-bg-firefly-nights-dark)); }
+.chart-appearance[data-chart-background="apple-orchard"] { --chart-surface: var(--chart-bg-apple-orchard-light); }
+.chart-appearance[data-chart-background="apple-orchard"][data-chart-dark="true"] { --chart-surface: var(--chart-bg-apple-orchard-dark); }
+.chart-swatch-apple-orchard-light { background: hsl(var(--chart-bg-apple-orchard-light)); }
+.chart-swatch-apple-orchard-dark { background: hsl(var(--chart-bg-apple-orchard-dark)); }
+.chart-appearance[data-chart-background="pumpkin-patch"] { --chart-surface: var(--chart-bg-pumpkin-patch-light); }
+.chart-appearance[data-chart-background="pumpkin-patch"][data-chart-dark="true"] { --chart-surface: var(--chart-bg-pumpkin-patch-dark); }
+.chart-swatch-pumpkin-patch-light { background: hsl(var(--chart-bg-pumpkin-patch-light)); }
+.chart-swatch-pumpkin-patch-dark { background: hsl(var(--chart-bg-pumpkin-patch-dark)); }
+.chart-appearance[data-chart-background="christmas-time"] { --chart-surface: var(--chart-bg-christmas-time-light); }
+.chart-appearance[data-chart-background="christmas-time"][data-chart-dark="true"] { --chart-surface: var(--chart-bg-christmas-time-dark); }
+.chart-swatch-christmas-time-light { background: hsl(var(--chart-bg-christmas-time-light)); }
+.chart-swatch-christmas-time-dark { background: hsl(var(--chart-bg-christmas-time-dark)); }
+.chart-appearance[data-chart-background="cocoa-quilts"] { --chart-surface: var(--chart-bg-cocoa-quilts-light); }
+.chart-appearance[data-chart-background="cocoa-quilts"][data-chart-dark="true"] { --chart-surface: var(--chart-bg-cocoa-quilts-dark); }
+.chart-swatch-cocoa-quilts-light { background: hsl(var(--chart-bg-cocoa-quilts-light)); }
+.chart-swatch-cocoa-quilts-dark { background: hsl(var(--chart-bg-cocoa-quilts-dark)); }
