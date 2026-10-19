@@ -10,6 +10,7 @@ import { InteractiveNatalWheel } from "@/components/cosmic/InteractiveNatalWheel
 import { PlacementDetailDialog } from "@/components/cosmic/PlacementDetailDialog";
 import { SignDetailDialog } from "@/components/cosmic/SignDetailDialog";
 import { HouseDetailDialog, HOUSE_TITLE } from "@/components/cosmic/HouseDetailDialog";
+import { ChartColorToggle } from "@/components/cosmic/ChartColorToggle";
 import { ChartPointDialog, type ChartPoint } from "@/components/cosmic/ChartPointDialog";
 import { AspectDetailDialog } from "@/components/cosmic/AspectDetailDialog";
 import { RetrogradeBadge } from "@/components/cosmic/RetrogradeBadge";
@@ -103,13 +104,35 @@ export default function CosmicNatal() {
 
   const [point, setPoint] = useState<ChartPoint | null>(null);
   const [pointOpen, setPointOpen] = useState(false);
+  type Panel = { k: "planet"; v: NatalPlanet } | { k: "sign"; v: Sign } | { k: "house"; v: number } | { k: "point"; v: ChartPoint } | { k: "aspect"; v: AspectRow };
+  const [current, setCurrent] = useState<Panel | null>(null);
+  const [history, setHistory] = useState<Panel[]>([]);
   const closeAll = () => { setOpen(false); setSignOpen(false); setHouseOpen(false); setPointOpen(false); setAspectOpen(false); };
-  const openPlanet = (p: NatalPlanet) => { closeAll(); setTimeout(() => { setSelected(p); setOpen(true); }, 0); };
-  const openSign = (s: Sign) => { closeAll(); setTimeout(() => { setSelectedSign(s); setSignOpen(true); }, 0); };
-  const openHouse = (h: number) => { closeAll(); setTimeout(() => { setSelectedHouse(h); setHouseOpen(true); }, 0); };
-  const openPoint = (p: ChartPoint) => { closeAll(); setTimeout(() => { setPoint(p); setPointOpen(true); }, 0); };
+  const display = (e: Panel) => {
+    closeAll();
+    setCurrent(e);
+    setTimeout(() => {
+      if (e.k === "planet") { setSelected(e.v); setOpen(true); }
+      else if (e.k === "sign") { setSelectedSign(e.v); setSignOpen(true); }
+      else if (e.k === "house") { setSelectedHouse(e.v); setHouseOpen(true); }
+      else if (e.k === "point") { setPoint(e.v); setPointOpen(true); }
+      else { setSelectedAspect(e.v); setAspectOpen(true); }
+    }, 0);
+  };
+  // Nested opens (from inside a panel) remember the current panel; top-level opens start fresh.
+  const go = (e: Panel) => {
+    const anyOpen = open || signOpen || houseOpen || pointOpen || aspectOpen;
+    setHistory(h => (anyOpen && current ? [...h, current] : []));
+    display(e);
+  };
+  const goBack = history.length ? () => { const prev = history[history.length - 1]; setHistory(h => h.slice(0, -1)); display(prev); } : undefined;
+  const closer = (set: (v: boolean) => void) => (v: boolean) => { set(v); if (!v) { setHistory([]); setCurrent(null); } };
+  const openPlanet = (p: NatalPlanet) => go({ k: "planet", v: p });
+  const openSign = (s: Sign) => go({ k: "sign", v: s });
+  const openHouse = (h: number) => go({ k: "house", v: h });
+  const openPoint = (p: ChartPoint) => go({ k: "point", v: p });
   const openRising = () => openPoint({ kind: "angle", angle: "As" });
-  const openAspect = (a: AspectRow) => { setSelectedAspect(a); setAspectOpen(true); };
+  const openAspect = (a: AspectRow) => go({ k: "aspect", v: a });
 
   const sun = chart?.planets.find(p => p.body === "Sun");
   const moon = chart?.planets.find(p => p.body === "Moon");
@@ -198,6 +221,7 @@ export default function CosmicNatal() {
           <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px]">
             <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={showTransits} onChange={e => setShowTransits(e.target.checked)} className="accent-[hsl(var(--primary))]" />Show transits</label>
             {showTransits && <input type="date" value={transitDate} onChange={e => setTransitDate(e.target.value || todayIso)} className="rounded-md border border-border bg-background px-2 py-1" aria-label="Transit date" />}
+            <ChartColorToggle />
             {showTransits && <Link to="/cosmic-flow/grid" className="text-primary hover:underline">Open transit grid</Link>}
           </div>
           <ChartCorners row={row} transitDate={transitDate} showTransits={showTransits} />
@@ -398,7 +422,7 @@ export default function CosmicNatal() {
             return (
               <button
                 key={h}
-                onClick={() => { setSelectedHouse(h); setHouseOpen(true); }}
+                onClick={() => openHouse(h)}
                 className={`text-left rounded-2xl border bg-card/60 p-3 hover:bg-card hover:border-primary/40 transition-colors ${isAngle ? "border-primary/30" : "border-border/40"}`}
               >
                 <div className="flex items-center justify-between">
@@ -478,28 +502,29 @@ export default function CosmicNatal() {
         chart={chart}
         planet={selected}
         open={open}
-        onOpenChange={setOpen}
-        onSelectPlanet={(p) => { setOpen(false); setTimeout(() => openPlanet(p), 120); }}
-        onSelectAspect={(a) => { setOpen(false); setTimeout(() => openAspect(a), 120); }}
+        onOpenChange={closer(setOpen)}
+        onBack={goBack}
+        onSelectPlanet={openPlanet}
+        onSelectAspect={openAspect}
         onSelectSign={openSign}
         onSelectHouse={openHouse}
       />
-      <SignDetailDialog chart={chart} sign={selectedSign} open={signOpen} onOpenChange={setSignOpen} onSelectPlanet={openPlanet} onSelectHouse={openHouse} />
-      <ChartPointDialog chart={chart} point={point} open={pointOpen} onOpenChange={setPointOpen} transits={transitPoints}
+      <SignDetailDialog chart={chart} sign={selectedSign} open={signOpen} onOpenChange={closer(setSignOpen)} onBack={goBack} onSelectPlanet={openPlanet} onSelectHouse={openHouse} />
+      <ChartPointDialog chart={chart} point={point} open={pointOpen} onOpenChange={closer(setPointOpen)} onBack={goBack} transits={transitPoints}
         approximateTime={!row.birth_time} onSelectPlanet={openPlanet} onSelectSign={openSign} onSelectHouse={openHouse} />
       <HouseDetailDialog
         chart={chart}
         house={selectedHouse}
         open={houseOpen}
-        onOpenChange={setHouseOpen}
-        onSelectPlanet={(p) => { setHouseOpen(false); setTimeout(() => openPlanet(p), 120); }}
+        onOpenChange={closer(setHouseOpen)}
+        onSelectPlanet={openPlanet} onSelectSign={openSign} onBack={goBack}
       />
       <AspectDetailDialog
         chart={chart}
         aspect={selectedAspect}
         open={aspectOpen}
-        onOpenChange={setAspectOpen}
-        onSelectPlanet={(p) => setTimeout(() => openPlanet(p), 120)}
+        onOpenChange={closer(setAspectOpen)}
+        onSelectPlanet={openPlanet} onBack={goBack}
       />
     </div>
   );
