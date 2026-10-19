@@ -517,7 +517,7 @@ export default function CosmicNatal() {
         house={selectedHouse}
         open={houseOpen}
         onOpenChange={closer(setHouseOpen)}
-        onSelectPlanet={openPlanet} onSelectSign={openSign} onBack={goBack}
+        onSelectPlanet={openPlanet} onBack={goBack}
       />
       <AspectDetailDialog
         chart={chart}
