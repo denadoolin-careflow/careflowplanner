@@ -113,6 +113,13 @@
       "when": 1792367305834,
       "tag": "0015_net_worth_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792370664678,
+      "tag": "0016_tighten_roadmap_read",
+      "breakpoints": true
     }
   ]
 }
