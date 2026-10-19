@@ -27,6 +27,7 @@ import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSecti
 import { AtmosphereFeelSection } from "@/components/settings/AtmosphereFeelSection";
 import { FlowColorPicker } from "@/components/settings/FlowColorPicker";
 import { FontSection } from "@/components/settings/FontSection";
+import { ChartAppearanceSettings } from "@/components/cosmic/ChartAppearanceSettings";
 import { CareyStyleSection } from "@/components/settings/CareyStyleSection";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { useSidebarDotsEnabled } from "@/lib/ui-prefs";
@@ -139,6 +140,10 @@ export default function Settings() {
       <ArchetypeThemeSection />
 
       <AtmosphereFeelSection />
+      <section className="space-y-3" aria-labelledby="chart-appearance-heading">
+        <h2 id="chart-appearance-heading" className="font-display text-xl">Natal chart appearance</h2>
+        <div className="max-w-lg"><ChartAppearanceSettings /></div>
+      </section>
 
       <FlowColorPicker />
 
