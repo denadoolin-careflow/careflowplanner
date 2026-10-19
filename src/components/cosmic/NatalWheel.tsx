@@ -1,6 +1,7 @@
 import { forwardRef, useMemo, useState } from "react";
 import type { NatalChartV2, NatalPlanet } from "@/lib/cosmic/chart";
 import { SIGN_GLYPH, ELEMENT_VAR, SIGN_ELEMENT } from "@/lib/cosmic/glyphs";
+import { useChartColorMode, signTintVar } from "@/lib/cosmic/chart-colors";
 import type { Sign } from "@/lib/transits";
 
 const SIGNS: Sign[] = [
@@ -118,6 +119,7 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
 
   const cusps = chart.houses?.cusps ?? Array.from({ length: 12 }, (_, i) => (anchor + i * 30) % 360);
   const line = "hsl(var(--chart-line))";
+  const [colorMode] = useChartColorMode();
   const elColor = (s: Sign) => `hsl(var(${ELEMENT_VAR[SIGN_ELEMENT[s]]}))`;
 
   // aspect lines (natal-natal + transit-natal)
@@ -158,11 +160,11 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
       fontFamily="'Nunito Sans', system-ui, sans-serif"
     >
       {/* rings */}
-      <circle cx={CX} cy={CY} r={R_OUTER} fill="hsl(var(--chart-surface))" stroke={line} strokeWidth={1} />
+      <circle cx={CX} cy={CY} r={R_OUTER} fill="hsl(var(--card))" stroke={line} strokeWidth={1} />
       <circle cx={CX} cy={CY} r={R_SIGN_IN} fill="none" stroke={line} strokeWidth={0.8} />
       <circle cx={CX} cy={CY} r={R_MID} fill="none" stroke={line} strokeWidth={0.8} />
       <circle cx={CX} cy={CY} r={R_HOUSE} fill="none" stroke={line} strokeWidth={0.8} />
-      <circle cx={CX} cy={CY} r={R_HUB} fill="hsl(var(--chart-surface))" stroke={line} strokeWidth={0.8} />
+      <circle cx={CX} cy={CY} r={R_HUB} fill="hsl(var(--card))" stroke={line} strokeWidth={0.8} />
 
       {/* highlighted house (e.g. time-lord house) */}
       {highlightHouse && (
@@ -175,6 +177,7 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
         const b = pt(i * 30, R_OUTER), b2 = pt(i * 30, R_SIGN_IN);
         return (
           <g key={s} onClick={() => onSelectSign?.(s)} className={onSelectSign ? "cursor-pointer" : undefined}>
+            <path d={sector(i * 30, i * 30 + 30, R_SIGN_IN, R_OUTER)} fill={`hsl(var(${signTintVar(s, colorMode)}) / 0.16)`} />
             <line x1={b.x} y1={b.y} x2={b2.x} y2={b2.y} stroke={line} strokeOpacity={0.5} strokeWidth={0.6} />
             <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={20} fill={elColor(s)}>{SIGN_GLYPH[s]}</text>
           </g>
@@ -192,7 +195,7 @@ export const NatalWheel = forwardRef<SVGSVGElement, Props>(function NatalWheel(
           <g key={`h-${i}`}>
             <path
               d={sector(c, next, R_HUB, R_HOUSE)}
-              fill={isHover ? "hsl(var(--chart-highlight) / 0.5)" : "transparent"}
+              fill={isHover ? "hsl(var(--chart-highlight) / 0.5)" : `hsl(var(${signTintVar(SIGNS[Math.floor((((mid % 360) + 360) % 360) / 30)], colorMode)}) / 0.12)`}
               onClick={() => onSelectHouse?.(i + 1)}
               onMouseEnter={() => setHoverHouse(i + 1)}
               onMouseLeave={() => setHoverHouse(null)}

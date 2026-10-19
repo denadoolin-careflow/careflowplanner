@@ -1,3 +1,4 @@
+import { PanelBack } from "./PanelBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { SIGN_GLYPH, SIGN_ELEMENT, ELEMENT_VAR, planetDisplay, PLANET_GLYPH } from "@/lib/cosmic/glyphs";
@@ -36,11 +37,12 @@ interface Props {
   sign: Sign | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onBack?: () => void;
   onSelectPlanet?: (p: NatalChartV2["planets"][number]) => void;
   onSelectHouse?: (h: number) => void;
 }
 
-export function SignDetailDialog({ chart, sign, open, onOpenChange, onSelectPlanet, onSelectHouse }: Props) {
+export function SignDetailDialog({ chart, sign, open, onOpenChange, onSelectPlanet, onSelectHouse, onBack }: Props) {
   if (!sign) return null;
   const placements = chart.planets.filter(p => p.sign === sign);
   const element = SIGN_ELEMENT[sign];
@@ -54,6 +56,7 @@ export function SignDetailDialog({ chart, sign, open, onOpenChange, onSelectPlan
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
+<PanelBack onClick={onBack} />
           <DialogTitle className="flex items-center gap-2 font-display">
             <span className="text-2xl" style={{ color: `hsl(var(${colorVar}))` }}>{SIGN_GLYPH[sign]}</span>
             {sign}

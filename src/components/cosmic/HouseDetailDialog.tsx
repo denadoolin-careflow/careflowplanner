@@ -1,3 +1,4 @@
+import { PanelBack } from "./PanelBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sparkles } from "lucide-react";
 import { SIGN_GLYPH, PLANET_GLYPH, planetDisplay, SIGN_ELEMENT, ELEMENT_VAR } from "@/lib/cosmic/glyphs";
@@ -69,10 +70,11 @@ interface Props {
   house: number | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onBack?: () => void;
   onSelectPlanet?: (p: NatalPlanet) => void;
 }
 
-export function HouseDetailDialog({ chart, house, open, onOpenChange, onSelectPlanet }: Props) {
+export function HouseDetailDialog({ chart, house, open, onOpenChange, onSelectPlanet, onBack }: Props) {
   if (!house) return null;
   // Whole-sign: count from the rising sign, or from the Sun sign when no birth time.
   const anchorLon = chart.houses ? chart.houses.ascendant : (chart.planets.find(p => p.body === "Sun")?.longitude ?? 0);
@@ -89,6 +91,7 @@ export function HouseDetailDialog({ chart, house, open, onOpenChange, onSelectPl
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
+<PanelBack onClick={onBack} />
           <DialogTitle className="font-display flex items-center gap-2">
             <span className="text-xl" style={{ color: `hsl(var(${colorVar}))` }}>{cuspSign ? SIGN_GLYPH[cuspSign] : ""}</span>
             House {house} · {HOUSE_TITLE[house]}

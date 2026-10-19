@@ -1,3 +1,4 @@
+import { PanelBack } from "./PanelBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ interface Props {
   planet: NatalPlanet | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onBack?: () => void;
   onSelectPlanet?: (p: NatalPlanet) => void;
   onSelectAspect?: (a: AspectRow) => void;
   onSelectSign?: (s: Sign) => void;
@@ -102,7 +104,7 @@ function journalPrompts(planet: NatalPlanet): string[] {
   return prompts;
 }
 
-export function PlacementDetailDialog({ chart, planet, open, onOpenChange, onSelectPlanet, onSelectAspect, onSelectSign, onSelectHouse }: Props) {
+export function PlacementDetailDialog({ chart, planet, open, onOpenChange, onSelectPlanet, onSelectAspect, onSelectSign, onSelectHouse, onBack }: Props) {
   if (!planet) return null;
   const aspects = chart.aspects
     .filter(a => a.a === planet.body || a.b === planet.body)
@@ -121,6 +123,7 @@ export function PlacementDetailDialog({ chart, planet, open, onOpenChange, onSel
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
+<PanelBack onClick={onBack} />
           <DialogTitle className="flex items-center gap-2 font-display">
             <span className="text-2xl" style={{ color: `hsl(var(${colorVar}))` }}>{PLANET_GLYPH[planet.body] ?? ""}</span>
             {name} in {planet.sign}

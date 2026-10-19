@@ -31,6 +31,6 @@
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
 - Agenda/List views build day lists via src/lib/planner/agenda-rows.ts so they stay consistent.
 - Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
-- Astro calculations are local; chapters share panel readings, cached by birth/date/version to avoid stale text.
-- Natal PNGs are prepared before saving for iOS activation; zoom uses react-zoom-pan-pinch, separate from the exported SVG.
+- Astro math is local; chapters reuse panel readings, cached by birth/date/version.
+- Natal PNGs are pre-rendered for iOS; zoom (react-zoom-pan-pinch) is separate from the SVG. Chart color mode is device-local; chart uses atmosphere card tokens.
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.

@@ -8,9 +8,12 @@ import { bodyLongitude } from "@/lib/cosmic/astro/bodies";
 import { DIGNITY_MEANING, SIGNS, TRADITIONAL_RULER, TRANSIT_BODIES, dignityOf } from "@/lib/cosmic/sky";
 import { useMyChart } from "@/lib/cosmic/use-my-chart";
 import { cn } from "@/lib/utils";
+import { useChartColorMode, signTintVar } from "@/lib/cosmic/chart-colors";
+import { ChartColorToggle } from "@/components/cosmic/ChartColorToggle";
 
 export default function CosmicHouses() {
   const { chart } = useMyChart();
+  const [colorMode] = useChartColorMode();
   const data = useMemo(() => {
     if (!chart?.houses) return null;
     const h = chart.houses;
@@ -43,12 +46,14 @@ export default function CosmicHouses() {
         <>
           <p className="text-sm"><strong>{chart.houses!.ascendantSign} Rising</strong> ({Math.floor(chart.houses!.ascendant % 30)}°) · Whole Sign houses: each house is one full sign, starting with {chart.houses!.ascendantSign} as house 1 · Chart ruler <strong>{chart.chartRuler}</strong>.</p>
           <p className="text-sm">This year ({data[0].prof.yearStarts} → {data[0].prof.yearEnds}) your profection lights up <strong>house {data[0].prof.house}</strong>, with <strong>{data[0].prof.timeLord}</strong> as the year's guide.</p>
+          <ChartColorToggle />
           <div className="grid gap-3 sm:grid-cols-2">
             {data.map(d => (
-              <section key={d.house} className={cn("cozy-card p-4 space-y-1.5", d.profected && "ring-2 ring-primary")}>
+              <section key={d.house} className={cn("cozy-card p-4 space-y-1.5 border-l-4", d.profected && "ring-2 ring-primary")}
+                style={{ borderLeftColor: `hsl(var(${signTintVar(d.sign, colorMode)}))`, background: `linear-gradient(135deg, hsl(var(${signTintVar(d.sign, colorMode)}) / 0.14), hsl(var(--card)) 60%)` }}>
                 <div className="flex items-baseline justify-between">
                   <p className="font-display text-base">House {d.house} · {HOUSE_TITLE[d.house]}</p>
-                  <span className="text-sm">{SIGN_GLYPH[d.sign]} {d.sign}</span>
+                  <span className="rounded-full px-2 py-0.5 text-sm text-foreground" style={{ background: `hsl(var(${signTintVar(d.sign, colorMode)}) / 0.25)` }}>{SIGN_GLYPH[d.sign]} {d.sign}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">{houseTopics(d.house)}</p>
                 <p className="text-sm">Ruled by <strong>{d.ruler}</strong>{d.rulerSign && <> in {d.rulerSign}{d.rulerHouse ? ` (house ${d.rulerHouse})` : ""}</>}
