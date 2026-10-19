@@ -1,3 +1,4 @@
+import { PanelBack } from "./PanelBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -31,6 +32,7 @@ interface Props {
   point: ChartPoint | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onBack?: () => void;
   transits?: TransitPoint[];
   approximateTime?: boolean;
   onSelectPlanet?: (p: NatalPlanet) => void;
@@ -38,7 +40,7 @@ interface Props {
   onSelectHouse?: (h: number) => void;
 }
 
-export function ChartPointDialog({ chart, point, open, onOpenChange, transits = [], approximateTime, onSelectPlanet, onSelectSign, onSelectHouse }: Props) {
+export function ChartPointDialog({ chart, point, open, onOpenChange, transits = [], approximateTime, onSelectPlanet, onSelectSign, onSelectHouse, onBack }: Props) {
   if (!point) return null;
   const h = chart.houses;
   const ascIdx = h ? Math.floor(norm(h.ascendant) / 30) : Math.floor(norm(chart.planets.find(p => p.body === "Sun")?.longitude ?? 0) / 30);
@@ -53,7 +55,7 @@ export function ChartPointDialog({ chart, point, open, onOpenChange, transits = 
       return (
         <Dialog open={open} onOpenChange={onOpenChange}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle className="font-display">Rising sign</DialogTitle></DialogHeader>
+            <DialogHeader><PanelBack onClick={onBack} /><DialogTitle className="font-display">Rising sign</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">Your rising sign needs a birth time and place. <Link to="/cosmic-flow/birth-chart" className="text-primary hover:underline" onClick={() => onOpenChange(false)}>Add your birth time</Link> to see it.</p>
           </DialogContent>
         </Dialog>
@@ -70,6 +72,7 @@ export function ChartPointDialog({ chart, point, open, onOpenChange, transits = 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
+<PanelBack onClick={onBack} />
             <DialogTitle className="flex items-center gap-2 font-display">{isAsc ? "Rising" : "Midheaven"} in {sign} <span className="text-xl">{SIGN_GLYPH[sign]}</span></DialogTitle>
             <DialogDescription className="text-xs">{Math.floor(lon % 30)}° {sign} · {isAsc ? "Ascendant · start of House 1" : `Midheaven · in House ${house}`}{approximateTime ? " · approximate birth time" : ""}</DialogDescription>
           </DialogHeader>
@@ -111,6 +114,7 @@ export function ChartPointDialog({ chart, point, open, onOpenChange, transits = 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
+<PanelBack onClick={onBack} />
           <DialogTitle className="flex items-center gap-2 font-display">{t.glyph} {planetDisplay(t.body)} today in {sign}</DialogTitle>
           <DialogDescription className="text-xs">Transit · {Math.floor(t.longitude % 30)}° {sign} · passing through your House {house}{t.retrograde ? " · retrograde" : ""}</DialogDescription>
         </DialogHeader>

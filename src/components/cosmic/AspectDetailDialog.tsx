@@ -1,3 +1,4 @@
+import { PanelBack } from "./PanelBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ interface Props {
   aspect: AspectRow | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onBack?: () => void;
   onSelectPlanet?: (p: NatalPlanet) => void;
 }
 
@@ -90,7 +92,7 @@ function pairFlavor(a: string, b: string, aspect: string): string {
   return flavors[pair] ?? `the conversation between ${a} and ${b} energies in your chart.`;
 }
 
-export function AspectDetailDialog({ chart, aspect, open, onOpenChange, onSelectPlanet }: Props) {
+export function AspectDetailDialog({ chart, aspect, open, onOpenChange, onSelectPlanet, onBack }: Props) {
   if (!aspect) return null;
   const meaning = ASPECT_MEANING[aspect.aspect.name] ?? {
     title: aspect.aspect.name, angle: "", vibe: "A connection between two planets.", gift: "", growth: "",
@@ -104,6 +106,7 @@ export function AspectDetailDialog({ chart, aspect, open, onOpenChange, onSelect
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
+<PanelBack onClick={onBack} />
           <DialogTitle className="flex items-center gap-2 font-display">
             <span className="text-2xl" style={{ color: `hsl(var(${colorVar}))` }}>{ASPECT_GLYPH[aspect.aspect.name] ?? ""}</span>
             {planetDisplay(aspect.a)} {aspect.aspect.name} {planetDisplay(aspect.b)}
