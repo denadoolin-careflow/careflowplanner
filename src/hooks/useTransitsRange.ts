@@ -20,7 +20,7 @@ export function useTransitsRange(from: Date, to: Date) {
 
   const houses = useMemo(() => {
     if (!row) return null;
-    const birth = new Date(`${row.birth_date}T${row.birth_time ?? "12:00"}:00`);
+    const birth = new Date(`${row.birth_date}T${(row.birth_time || "12:00").slice(0, 5)}:00`);
     return computeHouses(birth, row.birth_lat ?? null, row.birth_lng ?? null, "whole-sign");
   }, [row]);
 
@@ -53,7 +53,7 @@ export function natalHouseForEvent(
   row: { birth_date: string; birth_time: string | null; birth_lat: number | null; birth_lng: number | null } | null,
 ): number | undefined {
   if (!row || !event.planet) return undefined;
-  const birth = new Date(`${row.birth_date}T${row.birth_time ?? "12:00"}:00`);
+  const birth = new Date(`${row.birth_date}T${(row.birth_time || "12:00").slice(0, 5)}:00`);
   const houses = computeHouses(birth, row.birth_lat ?? null, row.birth_lng ?? null, "whole-sign");
   if (!houses) return undefined;
   try {

@@ -82,6 +82,7 @@ export function computeHouses(
   lng: number | null | undefined,
   system: HouseSystem = "whole-sign",
 ): HouseCusps | null {
+  if (!(date instanceof Date) || !Number.isFinite(date.getTime())) return null;
   // Without lat/lng, no Ascendant.
   if (lat == null || lng == null) return null;
   const { asc, mc } = ascMC(date, lat, lng);
