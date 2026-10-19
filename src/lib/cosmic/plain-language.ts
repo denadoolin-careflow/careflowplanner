@@ -43,7 +43,7 @@ const name = (b: string) => (b === "NorthNode" ? "North Node" : b === "SouthNode
 export function describeTransit(transiting: string, aspect: string, natal: string) {
   const info = ASPECT_INFO[aspect.toLowerCase()] ?? ASPECT_INFO.conjunction;
   const title = `${name(transiting)} ${info.verb} your ${name(natal)}`;
-  const meaning = `${cap(PLANET_THEME[transiting] ?? name(transiting))} meets ${PLANET_THEME[natal] ?? `your ${name(natal)}`}: ${info.feel}.`;
+  const meaning = `This links ${PLANET_THEME[transiting] ?? name(transiting)} with ${PLANET_THEME[natal] ?? `your ${name(natal)}`} — ${info.feel}.`;
   return { title, meaning, tone: info.tone };
 }
 
@@ -73,5 +73,4 @@ export const TERM_HELP: Record<string, string> = {
   retrograde: "The planet looks like it moves backward — a time to review.",
 };
 
-function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); }

@@ -19,6 +19,18 @@ export interface BirthChartRow {
   natal_json: NatalSnapshot | null;
 }
 
+export async function geocodePlace(place: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const name = place.split(",")[0].trim();
+    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=10&language=en&format=json`);
+    const json = await res.json();
+    const rest = place.toLowerCase().split(",").slice(1).map(x => x.trim()).filter(Boolean);
+    const hits: any[] = json?.results ?? [];
+    const best = hits.find(h => rest.every(t => [h.admin1, h.country, h.country_code].some((v: string) => v?.toLowerCase().startsWith(t)))) ?? hits[0];
+    return best ? { lat: best.latitude, lng: best.longitude } : null;
+  } catch { return null; }
+}
+
 export function useBirthChart() {
   const [row, setRow] = useState<BirthChartRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +44,17 @@ export function useBirthChart() {
       .select("birth_date,birth_time,birth_tz,birth_lat,birth_lng,birth_place,natal_json")
       .eq("user_id", u.user.id)
       .maybeSingle();
-    setRow((data as BirthChartRow) ?? null);
+    let r = (data as BirthChartRow) ?? null;
+    // Place typed without coordinates: look them up once so houses and rising can be calculated.
+    if (r && r.birth_place && (r.birth_lat == null || r.birth_lng == null)) {
+      const geo = await geocodePlace(r.birth_place);
+      if (geo) {
+        r = { ...r, birth_lat: geo.lat, birth_lng: geo.lng };
+        await (supabase as any).from("cosmic_birth_chart")
+          .update({ birth_lat: geo.lat, birth_lng: geo.lng }).eq("user_id", u.user.id);
+      }
+    }
+    setRow(r);
     setLoading(false);
   }, []);
 
