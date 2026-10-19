@@ -16,6 +16,8 @@ interface Props {
   className?: string;
   /** Hide "save to journal / save to notes" CTAs (e.g. inside a dashboard chip). */
   hideSaveDestinations?: boolean;
+  /** A line (e.g. tarot cards) kept in sync inside the reflection text. */
+  attachedLine?: string;
 }
 
 /**
@@ -24,7 +26,7 @@ interface Props {
  * or notes when the user picks a save destination.
  */
 export function TransitJournalInline({
-  eventId, eventLabel, eventDate, prompt, compact, className, hideSaveDestinations,
+  eventId, eventLabel, eventDate, prompt, compact, className, hideSaveDestinations, attachedLine,
 }: Props) {
   const { toast } = useToast();
   const [rating, setRating] = useState<number>(0);
@@ -52,6 +54,14 @@ export function TransitJournalInline({
     })();
     return () => { cancelled = true; };
   }, [eventId]);
+
+  useEffect(() => {
+    if (loading || !attachedLine) return;
+    setNote(n => {
+      const kept = n.split("\n").filter(l => !l.startsWith("Tarot: ")).join("\n").trimEnd();
+      return kept ? `${kept}\n\n${attachedLine}` : attachedLine;
+    });
+  }, [attachedLine, loading]);
 
   const saveReflection = useCallback(async () => {
     setSaving(true);

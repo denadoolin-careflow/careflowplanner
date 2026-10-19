@@ -58,7 +58,7 @@ function Guide({ row, natalLon, natalHouse, on }: { row: TransitRow; natalLon: n
     await addTask?.({ title, dueDate: on.toLocaleDateString("en-CA"), cosmic_tag: "sky" });
     toast.success("Added to Planner");
   };
-  const tarotLine = cards.length ? `\nTarot: ${cards.map(c => `${c.position} — ${c.card.name}${c.orientation === "reversed" ? " (reversed)" : ""}`).join("; ")}` : "";
+  const tarotLine = cards.length ? `Tarot: ${cards.map(c => `${c.position} — ${c.card.name}${c.orientation === "reversed" ? " (reversed)" : ""}`).join("; ")}` : "";
 
   return (
     <div className="space-y-5 pb-6">
@@ -138,7 +138,8 @@ function Guide({ row, natalLon, natalHouse, on }: { row: TransitRow; natalLon: n
           eventId={`grid:${row.transit}-${row.aspect}-${row.natal}:${format(win.start, "yyyy-MM-dd")}`}
           eventLabel={d.title}
           eventDate={on.toLocaleDateString("en-CA")}
-          prompt={`${prompts[0]}${tarotLine}`}
+          prompt={prompts[0]}
+          attachedLine={tarotLine || undefined}
         />
       </section>
     </div>
