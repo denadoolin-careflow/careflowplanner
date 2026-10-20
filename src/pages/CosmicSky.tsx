@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react";
-import { format } from "date-fns";
+import { addDays, format, isSameDay } from "date-fns";
+import { Link, useSearchParams } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DayPickerButton } from "@/components/calendar/DayPickerButton";
+import { dailyPullFor, loadPulls } from "@/lib/astro-suite/tarot-pulls";
+import { getCardById } from "@/lib/astro-suite/tarot";
 import { cn } from "@/lib/utils";
 import { AstroPageHeader } from "@/components/cosmic/AstroPageHeader";
 import { SkyRowActions } from "@/components/cosmic/SkyRowActions";
@@ -16,13 +22,34 @@ const MEAN_SPEED: Record<string, number> = { Sun: 1, Moon: 13.2, Mercury: 1.38, 
 export default function CosmicSky() {
   const [tab, setTab] = useState<"signs" | "lunations">("signs");
   const { chart } = useMyChart();
-  const now = useMemo(() => new Date(), []);
+  const [params, setParams] = useSearchParams();
+  const dateParam = params.get("date");
+  const now = useMemo(() => {
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      const d = new Date(`${dateParam}T12:00:00`);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  }, [dateParam]);
+  const isNow = !dateParam || isSameDay(now, new Date());
+  const go = (d: Date | null) => setParams(p => { const n = new URLSearchParams(p); if (d) n.set("date", format(d, "yyyy-MM-dd")); else n.delete("date"); return n; });
+  const iso = format(now, "yyyy-MM-dd");
+  const daily = useMemo(() => dailyPullFor(loadPulls(), iso), [iso]);
+  const dailyCard = daily ? getCardById(daily.cards[0]?.id) : undefined;
   const status = useMemo(() => SKY_BODIES.map(b => skyStatus(b, now)), [now]);
   const luns = useMemo(() => lunations(now, 14), [now]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 px-4 py-6 pb-28">
       <AstroPageHeader title="The sky" subtitle="Where every planet is now, what moves next, and the coming new and full Moons." />
+      <div className="cozy-card flex flex-wrap items-center gap-2 px-3 py-2">
+        <Button size="icon" variant="ghost" aria-label="Previous day" onClick={() => go(addDays(now, -1))}><ChevronLeft className="h-4 w-4" /></Button>
+        <DayPickerButton date={now} onChange={d => go(d)} />
+        <Button size="icon" variant="ghost" aria-label="Next day" onClick={() => go(addDays(now, 1))}><ChevronRight className="h-4 w-4" /></Button>
+        {!isNow && <Button size="sm" variant="outline" onClick={() => go(null)}>Now</Button>}
+        <p className="text-sm text-muted-foreground">{isNow ? "Sky right now" : `Sky on ${format(now, "EEE, MMM d, yyyy")}`}</p>
+        {dailyCard && <Link to={`/cosmic-flow/tarot?date=${iso}`} className="ml-auto rounded-full bg-accent/15 px-2.5 py-1 text-xs hover:bg-accent/25">🔮 Tarot that day: {dailyCard.name}</Link>}
+      </div>
       <div className="flex gap-1.5">
         {(["signs", "lunations"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={cn("rounded-full border px-3 py-1.5 text-sm min-h-9",
