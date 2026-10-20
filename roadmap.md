@@ -68,3 +68,4 @@
 - [x] Verify natal chart PNG saving on desktop/mobile and add zoom/pan controls
 - [x] Align written Chapter with shared time lord, solar return and moon readings; tests and signed-in request verified
 - [ ] Verify generated Chapter save/readback — blocked by reading service rate limit
+- [x] Connect dated Tarot, Sky, Moon & Rituals, and lunations with Plan/Grow/Care/Let go in the Planner monthly moonscape; verify navigation and ritual persistence
