@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { addDays, format, isSameDay } from "date-fns";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -7,12 +7,15 @@ import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { dailyPullFor, loadPulls } from "@/lib/astro-suite/tarot-pulls";
 import { getCardById } from "@/lib/astro-suite/tarot";
 import { cn } from "@/lib/utils";
+import { LunarDateConnections } from "@/components/cosmic/LunarDateConnections";
+import { monthRhythmMoments, cosmicDateFromParam } from "@/lib/cosmic/lunar-rhythm";
+import { bodyLongitude } from "@/lib/cosmic/astro/bodies";
 import { AstroPageHeader } from "@/components/cosmic/AstroPageHeader";
 import { SkyRowActions } from "@/components/cosmic/SkyRowActions";
 import { BODY_GLYPHS } from "@/lib/cosmic/astro/bodies";
 import { SIGN_GLYPH } from "@/lib/cosmic/glyphs";
 import { houseOf } from "@/lib/cosmic/astro/houses";
-import { SKY_BODIES, skyStatus, lunations } from "@/lib/cosmic/sky";
+import { SKY_BODIES, skyStatus, signOf } from "@/lib/cosmic/sky";
 import { useMyChart } from "@/lib/cosmic/use-my-chart";
 import { describeSkyPlacement, describeIngress, TERM_HELP } from "@/lib/cosmic/plain-language";
 
@@ -20,24 +23,19 @@ const NAME: Record<string, string> = { NorthNode: "North Node" };
 const MEAN_SPEED: Record<string, number> = { Sun: 1, Moon: 13.2, Mercury: 1.38, Venus: 1.2, Mars: 0.52, Jupiter: 0.083, Saturn: 0.033, Uranus: 0.012, Neptune: 0.006, Pluto: 0.004, NorthNode: 0.053, Chiron: 0.02 };
 
 export default function CosmicSky() {
-  const [tab, setTab] = useState<"signs" | "lunations">("signs");
   const { chart } = useMyChart();
   const [params, setParams] = useSearchParams();
   const dateParam = params.get("date");
-  const now = useMemo(() => {
-    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
-      const d = new Date(`${dateParam}T12:00:00`);
-      if (!isNaN(d.getTime())) return d;
-    }
-    return new Date();
-  }, [dateParam]);
+  const now = useMemo(() => cosmicDateFromParam(dateParam), [dateParam]);
+  const tab = params.get("tab") === "lunations" ? "lunations" : "signs";
+  const setTab = (value: string) => setParams(p => { const next = new URLSearchParams(p); next.set("tab", value); return next; });
   const isNow = !dateParam || isSameDay(now, new Date());
   const go = (d: Date | null) => setParams(p => { const n = new URLSearchParams(p); if (d) n.set("date", format(d, "yyyy-MM-dd")); else n.delete("date"); return n; });
   const iso = format(now, "yyyy-MM-dd");
   const daily = useMemo(() => dailyPullFor(loadPulls(), iso), [iso]);
   const dailyCard = daily ? getCardById(daily.cards[0]?.id) : undefined;
   const status = useMemo(() => SKY_BODIES.map(b => skyStatus(b, now)), [now]);
-  const luns = useMemo(() => lunations(now, 14), [now]);
+  const luns = useMemo(() => monthRhythmMoments(now), [now]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 px-4 py-6 pb-28">
@@ -50,6 +48,7 @@ export default function CosmicSky() {
         <p className="text-sm text-muted-foreground">{isNow ? "Sky right now" : `Sky on ${format(now, "EEE, MMM d, yyyy")}`}</p>
         {dailyCard && <Link to={`/cosmic-flow/tarot?date=${iso}`} className="ml-auto rounded-full bg-accent/15 px-2.5 py-1 text-xs hover:bg-accent/25">🔮 Tarot that day: {dailyCard.name}</Link>}
       </div>
+      <LunarDateConnections date={now} current={tab === "lunations" ? "lunations" : "sky"} />
       <div className="flex gap-1.5">
         {(["signs", "lunations"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={cn("rounded-full border px-3 py-1.5 text-sm min-h-9",
@@ -86,18 +85,22 @@ export default function CosmicSky() {
       ) : (
         <ul className="cozy-card divide-y divide-border">
           {luns.map(l => {
-            const house = chart?.houses ? houseOf(l.longitude, chart.houses) : null;
-            const title = `${l.kind === "new" ? "New" : "Full"} Moon in ${l.sign}`;
+            const longitude = bodyLongitude("Moon", l.date);
+            const sign = signOf(longitude);
+            const house = chart?.houses ? houseOf(longitude, chart.houses) : null;
+            const title = `${l.info.label} · ${l.info.moon} in ${sign}`;
             return (
               <li key={l.date.toISOString()} className={cn("flex items-center gap-3 px-4 py-3", l.eclipseSeason && "bg-accent/10")}>
-                <span className="text-xl">{l.kind === "new" ? "🌑" : "🌕"}</span>
+                <span className="text-xl">{l.info.glyph}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{title} {SIGN_GLYPH[l.sign]}</p>
+                  <p className="text-sm font-medium">{title} {SIGN_GLYPH[sign]}</p>
                   <p className="text-xs text-muted-foreground">
-                    {format(l.date, "EEE, MMM d · h:mm a")} · {Math.floor(l.longitude % 30)}°
+                    {format(l.date, "EEE, MMM d · h:mm a")} · {Math.floor(longitude % 30)}°
                     {house && ` · your house ${house}`}
-                    {l.eclipseSeason ? ` · eclipse season (${l.nodeDistance.toFixed(0)}° from the nodes)` : ""}
+                    {l.eclipseSeason ? " · possible eclipse window (near the nodes)" : ""}
                   </p>
+                  <p className="mt-1 text-xs text-foreground/80">{l.info.invitation}</p>
+                  <LunarDateConnections date={l.date} phase={l.phase} current="lunations" />
                 </div>
                 <SkyRowActions title={title} date={l.date} note={house ? `Touches my house ${house}` : undefined} />
               </li>

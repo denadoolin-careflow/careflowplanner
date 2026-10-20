@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TarotCardArt, artForCard } from "./TarotCardArt";
 import { getCardById } from "@/lib/astro-suite/tarot";
+import { LunarDateConnections } from "@/components/cosmic/LunarDateConnections";
+import { cosmicDateFromParam } from "@/lib/cosmic/lunar-rhythm";
 import { SPREADS, dailyPullFor, loadPulls, pullsByDate, type TarotPull } from "@/lib/astro-suite/tarot-pulls";
 
 /** Month grid of daily tarot pulls; tap a day to see its card and spreads. */
 export function TarotCalendar({ initialDate }: { initialDate?: string }) {
   const [pulls, setPulls] = useState<TarotPull[]>(() => loadPulls());
-  const start = initialDate ? new Date(`${initialDate}T12:00:00`) : new Date();
+  const start = cosmicDateFromParam(initialDate ?? null);
   const [month, setMonth] = useState(startOfMonth(start));
   const [selected, setSelected] = useState(format(start, "yyyy-MM-dd"));
 
@@ -66,6 +68,7 @@ export function TarotCalendar({ initialDate }: { initialDate?: string }) {
           <p className="font-display text-base">{format(new Date(`${selected}T12:00:00`), "EEEE, MMM d, yyyy")}</p>
           <Button asChild size="sm" variant="outline"><Link to={`/cosmic-flow/sky?date=${selected}`}><Telescope className="mr-1 h-3.5 w-3.5" />See the sky that day</Link></Button>
         </div>
+        <LunarDateConnections date={cosmicDateFromParam(selected)} current="tarot" />
         {!dayPulls.length && <p className="text-sm text-muted-foreground">No cards pulled this day.</p>}
         {daily && (() => {
           const pc = daily.cards[0]; const card = getCardById(pc.id); if (!card) return null;

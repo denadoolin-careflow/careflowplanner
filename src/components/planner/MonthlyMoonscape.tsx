@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns";
-import { BookHeart, ExternalLink, Moon, NotebookPen, Pencil } from "lucide-react";
+import { BookHeart, ExternalLink, NotebookPen, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useStore } from "@/lib/store";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
-import { getMoonAgeDays, getMoonPhase } from "@/lib/moon";
+import { getMoonPhase } from "@/lib/moon";
 import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
-import { KEY_PHASES, type KeyPhase } from "@/lib/lunar-phases";
+import { KEY_PHASES } from "@/lib/lunar-phases";
+import { monthRhythmMoments } from "@/lib/cosmic/lunar-rhythm";
+import { LunarDateConnections } from "@/components/cosmic/LunarDateConnections";
 import { getOrCreatePeriodNote, updateNote } from "@/lib/notes";
 import { monthKeyFor } from "@/lib/notes/periods";
 import { logCosmicJournal } from "@/lib/cosmic/hooks";
@@ -17,40 +19,34 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 
-const TARGETS: { key: KeyPhase; age: number }[] = [
-  { key: "sow", age: 0 }, { key: "grow", age: 29.53058867 / 4 },
-  { key: "glow", age: 29.53058867 / 2 }, { key: "let-go", age: 29.53058867 * 0.75 },
-];
+const LEGACY_KEY = { plan: "sow", grow: "grow", care: "glow", letgo: "let-go" } as const;
 const ELEMENT_GUIDE = { Fire: "Act on one clear spark.", Earth: "Ground it in a practical next step.", Air: "Name it, share it, or write it out.", Water: "Feel first; plan from what surfaces." } as const;
 
 export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month: Date; selectedDate: Date; onSelectDate: (date: Date) => void }) {
   const { state, addJournal, updateJournal } = useStore();
   const { settings, periods, loaded } = useCycle();
   const days = useMemo(() => eachDayOfInterval({ start: startOfMonth(month), end: endOfMonth(month) }), [month.getFullYear(), month.getMonth()]); // eslint-disable-line react-hooks/exhaustive-deps
-  const moments = useMemo(() => TARGETS.map(target => {
-    const date = days.reduce((best, day) => {
-      const age = getMoonAgeDays(day);
-      const distance = Math.min(Math.abs(age - target.age), 29.53058867 - Math.abs(age - target.age));
-      const bestAge = getMoonAgeDays(best);
-      const bestDistance = Math.min(Math.abs(bestAge - target.age), 29.53058867 - Math.abs(bestAge - target.age));
-      return distance < bestDistance ? day : best;
-    }, days[0]);
-    return { ...target, date, context: getMoonJournalContext(date), info: KEY_PHASES[target.key] };
-  }), [days]);
-  const initial = moments.findIndex(moment => format(moment.date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd"));
-  const [activeKey, setActiveKey] = useState<KeyPhase>(moments[Math.max(0, initial)]?.key ?? "sow");
-  const active = moments.find(moment => moment.key === activeKey) ?? moments[0];
-  const journalTitle = `${active.info.label} · ${format(active.date, "MMMM d, yyyy")}`;
+  const moments = useMemo(() => monthRhythmMoments(month).map(moment => ({
+    ...moment, key: LEGACY_KEY[moment.phase], context: getMoonJournalContext(moment.date),
+  })), [month.getFullYear(), month.getMonth()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [activeId, setActiveId] = useState("");
+  useEffect(() => {
+    const matching = moments.find(moment => format(moment.date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd"));
+    const preceding = moments.filter(moment => moment.date <= selectedDate).at(-1);
+    setActiveId((matching ?? preceding ?? moments[0])?.id ?? "");
+  }, [moments, selectedDate]);
+  const active = moments.find(moment => moment.id === activeId) ?? moments[0];
+  const journalTitle = `${KEY_PHASES[active.key].label} · ${format(active.date, "MMMM d, yyyy")}`;
   const existing = state.journal.find(entry => entry.title === journalTitle);
   const [reflection, setReflection] = useState(existing?.body ?? "");
   const [cycleEditorOpen, setCycleEditorOpen] = useState(false);
   useEffect(() => { setReflection(existing?.body ?? ""); }, [journalTitle, existing?.body]);
   const cycleDays = days.map(day => ({ day, info: settings.enabled ? getPhaseInfo(day, periods, settings) : null }));
 
-  const choose = (key: KeyPhase) => {
-    const next = moments.find(moment => moment.key === key);
+  const choose = (id: string) => {
+    const next = moments.find(moment => moment.id === id);
     if (!next) return;
-    setActiveKey(key); setReflection(state.journal.find(entry => entry.title === `${next.info.label} · ${format(next.date, "MMMM d, yyyy")}`)?.body ?? ""); onSelectDate(next.date);
+    setActiveId(id); onSelectDate(next.date);
   };
   const saveJournal = async () => {
     const body = reflection.trim() || active.context.seedBody;
@@ -76,14 +72,16 @@ export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month:
       <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Monthly rhythm</p><h3 id="monthly-moonscape-title" className="font-display text-base font-semibold">Monthly moonscape</h3></div>
       <Button asChild variant="ghost" size="sm" className="h-8 px-2 text-xs"><Link to="/cosmic-flow">Cosmic Flow <ExternalLink className="ml-1 h-3 w-3" /></Link></Button>
     </div>
-    <div className="mt-3 grid grid-cols-4 gap-1" role="tablist" aria-label="Moon phases this month">
-      {moments.map(moment => <button key={moment.key} type="button" role="tab" aria-selected={moment.key === active.key} onClick={() => choose(moment.key)} className={cn("min-w-0 rounded-md border border-border/50 px-1 py-2 text-center", moment.key === active.key ? "bg-primary-soft ring-1 ring-primary/40" : "bg-background/50")}>
-        <span className="block text-lg" aria-hidden>{moment.info.glyph}</span><strong className="block truncate text-[10px]">{moment.info.verb}</strong><span className="block text-[9px] text-muted-foreground">{format(moment.date, "MMM d")}</span>
-      </button>)}
+    <div className="mt-3 flex flex-wrap gap-1" role="tablist" aria-label="Moon phases this month">
+      {moments.map(moment => <Button variant="ghost" key={moment.id} type="button" role="tab" aria-selected={moment.id === active.id} onClick={() => choose(moment.id)} className={cn("h-auto min-w-16 flex-1 flex-col rounded-md border border-border/50 px-1 py-2 text-center", moment.id === active.id ? "bg-primary-soft ring-1 ring-primary/40" : "bg-background/50")}>
+        <span className="block text-lg" aria-hidden>{moment.info.glyph}</span><strong className="block truncate text-[10px]">{moment.info.label}</strong><span className="block text-[9px] text-muted-foreground">{format(moment.date, "MMM d")}</span>
+      </Button>)}
     </div>
     <div className="mt-3 border-t border-border/50 pt-3">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><strong className="text-sm">{active.info.label}</strong><span className="text-xs text-muted-foreground">{active.context.sign.symbol} {active.context.sign.name} · {active.context.elementEmoji} {active.context.sign.element}</span></div>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><strong className="text-sm">{active.info.label} · {active.info.moon}</strong><span className="text-xs text-muted-foreground">{active.context.sign.symbol} {active.context.sign.name} · {active.context.elementEmoji} {active.context.sign.element}</span></div>
       <p className="mt-1 text-xs text-muted-foreground">{ELEMENT_GUIDE[active.context.sign.element]} {active.info.invitation}</p>
+      {active.eclipseSeason && <p className="mt-2 text-xs text-muted-foreground">Near the lunar nodes — a possible eclipse window, not a confirmed eclipse. Keep plans flexible and choose rest over pressure.</p>}
+      <LunarDateConnections date={active.date} phase={active.phase} current="planner" />
       <p className="mt-2 text-sm">{active.context.prompts[0].text}</p>
       <Textarea value={reflection} onChange={event => setReflection(event.target.value)} placeholder="A few words is enough…" rows={3} className="mt-2 resize-none text-sm" />
       <div className="mt-2 flex flex-wrap gap-2"><Button size="sm" onClick={() => void saveJournal()}><BookHeart className="mr-1 h-3.5 w-3.5" />{existing ? "Update reflection" : "Save to Journal"}</Button><Button size="sm" variant="outline" onClick={() => void appendNote()}><NotebookPen className="mr-1 h-3.5 w-3.5" />Add to month note</Button></div>
