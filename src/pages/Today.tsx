@@ -10,6 +10,7 @@ import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
+import { TodayMoonHeader } from "@/components/today/TodayMoonHeader";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { useTodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
@@ -175,6 +176,7 @@ function TodayInner() {
           onDefaultRoute={(route) => updateProfile({ default_route: route })}
           onTemplates={() => setGalleryOpen(true)}
         />
+        <TodayMoonHeader />
         <DemoTasksBanner />
         <MoonJournalReminderBanner date={day} />
         {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
