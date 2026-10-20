@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { format } from "date-fns";
 import { useStore } from "@/lib/store";
 import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
-import { GreetingBlock } from "./GreetingBlock";
 import { ScopeSegmented } from "./ScopeSegmented";
 import { CareLoopRow } from "./CareLoopRow";
 import { CapacityCard } from "./CapacityCard";

@@ -38,7 +38,6 @@ import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
 import { TemplateGallery } from "@/components/today/TemplateGallery";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { GreetingBlock } from "@/components/today/dashboard/GreetingBlock";
 import { CalendarCheck, HeartHandshake, Sprout } from "lucide-react";
 
 export default function Today() {
@@ -163,7 +162,6 @@ function TodayInner() {
   return (
     <CapacityProvider value={capacity}>
       <div className="today-mobile-feed mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4">
-        <GreetingBlock date={day} />
         <TodayHeader
           date={day}
           onDate={setDayAndUrl}
