@@ -1,7 +1,23 @@
 import { format } from "date-fns";
 import { getMoonPhase, MOON_INFO, type MoonPhase } from "@/lib/moon";
+import { monthRhythmMoments } from "@/lib/cosmic/lunar-rhythm";
 
 const ENABLED_KEY = "moonJournalReminders.enabled";
+const NEW_MOON_KEY = "careflow:new-moon-reminders:enabled";
+
+export function getNewMoonRemindersEnabled(): boolean {
+  try { return window.localStorage.getItem(NEW_MOON_KEY) !== "0"; } catch { return true; }
+}
+
+export function setNewMoonRemindersEnabled(value: boolean) {
+  window.localStorage.setItem(NEW_MOON_KEY, value ? "1" : "0");
+  window.dispatchEvent(new Event("moon-reminders-changed"));
+}
+
+export function newMoonReminderFor(date: Date) {
+  const moment = monthRhythmMoments(date).find(item => item.phase === "plan" && format(item.date, "yyyy-MM-dd") === format(date, "yyyy-MM-dd"));
+  return moment ? { date: moment.date, planner: `/planner/${format(moment.date, "yyyy-MM-dd")}?range=month` } : null;
+}
 const DISMISSED_KEY = "moonJournalReminders.dismissed"; // JSON: { [yyyy-mm-dd]: true }
 
 export const MOON_TEMPLATE_FOR_PHASE: Partial<Record<MoonPhase, string>> = {
