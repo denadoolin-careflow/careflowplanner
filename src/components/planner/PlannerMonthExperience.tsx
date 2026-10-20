@@ -48,7 +48,7 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture }: { date: D
     </div>
     <div className="planner-month-season"><SeasonBanner date={date} compact linkTo="/month/overview" /></div>
     <PeriodNoteCard kind="monthly" keyISO={monthKeyFor(date)} defaultOpen={false} />
-    {isMobile ? <details className="border-y border-border py-2"><summary className="cursor-pointer text-sm font-medium">Monthly moonscape · Plan · Grow · Care · Let go</summary><MonthlyMoonscape month={date} selectedDate={selectedDate} onSelectDate={setSelectedDate} /></details> : <MonthlyMoonscape month={date} selectedDate={selectedDate} onSelectDate={setSelectedDate} />}
+    {isMobile ? <details className="border-y border-border py-2"><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Monthly moonscape · Plan · Grow · Care · Let go</summary><MonthlyMoonscape month={date} selectedDate={selectedDate} onSelectDate={setSelectedDate} /></details> : <MonthlyMoonscape month={date} selectedDate={selectedDate} onSelectDate={setSelectedDate} />}
     {(overdue.length > 0 || unscheduled > 0) && <section className="planner-needs-attention">
       <Button variant="ghost" onClick={() => setAttention(!attentionOpen)} aria-expanded={attentionOpen} className="h-auto min-h-11 w-full justify-start gap-2 px-3 py-2 text-left">
         <AlertTriangle className="h-4 w-4 shrink-0 text-warm-foreground" /><span className="min-w-0 flex-1"><span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Needs attention</span><span className="block text-xs font-medium">{overdue.length} need a new home · {unscheduled} can stay flexible</span></span>{attentionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
