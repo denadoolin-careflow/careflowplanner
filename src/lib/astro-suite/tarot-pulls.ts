@@ -18,7 +18,7 @@ export interface PulledCard { id: string; orientation: TarotOrientation; positio
 export interface TarotPull { id: string; date: string; spread: SpreadKind; cards: PulledCard[]; createdAt: number }
 
 const KEY = "careflow.tarot-pulls.v1";
-const MAX = 120;
+const MAX = 800;
 
 export function loadPulls(): TarotPull[] {
   void syncAstroFromAccount();
@@ -75,4 +75,20 @@ export async function appendToTodaysNote(text: string) {
   const note = await getOrCreateDailyNote(format(new Date(), "yyyy-MM-dd"));
   await updateNote(note.id, { body: appendTimestampedEntry(note.body ?? "", text, format(new Date(), "HH:mm")) });
   notifyDailyNotesChanged();
+}
+
+/** Group pulls by yyyy-MM-dd date, newest first within each day. */
+export function pullsByDate(pulls: TarotPull[], monthPrefix?: string): Map<string, TarotPull[]> {
+  const map = new Map<string, TarotPull[]>();
+  for (const p of [...pulls].sort((a, b) => b.createdAt - a.createdAt)) {
+    if (monthPrefix && !p.date.startsWith(monthPrefix)) continue;
+    const list = map.get(p.date) ?? [];
+    list.push(p); map.set(p.date, list);
+  }
+  return map;
+}
+
+/** The daily (single) pull for a date, if any. */
+export function dailyPullFor(pulls: TarotPull[], date: string): TarotPull | undefined {
+  return pulls.find(p => p.date === date && p.spread === "single");
 }
