@@ -884,13 +884,6 @@ function CalmChips({ compact }: { compact?: boolean }) {
   const size = compact ? "px-1.5 py-0.5 text-[11px]" : "px-2.5 py-1.5 text-xs";
   return (
     <>
-      {!compact && <span className={cn(base, size, "hidden lg:inline-flex")}>{ctx.season.emoji} {ctx.season.label}</span>}
-      {!compact && (
-        <span className={cn(base, size, "hidden lg:inline-flex")} title={`${ctx.moonLabel}${ctx.sign ? ` in ${ctx.sign}` : ""}`}>
-          {ctx.glyph} {ctx.sign ? `Moon in ${ctx.sign}` : ctx.moonLabel}
-        </span>
-      )}
-      {!compact && ctx.cycleLabel && <span className={cn(base, size, "hidden xl:inline-flex")}>{ctx.cycleGlyph} {ctx.cycleLabel}</span>}
       <Link
         to="/planner?range=month"
         className={cn("inline-flex shrink-0 items-center gap-1 rounded-full font-semibold", size)}
@@ -900,6 +893,13 @@ function CalmChips({ compact }: { compact?: boolean }) {
       >
         {ctx.rhythmLabel}
       </Link>
+      {!compact && <span className={cn(base, size, "hidden lg:inline-flex")}>{ctx.season.emoji} {ctx.season.label}</span>}
+      {!compact && (
+        <span className={cn(base, size, "hidden lg:inline-flex")} title={`${ctx.moonLabel}${ctx.sign ? ` in ${ctx.sign}` : ""}`}>
+          {ctx.glyph} {ctx.sign ? `Moon in ${ctx.sign}` : ctx.moonLabel}
+        </span>
+      )}
+      {!compact && ctx.cycleLabel && <span className={cn(base, size, "hidden xl:inline-flex")}>{ctx.cycleGlyph} {ctx.cycleLabel}</span>}
     </>
   );
 }
