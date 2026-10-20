@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { TarotCalendar } from "@/components/astro-suite/TarotCalendar";
 import { ArrowLeft, Shuffle, NotebookPen, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ export default function CosmicTarot() {
   const [spread, setSpread] = useState<SpreadKind>("three-time");
   const [current, setCurrent] = useState<TarotPull | null>(null);
   const [history, setHistory] = useState<TarotPull[]>(() => loadPulls());
+  const [params] = useSearchParams();
   const [detail, setDetail] = useState<TarotCard | null>(null);
 
   useEffect(() => {
@@ -48,6 +50,8 @@ export default function CosmicTarot() {
       </header>
 
       <DailyTarotPull />
+
+      <TarotCalendar key={params.get("date") ?? ""} initialDate={params.get("date") ?? undefined} />
 
       <section className="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
