@@ -54,10 +54,10 @@ export function MoonJournalReminderBanner({ date = new Date() }: { date?: Date }
         <p className="text-sm font-medium">{newMoon ? `New moon · ${date.toLocaleDateString(undefined, { month: "long" })} focus` : `${reminder?.label} reminder`}</p>
         {newMoon ? <MonthlyFocus date={date} /> : <p className="text-xs text-muted-foreground">{reminder?.invitation}</p>}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
         <Button
           size="sm"
-          className="rounded-full"
+          className="min-h-11 rounded-full sm:min-h-9"
           onClick={() => {
             if (newMoon) navigate(newMoon.planner);
             else if (reminder) { dismissReminder(date); navigate(`/journal?template=${reminder.template}`); }
@@ -68,7 +68,7 @@ export function MoonJournalReminderBanner({ date = new Date() }: { date?: Date }
         <Button
           size="icon"
           variant="ghost"
-          className="h-8 w-8 rounded-full"
+          className="h-11 w-11 rounded-full sm:h-8 sm:w-8"
           onClick={() => dismissReminder(date)}
           aria-label="Dismiss"
           title="Not today"

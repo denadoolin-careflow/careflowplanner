@@ -26,11 +26,11 @@ export function MonthlyPhaseIntentions({ month }: { month: Date }) {
     </div>
     {error && <p role="alert" className="text-xs text-destructive">Couldn't load intentions. <Button variant="link" size="sm" onClick={() => void reload()}>Try again</Button></p>}
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <Button size="sm" disabled={loading || !!error || saving || !dirty} onClick={async () => {
+      <Button size="sm" className="min-h-11 sm:min-h-9" disabled={loading || !!error || saving || !dirty} onClick={async () => {
         setSaving(true);
         try { await save(draft); toast.success("Monthly intentions saved"); } catch { toast.error("Couldn't save intentions. Your writing is still here—try again."); } finally { setSaving(false); }
       }}><Save className="mr-1 h-3.5 w-3.5" />{saving ? "Saving…" : "Save intentions"}</Button>
-      <label className="flex items-center gap-2 text-xs">New moon reminders<Switch aria-label="New moon reminders" checked={reminders} onCheckedChange={value => { setReminders(value); setNewMoonRemindersEnabled(value); }} /></label>
+      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-xs">New moon reminders<Switch aria-label="New moon reminders" checked={reminders} onCheckedChange={value => { setReminders(value); setNewMoonRemindersEnabled(value); }} /></label>
     </div>
   </div>;
 }
