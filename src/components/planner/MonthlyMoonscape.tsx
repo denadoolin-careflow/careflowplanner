@@ -18,6 +18,7 @@ import { logCosmicJournal } from "@/lib/cosmic/hooks";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
+import { MonthlyPhaseIntentions } from "./MonthlyPhaseIntentions";
 
 const LEGACY_KEY = { plan: "sow", grow: "grow", care: "glow", letgo: "let-go" } as const;
 const PRINCIPAL = { plan: "new", grow: "first-quarter", care: "full", letgo: "last-quarter" } as const;
@@ -77,6 +78,7 @@ export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month:
       <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Monthly rhythm</p><h3 id="monthly-moonscape-title" className="font-display text-base font-semibold">Monthly moonscape</h3></div>
       <Button asChild variant="ghost" size="sm" className="h-8 px-2 text-xs"><Link to="/cosmic-flow">Cosmic Flow <ExternalLink className="ml-1 h-3 w-3" /></Link></Button>
     </div>
+    <MonthlyPhaseIntentions key={monthKeyFor(month)} month={month} />
     <div className="mt-3 flex flex-wrap gap-1" role="tablist" aria-label="Moon phases this month">
       {moments.map(moment => <Button variant="ghost" key={moment.id} type="button" role="tab" aria-selected={moment.id === active.id} onClick={() => choose(moment.id)} className={cn("h-auto min-w-16 flex-1 flex-col rounded-md border border-border/50 px-1 py-2 text-center", moment.id === active.id ? "bg-primary-soft ring-1 ring-primary/40" : "bg-background/50")}>
         <span className="block text-lg" aria-hidden>{moment.info.glyph}</span><strong className="block truncate text-[10px]">{moment.info.label}</strong><span className="block text-[9px] text-muted-foreground">{format(moment.date, "MMM d")}</span>
