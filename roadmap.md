@@ -70,3 +70,4 @@
 - [ ] Verify generated Chapter save/readback — blocked by reading service rate limit
 - [x] Connect dated Tarot, Sky, Moon & Rituals, and lunations with Plan/Grow/Care/Let go in the Planner monthly moonscape; verify navigation and ritual persistence
 - [x] Save one intention per monthly rhythm phase and show a linked new-moon focus reminder; verified signed-in save/readback and Planner link
+- [ ] Check phone lunar date links and monthly moonscape; fix overlap and small tap targets and verify navigation
