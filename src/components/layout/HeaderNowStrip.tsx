@@ -887,7 +887,7 @@ function CalmChips({ compact }: { compact?: boolean }) {
       {!compact && <span className={cn(base, size, "hidden lg:inline-flex")}>{ctx.season.emoji} {ctx.season.label}</span>}
       {!compact && (
         <span className={cn(base, size, "hidden lg:inline-flex")} title={`${ctx.moonLabel}${ctx.sign ? ` in ${ctx.sign}` : ""}`}>
-          {ctx.glyph} {ctx.moonLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}
+          {ctx.glyph} {ctx.sign ? `Moon in ${ctx.sign}` : ctx.moonLabel}
         </span>
       )}
       {!compact && ctx.cycleLabel && <span className={cn(base, size, "hidden xl:inline-flex")}>{ctx.cycleGlyph} {ctx.cycleLabel}</span>}

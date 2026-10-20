@@ -26,14 +26,12 @@ export function TodayMoonHeader() {
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="hidden min-w-0 sm:block"><DateBlock now={now} ctx={ctx} /></div>
-            <p className="ml-auto shrink-0 text-right text-sm text-muted-foreground">
-              {temp && <span className="tabular-nums">{temp}{snap?.conditionLabel ? ` ${snap.conditionLabel}` : ""} · </span>}
-              {ctx.season.emoji} {ctx.season.label}
-              {ctx.cycleLabel && <span className="block">{ctx.cycleGlyph} {ctx.cycleLabel}</span>}
-            </p>
-          </div>
+          <div className="hidden min-w-0 sm:block"><DateBlock now={now} ctx={ctx} /></div>
+          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            {temp && <span className="tabular-nums">{temp}{snap?.conditionLabel ? ` ${snap.conditionLabel}` : ""}</span>}
+            <span>{ctx.season.emoji} {ctx.season.label}</span>
+            {ctx.cycleLabel && <span>{ctx.cycleGlyph} {ctx.cycleLabel}</span>}
+          </p>
           <ol className="mt-4 grid grid-cols-4 gap-1" aria-label="Moon rhythm">
             {RHYTHM_ORDER.map((p) => {
               const Icon = ICONS[p];
@@ -66,7 +64,7 @@ export function TodayMoonHeader() {
 function DateBlock({ now, ctx }: { now: Date; ctx: ReturnType<typeof useDayContext> }) {
   return (
     <>
-      <h2 className="font-display text-2xl leading-tight text-foreground sm:text-4xl">{format(now, "EEEE, MMMM d")}</h2>
+      <h2 className="font-display text-xl leading-tight text-foreground sm:text-4xl">{format(now, "EEEE, MMMM d")}</h2>
       <p className="text-sm text-muted-foreground">
         <span className="tabular-nums">{format(now, "h:mm a")}</span> · {ctx.moonLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}
       </p>
