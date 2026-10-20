@@ -1,6 +1,6 @@
 # Project architecture decisions
 
-- Planner density is device-local; habit and routine completions stay synced.
+- Planner density is local; habit/routine completions sync.
 - Past-day routine step completions read/write routine_completions; today's live done flags stay on routines.items. Habit weeklyTarget and skip dates live in habits.meta; routine skips in routines.meta — no schema change.
 - Daily rituals reuse daily_checkins for Morning Reset and dated journal entries tagged with the evening-reflection template for Evening Reflection completion, avoiding a duplicate ritual store.
 - Ritual step lists (Morning Reset / Evening Reflection) and their per-date check-offs are device-local (localStorage) presentation data; ritual completion itself stays in daily_checkins / journal.
@@ -9,7 +9,7 @@
 - Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
 - Today and Planner use page-scoped Soft Botanical mobile presentation tokens and Outfit/Figtree typography, preserving the app-wide theme.
 - Planner range and layout selectors reuse the shared ViewPills control so Today and Planner remain visually consistent.
-- Planner day context composes moon, solar season, cycle, and capacity inside one collapsible Day rhythm surface.
+- Day rhythm combines moon, season, cycle and capacity in one collapsible surface.
 - Note properties use notes.properties (jsonb); supertag fields use item_field_values, entity_type 'note'.
 - Note block IDs persist as trailing ` ^b-xxxxxx` markers in the markdown body (added only when first linked); block embeds/ref chips persist as data-* HTML so no schema change is needed.
 - Notes uses a page-scoped presentation layer derived from the active atmosphere; capture review, pinned density, and per-month notebook appearance are device-local while note/task content preserves existing synced models.
@@ -31,6 +31,6 @@
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
 - Agenda/List views build day lists via src/lib/planner/agenda-rows.ts so they stay consistent.
 - Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
-- Astro math is local; chapters cache panel readings by birth/date/version.
+- Astro math is local; chapters cache by birth/date/version. Shared lunar-rhythm dates use exact quarters, keep duplicate lunations and date ritual checks.
 - Natal PNGs are pre-rendered for iOS; zoom (react-zoom-pan-pinch) is separate from the SVG. Chart appearance is device-local; shared scoped tokens color Natal, Houses and PNGs.
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.
