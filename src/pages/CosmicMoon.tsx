@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Body, Illumination, MoonPhase as lunarAngle, SearchMoonPhase } from "astronomy-engine";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Check, NotebookPen, ChevronLeft, ChevronRight } from "lucide-react";
 import { addDays, format } from "date-fns";
@@ -8,7 +9,6 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { MOON_RITUALS, PHASE_ORDER, getMoonPhase, type MoonPhase } from "@/lib/astro-suite/lunar";
 import { getMoonSign, MOON_IN_SIGN_GUIDE } from "@/lib/astro-suite/zodiac";
-import { getIllumination, daysUntilFull, daysUntilNew } from "@/lib/moon";
 import { getOrCreateDailyNote, updateNote } from "@/lib/notes";
 import { notifyDailyNotesChanged } from "@/lib/notes/daily";
 import { LunarDateConnections } from "@/components/cosmic/LunarDateConnections";
@@ -27,7 +27,10 @@ export default function CosmicMoon() {
   const dateKey = format(date, "yyyy-MM-dd");
   const moment = monthRhythmMoments(date).find(m => format(m.date, "yyyy-MM-dd") === dateKey);
   const principal = { plan: "new", grow: "first-quarter", care: "full", letgo: "last-quarter" } as const;
-  const today = moment ? principal[moment.phase] : getMoonPhase(date);
+  const angle = lunarAngle(date);
+  const phaseIndex = Math.floor((angle + 22.5) / 45) % 8;
+  const today = moment ? principal[moment.phase] : PHASE_ORDER[phaseIndex] ?? getMoonPhase(date);
+  const until = (target: number) => Math.max(0, Math.round(((SearchMoonPhase(target, date, 32)?.date.getTime() ?? date.getTime()) - date.getTime()) / 86400000));
   const [phase, setPhase] = useState<MoonPhase>(today);
   useEffect(() => { setPhase(today); }, [dateKey, today]);
   const go = (next: Date) => setParams({ date: format(next, "yyyy-MM-dd") });
@@ -64,7 +67,7 @@ export default function CosmicMoon() {
         <div>
           <h1 className="font-display text-2xl">Moon & Rituals</h1>
           <p className="text-sm text-muted-foreground">
-            {Math.round(getIllumination(date) * 100)}% lit · Moon in {sign.name} · full in {daysUntilFull(date)}d · new in {daysUntilNew(date)}d
+            {Math.round(Illumination(Body.Moon, date).phase_fraction * 100)}% lit · Moon in {sign.name} · full in {until(180)}d · new in {until(0)}d
           </p>
         </div>
       </header>

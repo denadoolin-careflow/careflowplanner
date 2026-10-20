@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useStore } from "@/lib/store";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
-import { getMoonPhase } from "@/lib/moon";
+import { MOON_RITUALS } from "@/lib/astro-suite/lunar";
 import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
 import { KEY_PHASES } from "@/lib/lunar-phases";
 import { monthRhythmMoments } from "@/lib/cosmic/lunar-rhythm";
@@ -20,15 +20,19 @@ import { toast } from "sonner";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 
 const LEGACY_KEY = { plan: "sow", grow: "grow", care: "glow", letgo: "let-go" } as const;
+const PRINCIPAL = { plan: "new", grow: "first-quarter", care: "full", letgo: "last-quarter" } as const;
 const ELEMENT_GUIDE = { Fire: "Act on one clear spark.", Earth: "Ground it in a practical next step.", Air: "Name it, share it, or write it out.", Water: "Feel first; plan from what surfaces." } as const;
 
 export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month: Date; selectedDate: Date; onSelectDate: (date: Date) => void }) {
   const { state, addJournal, updateJournal } = useStore();
   const { settings, periods, loaded } = useCycle();
   const days = useMemo(() => eachDayOfInterval({ start: startOfMonth(month), end: endOfMonth(month) }), [month.getFullYear(), month.getMonth()]); // eslint-disable-line react-hooks/exhaustive-deps
-  const moments = useMemo(() => monthRhythmMoments(month).map(moment => ({
-    ...moment, key: LEGACY_KEY[moment.phase], context: getMoonJournalContext(moment.date),
-  })), [month.getFullYear(), month.getMonth()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const moments = useMemo(() => monthRhythmMoments(month).map(moment => {
+    const context = getMoonJournalContext(moment.date);
+    const ritual = MOON_RITUALS[PRINCIPAL[moment.phase]];
+    const prompts = [{ id: "phase", label: ritual.label, text: ritual.tarotPrompt }, ...context.prompts.slice(1)];
+    return { ...moment, key: LEGACY_KEY[moment.phase], context: { ...context, prompts, seedBody: `${moment.info.label} · ${moment.info.moon}\n\n${prompts.map(p => p.text).join("\n\n")}` } };
+  }), [month.getFullYear(), month.getMonth()]); // eslint-disable-line react-hooks/exhaustive-deps
   const [activeId, setActiveId] = useState("");
   useEffect(() => {
     const matching = moments.find(moment => format(moment.date, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd"));
@@ -36,8 +40,9 @@ export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month:
     setActiveId((matching ?? preceding ?? moments[0])?.id ?? "");
   }, [moments, selectedDate]);
   const active = moments.find(moment => moment.id === activeId) ?? moments[0];
-  const journalTitle = `${KEY_PHASES[active.key].label} · ${format(active.date, "MMMM d, yyyy")}`;
-  const existing = state.journal.find(entry => entry.title === journalTitle);
+  const journalTitle = `${active.info.label} · ${active.info.moon} · ${format(active.date, "MMMM d, yyyy")}`;
+  const legacyTitle = `${KEY_PHASES[active.key].label} · ${format(active.date, "MMMM d, yyyy")}`;
+  const existing = state.journal.find(entry => entry.title === journalTitle || entry.title === legacyTitle);
   const [reflection, setReflection] = useState(existing?.body ?? "");
   const [cycleEditorOpen, setCycleEditorOpen] = useState(false);
   useEffect(() => { setReflection(existing?.body ?? ""); }, [journalTitle, existing?.body]);
@@ -54,7 +59,7 @@ export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month:
       let entry = existing;
       if (entry) await updateJournal(entry.id, { body, prompts: active.context.prompts.map(prompt => prompt.text), tags: ["cosmic-flow", active.key, active.context.sign.name, active.context.sign.element] });
       else entry = await addJournal({ date: format(active.date, "yyyy-MM-dd"), type: "monthly", title: journalTitle, body, prompts: active.context.prompts.map(prompt => prompt.text), tags: ["cosmic-flow", active.key, active.context.sign.name, active.context.sign.element] });
-      if (entry && !existing) await logCosmicJournal({ journal_entry_id: entry.id, event_id: `moon-${active.key}-${format(active.date, "yyyy-MM-dd")}`, event_kind: "phase", sign: active.context.sign.name, phase: getMoonPhase(active.date), event_date: format(active.date, "yyyy-MM-dd") });
+      if (entry && !existing) await logCosmicJournal({ journal_entry_id: entry.id, event_id: `moon-${active.key}-${format(active.date, "yyyy-MM-dd")}`, event_kind: "phase", sign: active.context.sign.name, phase: PRINCIPAL[active.phase], event_date: format(active.date, "yyyy-MM-dd") });
       toast.success(existing ? "Reflection updated" : "Saved to Journal and Cosmic Flow");
     } catch { toast.error("Couldn't save the reflection"); }
   };

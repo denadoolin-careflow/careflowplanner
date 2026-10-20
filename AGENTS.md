@@ -8,7 +8,7 @@
 - Completed-task strikethrough is a device-local planner preference shared across all task surfaces.
 - Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
 - Today and Planner use page-scoped Soft Botanical mobile presentation tokens and Outfit/Figtree typography, preserving the app-wide theme.
-- Planner range and layout selectors reuse the shared ViewPills control so Today and Planner remain visually consistent.
+- Today/Planner range and layout selectors share ViewPills for consistency.
 - Day rhythm combines moon, season, cycle and capacity in one collapsible surface.
 - Note properties use notes.properties (jsonb); supertag fields use item_field_values, entity_type 'note'.
 - Note block IDs persist as trailing ` ^b-xxxxxx` markers in the markdown body (added only when first linked); block embeds/ref chips persist as data-* HTML so no schema change is needed.
