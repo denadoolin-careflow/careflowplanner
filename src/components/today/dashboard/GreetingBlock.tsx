@@ -36,7 +36,6 @@ export function GreetingBlock({ date, pageKey = "today" }: { date: Date; pageKey
       {header.url && (
         <>
           <img src={header.url} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/80 to-background/45" />
         </>
       )}
       <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
