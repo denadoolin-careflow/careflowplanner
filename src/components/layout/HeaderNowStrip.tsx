@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useAtmosphere } from "@/lib/atmospheres";
 import { RoutinesMini } from "@/components/routines/RoutinesMini";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { useNow, useDayContext, phaseStyle } from "@/components/today/day-context";
 import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
@@ -777,6 +778,7 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             }
           />
         )}
+        <CalmChips compact />
       </div>
 
 
@@ -843,6 +845,7 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           }
         />
       )}
+      <CalmChips />
       {upcoming.length > 0 && (
         <WeatherDetailPopover
           trigger={
@@ -871,5 +874,32 @@ export function HeaderNowStrip({ className }: { className?: string }) {
       )}
       </div>
     </div>
+  );
+}
+function CalmChips({ compact }: { compact?: boolean }) {
+  const now = useNow(60_000);
+  const ctx = useDayContext(now);
+  const c = phaseStyle(ctx.rhythm);
+  const base = "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 bg-card text-foreground";
+  const size = compact ? "px-1.5 py-0.5 text-[11px]" : "px-2.5 py-1.5 text-xs";
+  return (
+    <>
+      {!compact && <span className={cn(base, size, "hidden lg:inline-flex")}>{ctx.season.emoji} {ctx.season.label}</span>}
+      {!compact && (
+        <span className={cn(base, size, "hidden lg:inline-flex")} title={`${ctx.moonLabel}${ctx.sign ? ` in ${ctx.sign}` : ""}`}>
+          {ctx.glyph} {ctx.moonLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}
+        </span>
+      )}
+      {!compact && ctx.cycleLabel && <span className={cn(base, size, "hidden xl:inline-flex")}>{ctx.cycleGlyph} {ctx.cycleLabel}</span>}
+      <Link
+        to="/planner?range=month"
+        className={cn("inline-flex shrink-0 items-center gap-1 rounded-full font-semibold", size)}
+        style={{ background: c.deep, color: "hsl(var(--card))" }}
+        title={`${ctx.rhythmLabel} phase · ${ctx.moonLabel}${ctx.sign ? ` in ${ctx.sign}` : ""}`}
+        aria-label={`Moon rhythm: ${ctx.rhythmLabel}`}
+      >
+        {ctx.rhythmLabel}
+      </Link>
+    </>
   );
 }
