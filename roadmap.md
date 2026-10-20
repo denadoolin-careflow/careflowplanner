@@ -69,3 +69,4 @@
 - [x] Align written Chapter with shared time lord, solar return and moon readings; tests and signed-in request verified
 - [ ] Verify generated Chapter save/readback — blocked by reading service rate limit
 - [x] Connect dated Tarot, Sky, Moon & Rituals, and lunations with Plan/Grow/Care/Let go in the Planner monthly moonscape; verify navigation and ritual persistence
+- [ ] Save one intention per monthly rhythm phase and show a linked new-moon focus reminder; verify save/readback
