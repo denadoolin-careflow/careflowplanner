@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { GreetingBlock } from "@/components/today/dashboard/GreetingBlock";
 import { getIntention, setIntention } from "@/lib/daily-intention";
 import { BURNOUT_META, useBurnoutCheckIn, type BurnoutLevel } from "@/lib/burnout-checkin";
 import { useOverdueTasks } from "@/components/planner/PlannerOverdueSection";

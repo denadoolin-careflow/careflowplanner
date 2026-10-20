@@ -47,7 +47,6 @@ export function TodayDashboard({
   return (
     <CapacityProvider value={capacity}>
       <div className="animate-fade-in space-y-4">
-        <GreetingBlock date={date} />
         <div className="flex justify-center"><ScopeSegmented active="today" /></div>
         {controls}
         <CareLoopRow
