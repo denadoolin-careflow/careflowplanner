@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { GreetingBlock } from "@/components/today/dashboard/GreetingBlock";
 import { getIntention, setIntention } from "@/lib/daily-intention";
 import { BURNOUT_META, useBurnoutCheckIn, type BurnoutLevel } from "@/lib/burnout-checkin";
 import { useOverdueTasks } from "@/components/planner/PlannerOverdueSection";
@@ -30,8 +29,6 @@ export function ArriveBand({ date }: { date: Date }) {
 
   return (
     <section aria-label="Arrive" className="animate-fade-in space-y-3">
-      <GreetingBlock date={date} />
-
       <div className="rounded-3xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div

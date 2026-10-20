@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { format } from "date-fns";
 import { useStore } from "@/lib/store";
 import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
-import { GreetingBlock } from "./GreetingBlock";
 import { ScopeSegmented } from "./ScopeSegmented";
 import { CareLoopRow } from "./CareLoopRow";
 import { CapacityCard } from "./CapacityCard";
@@ -48,7 +47,6 @@ export function TodayDashboard({
   return (
     <CapacityProvider value={capacity}>
       <div className="animate-fade-in space-y-4">
-        <GreetingBlock date={date} />
         <div className="flex justify-center"><ScopeSegmented active="today" /></div>
         {controls}
         <CareLoopRow
