@@ -21,7 +21,7 @@
 - Main and Notes sidebars share the notebook date tree, driving the gallery month via the Notes URL; expansion is device-local and tree IDs are instance-unique.
 - Sidebar Space children use the same explicit links, tag matches, project links, and hidden-item exclusions as the Space hub, so linked navigation stays consistent.
 - Tag appearance editing reuses the shared tag store; unused filtering counts existing sources without deleting content.
-- Flow subpages are declared once in NAV_SUBPAGES (nav.ts) and drive both the indented sidebar branches and the connected page tabs, so the two never drift.
+- NAV_SUBPAGES (nav.ts) drives sidebar branches and page tabs so they never drift.
 - Sidebar hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portal to escape sidebar clipping.
 - Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
@@ -31,6 +31,6 @@
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
 - Agenda/List views build day lists via src/lib/planner/agenda-rows.ts so they stay consistent.
 - Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
-- Astro math is local; chapters cache by birth/date/version. Shared lunar-rhythm dates use exact quarters, keep duplicate lunations and date ritual checks.
+- Astro math is local; chapters cache by birth/date/version. Rhythm uses exact quarters and dated rituals, preserving duplicate lunations. Phase intentions sync in monthly-note properties, reused by reminders.
 - Natal PNGs are pre-rendered for iOS; zoom (react-zoom-pan-pinch) is separate from the SVG. Chart appearance is device-local; shared scoped tokens color Natal, Houses and PNGs.
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.

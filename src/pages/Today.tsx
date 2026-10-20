@@ -30,6 +30,7 @@ import { LaundryBoard } from "@/components/laundry/LaundryBoard";
 import { ConnectionsCard } from "@/components/today/ConnectionsCard";
 import { TodayNudgeStrip } from "@/components/today/TodayNudgeStrip";
 import { DailyRituals } from "@/components/today/DailyRituals";
+import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminderBanner";
 
 import { RoutinesHabitsRow } from "@/components/today/dashboard/RoutinesHabitsRow";
 import { CapacityProvider } from "@/components/today/dashboard/capacity-context";
@@ -177,6 +178,7 @@ function TodayInner() {
           onTemplates={() => setGalleryOpen(true)}
         />
         <DemoTasksBanner />
+        <MoonJournalReminderBanner date={day} />
         {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
         {isReallyToday && <DailyRituals date={day} onEveningReflection={() => setExhaleOpen(true)} />}
         {view !== "board" && <ArriveBand date={day} />}

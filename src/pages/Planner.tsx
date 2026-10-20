@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { tray, useTray } from "@/lib/tray-store";
 import { PlannerDndProvider } from "@/lib/planner/planner-dnd";
+import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminderBanner";
 
 
 const SEGMENTS = ["all", "morning", "afternoon", "evening"] as const;
@@ -295,6 +296,7 @@ export default function Planner() {
       }
     >
       <div ref={shellTopRef} aria-hidden className="h-0" />
+      <MoonJournalReminderBanner date={day} />
 
       {isMobile ? (
          <div ref={mobileHeaderRef} className="planner-mobile-command sticky top-0 z-30 -mx-2 space-y-1.5 border-b border-border/50 bg-background/95 px-2 pb-2 pt-[max(.375rem,env(safe-area-inset-top))] shadow-sm backdrop-blur-md">
