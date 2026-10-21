@@ -47,3 +47,20 @@ export function useRitualSteps(k: RitualKind, iso: string) {
     },
   };
 }
+
+const goalsKey = (k: RitualKind) => `careflow:ritual-goals:${k}:v1`;
+export function readRitualGoals(k: RitualKind): string[] {
+  try { const v = JSON.parse(localStorage.getItem(goalsKey(k)) ?? "[]"); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+export function saveRitualGoals(k: RitualKind, ids: string[]) {
+  localStorage.setItem(goalsKey(k), JSON.stringify(ids)); emit();
+}
+export function useRitualGoals(k: RitualKind) {
+  const [ids, setIds] = useState<string[]>(() => readRitualGoals(k));
+  useEffect(() => {
+    const r = () => setIds(readRitualGoals(k));
+    r(); window.addEventListener(EVT, r);
+    return () => window.removeEventListener(EVT, r);
+  }, [k]);
+  return { goalIds: ids, setGoalIds: (next: string[]) => saveRitualGoals(k, next) };
+}
