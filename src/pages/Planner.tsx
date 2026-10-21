@@ -121,6 +121,7 @@ export default function Planner() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [view, setView] = usePlannerView();
+  const moonPrefs = useMoonGuidePrefs();
   const [weekMode, setWeekMode] = usePlannerWeekMode();
   // Phones default to the stacked Overview; the grid stays one tap away.
   const [mobileWeekMode, setMobileWeekMode] = usePlannerMobileWeekMode();
