@@ -170,6 +170,9 @@ export interface Goal {
   timeline: "Q1" | "Q2" | "Q3" | "Q4" | "Year";
   progress: number; // 0-100
   status: "active" | "paused" | "done";
+  /** Astrological house (1-12) used as the goal's life area. */
+  lifeHouse?: number | null;
+  autoProgress?: boolean;
 }
 
 export interface Habit {

@@ -111,7 +111,8 @@ const taskTo = (t: Partial<Task>) => ({
   connection_kind: t.connectionKind === undefined ? undefined : (t.connectionKind ?? null),
 });
 
-const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
+const goalTo = (g: Partial<Goal>) => { const { lifeHouse, autoProgress, ...rest } = g as any; const o: any = { ...rest }; if (lifeHouse !== undefined) o.life_house = lifeHouse; if (autoProgress !== undefined) o.auto_progress = autoProgress; return o; };
+const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status, lifeHouse: r.life_house ?? null, autoProgress: !!r.auto_progress });
 
 /**
  * Column map used for PARTIAL task updates.
@@ -872,12 +873,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addGoal: async (g) => {
       if (!uid) return;
-      const { data } = await supabase.from("goals").insert({ user_id: uid, category: "Personal", timeline: "Q1", progress: 0, ...g }).select().single();
+      const { data } = await supabase.from("goals").insert({ user_id: uid, category: "Personal", timeline: "Q1", progress: 0, ...goalTo(g) }).select().single();
       if (data) setState(s => ({ ...s, goals: [goalFrom(data), ...s.goals] }));
     },
     updateGoal: async (id, patch) => {
       setState(s => ({ ...s, goals: s.goals.map(g => g.id === id ? { ...g, ...patch } : g) }));
-      await supabase.from("goals").update(patch as any).eq("id", id);
+      await supabase.from("goals").update(goalTo(patch) as any).eq("id", id);
     },
     deleteGoal: async (id) => {
       setState(s => ({ ...s, goals: s.goals.filter(g => g.id !== id) }));
