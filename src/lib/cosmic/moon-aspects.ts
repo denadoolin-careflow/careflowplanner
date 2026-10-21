@@ -118,3 +118,18 @@ export function moonBlockFor(e: MoonDayEvent) {
   const focus = e.aspect ? ASPECT_GUIDE[e.aspect].focus : "Wrap up & reset";
   return { title: `🌙 ${focus} · ${e.label}`, startTime: hm(start), endTime: hm(start + 60), estMinutes: 60 };
 }
+
+const REFLECT_PROMPT: Record<MoonAspectName | "ingress", string> = {
+  conjunction: "What did I begin or feel strongly about today?",
+  sextile: "Which small opening did I notice, and did I take it?",
+  square: "Where did I feel friction, and what did I adjust?",
+  trine: "What came easily today, and how can I keep it going?",
+  opposition: "Where did I balance my needs with someone else's?",
+  ingress: "How did my mood shift as the Moon changed sign?",
+};
+
+/** Markdown reflection block for one Moon event, for the daily note. */
+export function buildMoonReflection(e: MoonDayEvent): string {
+  const prompt = REFLECT_PROMPT[e.aspect ?? "ingress"];
+  return [`### 🌙 ${format(e.time, "h:mm a")} · ${e.label}${e.kind === "aspect" ? ` in ${e.sign}` : ""}`, `_${e.advice}_`, "", `**Reflect:** ${prompt}`, "", "- "].join("\n");
+}

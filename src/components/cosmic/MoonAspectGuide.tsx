@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink, Moon, Plus, Check } from "lucide-react";
+import { ExternalLink, Moon, Plus, Check, NotebookPen } from "lucide-react";
+import { getOrCreateDailyNote, updateNote } from "@/lib/notes";
+import { notifyDailyNotesChanged } from "@/lib/notes/daily";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
-import { moonEventsOnDay, moonSignOn, astroSeekUrl, moonBlockFor, getMoonGuidePrefs, type MoonGuidePrefs } from "@/lib/cosmic/moon-aspects";
+import { moonEventsOnDay, moonSignOn, astroSeekUrl, moonBlockFor, buildMoonReflection, getMoonGuidePrefs, type MoonGuidePrefs } from "@/lib/cosmic/moon-aspects";
 import { cn } from "@/lib/utils";
 
 export function useMoonGuidePrefs(): MoonGuidePrefs {
@@ -21,7 +23,7 @@ export function useMoonGuidePrefs(): MoonGuidePrefs {
 
 const checksKey = (d: string) => `careflow:moon-guide-checks:${d}`;
 
-export function MoonAspectGuide({ date, compact, className }: { date: Date; compact?: boolean; className?: string }) {
+export function MoonAspectGuide({ date, compact, reflect, className }: { date: Date; compact?: boolean; reflect?: boolean; className?: string }) {
   const iso = format(date, "yyyy-MM-dd");
   const events = useMemo(() => moonEventsOnDay(date), [iso]); // eslint-disable-line react-hooks/exhaustive-deps
   const { state, addTask } = useStore();
@@ -33,6 +35,16 @@ export function MoonAspectGuide({ date, compact, className }: { date: Date; comp
     setAdded(prev => new Set(prev).add(`${iso}|${b.title}`));
     await addTask({ title: b.title, area: "Personal", priority: "medium", done: false, dueDate: iso, startTime: b.startTime, endTime: b.endTime, estMinutes: b.estMinutes, inbox: false } as any);
     toast.success(`Added ${format(new Date(`${iso}T${b.startTime}`), "h:mm a")} block to your day`);
+  };
+  const [reflected, setReflected] = useState<Set<string>>(new Set());
+  const reflectOn = async (e: (typeof events)[number]) => {
+    try {
+      const note = await getOrCreateDailyNote(iso);
+      await updateNote(note.id, { body: `${(note.body ?? "").replace(/\s+$/, "")}\n\n${buildMoonReflection(e)}\n` });
+      notifyDailyNotesChanged();
+      setReflected(prev => new Set(prev).add(e.id));
+      toast.success("Added to your Daily Note", { action: { label: "Open", onClick: () => { window.location.href = `/notes/${note.id}`; } } });
+    } catch { toast.error("Couldn't add to your Daily Note"); }
   };
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   useEffect(() => { try { setChecks(JSON.parse(localStorage.getItem(checksKey(iso)) || "{}")); } catch { setChecks({}); } }, [iso]);
@@ -63,6 +75,11 @@ export function MoonAspectGuide({ date, compact, className }: { date: Date; comp
                   </Button>); })()}
               </div>
               {!compact && <p className="mt-0.5 text-sm text-muted-foreground">{e.advice}</p>}
+              {reflect && (
+                <Button type="button" size="sm" variant="ghost" onClick={() => reflectOn(e)} className="mt-1 h-11 rounded-full px-3 text-xs text-primary">
+                  {reflected.has(e.id) ? <><Check className="mr-1 h-3.5 w-3.5" />Added to Daily Note</> : <><NotebookPen className="mr-1 h-3.5 w-3.5" />Reflect in Daily Note</>}
+                </Button>
+              )}
               <div className={compact ? "mt-1" : "mt-2 space-y-1"}>
                 {e.actions.map(a => {
                   const k = `${e.id}:${a}`;

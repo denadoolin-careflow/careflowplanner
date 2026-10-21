@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { LunarDateConnections } from "@/components/cosmic/LunarDateConnections";
 import { monthRhythmMoments, cosmicDateFromParam } from "@/lib/cosmic/lunar-rhythm";
 import { bodyLongitude } from "@/lib/cosmic/astro/bodies";
+import { MoonAspectGuide } from "@/components/cosmic/MoonAspectGuide";
 import { AstroPageHeader } from "@/components/cosmic/AstroPageHeader";
 import { SkyRowActions } from "@/components/cosmic/SkyRowActions";
 import { BODY_GLYPHS } from "@/lib/cosmic/astro/bodies";
@@ -48,6 +49,7 @@ export default function CosmicSky() {
         <p className="text-sm text-muted-foreground">{isNow ? "Sky right now" : `Sky on ${format(now, "EEE, MMM d, yyyy")}`}</p>
         {dailyCard && <Link to={`/cosmic-flow/tarot?date=${iso}`} className="ml-auto rounded-full bg-accent/15 px-2.5 py-1 text-xs hover:bg-accent/25">🔮 Tarot that day: {dailyCard.name}</Link>}
       </div>
+      <MoonAspectGuide date={now} reflect />
       <LunarDateConnections date={now} current={tab === "lunations" ? "lunations" : "sky"} />
       <div className="flex gap-1.5">
         {(["signs", "lunations"] as const).map(t => (
