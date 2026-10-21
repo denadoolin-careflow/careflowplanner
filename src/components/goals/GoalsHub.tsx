@@ -263,7 +263,7 @@ export function GoalsHub() {
 
           {/* View tabs */}
           <Tabs value={view} onValueChange={(v:any)=>setView(v)}>
-            <TabsList className="rounded-full">
+            <TabsList className="max-w-full justify-start overflow-x-auto rounded-full">
               <TabsTrigger value="vision" className="rounded-full">Vision</TabsTrigger>
               <TabsTrigger value="list" className="rounded-full">List</TabsTrigger>
               <TabsTrigger value="board" className="rounded-full">Board</TabsTrigger>
