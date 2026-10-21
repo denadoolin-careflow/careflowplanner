@@ -21,7 +21,7 @@ function useMonth(month: Date): Day[] {
     const days = eachDayOfInterval({ start: startOfMonth(month), end: endOfMonth(month) }).map(d => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12));
     const out = days.map(date => {
       const phase = getMoonPhase(date);
-      return { date, phase, rhythm: rhythmPhaseForMoon(phase), illum: getIllumination(date), waxing: getMoonAgeDays(date) < 14.77, sign: moonSignOn(date), major: false };
+      return { date, phase, rhythm: rhythmPhaseForMoon(phase), illum: getIllumination(date) / 100, waxing: getMoonAgeDays(date) < 14.77, sign: moonSignOn(date), major: false };
     });
     // Mark only the first day of each major phase run so labels aren't repeated.
     out.forEach((d, i) => { d.major = MAJOR.includes(d.phase) && (i === 0 || out[i - 1].phase !== d.phase); });
@@ -53,7 +53,7 @@ function SeasonRibbon({ month }: { month: Date }) {
   return (
     <div className="rounded-2xl bg-secondary/15 px-4 py-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-secondary-foreground/80">Solar season</p>
-      <p className="font-display text-lg text-foreground">{a.glyph} {a.label}{change && <> → {b.glyph} {b.label} <span className="text-sm text-muted-foreground">from {format(change, "MMM d")}</span></>}</p>
+      <p className="font-display text-lg text-foreground">{`${a.glyph}\uFE0E`} {a.label}{change && <> → {`${b.glyph}\uFE0E`} {b.label} <span className="text-sm text-muted-foreground">from {format(change, "MMM d")}</span></>}</p>
       <p className="text-xs text-muted-foreground">{a.theme}</p>
     </div>
   );
@@ -72,14 +72,14 @@ function MockupArc({ days, month }: { days: Day[]; month: Date }) {
       <div className="-mx-4 overflow-x-auto px-4 pb-2">
         <ol className="flex min-w-max items-end gap-1.5 pt-6">
           {days.map((d, i) => {
-            const lift = Math.round(Math.sin((i / (days.length - 1)) * Math.PI) * 40);
+            const lift = Math.round(Math.sin((i / (days.length - 1)) * Math.PI) * 70);
             return (
               <li key={i} style={{ marginBottom: lift }} className="flex flex-col items-center">
                 <button type="button" onClick={() => setSel(d)} aria-label={`${format(d.date, "MMM d")}: ${MOON_INFO[d.phase].label} in ${d.sign}`}
                   className={cn("flex min-h-11 min-w-11 flex-col items-center justify-center rounded-full", isSameDay(d.date, today) && "ring-2 ring-primary ring-offset-2 ring-offset-card", sel && isSameDay(sel.date, d.date) && "bg-muted")}>
                   <MoonDisc illum={d.illum} waxing={d.waxing} rhythm={d.rhythm} size={d.major ? 40 : 26} />
                 </button>
-                <span className="text-[13px] leading-none text-foreground/80">{SIGN_GLYPH[d.sign as keyof typeof SIGN_GLYPH]}</span>
+                <span className="text-[13px] leading-none text-foreground/80">{`${SIGN_GLYPH[d.sign as keyof typeof SIGN_GLYPH]}\uFE0E`}</span>
                 <span className="mt-0.5 text-[10px] tabular-nums text-muted-foreground">{format(d.date, "d")}</span>
                 {d.major && <span className="mt-1 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[9px] font-semibold" style={{ background: `hsl(var(--rhythm-${d.rhythm}-tint))`, color: `hsl(var(--rhythm-${d.rhythm}-deep))` }}>{MOON_INFO[d.phase].label.replace(" Moon", "")}</span>}
               </li>
@@ -132,7 +132,7 @@ function MockupGarden({ days, month }: { days: Day[]; month: Date }) {
               style={{ background: `hsl(var(--rhythm-${d.rhythm}-tint) / 0.7)` }}>
               <span className="text-[10px] tabular-nums text-foreground/70">{format(d.date, "d")}</span>
               <MoonDisc illum={d.illum} waxing={d.waxing} rhythm={d.rhythm} size={d.major ? 26 : 20} />
-              <span className="text-[12px] leading-none" style={{ color: `hsl(var(--rhythm-${d.rhythm}-deep))` }}>{SIGN_GLYPH[d.sign as keyof typeof SIGN_GLYPH]}</span>
+              <span className="text-[12px] leading-none" style={{ color: `hsl(var(--rhythm-${d.rhythm}-deep))` }}>{`${SIGN_GLYPH[d.sign as keyof typeof SIGN_GLYPH]}\uFE0E`}</span>
             </div>
           ))}
         </div>
