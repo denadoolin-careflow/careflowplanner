@@ -115,7 +115,6 @@ import CosmicPredictive from "./pages/CosmicPredictive";
 import CosmicCalendar from "./pages/CosmicCalendar";
 import CosmicTarot from "./pages/CosmicTarot";
 import CosmicMoon from "./pages/CosmicMoon";
-import MoonscapeMockups from "./pages/MoonscapeMockups";
 import CosmicAlmanac from "./pages/CosmicAlmanac";
 import CosmicSky from "./pages/CosmicSky";
 import CosmicGrid from "./pages/CosmicGrid";
@@ -260,7 +259,6 @@ const App = () => (
                 <Route path="/seasons/bucket-lists" element={<SeasonsBucketLists />} />
                 <Route path="/seasons/remembrance" element={<SeasonsRemembrance />} />
                 <Route path="/cosmic-flow" element={<CosmicFlow />} />
-                <Route path="/cosmic-flow/moonscape-mockups" element={<MoonscapeMockups />} />
                 <Route path="/cosmic-flow/timeline" element={<CosmicFlowTimeline />} />
                 <Route path="/cosmic-flow/event/:id" element={<CosmicFlowEventDetail />} />
                 <Route path="/cosmic-flow/birth-chart" element={<CosmicFlowBirthChart />} />
