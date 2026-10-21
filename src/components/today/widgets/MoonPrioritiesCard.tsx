@@ -12,6 +12,7 @@ import { pickAffirmation } from "@/lib/affirmations";
 import { toast } from "sonner";
 import { CompletionBurst } from "@/components/cards/CompletionBurst";
 import { cn } from "@/lib/utils";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 export function MoonPrioritiesCard({
   date,
@@ -76,17 +77,20 @@ export function MoonPrioritiesCard({
                     onCheckedChange={() => handleToggle(t.id, t.done)}
                     aria-label={`Complete ${t.title}`}
                   />
-                  <button
-                    type="button"
-                    className={cn(
-                      "min-w-0 flex-1 truncate text-left text-xs",
-                      t.done && "line-through",
-                    )}
-                    onClick={() => onTaskClick?.(t.id)}
-                    title={t.title}
-                  >
-                    {t.title}
-                  </button>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <button
+                      type="button"
+                      className={cn(
+                        "min-w-0 truncate text-left text-xs",
+                        t.done && "line-through",
+                      )}
+                      onClick={() => onTaskClick?.(t.id)}
+                      title={t.title}
+                    >
+                      {t.title}
+                    </button>
+                    <LinkedGoalLabels ids={[t.goalId]} className="mt-0.5" />
+                  </span>
                   <Button
                     size="icon"
                     variant="ghost"

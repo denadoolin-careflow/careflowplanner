@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Coffee, Sun, Sunset, Check, ChevronRight, Plus } from "lucide-react";
 import { DashCard, EmptyLine } from "./DashCard";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 import { capacityLimit, useCapacity } from "./capacity-context";
 import { haptics } from "@/lib/haptics";
 
@@ -14,8 +15,8 @@ const PARTS = [
   { key: "Evening", label: "Evening", icon: Sunset },
 ] as const;
 
-function TaskLine({ id, title, done, onToggle, onOpen, onRename }: {
-  id: string; title: string; done: boolean;
+function TaskLine({ id, title, done, goalId, onToggle, onOpen, onRename }: {
+  id: string; title: string; done: boolean; goalId?: string;
   onToggle: (id: string) => void; onOpen?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
 }) {
@@ -56,15 +57,18 @@ function TaskLine({ id, title, done, onToggle, onOpen, onRename }: {
           className="min-w-0 flex-1 rounded border border-primary/40 bg-background/70 px-1 py-0 text-[12.5px] outline-none"
         />
       ) : (
-      <button
-        type="button"
-        onClick={() => onOpen?.(id)}
-        onDoubleClick={() => { setDraft(title); setEditing(true); }}
-        title="Double-click to rename"
-        className={cn("min-w-0 flex-1 text-left text-[12.5px] leading-snug [overflow-wrap:anywhere] hover:underline", done && "text-muted-foreground line-through")}
-      >
-        {title}
-      </button>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <button
+            type="button"
+            onClick={() => onOpen?.(id)}
+            onDoubleClick={() => { setDraft(title); setEditing(true); }}
+            title="Double-click to rename"
+            className={cn("min-w-0 text-left text-[12.5px] leading-snug [overflow-wrap:anywhere] hover:underline", done && "text-muted-foreground line-through")}
+          >
+            {title}
+          </button>
+          <LinkedGoalLabels ids={[goalId]} className="mt-0.5" />
+        </span>
       )}
     </li>
   );
@@ -156,7 +160,7 @@ export function PlanColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
                 ) : (
                   <ul className="space-y-1.5">
                     {list.slice(0, perPart).map(t => (
-                      <TaskLine key={t.id} id={t.id} title={t.title} done={!!t.done}
+                      <TaskLine key={t.id} id={t.id} title={t.title} done={!!t.done} goalId={t.goalId}
                         onToggle={(id) => void toggleTask(id)} onOpen={onTaskClick} onRename={rename} />
                     ))}
                     {list.length > perPart && (
@@ -173,7 +177,7 @@ export function PlanColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
               <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Anytime</div>
               <ul className="space-y-1.5">
                 {grouped.Anytime.slice(0, perPart).map(t => (
-                  <TaskLine key={t.id} id={t.id} title={t.title} done={!!t.done}
+                  <TaskLine key={t.id} id={t.id} title={t.title} done={!!t.done} goalId={t.goalId}
                     onToggle={(id) => void toggleTask(id)} onOpen={onTaskClick} onRename={rename} />
                 ))}
                 <QuickAddLine label="Anytime" onAdd={(t) => quickAdd(t)} />

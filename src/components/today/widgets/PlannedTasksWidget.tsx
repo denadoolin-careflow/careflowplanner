@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import type { Task } from "@/lib/types";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -123,17 +124,20 @@ export function PlannedTasksWidget({ date = new Date() }: { date?: Date }) {
               <button
                 type="button"
                 onClick={() => openTaskEditor(t.id)}
-                className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-left hover:bg-muted/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                className="flex min-w-0 flex-1 flex-col rounded-md px-1.5 py-0.5 text-left hover:bg-muted/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
               >
-                <span className="min-w-0 flex-1 truncate text-foreground">{t.title}</span>
-                {t.dueDate && t.dueDate !== todayISO && (
-                  <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] tabular-nums text-muted-foreground">
-                    {format(parseISO(t.dueDate + "T00:00:00"), "MMM d")}
-                  </span>
-                )}
-                {t.startTime && (
-                  <span className="shrink-0 text-[9px] tabular-nums text-muted-foreground">{t.startTime}</span>
-                )}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="min-w-0 flex-1 truncate text-foreground">{t.title}</span>
+                  {t.dueDate && t.dueDate !== todayISO && (
+                    <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] tabular-nums text-muted-foreground">
+                      {format(parseISO(t.dueDate + "T00:00:00"), "MMM d")}
+                    </span>
+                  )}
+                  {t.startTime && (
+                    <span className="shrink-0 text-[9px] tabular-nums text-muted-foreground">{t.startTime}</span>
+                  )}
+                </span>
+                <LinkedGoalLabels ids={[t.goalId]} className="mt-0.5" />
               </button>
             </li>
           ))}

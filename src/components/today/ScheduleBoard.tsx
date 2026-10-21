@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 /** Appointment-first vertical schedule view. */
 export function ScheduleBoard({ date, onTaskClick, onApptClick }: {
@@ -62,16 +63,19 @@ export function ScheduleBoard({ date, onTaskClick, onApptClick }: {
                 ) : (
                   <span className="grid h-4 w-4 place-items-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">·</span>
                 )}
-                <button
-                  type="button"
-                  onClick={() => r.kind === "task" ? onTaskClick?.(r.id) : onApptClick?.(r.id)}
-                  className={cn(
-                    "min-w-0 flex-1 truncate text-left text-sm",
-                    r.done && "line-through text-muted-foreground",
-                  )}
-                >
-                  {r.label}
-                </button>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <button
+                    type="button"
+                    onClick={() => r.kind === "task" ? onTaskClick?.(r.id) : onApptClick?.(r.id)}
+                    className={cn(
+                      "min-w-0 max-w-full truncate text-left text-sm",
+                      r.done && "line-through text-muted-foreground",
+                    )}
+                  >
+                    {r.label}
+                  </button>
+                  {r.task && <LinkedGoalLabels ids={[r.task.goalId]} className="mt-0.5" />}
+                </span>
                 {r.kind === "task" && r.task && (
                   <QuickDayPartButton task={r.task} />
                 )}

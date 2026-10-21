@@ -5,6 +5,7 @@ import { useBurnoutCheckIn } from "@/lib/burnout-checkin";
 import { Anchor, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DashCard, EmptyLine } from "./DashCard";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 /** The single task that holds the day — the MVD task, else the first top-three. */
 export function AnchorTodayCard({ date, onTaskClick }: { date: Date; onTaskClick?: (id: string) => void }) {
@@ -51,6 +52,7 @@ export function AnchorTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
             >
               {anchor.title}
             </button>
+            <LinkedGoalLabels ids={[anchor.goalId]} className="mt-0.5" />
             <p className="mt-0.5 text-[11px] text-muted-foreground">
               <Anchor className="mr-1 inline h-3 w-3" aria-hidden />
               If only this happens, today still counts.
