@@ -64,7 +64,7 @@ export default function CosmicChapter() {
             </div>
           </section>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
             {/* 2. Time lord */}
             <Panel icon={<Crown className="h-4 w-4 text-primary" />} title={`Time lord: ${year.tl.lord}`} sub={`Age ${year.tl.profection.age} · ${year.tl.profection.yearStarts} → ${year.tl.profection.yearEnds}`}>
               <p>Your profection has reached the <strong>{ord(year.tl.profection.house)} house</strong> ({year.tl.profection.profectedSign}): {year.tl.topics}.</p>
@@ -131,7 +131,7 @@ export default function CosmicChapter() {
         {error && <p role="status" className="mt-3 text-sm text-muted-foreground">{error}</p>}
         {chapter && <div className="prose prose-sm dark:prose-invert mt-4 max-w-none">{chapter.summary.split(/\n\n+/).map((p, i) => <p key={i}>{p}</p>)}</div>}
         {chapter && (
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
             <Block title="Major Characters" items={chapter.characters} />
             <Block title="Lessons" items={chapter.lessons} />
             <Block title="Helpful Practices" items={chapter.practices} />

@@ -31,11 +31,11 @@ export function TarotCalendar({ initialDate }: { initialDate?: string }) {
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg">Card calendar</h2>
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1">
           <Button size="icon" variant="ghost" aria-label="Previous month" onClick={() => setMonth(m => addMonths(m, -1))}><ChevronLeft className="h-4 w-4" /></Button>
-          <span className="min-w-[7.5rem] text-center text-sm">{format(month, "MMMM yyyy")}</span>
+          <span className="min-w-[6.5rem] text-center text-sm">{format(month, "MMMM yyyy")}</span>
           <Button size="icon" variant="ghost" aria-label="Next month" onClick={() => setMonth(m => addMonths(m, 1))}><ChevronRight className="h-4 w-4" /></Button>
           <Button size="sm" variant="outline" onClick={() => { const n = new Date(); setMonth(startOfMonth(n)); setSelected(format(n, "yyyy-MM-dd")); }}>Today</Button>
         </div>
