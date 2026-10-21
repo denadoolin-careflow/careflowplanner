@@ -1,3 +1,4 @@
+import { ProjectGoalPicker } from "@/components/goals/LifeAreaGoalPicker";
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
@@ -183,19 +184,7 @@ export function HabitDetailSheet({ habitId, open, onOpenChange }: { habitId: str
 
           <section className="space-y-2">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Linked goals</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {state.goals.length === 0 && <span className="text-xs text-muted-foreground">No goals yet.</span>}
-              {state.goals.map(g => {
-                const on = linkedGoals.includes(g.id);
-                return (
-                  <button key={g.id} type="button" onClick={() => toggleLink("linkedGoalIds", g.id)}
-                    className={cn("rounded-full border px-2.5 py-1 text-xs transition",
-                      on ? "border-primary bg-primary/10 text-primary" : "border-border/60 hover:bg-muted/50")}>
-                    {g.title}
-                  </button>
-                );
-              })}
-            </div>
+            <ProjectGoalPicker ids={linkedGoals} onChange={ids => updateHabit(habit.id, { linkedGoalIds: ids })} />
           </section>
 
           <section className="space-y-2">

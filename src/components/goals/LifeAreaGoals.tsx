@@ -28,6 +28,7 @@ export function LifeAreaGoalList({ house, compact }: { house: number; compact?: 
       {goals.map(g => {
         const tasks = state.tasks.filter(t => t.goalId === g.id);
         const linkedProjects = projects.filter((p: any) => (p.linkedGoalIds ?? []).includes(g.id));
+        const habits = state.habits.filter(h => (h.linkedGoalIds ?? []).includes(g.id));
         const pct = effectiveGoalProgress(g, tasks);
         return (
           <div key={g.id} className="rounded-lg border border-border bg-card/80 p-3 space-y-2">
@@ -36,7 +37,7 @@ export function LifeAreaGoalList({ house, compact }: { house: number; compact?: 
               <span className="shrink-0 text-xs text-muted-foreground">{pct}%</span>
             </div>
             <Progress value={pct} className="h-1.5" />
-            <p className="text-xs text-muted-foreground">{tasks.length} task{tasks.length === 1 ? "" : "s"} · {linkedProjects.length} project{linkedProjects.length === 1 ? "" : "s"}</p>
+            <p className="text-xs text-muted-foreground">{tasks.length} task{tasks.length === 1 ? "" : "s"} · {linkedProjects.length} project{linkedProjects.length === 1 ? "" : "s"} · {habits.length} habit{habits.length === 1 ? "" : "s"}</p>
             {!compact && (
               <>
                 {tasks.slice(0, 5).map(t => (

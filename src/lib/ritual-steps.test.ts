@@ -24,3 +24,12 @@ describe("ritual completion persistence", () => {
     });
   }
 });
+import { readRitualGoals, saveRitualGoals } from "./ritual-steps";
+describe("ritual goal links", () => {
+  it("saves and reads back a ritual's goal link per ritual", () => {
+    localStorage.clear();
+    saveRitualGoals("morning", ["g1"]);
+    expect(readRitualGoals("morning")).toEqual(["g1"]);
+    expect(readRitualGoals("evening")).toEqual([]);
+  });
+});

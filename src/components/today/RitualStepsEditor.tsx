@@ -1,8 +1,10 @@
+
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRitualSteps, type RitualKind } from "@/lib/ritual-steps";
+import { useRitualSteps, useRitualGoals, type RitualKind } from "@/lib/ritual-steps";
+import { LinkedGoalLabels, ProjectGoalPicker } from "@/components/goals/LifeAreaGoalPicker";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { motion, useReducedMotion } from "framer-motion";
@@ -12,6 +14,7 @@ import { playCompletionChime } from "@/lib/completion-sound";
 
 export function RitualStepsEditor({ kind, iso, onComplete }: { kind: RitualKind; iso: string; onComplete?: () => void | Promise<void> }) {
   const { steps, done, add, remove, move, rename, toggle } = useRitualSteps(kind, iso);
+  const { goalIds, setGoalIds } = useRitualGoals(kind);
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
   const [celebrating, setCelebrating] = useState<string | null>(null);
@@ -33,6 +36,8 @@ export function RitualStepsEditor({ kind, iso, onComplete }: { kind: RitualKind;
           {editing ? <><Check className="h-3 w-3" /> Done</> : <><Pencil className="h-3 w-3" /> Edit</>}
         </Button>
       </div>
+      {editing ? <div className="mb-2 space-y-1"><p className="text-[11px] font-medium text-muted-foreground">Life-area goal</p><ProjectGoalPicker ids={goalIds} onChange={setGoalIds} /></div>
+        : <LinkedGoalLabels ids={goalIds} className="mb-1.5" />}
       <ul className="space-y-1">
         {steps.map((s, i) => (
           <li key={s.id} className="flex items-center gap-2 text-[13px]">
