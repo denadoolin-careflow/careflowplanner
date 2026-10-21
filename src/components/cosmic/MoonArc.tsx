@@ -79,7 +79,7 @@ export function MoonArc({ month, selectedDate, onSelectDate, title = true }: { m
           {days.map((d, i) => (
             <li key={i} style={{ marginBottom: Math.round(Math.sin((i / Math.max(1, days.length - 1)) * Math.PI) * 60) }} className="flex flex-col items-center">
               <button type="button" onClick={() => onSelectDate?.(d.date)} aria-label={`${format(d.date, "MMMM d")}: ${MOON_INFO[d.phase].label} in ${d.sign}`}
-                className={cn("flex min-h-11 min-w-11 items-center justify-center rounded-full", isSameDay(d.date, today) && "ring-2 ring-primary ring-offset-2 ring-offset-card", sel === d && "bg-muted")}>
+                className={cn("flex min-h-11 min-w-11 items-center justify-center rounded-full", isSameDay(d.date, today) && "ring-2 ring-primary ring-offset-2 ring-offset-card shadow-[0_0_18px_hsl(var(--accent)/0.6)] motion-safe:animate-pulse", sel === d && "bg-muted")}>
                 <MoonDisc illum={d.illum} waxing={d.waxing} rhythm={d.rhythm} size={d.major ? 40 : 26} />
               </button>
               <span className="text-[13px] leading-none text-foreground/80">{glyph(d.sign)}</span>

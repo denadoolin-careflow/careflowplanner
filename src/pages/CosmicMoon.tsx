@@ -64,7 +64,7 @@ export default function CosmicMoon() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 px-4 py-6">
-      <header className="flex items-center gap-2">
+      <header className="cosmic-sky-band flex items-center gap-2 rounded-2xl border border-border p-3 shadow-sm motion-safe:animate-fade-in">
         <Button asChild variant="ghost" size="icon"><Link to="/cosmic-flow" aria-label="Back to Cosmic Flow"><ArrowLeft className="h-4 w-4" /></Link></Button>
         <div>
           <h1 className="font-display text-2xl">Moon & Rituals</h1>
