@@ -74,5 +74,5 @@
 - [x] Finish Sky planet cards and Lunations & Eclipses timeline
 - [x] Finish tappable Houses wheel and side-by-side Compare charts
 - [x] Verify all four Cosmic redesigns with saved charts at phone width; house selection/goals, 44px timeline actions, no overflow, desktop paired charts and 18 regression tests
-- [ ] Add life-area goal selection to task and project editors and linked-goal labels
-- [ ] Verify task/project goal saves and labels after reopening
+- [x] Add life-area goal selection to task and project editors and linked-goal labels
+- [x] Verify task/project goal saves and labels after reopening
