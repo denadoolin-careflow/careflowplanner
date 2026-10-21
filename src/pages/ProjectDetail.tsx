@@ -194,7 +194,6 @@ function HubHeader({ project, onUpdate }: { project: Project; onUpdate: (p: Part
             autoFocus
             value={project.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
-            onBlur={() => setEditing(false)}
             onKeyDown={(e) => { if (e.key === "Enter") setEditing(false); }}
             className="h-9 max-w-md text-lg font-semibold"
           />
