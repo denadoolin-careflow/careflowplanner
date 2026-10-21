@@ -334,7 +334,7 @@ function NewProjectDialog({ open, onOpenChange, defaultArea }: { open: boolean; 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Start a new project</DialogTitle>
           <DialogDescription>Pick a template to get lanes, milestones and starter tasks — or begin with a blank canvas.</DialogDescription>
