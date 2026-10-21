@@ -22,6 +22,7 @@ import { getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 import { formatRelativeDate } from "@/lib/date-format";
 import { DashboardTabs } from "@/components/shared/DashboardTabs";
 import { ProjectFolderRail, PROJECT_DND_TYPE } from "./ProjectFolderRail";
+import { ProjectGoalPicker, LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 /** Map an area name to one of the three brand tones for banners/progress fills. */
 type BrandTone = "lavender" | "sage" | "marigold";
@@ -172,6 +173,7 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
           Focus This Week <Sparkles className="h-3.5 w-3.5" style={{ color: `hsl(${STUDIO.gold})` }} />
         </div>
         <h2 className="mt-3 font-display text-3xl leading-tight">{focus.name}</h2>
+        <LinkedGoalLabels ids={focus.linkedGoalIds} className="mt-2" />
         <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
           <span>{m.pct}% complete</span>
           <StageChip stage={stageOf(focus.stage)} size="sm" />
@@ -305,6 +307,7 @@ function NewProjectDialog({ open, onOpenChange, defaultArea }: { open: boolean; 
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [template, setTemplate] = useState<ProjectTemplateKey>("blank");
+  const [goalIds, setGoalIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   const create = async () => {
@@ -316,10 +319,12 @@ function NewProjectDialog({ open, onOpenChange, defaultArea }: { open: boolean; 
       const created = await addProject({ name: title, areaName: tpl?.area ?? defaultArea });
       if (created) {
         await applyProjectTemplate(created, template, { addSection, addTask, updateProject });
+        if (goalIds.length) await updateProject(created.id, { linkedGoalIds: goalIds });
         toast.success(`Project "${created.name}" created`);
         onOpenChange(false);
         setName("");
         setTemplate("blank");
+        setGoalIds([]);
         navigate(`/projects/${created.id}`);
       }
     } finally {
@@ -361,6 +366,7 @@ function NewProjectDialog({ open, onOpenChange, defaultArea }: { open: boolean; 
               </button>
             ))}
           </div>
+          <div className="space-y-2"><p className="text-sm font-medium">Life-area goals</p><ProjectGoalPicker ids={goalIds} onChange={setGoalIds} /></div>
           <Button className="w-full" disabled={busy || !name.trim()} onClick={() => void create()}>
             {busy ? "Creating…" : "Create project"}
           </Button>
@@ -437,6 +443,7 @@ function ProjectCard({ p, metrics }: { p: Project; metrics: ReturnType<typeof us
           <h3 className="font-display text-lg leading-tight">{p.name}</h3>
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{m.pct}%</span>
         </div>
+        <LinkedGoalLabels ids={p.linkedGoalIds} />
         <div className="h-1.5 overflow-hidden rounded-full" style={{ background: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
           <div
             className="h-full rounded-full transition-[width] duration-700 ease-out"
@@ -495,6 +502,7 @@ function ProjectsListView({ projects, metrics }: { projects: Project[]; metrics:
               <Icon className="h-4 w-4 shrink-0" style={{ color: p.color ?? `hsl(${STUDIO.plum})` }} />
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">{p.name}</div>
+                <LinkedGoalLabels ids={p.linkedGoalIds} />
                 <div className="truncate text-[11px] text-muted-foreground">{m.open} open · {m.total} total</div>
               </div>
             </div>
@@ -522,6 +530,7 @@ function ProjectsGalleryView({ projects }: { projects: Project[] }) {
           <ProjectCoverArt seed={p.id} coverUrl={p.coverUrl} className="absolute inset-0 scale-105 transition group-hover:scale-110" />
           <div className="absolute inset-x-0 bottom-0 p-3" style={{ background: `linear-gradient(0deg, hsl(${STUDIO.ink} / 0.55), transparent)` }}>
             <div className="font-display text-base leading-tight text-white drop-shadow">{p.name}</div>
+            <LinkedGoalLabels ids={p.linkedGoalIds} className="mt-1 rounded-md bg-card" />
             <div className="mt-1 flex items-center gap-1.5"><StageChip stage={stageOf(p.stage)} size="sm" /></div>
           </div>
         </Link>

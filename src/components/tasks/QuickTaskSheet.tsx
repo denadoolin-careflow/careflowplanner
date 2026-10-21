@@ -10,6 +10,8 @@ import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { ProjectQuickJump } from "@/components/tasks/ProjectQuickJump";
+import { LifeAreaGoalPicker } from "@/components/goals/LifeAreaGoalPicker";
+import { lifeAreaLabel } from "@/lib/goals/life-areas";
 import {
   Flag, Folder, Target, MapPin, Tag, CloudSun, Repeat, CalendarDays,
   ChevronLeft, Trash2, Settings2, X, Check,
@@ -124,12 +126,7 @@ export function QuickTaskSheet({ task, open, onOpenChange, anchor }: Props) {
 
             {picker === "goal" && (
               <div className="space-y-1">
-                <Row label="None" active={!task.goalId} onClick={() => { void patch({ goalId: undefined }); setPicker(null); }} />
-                {goals.length === 0 && <Hint>No goals yet.</Hint>}
-                {goals.map(g => (
-                  <Row key={g.id} label={g.title} active={task.goalId === g.id}
-                    onClick={() => { void patch({ goalId: g.id }); setPicker(null); }} />
-                ))}
+                <LifeAreaGoalPicker value={task.goalId} onChange={id => { void patch({ goalId: id }); setPicker(null); }} />
               </div>
             )}
 
@@ -232,7 +229,7 @@ export function QuickTaskSheet({ task, open, onOpenChange, anchor }: Props) {
               <TileRow icon={<Folder className="h-3.5 w-3.5" />} label="Project"
                 value={project?.name ?? "None"} onClick={() => setPicker("project")} />
               <TileRow icon={<Target className="h-3.5 w-3.5" />} label="Goal"
-                value={goal?.title ?? "None"} onClick={() => setPicker("goal")} />
+                value={goal ? `${goal.title}${lifeAreaLabel(goal.lifeHouse) ? ` · ${lifeAreaLabel(goal.lifeHouse)}` : ""}` : "None"} onClick={() => setPicker("goal")} />
               <TileRow icon={<MapPin className="h-3.5 w-3.5" />} label="Area"
                 value={task.area ?? "None"} onClick={() => setPicker("area")} />
               <TileRow icon={<Flag className="h-3.5 w-3.5" />} label="Priority"

@@ -37,6 +37,7 @@ import { CareyButton } from "@/components/carey/CareyButton";
 import { ProjectWorkspace } from "@/components/projects/detail/ProjectWorkspace";
 import { LayoutGrid } from "lucide-react";
 import { BacklinksSection } from "@/components/common/BacklinksSection";
+import { ProjectGoalPicker, LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 /* ----------------------------- Atmospheres ----------------------------- */
 
@@ -83,6 +84,7 @@ export default function ProjectDetail() {
       <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
         <HubHeader project={project} onUpdate={(p) => updateProject(project.id, p)} />
         <ProjectHero project={project} atmo={atmo} onUpdate={(p) => updateProject(project.id, p)} />
+        <LinkedGoalLabels ids={project.linkedGoalIds} />
 
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
           <div className="overflow-x-auto">
@@ -206,6 +208,12 @@ function HubHeader({ project, onUpdate }: { project: Project; onUpdate: (p: Part
           </button>
         )}
       </div>
+
+      {editing && <div className="w-full space-y-2 border-y border-border py-3">
+        <p className="text-sm font-medium">Life-area goals</p>
+        <ProjectGoalPicker ids={project.linkedGoalIds} onChange={ids => onUpdate({ linkedGoalIds: ids })} />
+        <Button variant="outline" onClick={() => setEditing(false)}>Done</Button>
+      </div>}
 
       <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Quick search">
         <Search className="h-4 w-4" />

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { BigCard, SmallTile, SectionLabel } from "@/components/tasks/TaskSettingsBits";
 import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
+import { lifeAreaLabel } from "@/lib/goals/life-areas";
 
 type Props = {
   task: Task;
@@ -331,7 +332,7 @@ function PickerSheet({
       return [{ id: "", name: "None" }, ...(state.projects ?? [])].filter(p => norm(p.name));
     }
     if (kind === "goal") {
-      return [{ id: "", title: "None" } as any, ...(state.goals ?? [])].filter((g: any) => norm(g.title));
+      return [{ id: "", title: "None" } as any, ...(state.goals ?? [])].filter((g: any) => norm(`${g.title} ${lifeAreaLabel(g.lifeHouse) ?? ""}`));
     }
     return [];
   }, [kind, q, state.projects, state.goals]);
@@ -372,7 +373,7 @@ function PickerSheet({
                     }}
                     className="flex h-12 w-full items-center gap-3 rounded-xl px-3 text-left active:bg-muted/40"
                   >
-                    <span className="flex-1 truncate text-[15px]">{label}</span>
+                    <span className="min-w-0 flex-1 text-[15px]">{label}{kind === "goal" && lifeAreaLabel(it.lifeHouse) && <span className="block text-xs text-muted-foreground">{it.lifeHouse} · {lifeAreaLabel(it.lifeHouse)}</span>}</span>
                     {isActive && <Check className="h-4 w-4 text-primary" />}
                   </button>
                 );
