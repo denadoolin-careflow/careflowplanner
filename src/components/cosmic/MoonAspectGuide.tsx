@@ -25,10 +25,12 @@ export function MoonAspectGuide({ date, compact, className }: { date: Date; comp
   const iso = format(date, "yyyy-MM-dd");
   const events = useMemo(() => moonEventsOnDay(date), [iso]); // eslint-disable-line react-hooks/exhaustive-deps
   const { state, addTask } = useStore();
-  const isScheduled = (title: string) => state.tasks.some(t => t.dueDate === iso && t.title === title);
+  const [added, setAdded] = useState<Set<string>>(new Set());
+  const isScheduled = (title: string) => added.has(`${iso}|${title}`) || state.tasks.some(t => t.dueDate === iso && t.title.trim() === title.trim());
   const schedule = async (e: (typeof events)[number]) => {
     const b = moonBlockFor(e);
     if (isScheduled(b.title)) return;
+    setAdded(prev => new Set(prev).add(`${iso}|${b.title}`));
     await addTask({ title: b.title, area: "Personal", priority: "medium", done: false, dueDate: iso, startTime: b.startTime, endTime: b.endTime, estMinutes: b.estMinutes, inbox: false } as any);
     toast.success(`Added ${format(new Date(`${iso}T${b.startTime}`), "h:mm a")} block to your day`);
   };
