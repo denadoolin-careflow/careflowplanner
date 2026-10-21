@@ -86,7 +86,7 @@ export function FocusPanel() {
   return (
     <aside
       className={cn(
-        "fixed right-3 top-20 z-30 hidden md:block",
+        "fixed right-3 top-20 z-30 hidden lg:block",
         "transition-all duration-300 ease-out",
       )}
       style={{ width: open ? 320 : 92 }}
