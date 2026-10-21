@@ -120,6 +120,13 @@
       "when": 1792370664678,
       "tag": "0016_tighten_roadmap_read",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792607062773,
+      "tag": "0017_goals_life_house",
+      "breakpoints": true
     }
   ]
 }

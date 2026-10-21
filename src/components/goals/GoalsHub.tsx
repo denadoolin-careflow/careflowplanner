@@ -19,6 +19,8 @@ import {
   Share2, Link2, ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LifeAreasBoard } from "@/components/goals/LifeAreaGoals";
+import { LIFE_AREAS, LIFE_HOUSES } from "@/lib/goals/life-areas";
 import { CareyButton } from "@/components/carey/CareyButton";
 
 /* ---------------- Types & local persistence ---------------- */
@@ -108,7 +110,7 @@ export function GoalsHub() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [areaFilter, setAreaFilter] = useState<Goal["category"] | "all">("all");
-  const [view, setView] = useState<"vision" | "list" | "board" | "journey">("vision");
+  const [view, setView] = useState<"vision" | "list" | "board" | "journey" | "areas">("vision");
   const [checkInQueueDismissed, setCheckInQueueDismissed] = useState<string[]>([]);
 
   useEffect(() => { saveExtras(extras); }, [extras]);
@@ -222,11 +224,11 @@ export function GoalsHub() {
         />
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* MAIN COLUMN */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           {/* Momentum dashboard */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 [&>*]:min-w-0">
             <MomentumTile icon={Sprout} accent="emerald" value={active.length} label="Active Goals" />
             <MomentumTile icon={Sparkles} accent="amber" value={tinyWins} label="Tiny Wins" />
             <MomentumTile icon={Flame} accent="orange" value={streakWeeks} label="Week Streak" />
@@ -261,12 +263,18 @@ export function GoalsHub() {
 
           {/* View tabs */}
           <Tabs value={view} onValueChange={(v:any)=>setView(v)}>
-            <TabsList className="rounded-full">
+            <TabsList className="max-w-full justify-start overflow-x-auto rounded-full">
               <TabsTrigger value="vision" className="rounded-full">Vision</TabsTrigger>
               <TabsTrigger value="list" className="rounded-full">List</TabsTrigger>
               <TabsTrigger value="board" className="rounded-full">Board</TabsTrigger>
               <TabsTrigger value="journey" className="rounded-full">Journey</TabsTrigger>
+              <TabsTrigger value="areas" className="rounded-full">Life areas</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="areas" className="mt-5">
+              <p className="mb-3 text-sm text-muted-foreground">Your 12 life areas follow the 12 houses of your chart. Open <a href="/cosmic-flow/houses" className="text-primary underline">Houses</a> to see what's moving through each one.</p>
+              <LifeAreasBoard />
+            </TabsContent>
 
             <TabsContent value="vision" className="mt-5">
               {filtered.length === 0 ? <EmptyState onCreate={()=>setCreateOpen(true)} /> : (
@@ -694,6 +702,7 @@ function CreateGoalDialog({
 }) {
   const [title, setTitle] = useState("");
   const [cat, setCat] = useState<Goal["category"]>("Family");
+  const [house, setHouse] = useState<string>("none");
   const [why, setWhy] = useState("");
   const [nextStep, setNextStep] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -716,6 +725,16 @@ function CreateGoalDialog({
             </Select>
           </div>
           <div>
+            <label className="text-xs text-muted-foreground">Chart life area (house)</label>
+            <Select value={house} onValueChange={setHouse}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {LIFE_HOUSES.map(h => <SelectItem key={h} value={String(h)}>{h} · {LIFE_AREAS[h].label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <label className="text-xs text-muted-foreground">Why this matters</label>
             <Textarea rows={2} placeholder="The feeling underneath the goal…" value={why} onChange={e=>setWhy(e.target.value)} />
           </div>
@@ -734,7 +753,7 @@ function CreateGoalDialog({
           <Button variant="ghost" onClick={()=>onOpenChange(false)}>Cancel</Button>
           <Button onClick={() => {
             if (!title.trim()) return;
-            onCreate({ title: title.trim(), category: cat }, { why, nextStep, targetDate, startedAt: new Date().toISOString() });
+            onCreate({ title: title.trim(), category: cat, ...(house !== "none" ? { lifeHouse: Number(house) } : {}) } as any, { why, nextStep, targetDate, startedAt: new Date().toISOString() });
             setTitle(""); setWhy(""); setNextStep(""); setTargetDate("");
             onOpenChange(false);
             toast.success("Intention planted 🌱");

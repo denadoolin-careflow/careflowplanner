@@ -1,0 +1,2 @@
+ALTER TABLE public.goals ADD COLUMN IF NOT EXISTS life_house smallint CHECK (life_house BETWEEN 1 AND 12);
+ALTER TABLE public.goals ADD COLUMN IF NOT EXISTS auto_progress boolean NOT NULL DEFAULT false;

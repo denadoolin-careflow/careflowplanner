@@ -7,12 +7,17 @@ import { houseOf } from "@/lib/cosmic/astro/houses";
 import { bodyLongitude } from "@/lib/cosmic/astro/bodies";
 import { DIGNITY_MEANING, SIGNS, TRADITIONAL_RULER, TRANSIT_BODIES, dignityOf } from "@/lib/cosmic/sky";
 import { useMyChart } from "@/lib/cosmic/use-my-chart";
+import { useStore } from "@/lib/store";
+import { LIFE_AREAS } from "@/lib/goals/life-areas";
+import { LifeAreaGoalList } from "@/components/goals/LifeAreaGoals";
 import { cn } from "@/lib/utils";
 import { useChartColorMode, signTintVar } from "@/lib/cosmic/chart-colors";
 import { ChartColorToggle } from "@/components/cosmic/ChartColorToggle";
 import { useChartBackground } from "@/lib/cosmic/chart-backgrounds";
 
 export default function CosmicHouses() {
+  const { state } = useStore();
+  const goalCount = (h: number) => state.goals.filter(g => g.lifeHouse === h && g.status !== "done").length;
   const { chart } = useMyChart();
   const [colorMode] = useChartColorMode();
   const { resolved, dark } = useChartBackground();
@@ -65,6 +70,11 @@ export default function CosmicHouses() {
                 <p className="text-xs"><span className="text-muted-foreground">Natal planets:</span> {d.occupants.join(", ") || "none — read through its ruler"}</p>
                 {d.transits.length > 0 && <p className="text-xs"><span className="text-muted-foreground">Passing through now:</span> {d.transits.join(", ")}</p>}
                 {d.profected && <p className="text-xs font-medium text-primary">Activated by this year's profection</p>}
+                {(d.profected || d.transits.some(t => t === "Jupiter" || t === "Saturn")) && <p className="text-xs text-foreground">Good timing for goals here{d.transits.includes("Jupiter") ? " · Jupiter is moving through this area" : ""}{d.transits.includes("Saturn") ? " · Saturn asks for steady effort here" : ""}{d.profected ? " · your year's focus area" : ""}.</p>}
+                <details className="pt-1">
+                  <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium text-primary">{LIFE_AREAS[d.house].label} goals ({goalCount(d.house)})</summary>
+                  <LifeAreaGoalList house={d.house} compact />
+                </details>
               </section>
             ))}
           </div>
