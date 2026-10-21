@@ -29,7 +29,7 @@
 - My Focus pinboard columns and pins are device-local (localStorage) references to existing task ids, so tasks stay in their original project/area without a schema change.
 - Bedside med reminders use the shared medication scheduler and dose logs (not duplicate tasks), so stopping a med cancels reminders but keeps history.
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
-- Agenda/List use src/lib/planner/agenda-rows.ts.
+- Agenda/List: src/lib/planner/agenda-rows.ts.
 - Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
 - Astro math is local; chapters cache by birth/date/version. Rhythm uses exact quarters and dated rituals, preserving duplicate lunations. Phase intentions sync in monthly-note properties, reused by reminders.
 - Natal PNGs are pre-rendered for iOS; zoom (react-zoom-pan-pinch) is separate from the SVG. Chart appearance is device-local; shared scoped tokens color Natal, Houses and PNGs.
