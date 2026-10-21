@@ -71,3 +71,6 @@
 - [x] Connect dated Tarot, Sky, Moon & Rituals, and lunations with Plan/Grow/Care/Let go in the Planner monthly moonscape; verify navigation and ritual persistence
 - [x] Save one intention per monthly rhythm phase and show a linked new-moon focus reminder; verified signed-in save/readback and Planner link
 - [x] Check phone lunar date links and monthly moonscape; enlarged targets and scrollable date rails, verified 360px navigation through Sky/Moon/Tarot/Planner without overflow
+- [x] Finish Sky planet cards and Lunations & Eclipses timeline
+- [x] Finish tappable Houses wheel and side-by-side Compare charts
+- [x] Verify all four Cosmic redesigns with saved charts at phone width; house selection/goals, 44px timeline actions, no overflow, desktop paired charts and 18 regression tests
