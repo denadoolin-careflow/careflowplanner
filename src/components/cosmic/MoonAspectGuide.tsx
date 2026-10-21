@@ -32,7 +32,7 @@ export function MoonAspectGuide({ date, compact, className }: { date: Date; comp
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex min-w-0 items-center gap-2 font-display text-lg leading-snug"><Moon className="h-4 w-4 shrink-0 text-primary" />Moon aspects · Moon in {moonSignOn(date)}</h2>
         <div className="flex gap-3 text-xs">
-          {compact && <Link className="text-primary underline-offset-2 hover:underline min-h-11 px-1 inline-flex items-center" to={`/cosmic/moon?date=${iso}`}>Full guide</Link>}
+          {compact && <Link className="text-primary underline-offset-2 hover:underline min-h-11 px-1 inline-flex items-center" to={`/cosmic-flow/moon?date=${iso}`}>Full guide</Link>}
           <a className="inline-flex min-h-11 px-1 items-center gap-1 text-muted-foreground hover:text-foreground" href={astroSeekUrl()} target="_blank" rel="noreferrer">Astro-Seek <ExternalLink className="h-3 w-3" /></a>
         </div>
       </div>
