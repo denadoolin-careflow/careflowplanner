@@ -21,7 +21,7 @@
 - Main and Notes sidebars share the notebook date tree, driving the gallery month via the Notes URL; expansion is device-local and tree IDs are instance-unique.
 - Sidebar Space children use the same explicit links, tag matches, project links, and hidden-item exclusions as the Space hub, so linked navigation stays consistent.
 - Tag appearance editing reuses the shared tag store; unused filtering counts existing sources without deleting content.
-- NAV_SUBPAGES (nav.ts) drives sidebar branches and page tabs so they never drift.
+- NAV_SUBPAGES (nav.ts) drives sidebar branches and page tabs.
 - Sidebar hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portal to escape sidebar clipping.
 - Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
