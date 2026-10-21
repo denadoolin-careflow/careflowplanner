@@ -224,11 +224,11 @@ export function GoalsHub() {
         />
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* MAIN COLUMN */}
         <div className="min-w-0 space-y-6 lg:col-span-2">
           {/* Momentum dashboard */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 [&>*]:min-w-0">
             <MomentumTile icon={Sprout} accent="emerald" value={active.length} label="Active Goals" />
             <MomentumTile icon={Sparkles} accent="amber" value={tinyWins} label="Tiny Wins" />
             <MomentumTile icon={Flame} accent="orange" value={streakWeeks} label="Week Streak" />
