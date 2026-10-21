@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MoonAspectGuide } from "@/components/cosmic/MoonAspectGuide";
+import { MoonArc } from "@/components/cosmic/MoonArc";
 import { Body, Illumination, MoonPhase as lunarAngle, SearchMoonPhase } from "astronomy-engine";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Check, NotebookPen, ChevronLeft, ChevronRight } from "lucide-react";
@@ -132,6 +133,10 @@ export default function CosmicMoon() {
             }}><NotebookPen className="mr-1 h-3.5 w-3.5" />Journal this</Button>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+        <MoonArc month={date} selectedDate={date} onSelectDate={go} />
       </section>
 
       <MoonAspectGuide date={date} />
