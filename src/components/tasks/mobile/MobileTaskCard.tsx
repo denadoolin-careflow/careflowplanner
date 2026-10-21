@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { MobileTaskSheet } from "./MobileTaskSheet";
 import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 const DOTS: Record<Task["priority"], number> = { low: 0, medium: 1, high: 2 };
 
@@ -147,6 +148,7 @@ export function MobileTaskCard({ task }: { task: Task }) {
               <TagChip key={t} name={t} subtle size="sm" />
             ))}
           </div>
+          <LinkedGoalLabels ids={[task.goalId]} className="mt-1" />
         </div>
         <QuickDayPartButton task={task} />
       </div>

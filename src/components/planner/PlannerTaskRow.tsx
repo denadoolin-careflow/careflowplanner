@@ -14,6 +14,7 @@ import { CosmicTaskChip } from "./CosmicTaskChip";
 import { ActivityChip } from "./ActivityChip";
 import { usePlannerCompletedStrikethrough } from "@/lib/planner-prefs";
 import { SwipeableTaskCard } from "./mobile/SwipeableTaskCard";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 const AREA_TINTS: Record<string, string> = {
   Family: "bg-amber-400",
@@ -93,6 +94,7 @@ export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; 
           task.done && completedStrikethrough && "line-through",
         )}>
           {task.title}
+          <LinkedGoalLabels ids={[task.goalId]} className="mt-1" />
         </span>
       </div>
       {!allDay && <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 text-[10px] text-muted-foreground max-sm:w-full max-sm:justify-start">

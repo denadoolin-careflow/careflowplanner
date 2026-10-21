@@ -27,6 +27,7 @@ import { CompletionBurst } from "@/components/cards/CompletionBurst";
 import { useCompletionVisual, type CompletionVisualKey } from "@/lib/completion-visual";
 import { SmartDueChip } from "@/components/tasks/SmartDueChip";
 import { Button } from "@/components/ui/button";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 import { addDays, format } from "date-fns";
 import { SubtaskLinkPicker, type PickedLink } from "@/components/tasks/SubtaskLinkPicker";
 import { linkTaskTo, TASK_LINK_LABEL } from "@/lib/task-links";
@@ -421,6 +422,7 @@ export function TaskRow({
         )}
 
         {/* Subtask progress bar */}
+        {!editing && <LinkedGoalLabels ids={[task.goalId]} className="mt-1" />}
         {!editing && !tt && hasSubs && (
           <div className="mt-1.5 flex items-center gap-2">
             <Progress

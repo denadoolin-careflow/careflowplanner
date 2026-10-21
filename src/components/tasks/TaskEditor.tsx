@@ -29,6 +29,7 @@ import { SubtaskAddMenu } from "@/components/tasks/SubtaskAddMenu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { ItemFieldsSection } from "@/components/tags/ItemFieldsSection";
+import { LifeAreaGoalPicker, LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 import { supabase } from "@/integrations/supabase/client";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
@@ -126,14 +127,9 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
           </SelectContent>
         </Select>
       </Field>
-      <Field icon={Target} label="Goal">
-        <Select value={draft.goalId ?? "none"} onValueChange={v => set("goalId", v === "none" ? undefined : v)}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
-          <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
-            <SelectItem value="none" icon={<X className="h-4 w-4 text-muted-foreground" />}>No goal</SelectItem>
-            {state.goals.map(g => <SelectItem key={g.id} value={g.id} icon={<Target className="h-4 w-4 text-muted-foreground" />}>{g.title}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <Field icon={Target} label="Life-area goal">
+        <LifeAreaGoalPicker value={draft.goalId} onChange={id => set("goalId", id)} />
+        <LinkedGoalLabels ids={[draft.goalId]} />
       </Field>
       <Field icon={User} label="Linked person">
         <Select value={draft.recipientId ?? "none"} onValueChange={v => set("recipientId", v === "none" ? undefined : v)}>
@@ -350,6 +346,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             />
           </div>
           <DialogTitle className="sr-only">Edit task</DialogTitle>
+          <LinkedGoalLabels ids={[draft.goalId]} />
 
           {/* Row 2: actions */}
           <div className="flex w-full min-w-0 flex-wrap items-center gap-1">
