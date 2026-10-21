@@ -23,15 +23,15 @@
 - Tag appearance editing reuses the shared tag store; unused filtering counts existing sources without deleting content.
 - NAV_SUBPAGES (nav.ts) drives sidebar branches and page tabs.
 - Sidebar hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portal to escape sidebar clipping.
-- Project Linked notes merge explicit note_links with notes whose Project property (notes.project_id) matches, labelling the source; no schema change.
+- Project Linked notes merge note_links and notes.project_id matches, labelling each source.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
 - Inbox and Planner share a selected-note schedule pane; the chosen ordinary note is device-local while daily-note following uses the active schedule date.
 - My Focus pinboard columns and pins are device-local (localStorage) references to existing task ids, so tasks stay in their original project/area without a schema change.
 - Bedside med reminders use the shared medication scheduler and dose logs (not duplicate tasks), so stopping a med cancels reminders but keeps history.
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
-- Agenda/List: src/lib/planner/agenda-rows.ts.
+- Cosmic visuals reuse skyStatus, monthRhythmMoments and NatalWheel; HousesWheel selects existing details without recalculating.
 - Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
 - Astro math is local; chapters cache by birth/date/version. Rhythm uses exact quarters and dated rituals, preserving duplicate lunations. Phase intentions sync in monthly-note properties, reused by reminders.
-- Natal PNGs are pre-rendered for iOS; zoom (react-zoom-pan-pinch) is separate from the SVG. Chart appearance is device-local; shared scoped tokens color Natal, Houses and PNGs.
+- Natal PNGs pre-render for iOS; react-zoom-pan-pinch zoom is separate. Device-local appearance tokens color Natal, Houses and PNGs.
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.
 - Moon aspect guide is computed locally; placement prefs and check-offs are device-local.
