@@ -35,3 +35,4 @@
 - Natal PNGs are pre-rendered for iOS; zoom (react-zoom-pan-pinch) is separate from the SVG. Chart appearance is device-local; shared scoped tokens color Natal, Houses and PNGs.
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.
 - Moon aspect guide is computed locally; placement prefs and check-offs are device-local.
+- Goal life areas are goals.life_house (1-12, astrological house); links reuse tasks.goal_id and projects.linked_goal_ids, auto progress via goals.auto_progress.
