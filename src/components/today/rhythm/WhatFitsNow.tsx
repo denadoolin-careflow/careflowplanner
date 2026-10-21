@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { toast } from "sonner";
 import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 function estMin(t: Task) { return t.estMinutes ?? 15; }
 function inferEnergy(t: Task): Energy {
@@ -114,6 +115,7 @@ export function WhatFitsNow({ date, onTaskClick }: Props) {
                     <Clock className="h-2.5 w-2.5" /> {mins} min
                   </span>
                 </div>
+                <LinkedGoalLabels ids={[t.goalId]} className="mt-0.5" />
               </button>
               <QuickDayPartButton task={t} />
             </div>

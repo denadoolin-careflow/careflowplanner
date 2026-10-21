@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
-import { CalendarClock, GripVertical, Check } from "lucide-react";
+import { CalendarClock, GripVertical, Check, Target } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
@@ -43,6 +43,8 @@ export function TodayPlannedRail({ date, className }: { date: Date; className?: 
 }
 
 function PlannedChip({ task, onToggle }: { task: Task; onToggle: () => void }) {
+  const { state } = useStore();
+  const goal = task.goalId ? state.goals.find(g => g.id === task.goalId) : undefined;
   const drag = usePlannerPointerDrag(
     () => ({ taskId: task.id, label: task.title }),
     { onClick: () => openTaskQuickEdit(task.id) },
@@ -80,6 +82,15 @@ function PlannedChip({ task, onToggle }: { task: Task; onToggle: () => void }) {
       </button>
       {time && <span className="font-mono text-[10.5px] tabular-nums text-muted-foreground">{time.slice(0, 5)}</span>}
       <span className="truncate">{task.title}</span>
+      {goal && (
+        <span
+          className="flex min-w-0 max-w-[7rem] shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] leading-none text-primary"
+          title={`Goal: ${goal.title}`}
+        >
+          <Target className="h-2.5 w-2.5 shrink-0" aria-hidden />
+          <span className="truncate">{goal.title}</span>
+        </span>
+      )}
       <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/40" aria-hidden />
     </div>
   );
