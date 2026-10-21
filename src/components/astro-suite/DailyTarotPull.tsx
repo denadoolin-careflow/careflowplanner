@@ -54,7 +54,7 @@ export function DailyTarotPull({ compact }: { compact?: boolean }) {
                 {card.keywords.map(k => <span key={k} className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">{k}</span>)}
                 {astro && <Link to={birthChartLinkFor(astro)} className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] text-foreground hover:bg-accent/25">✦ {astro.label}</Link>}
               </div>
-              <Button size="sm" variant="outline" onClick={async () => {
+              <Button size="sm" variant="outline" className="h-auto min-h-10 max-w-full whitespace-normal" onClick={async () => {
                 try { await appendToTodaysNote(pullToText(pull!)); toast.success("Added to today's note"); }
                 catch { toast.error("Couldn't add to today's note"); }
               }}><NotebookPen className="mr-1 h-3.5 w-3.5" />Send to today's note</Button>
