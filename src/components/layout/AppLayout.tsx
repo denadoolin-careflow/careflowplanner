@@ -41,7 +41,9 @@ import { GmailBackgroundSync } from "@/components/gmail/GmailBackgroundSync";
 export function AppLayout() {
   const { state } = useStore();
   const { pathname } = useLocation();
-  const current = NAV.find(n => n.to === pathname) ?? NAV[0];
+  const current = NAV.find(n => n.to === pathname)
+    ?? [...NAV].filter(n => n.to !== "/" && pathname.startsWith(n.to + "/")).sort((a, b) => b.to.length - a.to.length)[0]
+    ?? NAV[0];
   const isNotesExperience = pathname.startsWith("/notes");
   useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
   const { current: atmoId } = useAtmosphere();
@@ -59,14 +61,14 @@ export function AppLayout() {
             <div className="flex min-w-0 flex-nowrap items-center gap-2">
               <MobileSidebarTrigger />
               <div className="min-w-0">
-                <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:block">
+                <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground lg:block">
                   CareFlow · Plan · Care · Grow
                 </p>
                 <h1 className="font-display text-base font-semibold leading-tight sm:text-2xl">{current.label}</h1>
               </div>
             </div>
             <div className="flex flex-nowrap items-center gap-1 sm:gap-3">
-              <div className="hidden sm:inline-flex">
+              <div className="hidden lg:inline-flex">
                 <CapacityChip />
               </div>
               <HeaderNowStrip />
@@ -83,7 +85,7 @@ export function AppLayout() {
               </Link>
             </div>
           </header>}
-          <main className="flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-12">
+          <main className="flex-1 px-4 pb-40 pt-6 lg:px-8 lg:pb-12">
             <div className="mx-auto w-full max-w-6xl">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
