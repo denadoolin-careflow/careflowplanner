@@ -4,8 +4,8 @@
 - Past-day routine step completions read/write routine_completions; today's live done flags stay on routines.items. Habit weeklyTarget and skip dates live in habits.meta; routine skips in routines.meta — no schema change.
 - Daily rituals reuse daily_checkins for Morning Reset and dated journal entries tagged with the evening-reflection template for Evening Reflection completion, avoiding a duplicate ritual store.
 - Ritual step lists (Morning Reset / Evening Reflection) and their per-date check-offs are device-local (localStorage) presentation data; ritual completion itself stays in daily_checkins / journal.
-- Ritual steps reuse shared completion visuals and chimes; stable default step IDs preserve check-offs across renders.
-- Completed-task strikethrough is a device-local planner preference shared across all task surfaces.
+- Ritual steps reuse shared completion visuals/chimes; stable default step IDs keep check-offs.
+- Completed-task strikethrough is a device-local pref shared by all task surfaces.
 - Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
 - Today and Planner use page-scoped Soft Botanical mobile presentation tokens and Outfit/Figtree typography, preserving the app-wide theme.
 - Today/Planner selectors share ViewPills. Goal life areas = goals.life_house (house 1-12); links reuse tasks.goal_id/projects.linked_goal_ids.
