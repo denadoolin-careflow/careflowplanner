@@ -109,3 +109,12 @@ export function setMoonGuidePrefs(p: Partial<MoonGuidePrefs>) {
   localStorage.setItem(KEY, JSON.stringify({ ...getMoonGuidePrefs(), ...p }));
   window.dispatchEvent(new Event("careflow:moon-guide-prefs"));
 }
+
+/** A 1-hour planner block centred on the exact time, snapped to 15 min and kept within the day. */
+export function moonBlockFor(e: MoonDayEvent) {
+  const mins = e.time.getHours() * 60 + e.time.getMinutes();
+  const start = Math.min(Math.max(Math.round((mins - 30) / 15) * 15, 0), 23 * 60);
+  const hm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+  const focus = e.aspect ? ASPECT_GUIDE[e.aspect].focus : "Wrap up & reset";
+  return { title: `🌙 ${focus} · ${e.label}`, startTime: hm(start), endTime: hm(start + 60), estMinutes: 60 };
+}
