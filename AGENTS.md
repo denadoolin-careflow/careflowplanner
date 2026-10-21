@@ -34,3 +34,4 @@
 - Astro math is local; chapters cache by birth/date/version. Rhythm uses exact quarters and dated rituals, preserving duplicate lunations. Phase intentions sync in monthly-note properties, reused by reminders.
 - Natal PNGs are pre-rendered for iOS; zoom (react-zoom-pan-pinch) is separate from the SVG. Chart appearance is device-local; shared scoped tokens color Natal, Houses and PNGs.
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.
+- Moon aspect guide is computed locally; placement prefs and check-offs are device-local.
