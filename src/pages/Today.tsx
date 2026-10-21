@@ -52,6 +52,7 @@ export default function Today() {
 }
 
 function TodayInner() {
+  const moonPrefs = useMoonGuidePrefs();
   const { state, updateProfile } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
