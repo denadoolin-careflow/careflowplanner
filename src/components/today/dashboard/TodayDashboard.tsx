@@ -17,6 +17,7 @@ import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
 import { ConnectionsCard } from "@/components/today/ConnectionsCard";
 import { TodayNudgeStrip } from "@/components/today/TodayNudgeStrip";
 import { LaundryBoard } from "@/components/laundry/LaundryBoard";
+import { MoonAspectGuide, useMoonGuidePrefs } from "@/components/cosmic/MoonAspectGuide";
 import { WellFlowTodayCard } from "@/components/today/WellFlowTodayCard";
 
 
@@ -29,6 +30,7 @@ export function TodayDashboard({
   controls?: React.ReactNode;
 }) {
   const { state } = useStore();
+  const moonPrefs = useMoonGuidePrefs();
   const { entry } = useBurnoutCheckIn(date);
   const iso = format(date, "yyyy-MM-dd");
 
@@ -61,6 +63,7 @@ export function TodayDashboard({
           <AnchorTodayCard date={date} onTaskClick={onTaskClick} />
         </div>
         <RhythmTodayCard date={date} />
+        {moonPrefs.dayRhythm && <MoonAspectGuide date={date} compact />}
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <DinnerTonightCard date={date} />
