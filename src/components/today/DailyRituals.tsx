@@ -1,3 +1,6 @@
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
+import { useRitualGoals, type RitualKind as RK } from "@/lib/ritual-steps";
+function RitualGoalChips({ kind }: { kind: RK }) { const { goalIds } = useRitualGoals(kind); return <LinkedGoalLabels ids={goalIds} className="mt-1" />; }
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -70,6 +73,7 @@ export function DailyRituals({ date, onEveningReflection }: {
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-semibold leading-tight">{title}</span>
                   <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{detail}</span>
+                  <RitualGoalChips kind={kind} />
                 </span>
                 <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", expanded === kind && "rotate-90")} aria-hidden />
               </button>

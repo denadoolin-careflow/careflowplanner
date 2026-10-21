@@ -1,3 +1,4 @@
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
@@ -81,6 +82,7 @@ export function TodayHabitsCard({ date, collapsibleId }: { date: Date; collapsib
                         <HabitPlant stage={growth.stage} size={28} />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium">{h.title}</div>
+                          <LinkedGoalLabels ids={h.linkedGoalIds} className="my-0.5" />
                           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                             <span className="inline-flex items-center gap-0.5"><Flame className="h-2.5 w-2.5" />{growth.forgivingStreak}d</span>
                             {project && <><span>·</span><span className="truncate">{project}</span></>}

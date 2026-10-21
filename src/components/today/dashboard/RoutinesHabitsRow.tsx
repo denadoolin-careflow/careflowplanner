@@ -1,3 +1,4 @@
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 import { useMemo, useState } from "react";
 import { format, subDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -157,7 +158,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
                     )}
                   >
                      <span className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-primary/50", h.log[iso] && "bg-primary text-primary-foreground")}>{h.log[iso] && <Check className="h-3 w-3" />}</span>
-                     <span className="truncate">{h.title}</span>
+                     <span className="flex min-w-0 flex-col"><span className="truncate">{h.title}</span><LinkedGoalLabels ids={h.linkedGoalIds} className="mt-0.5" /></span>
                   </button>
                   <span className="flex shrink-0 gap-1" aria-hidden>
                     {last7.map(d => (
