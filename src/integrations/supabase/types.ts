@@ -3070,10 +3070,12 @@ export type Database = {
       goals: {
         Row: {
           anchor_key: string | null
+          auto_progress: boolean
           category: string
           created_at: string
           description: string | null
           id: string
+          life_house: number | null
           progress: number
           status: string
           timeline: string
@@ -3083,10 +3085,12 @@ export type Database = {
         }
         Insert: {
           anchor_key?: string | null
+          auto_progress?: boolean
           category?: string
           created_at?: string
           description?: string | null
           id?: string
+          life_house?: number | null
           progress?: number
           status?: string
           timeline?: string
@@ -3096,10 +3100,12 @@ export type Database = {
         }
         Update: {
           anchor_key?: string | null
+          auto_progress?: boolean
           category?: string
           created_at?: string
           description?: string | null
           id?: string
+          life_house?: number | null
           progress?: number
           status?: string
           timeline?: string
