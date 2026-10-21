@@ -145,7 +145,7 @@ export const taskPatchTo = (patch: Partial<Task>): Record<string, unknown> => {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(patch)) {
     const col = TASK_COLUMNS[key];
-    if (!col || value === undefined) continue;
+    if (!col || (value === undefined && key !== "goalId")) continue;
     out[col] = value === undefined ? null : (value ?? null);
   }
   return out;

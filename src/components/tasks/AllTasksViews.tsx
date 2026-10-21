@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ViewOptionsMenu } from "@/components/tasks/ViewOptionsMenu";
 import { useViewPrefs, type TaskViewType } from "@/hooks/useViewPrefs";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 import {
   addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth,
   parseISO, startOfMonth, startOfWeek, addDays, isPast, isToday, isTomorrow,
@@ -376,6 +377,7 @@ function GridCard({ task, projectName }: { task: Task; projectName?: string }) {
         {visible.checkbox && <Checkbox checked={task.done} onCheckedChange={() => toggleTask(task.id)} className="mt-0.5" />}
         <div className="min-w-0 flex-1">
           <div className={cn("text-sm font-medium break-words", task.done && "line-through")}>{task.title}</div>
+          <LinkedGoalLabels ids={[task.goalId]} className="mt-1" />
           {visible.description && task.notes && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{task.notes}</div>}
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {visible.area && <Badge variant="secondary" className="text-[10px]">{task.area}</Badge>}

@@ -167,8 +167,8 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
             <BigCard
               tone="primary"
               icon={<Target className="h-5 w-5" />}
-              label="Goal"
-              value={goal?.title ?? "None"}
+              label="Life-area goal"
+              value={goal ? `${goal.title}${lifeAreaLabel(goal.lifeHouse) ? ` · ${lifeAreaLabel(goal.lifeHouse)}` : ""}` : "None"}
               onClick={() => { haptics.tap?.(); setPicker("goal"); }}
               extra={
                 goal ? (

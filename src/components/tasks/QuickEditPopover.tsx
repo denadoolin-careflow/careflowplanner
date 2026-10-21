@@ -7,6 +7,7 @@ import { haptics } from "@/lib/haptics";
 import { Repeat, Flag, Folder, Target, MapPin, Tag, Sun, Moon, CloudSun } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { LifeAreaGoalPicker, LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 type Props = {
   task: Task;
@@ -95,13 +96,9 @@ export function QuickEditPopover({ task, open, onOpenChange, anchor }: Props) {
           )}
 
           {goals.length > 0 && (
-            <Section icon={Target} label="Goal">
-              <div className="flex flex-wrap gap-1">
-                <Chip active={!task.goalId} onClick={() => patch({ goalId: undefined })}>None</Chip>
-                {goals.slice(0, 8).map(g => (
-                  <Chip key={g.id} active={task.goalId === g.id} onClick={() => patch({ goalId: g.id })}>{g.title}</Chip>
-                ))}
-              </div>
+            <Section icon={Target} label="Life-area goal">
+              <LifeAreaGoalPicker value={task.goalId} onChange={id => void patch({ goalId: id })} />
+              <LinkedGoalLabels ids={[task.goalId]} />
             </Section>
           )}
 

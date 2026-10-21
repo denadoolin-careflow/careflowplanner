@@ -19,6 +19,7 @@ import {
 import { createNote } from "@/lib/notes";
 import { createMemory } from "@/lib/memories";
 import { toast } from "sonner";
+import { LifeAreaGoalPicker, LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 const FRAMES = [
   { id: "morning", label: "Morning", start: "09:00", range: [5 * 60, 12 * 60] },
@@ -70,6 +71,7 @@ export function QuickTaskInlineEditor({
   const [recipe, setRecipe] = useState<string | null>(splitRecipe(task?.notes).recipe);
   const [area, setArea] = useState<Area>(task?.area ?? "Personal");
   const [projectId, setProjectId] = useState<string | undefined>(task?.projectId);
+  const [goalId, setGoalId] = useState<string | undefined>(task?.goalId);
   const [recipientId, setRecipientId] = useState<string | undefined>(task?.recipientId);
   const [zone, setZone] = useState<string | undefined>(
     task?.tags?.find(t => t.startsWith(ZONE_TAG))?.slice(ZONE_TAG.length),
@@ -88,6 +90,7 @@ export function QuickTaskInlineEditor({
     setRecipe(s.recipe);
     setArea(task.area);
     setProjectId(task.projectId);
+    setGoalId(task.goalId);
     setRecipientId(task.recipientId);
     setZone(task.tags?.find(t => t.startsWith(ZONE_TAG))?.slice(ZONE_TAG.length));
     setActivity(readActivityTag(task.tags));
@@ -120,6 +123,7 @@ export function QuickTaskInlineEditor({
         notes: composedNotes || undefined,
         area,
         projectId,
+        goalId,
         recipientId,
         tags,
         dueDate,
@@ -186,6 +190,11 @@ export function QuickTaskInlineEditor({
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-2">
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-muted-foreground">Life-area goal</p>
+        <LifeAreaGoalPicker value={goalId} onChange={setGoalId} />
+        <LinkedGoalLabels ids={[goalId]} />
+      </div>
       <div className="flex flex-wrap gap-1">
         {FRAMES.map(f => (
           <button
