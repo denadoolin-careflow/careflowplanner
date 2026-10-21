@@ -161,7 +161,7 @@ export default function CosmicChapter() {
 function Panel({ icon, title, sub, children, className }: { icon: ReactNode; title: string; sub: string; children: ReactNode; className?: string }) {
   const [open, setOpen] = useState(true);
   return (
-    <section className={cn("cozy-card p-4 sm:p-5 text-sm", className)}>
+    <section className={cn("cozy-card min-w-0 break-words p-4 sm:p-5 text-sm", className)}>
       <button onClick={() => setOpen(o => !o)} aria-expanded={open} className="flex w-full items-start justify-between gap-2 text-left">
         <div>
           <p className="font-display text-lg flex items-center gap-1.5">{icon}{title}</p>
