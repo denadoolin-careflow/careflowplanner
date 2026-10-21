@@ -8,8 +8,8 @@
 - Completed-task strikethrough is a device-local pref shared by all task surfaces.
 - Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
 - Today and Planner use page-scoped Soft Botanical mobile presentation tokens and Outfit/Figtree typography, preserving the app-wide theme.
-- Today/Planner selectors share ViewPills. Goal life areas = goals.life_house (houses 1-12); links reuse tasks.goal_id, projects.linked_goal_ids.
-- Day rhythm: moon, season, cycle, capacity in one collapsible surface.
+- Today/Planner share ViewPills. Goal pickers/labels share LifeAreaGoalPicker; links use tasks.goal_id and projects.linked_goal_ids. Explicit task goal clears persist null.
+- Day rhythm combines moon, season, cycle and capacity.
 - Note properties use notes.properties (jsonb); supertag fields use item_field_values, entity_type 'note'.
 - Note block IDs persist as trailing ` ^b-xxxxxx` markers in the markdown body (added only when first linked); block embeds/ref chips persist as data-* HTML so no schema change is needed.
 - Notes uses a page-scoped presentation layer derived from the active atmosphere; capture review, pinned density, and per-month notebook appearance are device-local while note/task content preserves existing synced models.

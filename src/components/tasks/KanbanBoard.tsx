@@ -19,6 +19,7 @@ import { fallbackColorFor } from "@/lib/tags";
 import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { hmToHours } from "@/lib/time-blocks";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 export type KanbanColorBy = "none" | "tag" | "project" | "area";
 
@@ -279,6 +280,7 @@ export function KanbanCard({ task, colorBy = "area" }: { task: Task; colorBy?: K
           {visible.icon && <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
           <span className={cn("flex-1 min-w-0 text-sm leading-snug break-words whitespace-normal", task.done && "text-muted-foreground line-through")}>{task.title}</span>
         </div>
+        <LinkedGoalLabels ids={[task.goalId]} className="mt-1" />
         {((visible.tags && task.tags?.length) || (visible.dueDate && task.dueDate) || (visible.priority && task.priority === "high")) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
             {visible.tags && (task.tags ?? []).slice(0, 3).map(t => (

@@ -24,6 +24,7 @@ import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 import { haptics } from "@/lib/haptics";
 import { BigCard, SmallTile, SectionLabel } from "@/components/tasks/TaskSettingsBits";
 import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
+import { LifeAreaGoalPicker, LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 const AREAS: Area[] = ["Personal","Family","Kids","Caregiving","Home","Meals","Appointments","Money","Creative Projects","Holidays & Birthdays"];
 const PRIORITY_OPTS: { id: Priority; label: string; dots: number; tone: string }[] = [
@@ -217,26 +218,12 @@ export default function TaskDetail() {
               ))}
             </PopoverContent>
           </Popover>
-          <Popover>
-            <PopoverTrigger asChild>
-              <BigCard tone="emerald" icon={<Target className="h-5 w-5" />} label="Goal" value={goal?.title ?? "None"}>
-                {goal && (
-                  <div className="mt-2 space-y-1">
-                    <p className="text-[11px] font-medium text-emerald-600">{goal.progress}% complete</p>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-500/15">
-                      <div className="h-full bg-emerald-500/80" style={{ width: `${goal.progress}%` }} />
-                    </div>
-                  </div>
-                )}
-              </BigCard>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="max-h-72 w-64 overflow-auto p-1">
-              <button onClick={() => patch({ goalId: undefined } as any)} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">None</button>
-              {(state.goals ?? []).map(g => (
-                <button key={g.id} onClick={() => patch({ goalId: g.id } as any)} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">{g.title}</button>
-              ))}
-            </PopoverContent>
-          </Popover>
+          <div className="min-w-0 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Life-area goal</p>
+            <LifeAreaGoalPicker value={task.goalId} onChange={id => void patch({ goalId: id })} />
+            <LinkedGoalLabels ids={[task.goalId]} />
+            {goal && <p className="text-xs text-muted-foreground">{goal.progress}% complete</p>}
+          </div>
         </div>
 
         {/* SCHEDULING */}
