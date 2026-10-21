@@ -35,6 +35,7 @@ import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/Planne
 import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { PlannerMobileViewFab } from "@/components/planner/PlannerMobileViewFab";
+import { MoonAspectGuide, useMoonGuidePrefs } from "@/components/cosmic/MoonAspectGuide";
 import { PlannerDayRhythm } from "@/components/planner/PlannerDayRhythm";
 import { PlannerDayAssistant } from "@/components/planner/PlannerDayAssistant";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
@@ -635,6 +636,7 @@ export default function Planner() {
                   <div className="space-y-2 px-2 pb-2">
                      <PlannerOverdueSection date={day} />
                       <PlannerDayRhythm date={day} onSelectDate={openDay} />
+{moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
                     <PlannerDayAssistant date={day} />
                      <PlannerRhythmCard date={day} />
                      <PlannerDayReferences date={day} />
@@ -649,6 +651,7 @@ export default function Planner() {
                 >
                   <div className="space-y-2 px-2 pb-2">
                     <PlannerDayRhythm date={day} onSelectDate={openDay} />
+{moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
                     <PlannerDayAssistant date={day} />
                     <PlannerRhythmCard date={day} />
                     <PlannerDayReferences date={day} />
@@ -712,6 +715,7 @@ export default function Planner() {
                     </SheetContent>
                   </Sheet>
                 )}
+                {moonPrefs.timeline && <MoonAspectGuide date={day} compact className="mb-3" />}
                 <PlannerTimeline date={day} />
               </div>
             )}

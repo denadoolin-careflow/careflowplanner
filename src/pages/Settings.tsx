@@ -20,6 +20,7 @@ import { GmailSection } from "@/components/gmail/GmailSection";
 import { CalendarColorsSection } from "@/components/settings/CalendarColorsSection";
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { GroceryPrefsSection } from "@/components/settings/GroceryPrefsSection";
+import { MoonGuideSection } from "@/components/settings/MoonGuideSection";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import { WeatherPrefsSection } from "@/components/settings/WeatherPrefsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
@@ -422,6 +423,7 @@ export default function Settings() {
       </SectionCard>
 
       <CycleSettingsSection />
+      <MoonGuideSection />
       <WeatherPrefsSection />
     </div>
   );

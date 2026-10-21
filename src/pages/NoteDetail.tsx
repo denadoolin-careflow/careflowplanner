@@ -34,6 +34,7 @@ import { TagFocusPanel } from "@/components/notes/TagFocusPanel";
 import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { useTags } from "@/hooks/use-tags";
 import { useStore } from "@/lib/store";
+import { appendMoonAspects } from "@/lib/cosmic/moon-aspects";
 import { appendDayRhythm } from "@/lib/notes/day-rhythm";
 import { copyToClipboard } from "@/lib/clipboard";
 import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
@@ -487,6 +488,12 @@ export default function NoteDetail() {
             <Button variant="ghost" size="sm" className="h-8 text-xs" title="Insert day's rhythm"
               onClick={() => { const next = appendDayRhythm(body, state, note.date!); setBody(next); save({ body: next }); }}>
               🌿 <span className="ml-1 hidden sm:inline">Day's rhythm</span>
+            </Button>
+          )}
+          {note.kind === "daily" && note.date && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" title="Insert Moon aspects"
+              onClick={() => { const next = appendMoonAspects(body, new Date(`${note.date}T12:00:00`)); setBody(next); save({ body: next }); }}>
+              🌙 <span className="ml-1 hidden sm:inline">Moon aspects</span>
             </Button>
           )}
           <NoteAIButton

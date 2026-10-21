@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { getOrCreateDailyNote, updateNote, type Note } from "@/lib/notes";
 import { todayISO, useStore } from "@/lib/store";
+import { appendMoonAspects } from "@/lib/cosmic/moon-aspects";
 import { appendDayRhythm } from "@/lib/notes/day-rhythm";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { notifyDailyNotesChanged } from "@/lib/notes/daily";
@@ -97,6 +98,9 @@ export function TodayJournalDrawer({ compact, label = "Journal", triggerClassNam
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" disabled={!note} onClick={() => save(appendDayRhythm(body, state, todayISO()))}>
             <Leaf className="mr-1.5 h-4 w-4" /> Insert day's rhythm
+          </Button>
+          <Button size="sm" variant="secondary" disabled={!note} onClick={() => save(appendMoonAspects(body, new Date()))}>
+            🌙 <span className="ml-1.5">Insert Moon aspects</span>
           </Button>
           {note && (
             <Button size="sm" variant="ghost" asChild>

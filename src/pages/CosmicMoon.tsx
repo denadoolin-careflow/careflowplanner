@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MoonAspectGuide } from "@/components/cosmic/MoonAspectGuide";
 import { Body, Illumination, MoonPhase as lunarAngle, SearchMoonPhase } from "astronomy-engine";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Check, NotebookPen, ChevronLeft, ChevronRight } from "lucide-react";
@@ -132,6 +133,8 @@ export default function CosmicMoon() {
           </div>
         </div>
       </section>
+
+      <MoonAspectGuide date={date} />
 
       {guide && (
         <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">

@@ -1,3 +1,4 @@
+import { getMoonGuidePrefs, buildMoonAspectsMarkdown } from "@/lib/cosmic/moon-aspects";
 import { supabase } from "@/integrations/supabase/client";
 import type { Attachment } from "@/lib/types";
 
@@ -170,7 +171,7 @@ export async function getOrCreatePeriodNote(kind: PeriodKind, date: string, titl
   if (existing.data?.[0]) return fromRow(existing.data[0]);
   const { data, error } = await supabase
     .from("notes")
-    .insert({ user_id: u.user.id, kind, date, title: title ?? date, body: "" })
+    .insert({ user_id: u.user.id, kind, date, title: title ?? date, body: kind === "daily" && getMoonGuidePrefs().autoDailyNote ? buildMoonAspectsMarkdown(new Date(`${date}T12:00:00`)).trimStart() : "" })
     .select()
     .single();
   if (error) throw error;
