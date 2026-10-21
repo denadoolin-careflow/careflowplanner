@@ -19,6 +19,7 @@ import {
   Share2, Link2, ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LifeAreasBoard } from "@/components/goals/LifeAreaGoals";
 import { CareyButton } from "@/components/carey/CareyButton";
 
 /* ---------------- Types & local persistence ---------------- */
@@ -108,7 +109,7 @@ export function GoalsHub() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [areaFilter, setAreaFilter] = useState<Goal["category"] | "all">("all");
-  const [view, setView] = useState<"vision" | "list" | "board" | "journey">("vision");
+  const [view, setView] = useState<"vision" | "list" | "board" | "journey" | "areas">("vision");
   const [checkInQueueDismissed, setCheckInQueueDismissed] = useState<string[]>([]);
 
   useEffect(() => { saveExtras(extras); }, [extras]);
@@ -266,7 +267,13 @@ export function GoalsHub() {
               <TabsTrigger value="list" className="rounded-full">List</TabsTrigger>
               <TabsTrigger value="board" className="rounded-full">Board</TabsTrigger>
               <TabsTrigger value="journey" className="rounded-full">Journey</TabsTrigger>
+              <TabsTrigger value="areas" className="rounded-full">Life areas</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="areas" className="mt-5">
+              <p className="mb-3 text-sm text-muted-foreground">Your 12 life areas follow the 12 houses of your chart. Open <a href="/cosmic-flow/houses" className="text-primary underline">Houses</a> to see what's moving through each one.</p>
+              <LifeAreasBoard />
+            </TabsContent>
 
             <TabsContent value="vision" className="mt-5">
               {filtered.length === 0 ? <EmptyState onCreate={()=>setCreateOpen(true)} /> : (
