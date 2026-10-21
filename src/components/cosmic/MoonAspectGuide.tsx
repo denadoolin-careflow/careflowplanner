@@ -23,6 +23,8 @@ export function MoonAspectGuide({ date, compact, className }: { date: Date; comp
   const events = useMemo(() => moonEventsOnDay(date), [iso]); // eslint-disable-line react-hooks/exhaustive-deps
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   useEffect(() => { try { setChecks(JSON.parse(localStorage.getItem(checksKey(iso)) || "{}")); } catch { setChecks({}); } }, [iso]);
+  const ingress = events.find(e => e.kind === "ingress");
+  const signLine = ingress ? `Moon ${moonSignOn(date)} → ${ingress.sign}` : `Moon in ${moonSignOn(date)}`;
   const toggle = (k: string) => {
     const next = { ...checks, [k]: !checks[k] };
     setChecks(next); localStorage.setItem(checksKey(iso), JSON.stringify(next));
@@ -30,19 +32,19 @@ export function MoonAspectGuide({ date, compact, className }: { date: Date; comp
   return (
     <section className={cn("min-w-0 rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-soft", className)} aria-label="Moon aspects">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex min-w-0 items-center gap-2 font-display text-lg leading-snug"><Moon className="h-4 w-4 shrink-0 text-primary" />Moon aspects · Moon in {moonSignOn(date)}</h2>
+        <h2 className="flex min-w-0 items-center gap-2 font-display text-lg leading-snug"><Moon className="h-4 w-4 shrink-0 text-primary" />Moon aspects · {signLine}</h2>
         <div className="flex gap-3 text-xs">
           {compact && <Link className="text-primary underline-offset-2 hover:underline min-h-11 px-1 inline-flex items-center" to={`/cosmic-flow/moon?date=${iso}`}>Full guide</Link>}
           <a className="inline-flex min-h-11 px-1 items-center gap-1 text-muted-foreground hover:text-foreground" href={astroSeekUrl()} target="_blank" rel="noreferrer">Astro-Seek <ExternalLink className="h-3 w-3" /></a>
         </div>
       </div>
       {events.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No exact Moon aspects today — a steady day.</p> : (
-        <ol className="mt-3 space-y-3">
+        <ol className={cn("mt-3", compact ? "space-y-2" : "space-y-3")}>
           {events.map(e => (
-            <li key={e.id} className="rounded-xl bg-muted/40 p-3">
-              <p className="break-words text-sm font-semibold"><span className="tabular-nums text-primary">{format(e.time, "h:mm a")}</span> · {e.label} <span className="font-normal text-muted-foreground">in {e.sign}</span></p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{e.advice}</p>
-              <div className="mt-2 space-y-1">
+            <li key={e.id} className={cn("rounded-xl bg-muted/40", compact ? "px-3 py-2" : "p-3")}>
+              <p className="break-words text-sm font-semibold"><span className="tabular-nums text-primary">{format(e.time, "h:mm a")}</span> · {e.label}{e.kind === "aspect" && <span className="font-normal text-muted-foreground"> in {e.sign}</span>}</p>
+              {!compact && <p className="mt-0.5 text-sm text-muted-foreground">{e.advice}</p>}
+              <div className={compact ? "mt-1" : "mt-2 space-y-1"}>
                 {e.actions.map(a => {
                   const k = `${e.id}:${a}`;
                   return (
