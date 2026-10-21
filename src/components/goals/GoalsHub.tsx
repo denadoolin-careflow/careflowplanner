@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { LifeAreasBoard } from "@/components/goals/LifeAreaGoals";
+import { LIFE_AREAS, LIFE_HOUSES } from "@/lib/goals/life-areas";
 import { CareyButton } from "@/components/carey/CareyButton";
 
 /* ---------------- Types & local persistence ---------------- */
@@ -701,6 +702,7 @@ function CreateGoalDialog({
 }) {
   const [title, setTitle] = useState("");
   const [cat, setCat] = useState<Goal["category"]>("Family");
+  const [house, setHouse] = useState<string>("none");
   const [why, setWhy] = useState("");
   const [nextStep, setNextStep] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -723,6 +725,16 @@ function CreateGoalDialog({
             </Select>
           </div>
           <div>
+            <label className="text-xs text-muted-foreground">Chart life area (house)</label>
+            <Select value={house} onValueChange={setHouse}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {LIFE_HOUSES.map(h => <SelectItem key={h} value={String(h)}>{h} · {LIFE_AREAS[h].label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <label className="text-xs text-muted-foreground">Why this matters</label>
             <Textarea rows={2} placeholder="The feeling underneath the goal…" value={why} onChange={e=>setWhy(e.target.value)} />
           </div>
@@ -741,7 +753,7 @@ function CreateGoalDialog({
           <Button variant="ghost" onClick={()=>onOpenChange(false)}>Cancel</Button>
           <Button onClick={() => {
             if (!title.trim()) return;
-            onCreate({ title: title.trim(), category: cat }, { why, nextStep, targetDate, startedAt: new Date().toISOString() });
+            onCreate({ title: title.trim(), category: cat, ...(house !== "none" ? { lifeHouse: Number(house) } : {}) } as any, { why, nextStep, targetDate, startedAt: new Date().toISOString() });
             setTitle(""); setWhy(""); setNextStep(""); setTargetDate("");
             onOpenChange(false);
             toast.success("Intention planted 🌱");
