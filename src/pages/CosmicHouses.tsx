@@ -69,7 +69,7 @@ export default function CosmicHouses() {
                 style={{ borderLeftColor: `hsl(var(${signTintVar(d.sign, colorMode, d.house)}))`, background: `hsl(var(${signTintVar(d.sign, colorMode, d.house)}) / 0.14)` }}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <Button variant="ghost" className="h-auto min-h-11 max-w-full justify-start whitespace-normal px-0 text-left font-display text-base hover:bg-transparent" aria-pressed={selected === d.house} onClick={() => setSelected(d.house)}>House {d.house} · {HOUSE_TITLE[d.house]}</Button>
-                  <span className="rounded-full px-2 py-0.5 text-sm text-foreground" style={{ background: `hsl(var(${signTintVar(d.sign, colorMode, d.house)}) / 0.25)` }}>{SIGN_GLYPH[d.sign]} {d.sign}</span>
+                  <span className="rounded-full px-2 py-0.5 text-sm text-foreground" style={{ background: `hsl(var(${signTintVar(d.sign, colorMode, d.house)}) / 0.25)` }}>{SIGN_GLYPH[d.sign]}︎ {d.sign}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">{houseTopics(d.house)}</p>
                 <p className="text-sm">Ruled by <strong>{d.ruler}</strong>{d.rulerSign && <> in {d.rulerSign}{d.rulerHouse ? ` (house ${d.rulerHouse})` : ""}</>}

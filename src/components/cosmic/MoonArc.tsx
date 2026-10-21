@@ -37,7 +37,7 @@ export function MoonDisc({ illum, waxing, rhythm, size = 28 }: { illum: number; 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
       <circle cx={c} cy={c} r={r} fill="hsl(var(--muted))" stroke={`hsl(var(--rhythm-${rhythm}-deep) / 0.35)`} strokeWidth={1} />
-      {illum > 0.02 && <path d={d} fill={`hsl(var(--rhythm-${rhythm}))`} />}
+      {illum >= 0.98 ? <circle cx={c} cy={c} r={r} fill={`hsl(var(--rhythm-${rhythm}))`} /> : illum > 0.02 && <path d={Math.abs(k) < 0.001 ? `M ${c} ${c - r} A ${r} ${r} 0 0 ${sweepOuter} ${c} ${c + r} Z` : d} fill={`hsl(var(--rhythm-${rhythm}))`} />}
     </svg>
   );
 }
