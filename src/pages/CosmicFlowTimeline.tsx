@@ -133,7 +133,7 @@ export default function CosmicFlowTimeline() {
             key={f.value}
             size="sm"
             variant={filter === f.value ? "default" : "outline"}
-            className="h-7 shrink-0 text-xs"
+            className="h-10 shrink-0 text-xs"
             onClick={() => setFilter(f.value)}
           >
             {f.label}
@@ -144,18 +144,18 @@ export default function CosmicFlowTimeline() {
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="mr-1 text-xs text-muted-foreground">Range:</span>
         {RANGE_PRESETS.map(r => (
-          <Button key={r.value} variant={preset === r.value ? "default" : "ghost"} size="sm" className="h-7 text-xs" onClick={() => setPreset(r.value)}>
+          <Button key={r.value} variant={preset === r.value ? "default" : "ghost"} size="sm" className="h-10 text-xs" onClick={() => setPreset(r.value)}>
             {r.label}
           </Button>
         ))}
         <div className="ml-auto flex items-center gap-0.5">
-          <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={shiftBy(-30)} aria-label="Back 30 days">
+          <Button variant="outline" size="sm" className="h-10 w-10 p-0" onClick={shiftBy(-30)} aria-label="Back 30 days">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setAnchor(new Date())}>
+          <Button variant="outline" size="sm" className="h-10 px-3 text-xs" onClick={() => setAnchor(new Date())}>
             <Home className="mr-1 h-3 w-3" /> Today
           </Button>
-          <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={shiftBy(30)} aria-label="Forward 30 days">
+          <Button variant="outline" size="sm" className="h-10 w-10 p-0" onClick={shiftBy(30)} aria-label="Forward 30 days">
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

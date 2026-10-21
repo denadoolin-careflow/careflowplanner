@@ -53,7 +53,7 @@ export default function CosmicSky() {
       <LunarDateConnections date={now} current={tab === "lunations" ? "lunations" : "sky"} />
       <div className="flex gap-1.5">
         {(["signs", "lunations"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={cn("rounded-full border px-3 py-1.5 text-sm min-h-9",
+          <button key={t} onClick={() => setTab(t)} className={cn("rounded-full border px-3 py-1.5 text-sm min-h-11",
             tab === t ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-muted")}>
             {t === "signs" ? "Signs & motion" : "Lunations & eclipses"}
           </button>

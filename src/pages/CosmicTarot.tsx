@@ -79,7 +79,7 @@ export default function CosmicTarot() {
                 );
               })}
             </div>
-            <Button size="sm" variant="outline" onClick={() => send(current)}><NotebookPen className="mr-1 h-3.5 w-3.5" />Send to today's note</Button>
+            <Button size="sm" variant="outline" className="h-auto min-h-10 max-w-full whitespace-normal" onClick={() => send(current)}><NotebookPen className="mr-1 h-3.5 w-3.5" />Send to today's note</Button>
           </div>
         )}
       </section>
