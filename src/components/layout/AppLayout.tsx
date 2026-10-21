@@ -41,7 +41,9 @@ import { GmailBackgroundSync } from "@/components/gmail/GmailBackgroundSync";
 export function AppLayout() {
   const { state } = useStore();
   const { pathname } = useLocation();
-  const current = NAV.find(n => n.to === pathname) ?? NAV[0];
+  const current = NAV.find(n => n.to === pathname)
+    ?? [...NAV].filter(n => n.to !== "/" && pathname.startsWith(n.to + "/")).sort((a, b) => b.to.length - a.to.length)[0]
+    ?? NAV[0];
   const isNotesExperience = pathname.startsWith("/notes");
   useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
   const { current: atmoId } = useAtmosphere();
