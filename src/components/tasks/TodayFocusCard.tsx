@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { energyBucket, ENERGY_META } from "@/lib/task-energy";
 import type { Energy, Task } from "@/lib/types";
 import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
+import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
 /**
  * "Today's Focus" hero card shown above task lists & on Today.
@@ -71,7 +72,10 @@ export function TodayFocusCard() {
               {focus.map(t => (
                 <li key={t.id} className="group flex items-start gap-3 rounded-xl bg-background/50 px-3 py-2 transition hover:bg-background/70">
                   <Checkbox checked={t.done} onCheckedChange={() => toggleTask(t.id)} aria-label={`Complete ${t.title}`} />
-                  <span className="flex-1 text-sm font-medium text-foreground break-words">{t.title}</span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-sm font-medium text-foreground break-words">{t.title}</span>
+                    <LinkedGoalLabels ids={[t.goalId]} className="mt-0.5" />
+                  </span>
                   <QuickDayPartButton task={t} />
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />
                 </li>
