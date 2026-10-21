@@ -28,27 +28,27 @@ export function MoonAspectGuide({ date, compact, className }: { date: Date; comp
     setChecks(next); localStorage.setItem(checksKey(iso), JSON.stringify(next));
   };
   return (
-    <section className={cn("rounded-2xl border border-border bg-card p-4 shadow-soft", className)} aria-label="Moon aspects">
+    <section className={cn("min-w-0 rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-soft", className)} aria-label="Moon aspects">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-display text-lg"><Moon className="h-4 w-4 text-primary" />Moon aspects · Moon in {moonSignOn(date)}</h2>
+        <h2 className="flex min-w-0 items-center gap-2 font-display text-lg leading-snug"><Moon className="h-4 w-4 shrink-0 text-primary" />Moon aspects · Moon in {moonSignOn(date)}</h2>
         <div className="flex gap-3 text-xs">
-          {compact && <Link className="text-primary underline-offset-2 hover:underline min-h-[32px] inline-flex items-center" to={`/cosmic/moon?date=${iso}`}>Full guide</Link>}
-          <a className="inline-flex min-h-[32px] items-center gap-1 text-muted-foreground hover:text-foreground" href={astroSeekUrl()} target="_blank" rel="noreferrer">Astro-Seek <ExternalLink className="h-3 w-3" /></a>
+          {compact && <Link className="text-primary underline-offset-2 hover:underline min-h-11 px-1 inline-flex items-center" to={`/cosmic/moon?date=${iso}`}>Full guide</Link>}
+          <a className="inline-flex min-h-11 px-1 items-center gap-1 text-muted-foreground hover:text-foreground" href={astroSeekUrl()} target="_blank" rel="noreferrer">Astro-Seek <ExternalLink className="h-3 w-3" /></a>
         </div>
       </div>
       {events.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No exact Moon aspects today — a steady day.</p> : (
         <ol className="mt-3 space-y-3">
           {events.map(e => (
             <li key={e.id} className="rounded-xl bg-muted/40 p-3">
-              <p className="text-sm font-semibold"><span className="tabular-nums text-primary">{format(e.time, "h:mm a")}</span> · {e.label} <span className="font-normal text-muted-foreground">in {e.sign}</span></p>
+              <p className="break-words text-sm font-semibold"><span className="tabular-nums text-primary">{format(e.time, "h:mm a")}</span> · {e.label} <span className="font-normal text-muted-foreground">in {e.sign}</span></p>
               <p className="mt-0.5 text-sm text-muted-foreground">{e.advice}</p>
               <div className="mt-2 space-y-1">
                 {e.actions.map(a => {
                   const k = `${e.id}:${a}`;
                   return (
-                    <label key={k} className="flex min-h-[36px] cursor-pointer items-center gap-2 text-sm">
-                      <Checkbox checked={!!checks[k]} onCheckedChange={() => toggle(k)} />
-                      <span className={cn(checks[k] && "line-through text-muted-foreground")}>{a}</span>
+                    <label key={k} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 text-sm active:bg-muted/60">
+                      <Checkbox className="h-5 w-5 shrink-0" checked={!!checks[k]} onCheckedChange={() => toggle(k)} />
+                      <span className={cn("min-w-0 break-words", checks[k] && "line-through text-muted-foreground")}>{a}</span>
                     </label>
                   );
                 })}
