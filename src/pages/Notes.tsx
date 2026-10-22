@@ -45,7 +45,7 @@ import { noteDisplayTitle, weekKeyFor, monthKeyFor } from "@/lib/notes/periods";
 import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate } from "@/lib/notes/daily";
 import { getNoteCoverCss } from "@/lib/note-covers";
 import { RhythmViewControls } from "@/components/notes/RhythmViewControls";
-import { applyRhythmView, groupByRhythm, EMPTY_RHYTHM_VIEW, type RhythmViewState } from "@/lib/notes/rhythm-view";
+import { applyRhythmView, groupByRhythm, EMPTY_RHYTHM_VIEW, RHYTHM_FIELDS, type RhythmViewState } from "@/lib/notes/rhythm-view";
 
 type View = "notebook" | "outline" | "list" | "compact" | "grid" | "board" | "table" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
@@ -158,7 +158,10 @@ export default function Notes() {
     const value = params.get("value");
     if (!prop || !value) return;
     const key = prop.trim().toLowerCase();
-    setRhythmView(v => ({ ...v, group: null, props: { ...(v.props ?? {}), [key]: [value] } }));
+    const rf = RHYTHM_FIELDS.find(f => f.propName.toLowerCase() === key);
+    setRhythmView(v => rf
+      ? { ...v, group: null, filters: { ...v.filters, [rf.id]: [value] } }
+      : { ...v, group: null, props: { ...(v.props ?? {}), [key]: [value] } });
     setView(v => (v === "grid" || v === "table" ? v : "grid"));
     const next = new URLSearchParams(params);
     next.delete("prop"); next.delete("value");
