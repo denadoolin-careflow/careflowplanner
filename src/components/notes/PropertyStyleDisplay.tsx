@@ -11,7 +11,8 @@ export function optionColor(prop: Pick<NoteProperty, "colors"> & { name?: string
   if (color) return color;
   let hash = 0;
   for (const char of option) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return OPTION_COLORS[hash % OPTION_COLORS.length];
+  // Keep existing automatic choice colors stable as the picker palette grows.
+  return OPTION_COLORS[hash % 10];
 }
 
 export function OptionChip({ prop, option }: { prop: Pick<NoteProperty, "colors"> & { name?: string }; option: string }) {
