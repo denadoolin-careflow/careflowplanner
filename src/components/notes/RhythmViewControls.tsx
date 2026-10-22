@@ -1,10 +1,11 @@
+import { useMemo } from "react";
 import { Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Note } from "@/lib/notes";
 import {
-  RHYTHM_FIELDS, EMPTY_RHYTHM_VIEW, activeRhythmCount, rhythmOptions,
+  RHYTHM_FIELDS, EMPTY_RHYTHM_VIEW, activeRhythmCount, rhythmOptions, collectPropFields,
   type RhythmField, type RhythmViewState,
 } from "@/lib/notes/rhythm-view";
 
