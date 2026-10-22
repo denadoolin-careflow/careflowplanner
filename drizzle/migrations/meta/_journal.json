@@ -134,6 +134,13 @@
       "when": 1792680954947,
       "tag": "0018_note_property_styles",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792689876330,
+      "tag": "0019_sync_note_property_style_patches",
+      "breakpoints": true
     }
   ]
 }

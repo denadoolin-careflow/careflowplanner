@@ -9192,6 +9192,7 @@ export type Database = {
         Args: { _household_id: string; _user_id: string }
         Returns: boolean
       }
+      patch_note_property_styles: { Args: { p_patch: Json }; Returns: Json }
       set_changelog_pull_schedule: { Args: { _freq: string }; Returns: string }
       ship_roadmap_item: {
         Args: { _id: string; _publish?: boolean }
