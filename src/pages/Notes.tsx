@@ -44,6 +44,8 @@ import { NotesNotebookGallery } from "@/components/notes/NotesNotebookGallery";
 import { noteDisplayTitle, weekKeyFor, monthKeyFor } from "@/lib/notes/periods";
 import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate } from "@/lib/notes/daily";
 import { getNoteCoverCss } from "@/lib/note-covers";
+import { RhythmViewControls } from "@/components/notes/RhythmViewControls";
+import { applyRhythmView, groupByRhythm, EMPTY_RHYTHM_VIEW, type RhythmViewState } from "@/lib/notes/rhythm-view";
 
 type View = "notebook" | "outline" | "list" | "compact" | "grid" | "board" | "table" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
@@ -110,6 +112,10 @@ export default function Notes() {
   });
   const [activeTag, setActiveTag] = useState<string | null>(params.get("tag"));
   const [sort, setSort] = useState<Sort>("updated");
+  const [rhythmView, setRhythmView] = useState<RhythmViewState>(() => {
+    try { return { ...EMPTY_RHYTHM_VIEW, ...JSON.parse(localStorage.getItem("careflow.notes.rhythmView") || "{}") }; } catch { return EMPTY_RHYTHM_VIEW; }
+  });
+  useEffect(() => { localStorage.setItem("careflow.notes.rhythmView", JSON.stringify(rhythmView)); }, [rhythmView]);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [previewLines, setPreviewLines] = useState<number>(() => {
     const raw = typeof window === "undefined" ? 3 : Number(localStorage.getItem("careflow.notes.previewLines"));
@@ -171,6 +177,8 @@ export default function Notes() {
     return sorted;
   }, [notes, collection, activeTag, q, kindFilter, pinnedOnly, sort]);
   const pinnedStrip = useMemo(() => notes.filter(n => n.pinned).slice(0, 3), [notes]);
+  const rhythmed = useMemo(() => applyRhythmView(filtered, rhythmView), [filtered, rhythmView]);
+  const rhythmGroups = useMemo(() => rhythmView.group ? groupByRhythm(rhythmed, rhythmView.group) : [{ key: "all", notes: rhythmed }], [rhythmed, rhythmView.group]);
 
   const selectNote = (id: string) => navigate(`/notes/${id}`);
   const closeNote = () => { const next = new URLSearchParams(params); next.delete("note"); setParams(next, { replace: true }); };
@@ -295,7 +303,8 @@ export default function Notes() {
                   <Button variant="ghost" size="icon" onClick={() => setView("list")} aria-label="List view" aria-pressed={view === "list"} className={cn("h-9 w-9 rounded-full", view === "list" && "is-active")}><ListIcon className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => setView("compact")} aria-label="Compact view" aria-pressed={view === "compact"} className={cn("h-9 w-9 rounded-full", view === "compact" && "is-active")}><IndentIncrease className="h-4 w-4" /></Button>
                 </div>
-                <SortMenu sort={sort} setSort={setSort} />
+                <SortMenu sort={sort} setSort={s => { setSort(s); setRhythmView(v => ({ ...v, sort: null })); }} />
+                {(view === "grid" || view === "table") && <RhythmViewControls notes={filtered} value={rhythmView} onChange={setRhythmView} />}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="notes-round-control h-10 w-10" aria-label="Advanced note views and filters"><SlidersHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -319,12 +328,22 @@ export default function Notes() {
                   try { navigate(`/notes/${(await openPeriodNoteWithTemplate("monthly", key, readDefaultPeriodTemplate("monthly"))).id}`); }
                   catch { toast.error("Could not open the month note"); }
                 }} />
-              ) : filtered.length === 0 && view !== "table" ? <EmptyNotes onCreate={() => void newNote()} /> : view === "grid" ? (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(n => <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} previewLines={previewLines} />)}</div>
+              ) : (view === "grid" ? rhythmed : filtered).length === 0 && view !== "table" ? <EmptyNotes onCreate={() => void newNote()} /> : view === "grid" ? (
+                <div className="space-y-5">{rhythmGroups.map(g => (
+                  <div key={g.key}>
+                    {rhythmView.group && <h3 className="mb-2 font-display text-base">{g.key} <span className="font-sans text-xs text-muted-foreground">· {g.notes.length}</span></h3>}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{g.notes.map(n => <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} previewLines={previewLines} />)}</div>
+                  </div>
+                ))}</div>
               ) : view === "outline" ? (
                 <NotesOutlineView notes={filtered} selectedId={noteParam} onSelect={selectNote} term={q} />
               ) : view === "table" ? (
-                <NotesTableView notes={filtered} allNotes={notes} selectedId={noteParam} onSelect={selectNote} sort={sort} onSortChange={setSort} onPropertiesChange={(id, properties) => { setNotes(prev => prev.map(x => x.id === id ? { ...x, properties } : x)); void updateNote(id, { properties }).catch(() => toast.error("Save failed")); }} onCreate={async (title, properties) => { const n = await createNote({ title }); if (properties.length) await updateNote(n.id, { properties }); setNotes(prev => [{ ...n, properties }, ...prev]); }} />
+                <div className="space-y-5">{rhythmGroups.map(g => (
+                  <div key={g.key}>
+                    {rhythmView.group && <h3 className="mb-2 font-display text-base">{g.key} <span className="font-sans text-xs text-muted-foreground">· {g.notes.length}</span></h3>}
+                    <NotesTableView notes={g.notes} allNotes={notes} selectedId={noteParam} onSelect={selectNote} sort={sort} onSortChange={s => { setSort(s); setRhythmView(v => ({ ...v, sort: null })); }} onPropertiesChange={(id, properties) => { setNotes(prev => prev.map(x => x.id === id ? { ...x, properties } : x)); void updateNote(id, { properties }).catch(() => toast.error("Save failed")); }} onCreate={async (title, properties) => { const n = await createNote({ title }); if (properties.length) await updateNote(n.id, { properties }); setNotes(prev => [{ ...n, properties }, ...prev]); }} />
+                  </div>
+                ))}</div>
               ) : view === "list" || view === "compact" ? (
                 <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} onDelete={handleDeleteNote} onPin={handlePinNote} onArchive={handleArchiveNote} compact={view === "compact"} />
               ) : view === "board" ? (
