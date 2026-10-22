@@ -7,6 +7,9 @@ import { useEffect, useState } from "react";
 import {
   Moon, Sun, Leaf, Heart, Star, Flame, Droplet, Flag, Tag, Sparkles, Sprout, Flower2,
   Circle, CircleDot, Zap, Cloud, Snowflake, Feather, Gem, Bookmark, Smile, Target, Compass, Home,
+  BookOpen, Brain, Briefcase, Calendar, Camera, Check, Coffee, Dumbbell, Eye, Globe,
+  GraduationCap, Headphones, Laptop, Lightbulb, Music, Palette, PawPrint, Pencil, Plane,
+  Rocket, Shield, ShoppingBag, Trees, Trophy, Users, Utensils, Wallet, Waves, Wind, MoonStar,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,6 +18,12 @@ export const PROPERTY_ICONS: Record<string, any> = {
   flag: Flag, tag: Tag, sparkles: Sparkles, sprout: Sprout, flower: Flower2, circle: Circle,
   dot: CircleDot, zap: Zap, cloud: Cloud, snow: Snowflake, feather: Feather, gem: Gem,
   bookmark: Bookmark, smile: Smile, target: Target, compass: Compass, home: Home,
+  book: BookOpen, brain: Brain, briefcase: Briefcase, calendar: Calendar, camera: Camera,
+  check: Check, coffee: Coffee, dumbbell: Dumbbell, eye: Eye, globe: Globe,
+  graduation: GraduationCap, headphones: Headphones, laptop: Laptop, lightbulb: Lightbulb,
+  music: Music, palette: Palette, paw: PawPrint, pencil: Pencil, plane: Plane, rocket: Rocket,
+  shield: Shield, shopping: ShoppingBag, trees: Trees, trophy: Trophy, people: Users,
+  utensils: Utensils, wallet: Wallet, waves: Waves, wind: Wind, "moon-star": MoonStar,
 };
 
 export interface StyleBit { icon?: string; color?: string }

@@ -1,0 +1,42 @@
+/* Saved property colors are user data; theme roles control their presentation. */
+:root {
+  --note-property-ink: 103 35% 18%;
+  --note-property-canvas: 37 89% 97%;
+  --note-property-tint-strength: 100%;
+  --note-property-rose: #f4c7c3;
+  --note-property-sand: #e6d3b3;
+  --note-property-peach: #f7d9a8;
+  --note-property-gold: #fbeaa0;
+  --note-property-sage: #c8e6c9;
+  --note-property-teal: #b3dfe0;
+  --note-property-blue: #bcd4f6;
+  --note-property-lavender: #d9c8f2;
+  --note-property-pink: #f2c6de;
+  --note-property-stone: #d6d3d1;
+  --note-property-burgundy: #dfafbb;
+  --note-property-olive: #d4d9b0;
+  --note-property-mint: #bcebd8;
+  --note-property-aqua: #baeaf0;
+  --note-property-periwinkle: #c8ccf3;
+  --note-property-lilac: #e9c8ee;
+  --note-property-coral: #ffbcb0;
+  --note-property-apricot: #ffd3aa;
+  --note-property-lemon: #f6efa9;
+  --note-property-fern: #b9d7a1;
+  --note-property-sky: #b7e0f7;
+  --note-property-plum: #d5b4dc;
+  --note-property-clay: #ddbfb3;
+  --note-property-silver: #e0e5e8;
+}
+.dark {
+  --note-property-ink: 37 50% 94%;
+  --note-property-canvas: 103 20% 12%;
+  --note-property-tint-strength: 24%;
+}
+.note-property-color {
+  background-color: color-mix(in srgb, var(--property-selected-color) var(--note-property-tint-strength), hsl(var(--note-property-canvas)));
+  color: hsl(var(--note-property-ink));
+}
+.note-property-swatch {
+  background-color: var(--property-selected-color);
+}
