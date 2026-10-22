@@ -725,6 +725,9 @@ export default function NoteDetail() {
         {id && (
           <NotePropertiesSection
             createdAt={note.createdAt}
+            noteDate={note.date ?? null}
+            noteTitle={note.title}
+            noteBody={note.body}
             className="mt-4"
             noteId={id}
             tags={note.tags}

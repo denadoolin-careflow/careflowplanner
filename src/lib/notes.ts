@@ -75,6 +75,8 @@ export async function getNote(id: string): Promise<Note | null> {
 export async function createNote(patch: Partial<Note> = {}): Promise<Note> {
   const { data: u } = await supabase.auth.getUser();
   if (!u?.user) throw new Error("not authenticated");
+  const { stampForNewNote, mergeRhythm } = await import("@/lib/notes/rhythm-properties");
+  const properties = mergeRhythm(patch.properties ?? [], await stampForNewNote(u.user.id, patch.date ?? null));
   const { data, error } = await supabase.from("notes").insert({
     user_id: u.user.id,
     title: patch.title ?? "",
@@ -83,6 +85,7 @@ export async function createNote(patch: Partial<Note> = {}): Promise<Note> {
     date: patch.date ?? null,
     project_id: patch.projectId ?? null,
     pinned: patch.pinned ?? false,
+    properties: properties as any,
   }).select().single();
   if (error) throw error;
   return fromRow(data);
