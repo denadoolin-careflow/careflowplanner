@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Note } from "@/lib/notes";
+import { OptionChip, PropertyStyleMark } from "./PropertyStyleDisplay";
 import {
   RHYTHM_FIELDS, EMPTY_RHYTHM_VIEW, activeRhythmCount, rhythmOptions, collectPropFields,
   type RhythmField, type RhythmViewState,
@@ -12,11 +13,11 @@ import {
 interface Props { notes: Note[]; value: RhythmViewState; onChange: (v: RhythmViewState) => void }
 
 const Chip = ({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) => (
-  <button type="button" onClick={onClick} aria-pressed={on}
-    className={cn("min-h-9 rounded-full border px-3 text-xs transition-colors",
-      on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground")}>
+  <Button type="button" variant="ghost" onClick={onClick} aria-pressed={on}
+    className={cn("h-auto min-h-9 max-w-full whitespace-normal rounded-full border px-2 py-1 text-xs transition-colors",
+      on ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border bg-background text-muted-foreground hover:text-foreground")}>
     {children}
-  </button>
+  </Button>
 );
 
 export function RhythmViewControls({ notes, value, onChange }: Props) {
@@ -24,6 +25,11 @@ export function RhythmViewControls({ notes, value, onChange }: Props) {
   const propFields = useMemo(() => collectPropFields(notes), [notes]);
   const activePropKeys = Object.entries(value.props ?? {}).filter(([, v]) => v?.length);
   const activeOnlyProps = activePropKeys.filter(([k]) => !propFields.some(f => f.key === k));
+  const choice = (name: string, option: string) => {
+    const prop = notes.flatMap(n => n.properties ?? []).find(p =>
+      p.name.trim().toLowerCase() === name.trim().toLowerCase() && p.colors?.[option]);
+    return <OptionChip prop={prop ?? { name }} option={option} />;
+  };
   const pick = (k: "group" | "sort", f: RhythmField | null) => onChange({ ...value, [k]: value[k] === f ? null : f });
   const toggle = (f: RhythmField, v: string) => {
     const cur = value.filters[f] ?? [];
@@ -49,16 +55,16 @@ export function RhythmViewControls({ notes, value, onChange }: Props) {
           {count > 0 && <Button variant="ghost" size="sm" className="h-8" onClick={() => onChange(EMPTY_RHYTHM_VIEW)}>Clear</Button>}
         </div>
         <p className="mb-1 text-xs font-medium text-muted-foreground">Group by</p>
-        <div className="mb-3 flex flex-wrap gap-1.5">{RHYTHM_FIELDS.map(f => <Chip key={f.id} on={value.group === f.id} onClick={() => pick("group", f.id)}>{f.label}</Chip>)}</div>
+        <div className="mb-3 flex flex-wrap gap-1.5">{RHYTHM_FIELDS.map(f => <Chip key={f.id} on={value.group === f.id} onClick={() => pick("group", f.id)}><PropertyStyleMark name={f.propName} />{f.label}</Chip>)}</div>
         <p className="mb-1 text-xs font-medium text-muted-foreground">Sort by</p>
-        <div className="mb-3 flex flex-wrap gap-1.5">{RHYTHM_FIELDS.map(f => <Chip key={f.id} on={value.sort === f.id} onClick={() => pick("sort", f.id)}>{f.label}</Chip>)}</div>
+        <div className="mb-3 flex flex-wrap gap-1.5">{RHYTHM_FIELDS.map(f => <Chip key={f.id} on={value.sort === f.id} onClick={() => pick("sort", f.id)}><PropertyStyleMark name={f.propName} />{f.label}</Chip>)}</div>
         <p className="mb-1 text-xs font-medium text-muted-foreground">Filter</p>
         {RHYTHM_FIELDS.map(f => {
           const opts = rhythmOptions(notes, f.id);
           return (
             <div key={f.id} className="mb-2">
-              <p className="mb-1 text-[11px] text-muted-foreground">{f.label}</p>
-              <div className="flex flex-wrap gap-1.5">{opts.map(o => <Chip key={o} on={(value.filters[f.id] ?? []).includes(o)} onClick={() => toggle(f.id, o)}>{o}</Chip>)}</div>
+              <p className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground"><PropertyStyleMark name={f.propName} />{f.label}</p>
+              <div className="flex flex-wrap gap-1.5">{opts.map(o => <Chip key={o} on={(value.filters[f.id] ?? []).includes(o)} onClick={() => toggle(f.id, o)}>{choice(f.propName, o)}</Chip>)}</div>
             </div>
           );
         })}
@@ -67,17 +73,17 @@ export function RhythmViewControls({ notes, value, onChange }: Props) {
             <p className="mb-1 text-xs font-medium text-muted-foreground">Properties</p>
             {propFields.map(f => (
               <div key={f.key} className="mb-2">
-                <p className="mb-1 text-[11px] text-muted-foreground">{f.name}</p>
+                <p className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground"><PropertyStyleMark name={f.name} />{f.name}</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {f.values.map(o => <Chip key={o} on={(value.props?.[f.key] ?? []).includes(o)} onClick={() => toggleProp(f.key, o)}>{o}</Chip>)}
+                  {f.values.map(o => <Chip key={o} on={(value.props?.[f.key] ?? []).includes(o)} onClick={() => toggleProp(f.key, o)}>{choice(f.name, o)}</Chip>)}
                 </div>
               </div>
             ))}
             {activeOnlyProps.map(([k, vals]) => (
               <div key={k} className="mb-2">
-                <p className="mb-1 text-[11px] text-muted-foreground">{k}</p>
+                <p className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground"><PropertyStyleMark name={k} />{k}</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {(vals ?? []).map(o => <Chip key={o} on onClick={() => toggleProp(k, o)}>{o}</Chip>)}
+                  {(vals ?? []).map(o => <Chip key={o} on onClick={() => toggleProp(k, o)}>{choice(k, o)}</Chip>)}
                 </div>
               </div>
             ))}

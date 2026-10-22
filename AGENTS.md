@@ -38,3 +38,4 @@
 - New-moon goal suggestions derive from monthRhythmMoments plus natal houses (sign fallback); swap/dismiss/added state is device-local per new moon, and Add reuses addGoal/addTask.
 - New notes are stamped with rhythm properties (stable rhythm-* ids in notes.properties) at creation; AI summary saves to the ai-summary property via the existing ai-notes summary action.
 - Note property/choice icons and colors sync per account in note_property_styles keyed by normalized property name; per-note prop.colors remains a fallback.
+- Note property display marks and choice chips share PropertyStyleDisplay across editors, gallery cards and rhythm controls so saved styling stays consistent.
