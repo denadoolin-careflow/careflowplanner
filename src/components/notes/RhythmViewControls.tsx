@@ -21,10 +21,19 @@ const Chip = ({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 
 export function RhythmViewControls({ notes, value, onChange }: Props) {
   const count = activeRhythmCount(value);
+  const propFields = useMemo(() => collectPropFields(notes), [notes]);
+  const activePropKeys = Object.entries(value.props ?? {}).filter(([, v]) => v?.length);
+  const activeOnlyProps = activePropKeys.filter(([k]) => !propFields.some(f => f.key === k));
   const pick = (k: "group" | "sort", f: RhythmField | null) => onChange({ ...value, [k]: value[k] === f ? null : f });
   const toggle = (f: RhythmField, v: string) => {
     const cur = value.filters[f] ?? [];
     onChange({ ...value, filters: { ...value.filters, [f]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] } });
+  };
+  const toggleProp = (key: string, v: string) => {
+    const cur = (value.props ?? {})[key] ?? [];
+    const next = { ...(value.props ?? {}), [key]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] };
+    if (!next[key].length) delete next[key];
+    onChange({ ...value, props: next });
   };
   return (
     <Popover>
@@ -53,6 +62,27 @@ export function RhythmViewControls({ notes, value, onChange }: Props) {
             </div>
           );
         })}
+        {(propFields.length > 0 || activeOnlyProps.length > 0) && (
+          <>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">Properties</p>
+            {propFields.map(f => (
+              <div key={f.key} className="mb-2">
+                <p className="mb-1 text-[11px] text-muted-foreground">{f.name}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {f.values.map(o => <Chip key={o} on={(value.props?.[f.key] ?? []).includes(o)} onClick={() => toggleProp(f.key, o)}>{o}</Chip>)}
+                </div>
+              </div>
+            ))}
+            {activeOnlyProps.map(([k, vals]) => (
+              <div key={k} className="mb-2">
+                <p className="mb-1 text-[11px] text-muted-foreground">{k}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(vals ?? []).map(o => <Chip key={o} on onClick={() => toggleProp(k, o)}>{o}</Chip>)}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </PopoverContent>
     </Popover>
   );
