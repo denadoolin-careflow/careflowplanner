@@ -22,10 +22,26 @@ export interface RhythmViewState {
   group: RhythmField | null;
   sort: RhythmField | null;
   filters: Partial<Record<RhythmField, string[]>>;
+  /** Filters for custom select/multi properties, keyed by normalized property name. */
+  props?: Record<string, string[]>;
 }
 export const EMPTY_RHYTHM_VIEW: RhythmViewState = { group: null, sort: null, filters: {} };
 
 const fieldOf = (f: RhythmField) => RHYTHM_FIELDS.find(x => x.id === f)!;
+const normName = (name: string) => name.trim().toLowerCase();
+
+/** A note's values for a named select/multi property (multi values flattened). */
+export function notePropValues(note: Pick<Note, "properties">, nameKey: string): string[] {
+  const out: string[] = [];
+  for (const p of note.properties ?? []) {
+    if (p.type !== "select" && p.type !== "multi") continue;
+    if ((p.name ?? "").trim().toLowerCase() !== nameKey) continue;
+    const v = p.value;
+    if (Array.isArray(v)) out.push(...v.filter(x => typeof x === "string" && x.trim()).map(x => String(x).trim()));
+    else if (typeof v === "string" && v.trim()) out.push(v.trim());
+  }
+  return out;
+}
 
 /** A note's value for a rhythm field (by stable id, falling back to property name). */
 export function rhythmValue(note: Pick<Note, "properties">, f: RhythmField): string | null {
