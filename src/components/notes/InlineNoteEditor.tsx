@@ -111,6 +111,9 @@ export function InlineNoteEditor({ noteId, initial, onBodyChange }: {
       </div>
       <NotePropertiesSection
             createdAt={note.createdAt}
+        noteDate={note.date ?? null}
+        noteTitle={note.title}
+        noteBody={body}
         className="mb-2"
         noteId={note.id}
         tags={note.tags}

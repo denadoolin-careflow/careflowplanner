@@ -41,7 +41,7 @@ export function OptionChip({ prop, option }: { prop: Pick<NoteProperty, "colors"
 export const createdDay = (createdAt?: string) => (createdAt ?? new Date().toISOString()).slice(0, 10);
 export const PROPERTY_TYPES = TYPES;
 
-export function NotePropertiesSection({ noteId, tags, value, onChange, className, createdAt, projectId }: {
+export function NotePropertiesSection({ noteId, tags, value, onChange, className, createdAt, projectId, noteDate, noteTitle, noteBody }: {
   noteId: string;
   /** The note's current project link; seeds a newly added Project property. */
   projectId?: string | null;
@@ -50,6 +50,10 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
   value: NoteProperty[];
   onChange: (next: NoteProperty[]) => void;
   className?: string;
+  /** Used for rhythm details and the AI summary. */
+  noteDate?: string | null;
+  noteTitle?: string;
+  noteBody?: string;
 }) {
   const key = `careflow:note-props-open`;
   const [open, setOpen] = useState(() => localStorage.getItem(key) !== "0");
@@ -89,6 +93,7 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
               </div>
             );
           })}
+          <SmartPropertyActions value={value} onChange={onChange} noteDate={noteDate} createdAt={createdAt} title={noteTitle} body={noteBody} />
           <Popover open={adding} onOpenChange={setAdding}>
             <PopoverTrigger asChild>
               <button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-1 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground">
