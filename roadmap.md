@@ -80,3 +80,4 @@
 
 - [x] Recommend Projects + dashboard redesign integrated with tasks, planner, goals and 12 life areas
 - [x] Verify property icon/color saving and live readback across independent device sessions; temporary picks restored
+- [ ] Adapt note property colors to dark mode, expand icon/color choices, add option settings, and wrap AI summaries; verify signed-in editing
