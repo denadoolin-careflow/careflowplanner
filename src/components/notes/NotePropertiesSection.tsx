@@ -14,6 +14,7 @@ import { ItemFieldsSection } from "@/components/tags/ItemFieldsSection";
 import { PersonPicker } from "@/components/people/PersonPicker";
 import type { NoteProperty, NotePropertyType } from "@/lib/notes";
 import { cn } from "@/lib/utils";
+import { SmartPropertyActions } from "./SmartPropertyActions";
 
 const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
   { type: "text", label: "Text", icon: Type },
