@@ -63,13 +63,22 @@ export function compareRhythm(f: RhythmField, a: string | null, b: string | null
   return rank(f, a) - rank(f, b) || (a ?? "").localeCompare(b ?? "");
 }
 
-/** Filter (AND across fields, OR within a field), then stable-sort by the chosen field. */
+/** Filter (AND across fields + custom properties, OR within a field), then stable-sort by the chosen field. */
 export function applyRhythmView<T extends Pick<Note, "properties">>(notes: T[], s: RhythmViewState): T[] {
-  let out = notes.filter(n => Object.entries(s.filters).every(([f, vals]) => {
-    if (!vals?.length) return true;
-    const v = rhythmValue(n, f as RhythmField) ?? NO_VALUE;
-    return vals.some(x => x.toLowerCase() === v.toLowerCase());
-  }));
+  let out = notes.filter(n => {
+    const byField = Object.entries(s.filters).every(([f, vals]) => {
+      if (!vals?.length) return true;
+      const v = rhythmValue(n, f as RhythmField) ?? NO_VALUE;
+      return vals.some(x => x.toLowerCase() === v.toLowerCase());
+    });
+    if (!byField) return false;
+    return Object.entries(s.props ?? {}).every(([nameKey, vals]) => {
+      if (!vals?.length) return true;
+      const vs = notePropValues(n, nameKey);
+      if (!vs.length) return vals.includes(NO_VALUE);
+      return vals.some(x => vs.some(v => v.toLowerCase() === x.toLowerCase()));
+    });
+  });
   if (s.sort) out = [...out].sort((a, b) => compareRhythm(s.sort!, rhythmValue(a, s.sort!), rhythmValue(b, s.sort!)));
   return out;
 }
