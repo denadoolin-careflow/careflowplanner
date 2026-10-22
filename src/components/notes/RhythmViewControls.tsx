@@ -1,0 +1,58 @@
+import { Moon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import type { Note } from "@/lib/notes";
+import {
+  RHYTHM_FIELDS, EMPTY_RHYTHM_VIEW, activeRhythmCount, rhythmOptions,
+  type RhythmField, type RhythmViewState,
+} from "@/lib/notes/rhythm-view";
+
+interface Props { notes: Note[]; value: RhythmViewState; onChange: (v: RhythmViewState) => void }
+
+const Chip = ({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) => (
+  <button type="button" onClick={onClick} aria-pressed={on}
+    className={cn("min-h-9 rounded-full border px-3 text-xs transition-colors",
+      on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground")}>
+    {children}
+  </button>
+);
+
+export function RhythmViewControls({ notes, value, onChange }: Props) {
+  const count = activeRhythmCount(value);
+  const pick = (k: "group" | "sort", f: RhythmField | null) => onChange({ ...value, [k]: value[k] === f ? null : f });
+  const toggle = (f: RhythmField, v: string) => {
+    const cur = value.filters[f] ?? [];
+    onChange({ ...value, filters: { ...value.filters, [f]: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] } });
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="icon" className="notes-round-control relative h-10 w-10" aria-label="Group, sort and filter by rhythm">
+          <Moon className="h-4 w-4" />
+          {count > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] text-primary-foreground">{count}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="max-h-[70dvh] w-[min(92vw,340px)] overflow-y-auto p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="font-display text-base">Rhythm view</p>
+          {count > 0 && <Button variant="ghost" size="sm" className="h-8" onClick={() => onChange(EMPTY_RHYTHM_VIEW)}>Clear</Button>}
+        </div>
+        <p className="mb-1 text-xs font-medium text-muted-foreground">Group by</p>
+        <div className="mb-3 flex flex-wrap gap-1.5">{RHYTHM_FIELDS.map(f => <Chip key={f.id} on={value.group === f.id} onClick={() => pick("group", f.id)}>{f.label}</Chip>)}</div>
+        <p className="mb-1 text-xs font-medium text-muted-foreground">Sort by</p>
+        <div className="mb-3 flex flex-wrap gap-1.5">{RHYTHM_FIELDS.map(f => <Chip key={f.id} on={value.sort === f.id} onClick={() => pick("sort", f.id)}>{f.label}</Chip>)}</div>
+        <p className="mb-1 text-xs font-medium text-muted-foreground">Filter</p>
+        {RHYTHM_FIELDS.map(f => {
+          const opts = rhythmOptions(notes, f.id);
+          return (
+            <div key={f.id} className="mb-2">
+              <p className="mb-1 text-[11px] text-muted-foreground">{f.label}</p>
+              <div className="flex flex-wrap gap-1.5">{opts.map(o => <Chip key={o} on={(value.filters[f.id] ?? []).includes(o)} onClick={() => toggle(f.id, o)}>{o}</Chip>)}</div>
+            </div>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
