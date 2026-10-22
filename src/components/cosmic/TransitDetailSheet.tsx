@@ -1,3 +1,4 @@
+import { stampForNewNote } from "@/lib/notes/rhythm-properties";
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
@@ -67,6 +68,7 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
       if (kind === "note") {
         const { data, error } = await (supabase as any).from("notes").insert({
           user_id: u.user.id,
+            properties: (await stampForNewNote(u.user.id, null)) as any,
           title: `Transit · ${event.title}`,
           body,
           kind: "note",

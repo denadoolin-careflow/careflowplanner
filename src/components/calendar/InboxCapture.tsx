@@ -1,3 +1,4 @@
+import { stampForNewNote } from "@/lib/notes/rhythm-properties";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as chrono from "chrono-node";
 import { format } from "date-fns";
@@ -135,6 +136,7 @@ export function InboxCapture({ defaultDate }: { defaultDate?: Date }) {
           if (!uid) { toast.error("Sign in to save notes."); break; }
           const { error } = await supabase.from("notes").insert({
             user_id: uid,
+            properties: (await stampForNewNote(uid, dateISO ?? null)) as any,
             title: preview.title.slice(0, 80),
             body: preview.title,
             kind: "note",

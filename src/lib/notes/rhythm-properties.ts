@@ -20,7 +20,7 @@ export const SUMMARY_PROP_ID = "ai-summary";
 const RHYTHM_IDS = new Set<string>(Object.values(RHYTHM_PROP_IDS));
 export const isRhythmProp = (p: Pick<NoteProperty, "id">) => RHYTHM_IDS.has(p.id);
 
-export interface CycleInput { settings: Pick<CycleSettings, "enabled"> & CycleSettings; periods: PeriodLog[] }
+export interface CycleInput { settings: CycleSettings; periods: PeriodLog[] }
 
 const sel = (id: string, name: string, v: string | null): NoteProperty | null =>
   v ? { id, name, type: "select", value: v, options: [v] } : null;

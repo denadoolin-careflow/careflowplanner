@@ -1,3 +1,4 @@
+import { stampForNewNote } from "@/lib/notes/rhythm-properties";
 import { useCallback, useEffect, useState } from "react";
 import { Star, Save, BookOpen, FileText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,6 +145,7 @@ export function TransitJournalInline({
       ].filter(Boolean).join("\n");
       const { error } = await (supabase as any).from("notes").insert({
         user_id: u.user.id,
+            properties: (await stampForNewNote(u.user.id, null)) as any,
         title: `Transit · ${eventLabel}${eventDate ? ` · ${eventDate}` : ""}`,
         body,
         kind: "note",
