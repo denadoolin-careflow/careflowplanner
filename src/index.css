@@ -536,7 +536,12 @@
     .planner-month-day { @apply min-h-[62px] border-border/30 p-0.5; }
     .planner-month-day__rhythm { @apply justify-center gap-0.5 text-[8px]; }
     .planner-month-day__header { @apply min-h-8 justify-center; }
-    .planner-month-day__number { @apply h-7 w-7 text-xs; }
+    .planner-month-day__number { @apply h-8 w-8 text-sm; }
+    .planner-month-day--today .planner-month-day__number { @apply ring-2 ring-primary/60; }
+    .planner-month-day--selected .planner-month-day__number { @apply bg-primary text-primary-foreground; }
+    .planner-month-fold { @apply rounded-xl border border-border/50 bg-card/60 px-3; }
+    .planner-month-fold > summary { @apply flex min-h-11 cursor-pointer items-center text-sm font-medium; }
+    .planner-month-fold[open] { @apply pb-3; }
     .planner-month-day__header > span:last-child { @apply hidden; }
     .planner-month-day__today-label { @apply absolute left-1/2 top-0 -translate-x-1/2 px-1 text-[6px]; }
     .planner-month-day__capacity { @apply justify-center; }
