@@ -79,3 +79,4 @@
 - [x] Show each task's linked life-area goal on Today surfaces (plan list, must-do, top-3, schedule, anchor, rails) and Planner; verified at phone and desktop widths
 
 - [x] Recommend Projects + dashboard redesign integrated with tasks, planner, goals and 12 life areas
+- [x] Verify property icon/color saving and live readback across independent device sessions; temporary picks restored
