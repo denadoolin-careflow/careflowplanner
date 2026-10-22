@@ -103,4 +103,23 @@ export function rhythmOptions(notes: Pick<Note, "properties">[], f: RhythmField)
 }
 
 export const activeRhythmCount = (s: RhythmViewState) =>
-  (s.group ? 1 : 0) + (s.sort ? 1 : 0) + Object.values(s.filters).filter(v => v?.length).length;
+  (s.group ? 1 : 0) + (s.sort ? 1 : 0) + Object.values(s.filters).filter(v => v?.length).length + Object.values(s.props ?? {}).filter(v => v?.length).length;
+
+const RHYTHM_NAMES = new Set(RHYTHM_FIELDS.map(f => f.propName.toLowerCase()));
+
+export interface PropFilterField { key: string; name: string; values: string[] }
+
+/** Custom select/multi properties present across notes (rhythm fields excluded), for filter choices. */
+export function collectPropFields(notes: Pick<Note, "properties">[]): PropFilterField[] {
+  const map = new Map<string, { name: string; values: Set<string> }>();
+  for (const n of notes) for (const p of n.properties ?? []) {
+    if (p.type !== "select" && p.type !== "multi") continue;
+    const name = (p.name ?? "").trim();
+    const key = name.toLowerCase();
+    if (!key || RHYTHM_NAMES.has(key)) continue;
+    const entry = map.get(key) ?? { name, values: new Set<string>() };
+    for (const v of notePropValues(n, key)) entry.values.add(v);
+    map.set(key, entry);
+  }
+  return [...map.entries()].map(([key, e]) => ({ key, name: e.name, values: [...e.values].sort((a, b) => a.localeCompare(b)) }));
+}
