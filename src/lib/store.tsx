@@ -312,7 +312,7 @@ interface Ctx {
   addArea: (patch: Partial<AreaRecord> & { name: string }) => Promise<AreaRecord | null>;
   deleteArea: (id: string) => Promise<void>;
 
-  addGoal: (g: Partial<Goal> & { title: string }) => Promise<void>;
+  addGoal: (g: Partial<Goal> & { title: string }) => Promise<string | undefined>;
   updateGoal: (id: string, patch: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
 
@@ -875,6 +875,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!uid) return;
       const { data } = await supabase.from("goals").insert({ user_id: uid, category: "Personal", timeline: "Q1", progress: 0, ...goalTo(g) }).select().single();
       if (data) setState(s => ({ ...s, goals: [goalFrom(data), ...s.goals] }));
+      return data?.id;
     },
     updateGoal: async (id, patch) => {
       setState(s => ({ ...s, goals: s.goals.map(g => g.id === id ? { ...g, ...patch } : g) }));

@@ -11,6 +11,7 @@ import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { TodayMoonHeader } from "@/components/today/TodayMoonHeader";
+import { NewMoonGoalCard } from "@/components/today/NewMoonGoalCard";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { useTodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
@@ -180,6 +181,7 @@ function TodayInner() {
           onTemplates={() => setGalleryOpen(true)}
         />
         <TodayMoonHeader />
+        {isReallyToday && <NewMoonGoalCard />}
         <DemoTasksBanner />
         <MoonJournalReminderBanner date={day} />
         {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
