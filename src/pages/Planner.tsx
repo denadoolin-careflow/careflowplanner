@@ -763,7 +763,7 @@ export default function Planner() {
               <PlannerWeekTable weekStart={weekStart} />
             )}
             {nativeRange && view === "month" && monthMode === "calendar" && (
-              <PlannerMonthExperience date={day} onOpenDay={openDay} onCapture={() => setCaptureOpen(true)} />
+              <PlannerMonthExperience date={day} onOpenDay={openDay} onCapture={() => setCaptureOpen(true)} onChangeMonth={go} />
             )}
             {nativeRange && view === "month" && monthMode === "overview" && (
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
