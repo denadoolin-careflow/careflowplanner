@@ -45,7 +45,7 @@ import { noteDisplayTitle, weekKeyFor, monthKeyFor } from "@/lib/notes/periods";
 import { openPeriodNoteWithTemplate, readDefaultPeriodTemplate } from "@/lib/notes/daily";
 import { getNoteCoverCss } from "@/lib/note-covers";
 import { RhythmViewControls } from "@/components/notes/RhythmViewControls";
-import { applyRhythmView, groupByRhythm, EMPTY_RHYTHM_VIEW, type RhythmViewState } from "@/lib/notes/rhythm-view";
+import { applyRhythmView, groupByRhythm, EMPTY_RHYTHM_VIEW, RHYTHM_FIELDS, type RhythmViewState } from "@/lib/notes/rhythm-view";
 
 type View = "notebook" | "outline" | "list" | "compact" | "grid" | "board" | "table" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
@@ -151,6 +151,24 @@ export default function Notes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, collection, activeTag, q, notebookMonth]);
 
+  // Opening a property value (e.g. "See all notes with Full Moon" from a note's Properties)
+  // lands here with ?prop=<name>&value=<value>; apply it as a property filter, then clean the URL.
+  useEffect(() => {
+    const prop = params.get("prop");
+    const value = params.get("value");
+    if (!prop || !value) return;
+    const key = prop.trim().toLowerCase();
+    const rf = RHYTHM_FIELDS.find(f => f.propName.toLowerCase() === key);
+    setRhythmView(v => rf
+      ? { ...v, group: null, filters: { ...v.filters, [rf.id]: [value] } }
+      : { ...v, group: null, props: { ...(v.props ?? {}), [key]: [value] } });
+    setView(v => (v === "grid" || v === "table" ? v : "grid"));
+    const next = new URLSearchParams(params);
+    next.delete("prop"); next.delete("value");
+    setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
+
   const refresh = async () => {
     setLoading(true);
     try {
@@ -179,6 +197,15 @@ export default function Notes() {
   const pinnedStrip = useMemo(() => notes.filter(n => n.pinned).slice(0, 3), [notes]);
   const rhythmed = useMemo(() => applyRhythmView(filtered, rhythmView), [filtered, rhythmView]);
   const rhythmGroups = useMemo(() => rhythmView.group ? groupByRhythm(rhythmed, rhythmView.group) : [{ key: "all", notes: rhythmed }], [rhythmed, rhythmView.group]);
+  // Tapping a group heading (e.g. "Full Moon") shows only the notes in that group.
+  const toggleGroupFilter = (key: string) => {
+    const f = rhythmView.group;
+    if (!f) return;
+    setRhythmView(v => {
+      const cur = v.filters[f] ?? [];
+      return { ...v, filters: { ...v.filters, [f]: cur.includes(key) ? cur.filter(x => x !== key) : [...cur, key] } };
+    });
+  };
 
   const selectNote = (id: string) => navigate(`/notes/${id}`);
   const closeNote = () => { const next = new URLSearchParams(params); next.delete("note"); setParams(next, { replace: true }); };
@@ -331,7 +358,12 @@ export default function Notes() {
               ) : (view === "grid" ? rhythmed : filtered).length === 0 && view !== "table" ? <EmptyNotes onCreate={() => void newNote()} /> : view === "grid" ? (
                 <div className="space-y-5">{rhythmGroups.map(g => (
                   <div key={g.key}>
-                    {rhythmView.group && <h3 className="mb-2 font-display text-base">{g.key} <span className="font-sans text-xs text-muted-foreground">· {g.notes.length}</span></h3>}
+                    {rhythmView.group && (
+                      <button type="button" onClick={() => toggleGroupFilter(g.key)} title={`Show only ${g.key} notes`} className="mb-2 block text-left">
+                        <span className="font-display text-base underline-offset-4 hover:text-primary hover:underline">{g.key}</span>{" "}
+                        <span className="font-sans text-xs text-muted-foreground">· {g.notes.length}</span>
+                      </button>
+                    )}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{g.notes.map(n => <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} previewLines={previewLines} />)}</div>
                   </div>
                 ))}</div>
@@ -340,7 +372,12 @@ export default function Notes() {
               ) : view === "table" ? (
                 <div className="space-y-5">{rhythmGroups.map(g => (
                   <div key={g.key}>
-                    {rhythmView.group && <h3 className="mb-2 font-display text-base">{g.key} <span className="font-sans text-xs text-muted-foreground">· {g.notes.length}</span></h3>}
+                    {rhythmView.group && (
+                      <button type="button" onClick={() => toggleGroupFilter(g.key)} title={`Show only ${g.key} notes`} className="mb-2 block text-left">
+                        <span className="font-display text-base underline-offset-4 hover:text-primary hover:underline">{g.key}</span>{" "}
+                        <span className="font-sans text-xs text-muted-foreground">· {g.notes.length}</span>
+                      </button>
+                    )}
                     <NotesTableView notes={g.notes} allNotes={notes} selectedId={noteParam} onSelect={selectNote} sort={sort} onSortChange={s => { setSort(s); setRhythmView(v => ({ ...v, sort: null })); }} onPropertiesChange={(id, properties) => { setNotes(prev => prev.map(x => x.id === id ? { ...x, properties } : x)); void updateNote(id, { properties }).catch(() => toast.error("Save failed")); }} onCreate={async (title, properties) => { const n = await createNote({ title }); if (properties.length) await updateNote(n.id, { properties }); setNotes(prev => [{ ...n, properties }, ...prev]); }} />
                   </div>
                 ))}</div>

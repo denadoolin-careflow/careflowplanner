@@ -22,10 +22,26 @@ export interface RhythmViewState {
   group: RhythmField | null;
   sort: RhythmField | null;
   filters: Partial<Record<RhythmField, string[]>>;
+  /** Filters for custom select/multi properties, keyed by normalized property name. */
+  props?: Record<string, string[]>;
 }
 export const EMPTY_RHYTHM_VIEW: RhythmViewState = { group: null, sort: null, filters: {} };
 
 const fieldOf = (f: RhythmField) => RHYTHM_FIELDS.find(x => x.id === f)!;
+const normName = (name: string) => name.trim().toLowerCase();
+
+/** A note's values for a named select/multi property (multi values flattened). */
+export function notePropValues(note: Pick<Note, "properties">, nameKey: string): string[] {
+  const out: string[] = [];
+  for (const p of note.properties ?? []) {
+    if (p.type !== "select" && p.type !== "multi") continue;
+    if ((p.name ?? "").trim().toLowerCase() !== nameKey) continue;
+    const v = p.value;
+    if (Array.isArray(v)) out.push(...v.filter(x => typeof x === "string" && x.trim()).map(x => String(x).trim()));
+    else if (typeof v === "string" && v.trim()) out.push(v.trim());
+  }
+  return out;
+}
 
 /** A note's value for a rhythm field (by stable id, falling back to property name). */
 export function rhythmValue(note: Pick<Note, "properties">, f: RhythmField): string | null {
@@ -47,13 +63,22 @@ export function compareRhythm(f: RhythmField, a: string | null, b: string | null
   return rank(f, a) - rank(f, b) || (a ?? "").localeCompare(b ?? "");
 }
 
-/** Filter (AND across fields, OR within a field), then stable-sort by the chosen field. */
+/** Filter (AND across fields + custom properties, OR within a field), then stable-sort by the chosen field. */
 export function applyRhythmView<T extends Pick<Note, "properties">>(notes: T[], s: RhythmViewState): T[] {
-  let out = notes.filter(n => Object.entries(s.filters).every(([f, vals]) => {
-    if (!vals?.length) return true;
-    const v = rhythmValue(n, f as RhythmField) ?? NO_VALUE;
-    return vals.some(x => x.toLowerCase() === v.toLowerCase());
-  }));
+  let out = notes.filter(n => {
+    const byField = Object.entries(s.filters).every(([f, vals]) => {
+      if (!vals?.length) return true;
+      const v = rhythmValue(n, f as RhythmField) ?? NO_VALUE;
+      return vals.some(x => x.toLowerCase() === v.toLowerCase());
+    });
+    if (!byField) return false;
+    return Object.entries(s.props ?? {}).every(([nameKey, vals]) => {
+      if (!vals?.length) return true;
+      const vs = notePropValues(n, nameKey);
+      if (!vs.length) return vals.includes(NO_VALUE);
+      return vals.some(x => vs.some(v => v.toLowerCase() === x.toLowerCase()));
+    });
+  });
   if (s.sort) out = [...out].sort((a, b) => compareRhythm(s.sort!, rhythmValue(a, s.sort!), rhythmValue(b, s.sort!)));
   return out;
 }
@@ -78,4 +103,23 @@ export function rhythmOptions(notes: Pick<Note, "properties">[], f: RhythmField)
 }
 
 export const activeRhythmCount = (s: RhythmViewState) =>
-  (s.group ? 1 : 0) + (s.sort ? 1 : 0) + Object.values(s.filters).filter(v => v?.length).length;
+  (s.group ? 1 : 0) + (s.sort ? 1 : 0) + Object.values(s.filters).filter(v => v?.length).length + Object.values(s.props ?? {}).filter(v => v?.length).length;
+
+const RHYTHM_NAMES = new Set(RHYTHM_FIELDS.map(f => f.propName.toLowerCase()));
+
+export interface PropFilterField { key: string; name: string; values: string[] }
+
+/** Custom select/multi properties present across notes (rhythm fields excluded), for filter choices. */
+export function collectPropFields(notes: Pick<Note, "properties">[]): PropFilterField[] {
+  const map = new Map<string, { name: string; values: Set<string> }>();
+  for (const n of notes) for (const p of n.properties ?? []) {
+    if (p.type !== "select" && p.type !== "multi") continue;
+    const name = (p.name ?? "").trim();
+    const key = name.toLowerCase();
+    if (!key || RHYTHM_NAMES.has(key)) continue;
+    const entry = map.get(key) ?? { name, values: new Set<string>() };
+    for (const v of notePropValues(n, key)) entry.values.add(v);
+    map.set(key, entry);
+  }
+  return [...map.entries()].map(([key, e]) => ({ key, name: e.name, values: [...e.values].sort((a, b) => a.localeCompare(b)) }));
+}

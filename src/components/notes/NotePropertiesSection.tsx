@@ -3,8 +3,8 @@
  * notes.properties; shared supertag fields (from the note's tags) render below.
  */
 import { useState } from "react";
-import { Plus, Trash2, Type, Hash, Calendar, ListChecks, Tags, CheckSquare, Link2, User, ChevronDown, ChevronRight, FolderKanban } from "lucide-react";
-import { Link as RouterLink } from "react-router-dom";
+import { Plus, Trash2, Type, Hash, Calendar, ListChecks, Tags, CheckSquare, Link2, User, ChevronDown, ChevronRight, FolderKanban, ListFilter } from "lucide-react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -165,6 +165,7 @@ function removeOption(prop: NoteProperty, o: string): Partial<NoteProperty> {
 }
 
 function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Partial<NoteProperty>) => void }) {
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const multi = prop.type === "multi";
   const selected: string[] = multi ? (Array.isArray(prop.value) ? prop.value as string[] : []) : prop.value ? [String(prop.value)] : [];
@@ -175,15 +176,33 @@ function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Pa
     else onChange({ options: opts, value: selected[0] === o ? null : o });
     setQ("");
   };
+  const seeAll = () => {
+    const v = selected[0];
+    if (v) navigate(`/notes?view=grid&prop=${encodeURIComponent(prop.name.trim() || prop.name)}&value=${encodeURIComponent(v)}`);
+  };
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <button type="button" className="flex min-h-7 w-full flex-wrap items-center gap-1 rounded px-1 text-left text-xs hover:bg-muted/50">
-          {selected.length ? selected.map(s => <OptionChip key={s} prop={prop} option={s} />)
-            : <span className="text-muted-foreground">Empty</span>}
-        </button>
-      </PopoverTrigger>
+      <div className="flex w-full items-center gap-1">
+        <PopoverTrigger asChild>
+          <button type="button" className="flex min-h-7 min-w-0 flex-1 flex-wrap items-center gap-1 rounded px-1 text-left text-xs hover:bg-muted/50">
+            {selected.length ? selected.map(s => <OptionChip key={s} prop={prop} option={s} />)
+              : <span className="text-muted-foreground">Empty</span>}
+          </button>
+        </PopoverTrigger>
+        {selected.length > 0 && (
+          <button type="button" onClick={seeAll} title={`See all notes with ${selected[0]}`}
+            aria-label={`See all notes with ${selected[0]}`}
+            className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+            <ListFilter className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       <PopoverContent align="start" className="w-56 space-y-1 p-2">
+        {selected.length > 0 && (
+          <Button size="sm" variant="ghost" className="h-7 w-full justify-start text-xs" onClick={seeAll}>
+            <ListFilter className="mr-1.5 h-3 w-3 shrink-0" /> See all notes with "{selected[0]}"
+          </Button>
+        )}
         <Input autoFocus placeholder="Find or create…" value={q} onChange={e => setQ(e.target.value)} className="h-8 text-xs"
           onKeyDown={e => { if (e.key === "Enter" && q.trim()) { e.preventDefault(); pick(q.trim()); } }} />
         {options.filter(o => o.toLowerCase().includes(q.toLowerCase())).map(o => (
