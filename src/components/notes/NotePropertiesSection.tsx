@@ -2,8 +2,8 @@
  * Notion-style page properties for a note. Per-note properties live on
  * notes.properties; shared supertag fields (from the note's tags) render below.
  */
-import { useState } from "react";
-import { Plus, Trash2, Type, Hash, Calendar, ListChecks, Tags, CheckSquare, Link2, User, ChevronDown, ChevronRight, FolderKanban, ListFilter } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Trash2, Type, Hash, Calendar, ListChecks, Tags, CheckSquare, Link2, User, ChevronDown, ChevronRight, FolderKanban, ListFilter, Settings2 } from "lucide-react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { SmartPropertyActions } from "./SmartPropertyActions";
 import { PROPERTY_ICONS, usePropertyStyles, resolveOption, resolveProp, setOptionStyle, setPropStyle } from "@/lib/notes/property-styles";
 import { OPTION_COLORS, optionColor, OptionChip } from "./PropertyStyleDisplay";
+import { propertyColorStyle } from "@/lib/notes/property-colors";
+import { IconGrid, PropertyColorGrid } from "./PropertyStylePicker";
 export { OPTION_COLORS, optionColor, OptionChip } from "./PropertyStyleDisplay";
 
 const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
@@ -32,18 +34,6 @@ const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
 ];
 const iconFor = (t: NotePropertyType) => TYPES.find(x => x.type === t)?.icon ?? Type;
 
-function IconGrid({ value, onPick }: { value?: string; onPick: (k: string | undefined) => void }) {
-  return (
-    <div className="grid grid-cols-6 gap-1">
-      <button type="button" aria-label="No icon" onClick={() => onPick(undefined)} className={cn("flex h-7 w-7 items-center justify-center rounded text-[10px] text-muted-foreground hover:bg-muted", !value && "ring-2 ring-primary")}>—</button>
-      {Object.entries(PROPERTY_ICONS).map(([k, I]) => (
-        <button key={k} type="button" aria-label={`Icon ${k}`} onClick={() => onPick(k)}
-          className={cn("flex h-7 w-7 items-center justify-center rounded hover:bg-muted", value === k && "ring-2 ring-primary")}><I className="h-3.5 w-3.5" /></button>
-      ))}
-    </div>
-  );
-}
-
 function PropertyIcon({ prop }: { prop: NoteProperty }) {
   const map = usePropertyStyles();
   const st = resolveProp(map, prop.name);
@@ -51,22 +41,16 @@ function PropertyIcon({ prop }: { prop: NoteProperty }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" aria-label={`Icon and color for ${prop.name}`} className="flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-muted"
-          style={st.color ? { backgroundColor: st.color } : undefined}>
+        <Button variant="ghost" size="icon" aria-label={`Icon and color for ${prop.name}`} className={cn("h-8 w-8 shrink-0 rounded", st.color && "note-property-color")}
+          style={propertyColorStyle(st.color)}>
           <Icon className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-56 space-y-2 p-2">
+      <PopoverContent align="start" className="max-h-[75dvh] w-[min(92vw,280px)] space-y-2 overflow-y-auto p-2">
         <p className="text-[11px] font-medium text-muted-foreground">Icon</p>
         <IconGrid value={st.icon} onPick={k => setPropStyle(prop.name, { icon: k })} />
         <p className="text-[11px] font-medium text-muted-foreground">Color</p>
-        <div className="grid grid-cols-6 gap-1">
-          <button type="button" aria-label="No color" onClick={() => setPropStyle(prop.name, { color: undefined })} className="h-5 w-5 rounded-full border border-border text-[9px] text-muted-foreground">—</button>
-          {OPTION_COLORS.map(c => (
-            <button key={c} type="button" aria-label={`Use color ${c}`} onClick={() => setPropStyle(prop.name, { color: c })}
-              className={cn("h-5 w-5 rounded-full border border-border", st.color === c && "ring-2 ring-primary")} style={{ backgroundColor: c }} />
-          ))}
-        </div>
+        <PropertyColorGrid value={st.color} allowClear onPick={color => setPropStyle(prop.name, { color })} />
         <p className="text-[10px] text-muted-foreground">Applies to "{prop.name}" on every note.</p>
       </PopoverContent>
     </Popover>
@@ -98,7 +82,7 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
 
   const patch = (id: string, p: Partial<NoteProperty>) => onChange(value.map(v => v.id === id ? { ...v, ...p } : v));
   const add = (type: NotePropertyType) => {
-    const label = name.trim() || TYPES.find(t => t.type === type)!.label;
+    const label = name.trim() || TYPES.find(t => t.type === type)?.label || "Property";
     onChange([...value, { id: crypto.randomUUID(), name: label, type, value: type === "checkbox" ? false : type === "multi" ? [] : type === "date" ? createdDay(createdAt) : type === "project" ? (projectId ?? null) : null, options: [] }]);
     setName(""); setAdding(false);
   };
@@ -113,13 +97,13 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
         <div className="space-y-0.5">
           {value.map(p => {
             return (
-              <div key={p.id} className="group grid grid-cols-[minmax(110px,160px)_1fr_auto] items-center gap-2 rounded-md px-1 py-0.5 hover:bg-muted/40">
+              <div key={p.id} className={cn("group grid items-center gap-2 rounded-md px-1 py-0.5 hover:bg-muted/40", p.type === "text" ? "grid-cols-[1fr_auto]" : "grid-cols-[minmax(90px,140px)_minmax(0,1fr)_auto]")}>
                 <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
                   <PropertyIcon prop={p} />
                   <input value={p.name} onChange={e => patch(p.id, { name: e.target.value })} aria-label="Property name"
                     className="w-full min-w-0 bg-transparent text-xs outline-none focus:text-foreground" />
                 </div>
-                <PropValue prop={p} onChange={pp => patch(p.id, pp)} />
+                <div className={cn("min-w-0", p.type === "text" && "order-last col-span-full")}><PropValue prop={p} onChange={pp => patch(p.id, pp)} /></div>
                 <button type="button" aria-label={`Remove ${p.name}`} onClick={() => onChange(value.filter(v => v.id !== p.id))}
                   className="rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100 focus:opacity-100">
                   <Trash2 className="h-3.5 w-3.5" />
@@ -156,6 +140,8 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
 export function PropValue({ prop, onChange }: { prop: NoteProperty; onChange: (p: Partial<NoteProperty>) => void }) {
   const base = "h-7 w-full rounded bg-transparent px-1 text-xs outline-none hover:bg-muted/50 focus:bg-muted/60";
   switch (prop.type) {
+    case "text":
+      return <TextPropertyValue prop={prop} onChange={onChange} />;
     case "checkbox":
       return <Switch checked={!!prop.value} onCheckedChange={v => onChange({ value: v })} aria-label={prop.name} />;
     case "number":
@@ -181,6 +167,24 @@ export function PropValue({ prop, onChange }: { prop: NoteProperty; onChange: (p
     default:
       return <input className={base} placeholder="Empty" defaultValue={(prop.value as string) ?? ""} onBlur={e => onChange({ value: e.target.value || null })} />;
   }
+}
+
+function TextPropertyValue({ prop, onChange }: { prop: NoteProperty; onChange: (p: Partial<NoteProperty>) => void }) {
+  const [draft, setDraft] = useState(String(prop.value ?? ""));
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { setDraft(String(prop.value ?? "")); }, [prop.value]);
+  useEffect(() => {
+    const field = ref.current;
+    if (!field) return;
+    const resize = () => { field.style.height = "0px"; field.style.height = `${field.scrollHeight}px`; };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(field);
+    return () => observer.disconnect();
+  }, [draft]);
+  return <textarea ref={ref} rows={1} aria-label={prop.name} placeholder="Empty" value={draft}
+    onChange={e => setDraft(e.target.value)} onBlur={() => { if (draft !== String(prop.value ?? "")) onChange({ value: draft || null }); }}
+    className="block min-h-8 w-full resize-none overflow-hidden whitespace-pre-wrap break-words rounded bg-transparent px-1 py-1 text-xs leading-relaxed outline-none hover:bg-muted/50 focus:bg-muted/60" />;
 }
 
 /** Rename an option everywhere it appears in this property (options, colors, value). */
@@ -231,7 +235,7 @@ function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Pa
           </button>
         )}
       </div>
-      <PopoverContent align="start" className="w-56 space-y-1 p-2">
+      <PopoverContent align="start" className="max-h-[75dvh] w-[min(92vw,300px)] space-y-1 overflow-y-auto p-2">
         {selected.length > 0 && (
           <Button size="sm" variant="ghost" className="h-7 w-full justify-start text-xs" onClick={seeAll}>
             <ListFilter className="mr-1.5 h-3 w-3 shrink-0" /> See all notes with "{selected[0]}"
@@ -241,23 +245,19 @@ function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Pa
           onKeyDown={e => { if (e.key === "Enter" && q.trim()) { e.preventDefault(); pick(q.trim()); } }} />
         {options.filter(o => o.toLowerCase().includes(q.toLowerCase())).map(o => (
           <div key={o} className="flex items-center gap-1">
-            <button type="button" onClick={() => pick(o)} className={cn("flex flex-1 items-center justify-between rounded px-2 py-1 text-xs hover:bg-muted", selected.includes(o) && "font-medium")}>
+            <Button variant="ghost" onClick={() => pick(o)} className={cn("min-h-10 h-auto min-w-0 flex-1 justify-between whitespace-normal rounded px-2 py-1 text-xs", selected.includes(o) && "font-medium")}>
               <OptionChip prop={prop} option={o} />{selected.includes(o) && <CheckSquare className="h-3 w-3" />}
-            </button>
+            </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <button type="button" aria-label={`Color for ${o}`} className="h-4 w-4 rounded-full border border-border" style={{ backgroundColor: optionColor(prop, o, map) }} />
+                <Button variant="ghost" size="icon" aria-label={`Settings for ${o}`} title={`Colors and icons for ${o}`} className="h-10 w-10 shrink-0"><Settings2 className="h-4 w-4" /></Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-56 space-y-2 p-2">
+              <PopoverContent align="end" className="max-h-[75dvh] w-[min(92vw,280px)] space-y-2 overflow-y-auto p-2">
                 <Input defaultValue={o} aria-label={`Rename ${o}`} className="h-7 text-xs"
                   onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                   onBlur={e => { const t = e.target.value.trim(); if (t && t !== o) onChange(renameOption(prop, o, t)); }} />
-                <div className="grid grid-cols-5 gap-1">
-                  {OPTION_COLORS.map(c => (
-                    <button key={c} type="button" aria-label={`Use color ${c}`} onClick={() => { onChange({ colors: { ...(prop.colors ?? {}), [o]: c } }); setOptionStyle(prop.name, o, { color: c }); }}
-                      className={cn("h-5 w-5 rounded-full border border-border", optionColor(prop, o, map) === c && "ring-2 ring-primary")} style={{ backgroundColor: c }} />
-                  ))}
-                </div>
+                <p className="text-[11px] font-medium text-muted-foreground">Color</p>
+                <PropertyColorGrid value={optionColor(prop, o, map)} onPick={color => { if (!color) return; onChange({ colors: { ...(prop.colors ?? {}), [o]: color } }); setOptionStyle(prop.name, o, { color }); }} />
                 <p className="text-[11px] font-medium text-muted-foreground">Icon</p>
                 <IconGrid value={resolveOption(map, prop.name, o).icon} onPick={k => setOptionStyle(prop.name, o, { icon: k })} />
                 <button type="button" onClick={() => onChange(removeOption(prop, o))}
