@@ -40,29 +40,94 @@ export const DEFAULT_STYLES: StyleMap = {
 };
 
 const LS = "careflow.notes.propertyStyles";
-let styles: StyleMap = (() => { try { return JSON.parse(localStorage.getItem(LS) || "{}"); } catch { return {}; } })();
+let styles: StyleMap = {};
 const listeners = new Set<() => void>();
-let loaded = false;
 let userId: string | null = null;
+let pending: StyleMap = {};
+let saving = false;
+let started = false;
+let channel: ReturnType<typeof supabase.channel> | null = null;
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
-function emit() { try { localStorage.setItem(LS, JSON.stringify(styles)); } catch {} listeners.forEach(l => l()); }
-
-async function load() {
-  if (loaded) return; loaded = true;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  userId = user.id;
-  const { data } = await (supabase as any).from("note_property_styles").select("styles").eq("user_id", user.id).maybeSingle();
-  if (data?.styles) { styles = { ...styles, ...data.styles }; emit(); }
+/** Merge only changed fields, preserving unrelated choices from other devices. */
+export function mergeStylePatch(base: StyleMap, patch: StyleMap): StyleMap {
+  const next = { ...base };
+  for (const [key, bit] of Object.entries(patch)) {
+    const current = next[key] ?? {};
+    const options = { ...current.options };
+    for (const [option, value] of Object.entries(bit.options ?? {})) options[option] = { ...options[option], ...value };
+    next[key] = { ...current, ...bit, ...(current.options || bit.options ? { options } : {}) };
+  }
+  return next;
 }
 
-let saveTimer: any;
-function persist() {
+function readCache(key: string): StyleMap {
+  try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; }
+}
+function emit() {
+  if (userId) {
+    try {
+      localStorage.setItem(`${LS}.${userId}`, JSON.stringify(styles));
+      localStorage.setItem(`${LS}.${userId}.pending`, JSON.stringify(pending));
+    } catch {}
+  }
+  listeners.forEach(l => l());
+}
+async function refresh() {
+  const uid = userId;
+  if (!uid) return;
+  const { data, error } = await supabase.from("note_property_styles").select("styles").eq("user_id", uid).maybeSingle();
+  if (uid !== userId || error) return;
+  styles = mergeStylePatch((data?.styles ?? {}) as StyleMap, pending);
+  emit();
+}
+async function flush() {
+  const uid = userId;
+  if (!uid || saving || !Object.keys(pending).length) return;
+  saving = true;
+  const patch = pending;
+  pending = {};
+  try {
+    const { data, error } = await supabase.rpc("patch_note_property_styles", { p_patch: patch as any });
+    if (uid !== userId) return;
+    if (error) throw error;
+    styles = mergeStylePatch(data as StyleMap, pending);
+  } catch {
+    if (uid === userId) pending = mergeStylePatch(patch, pending);
+  } finally {
+    saving = false;
+    emit();
+    if (Object.keys(pending).length) persist(5000);
+  }
+}
+function persist(delay = 300) {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    if (!userId) return;
-    (supabase as any).from("note_property_styles").upsert({ user_id: userId, styles, updated_at: new Date().toISOString() }).then(() => {});
-  }, 500);
+  saveTimer = setTimeout(() => { void flush(); }, delay);
+}
+async function switchAccount(uid: string | null) {
+  if (uid === userId) return;
+  clearTimeout(saveTimer);
+  if (channel) { void supabase.removeChannel(channel); channel = null; }
+  userId = uid;
+  pending = uid ? readCache(`${LS}.${uid}.pending`) : {};
+  styles = uid ? readCache(`${LS}.${uid}`) : {};
+  emit();
+  if (!uid) return;
+  channel = supabase.channel(`note-property-styles-${uid}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "note_property_styles", filter: `user_id=eq.${uid}` }, () => { void refresh(); })
+    .subscribe(status => { if (status === "SUBSCRIBED") void refresh(); });
+  await refresh();
+  persist();
+}
+function startSync() {
+  if (started) return;
+  started = true;
+  void supabase.auth.getSession().then(({ data }) => switchAccount(data.session?.user.id ?? null));
+  supabase.auth.onAuthStateChange((_event, session) => { void switchAccount(session?.user.id ?? null); });
+  const resume = () => { if (document.visibilityState === "visible") { void refresh(); persist(); } };
+  window.addEventListener("focus", resume);
+  window.addEventListener("online", resume);
+  document.addEventListener("visibilitychange", resume);
 }
 
 /** Resolve a property's own style (user -> default). */
@@ -78,17 +143,22 @@ export function resolveOption(map: StyleMap, name: string, option: string, noteC
 }
 
 export function setPropStyle(name: string, bit: StyleBit) {
+  if (!userId) return;
   const k = normKey(name);
-  styles = { ...styles, [k]: { ...styles[k], ...bit } }; emit(); persist();
+  // JSON null explicitly clears an override on every device (undefined is omitted).
+  const patch = { [k]: Object.fromEntries(Object.entries(bit).map(([key, value]) => [key, value ?? null])) } as StyleMap;
+  styles = mergeStylePatch(styles, patch); pending = mergeStylePatch(pending, patch); emit(); persist();
 }
 export function setOptionStyle(name: string, option: string, bit: StyleBit) {
-  const k = normKey(name); const o = normKey(option); const cur = styles[k] ?? {};
-  styles = { ...styles, [k]: { ...cur, options: { ...cur.options, [o]: { ...cur.options?.[o], ...bit } } } };
+  if (!userId) return;
+  const k = normKey(name); const o = normKey(option);
+  const patch = { [k]: { options: { [o]: Object.fromEntries(Object.entries(bit).map(([key, value]) => [key, value ?? null])) } } } as StyleMap;
+  styles = mergeStylePatch(styles, patch); pending = mergeStylePatch(pending, patch);
   emit(); persist();
 }
 
 export function usePropertyStyles(): StyleMap {
   const [, set] = useState(0);
-  useEffect(() => { const l = () => set(n => n + 1); listeners.add(l); load(); return () => { listeners.delete(l); }; }, []);
+  useEffect(() => { const l = () => set(n => n + 1); listeners.add(l); startSync(); return () => { listeners.delete(l); }; }, []);
   return styles;
 }
