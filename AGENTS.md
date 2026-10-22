@@ -36,3 +36,4 @@
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.
 - Moon aspect guide is computed locally; placement prefs and check-offs are device-local.
 - New-moon goal suggestions derive from monthRhythmMoments plus natal houses (sign fallback); swap/dismiss/added state is device-local per new moon, and Add reuses addGoal/addTask.
+- New notes are stamped with rhythm properties (stable rhythm-* ids in notes.properties) at creation; AI summary saves to the ai-summary property via the existing ai-notes summary action.
