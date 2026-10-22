@@ -15,6 +15,7 @@ import { PersonPicker } from "@/components/people/PersonPicker";
 import type { NoteProperty, NotePropertyType } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 import { SmartPropertyActions } from "./SmartPropertyActions";
+import { PROPERTY_ICONS, usePropertyStyles, resolveOption, resolveProp, setOptionStyle, setPropStyle } from "@/lib/notes/property-styles";
 
 const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
   { type: "text", label: "Text", icon: Type },
@@ -30,13 +31,57 @@ const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
 const iconFor = (t: NotePropertyType) => TYPES.find(x => x.type === t)?.icon ?? Type;
 
 export const OPTION_COLORS = ["#e6d3b3", "#f4c7c3", "#f7d9a8", "#fbeaa0", "#c8e6c9", "#b3dfe0", "#bcd4f6", "#d9c8f2", "#f2c6de", "#d6d3d1"];
-export function optionColor(prop: Pick<NoteProperty, "colors">, option: string): string {
-  if (prop.colors?.[option]) return prop.colors[option];
+export function optionColor(prop: Pick<NoteProperty, "colors"> & { name?: string }, option: string, map?: any): string {
+  const st = prop.name && map ? resolveOption(map, prop.name, option, prop.colors?.[option]).color : prop.colors?.[option];
+  if (st) return st;
   let h = 0; for (const c of option) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return OPTION_COLORS[h % OPTION_COLORS.length];
 }
-export function OptionChip({ prop, option }: { prop: Pick<NoteProperty, "colors">; option: string }) {
-  return <span className="rounded-full px-2 py-0.5 text-[11px] text-foreground" style={{ backgroundColor: optionColor(prop, option) }}>{option}</span>;
+export function OptionChip({ prop, option }: { prop: Pick<NoteProperty, "colors"> & { name?: string }; option: string }) {
+  const map = usePropertyStyles();
+  const Icon = prop.name ? PROPERTY_ICONS[resolveOption(map, prop.name, option).icon ?? ""] : null;
+  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] text-foreground" style={{ backgroundColor: optionColor(prop, option, map) }}>{Icon && <Icon className="h-3 w-3" />}{option}</span>;
+}
+
+function IconGrid({ value, onPick }: { value?: string; onPick: (k: string | undefined) => void }) {
+  return (
+    <div className="grid grid-cols-6 gap-1">
+      <button type="button" aria-label="No icon" onClick={() => onPick(undefined)} className={cn("flex h-7 w-7 items-center justify-center rounded text-[10px] text-muted-foreground hover:bg-muted", !value && "ring-2 ring-primary")}>—</button>
+      {Object.entries(PROPERTY_ICONS).map(([k, I]) => (
+        <button key={k} type="button" aria-label={`Icon ${k}`} onClick={() => onPick(k)}
+          className={cn("flex h-7 w-7 items-center justify-center rounded hover:bg-muted", value === k && "ring-2 ring-primary")}><I className="h-3.5 w-3.5" /></button>
+      ))}
+    </div>
+  );
+}
+
+function PropertyIcon({ prop }: { prop: NoteProperty }) {
+  const map = usePropertyStyles();
+  const st = resolveProp(map, prop.name);
+  const Icon = (st.icon && PROPERTY_ICONS[st.icon]) || iconFor(prop.type);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" aria-label={`Icon and color for ${prop.name}`} className="flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-muted"
+          style={st.color ? { backgroundColor: st.color } : undefined}>
+          <Icon className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-56 space-y-2 p-2">
+        <p className="text-[11px] font-medium text-muted-foreground">Icon</p>
+        <IconGrid value={st.icon} onPick={k => setPropStyle(prop.name, { icon: k })} />
+        <p className="text-[11px] font-medium text-muted-foreground">Color</p>
+        <div className="grid grid-cols-6 gap-1">
+          <button type="button" aria-label="No color" onClick={() => setPropStyle(prop.name, { color: undefined })} className="h-5 w-5 rounded-full border border-border text-[9px] text-muted-foreground">—</button>
+          {OPTION_COLORS.map(c => (
+            <button key={c} type="button" aria-label={`Use color ${c}`} onClick={() => setPropStyle(prop.name, { color: c })}
+              className={cn("h-5 w-5 rounded-full border border-border", st.color === c && "ring-2 ring-primary")} style={{ backgroundColor: c }} />
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground">Applies to "{prop.name}" on every note.</p>
+      </PopoverContent>
+    </Popover>
+  );
 }
 /** Today-or-created date (yyyy-mm-dd) used as the default for new date properties. */
 export const createdDay = (createdAt?: string) => (createdAt ?? new Date().toISOString()).slice(0, 10);
@@ -78,11 +123,10 @@ export function NotePropertiesSection({ noteId, tags, value, onChange, className
       {open && (
         <div className="space-y-0.5">
           {value.map(p => {
-            const Icon = iconFor(p.type);
             return (
               <div key={p.id} className="group grid grid-cols-[minmax(110px,160px)_1fr_auto] items-center gap-2 rounded-md px-1 py-0.5 hover:bg-muted/40">
                 <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <PropertyIcon prop={p} />
                   <input value={p.name} onChange={e => patch(p.id, { name: e.target.value })} aria-label="Property name"
                     className="w-full min-w-0 bg-transparent text-xs outline-none focus:text-foreground" />
                 </div>
@@ -166,6 +210,7 @@ function removeOption(prop: NoteProperty, o: string): Partial<NoteProperty> {
 
 function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Partial<NoteProperty>) => void }) {
   const navigate = useNavigate();
+  const map = usePropertyStyles();
   const [q, setQ] = useState("");
   const multi = prop.type === "multi";
   const selected: string[] = multi ? (Array.isArray(prop.value) ? prop.value as string[] : []) : prop.value ? [String(prop.value)] : [];
@@ -212,18 +257,20 @@ function OptionPicker({ prop, onChange }: { prop: NoteProperty; onChange: (p: Pa
             </button>
             <Popover>
               <PopoverTrigger asChild>
-                <button type="button" aria-label={`Color for ${o}`} className="h-4 w-4 rounded-full border border-border" style={{ backgroundColor: optionColor(prop, o) }} />
+                <button type="button" aria-label={`Color for ${o}`} className="h-4 w-4 rounded-full border border-border" style={{ backgroundColor: optionColor(prop, o, map) }} />
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-48 space-y-2 p-2">
+              <PopoverContent align="end" className="w-56 space-y-2 p-2">
                 <Input defaultValue={o} aria-label={`Rename ${o}`} className="h-7 text-xs"
                   onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                   onBlur={e => { const t = e.target.value.trim(); if (t && t !== o) onChange(renameOption(prop, o, t)); }} />
                 <div className="grid grid-cols-5 gap-1">
                   {OPTION_COLORS.map(c => (
-                    <button key={c} type="button" aria-label={`Use color ${c}`} onClick={() => onChange({ colors: { ...(prop.colors ?? {}), [o]: c } })}
-                      className={cn("h-5 w-5 rounded-full border border-border", optionColor(prop, o) === c && "ring-2 ring-primary")} style={{ backgroundColor: c }} />
+                    <button key={c} type="button" aria-label={`Use color ${c}`} onClick={() => { onChange({ colors: { ...(prop.colors ?? {}), [o]: c } }); setOptionStyle(prop.name, o, { color: c }); }}
+                      className={cn("h-5 w-5 rounded-full border border-border", optionColor(prop, o, map) === c && "ring-2 ring-primary")} style={{ backgroundColor: c }} />
                   ))}
                 </div>
+                <p className="text-[11px] font-medium text-muted-foreground">Icon</p>
+                <IconGrid value={resolveOption(map, prop.name, o).icon} onPick={k => setOptionStyle(prop.name, o, { icon: k })} />
                 <button type="button" onClick={() => onChange(removeOption(prop, o))}
                   className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-xs text-destructive hover:bg-destructive/10">
                   <Trash2 className="h-3 w-3" /> Delete option
