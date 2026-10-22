@@ -5380,6 +5380,24 @@ export type Database = {
           },
         ]
       }
+      note_property_styles: {
+        Row: {
+          styles: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          styles?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          styles?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       note_spaces: {
         Row: {
           created_at: string
