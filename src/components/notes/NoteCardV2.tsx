@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { OptionChip, PropertyStyleMark } from "./PropertyStyleDisplay";
 
 function countLinks(body: string): number {
   const m = body?.match(/\[\[[^\]]+]]/g);
@@ -116,6 +117,12 @@ export function NoteCardV2({
   const gradient = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
   const linkCount = countLinks(note.body);
   const wordCount = note.body ? note.body.split(/\s+/).filter(Boolean).length : 0;
+  const choiceProperties = (note.properties ?? []).flatMap(prop => {
+    if (prop.type !== "select" && prop.type !== "multi") return [];
+    const values = (Array.isArray(prop.value) ? prop.value : [prop.value])
+      .filter((value): value is string => typeof value === "string" && !!value.trim());
+    return values.length ? [{ prop, values }] : [];
+  });
 
   return (
     <NoteHoverPreview
@@ -142,7 +149,7 @@ export function NoteCardV2({
         selected
           ? "border-primary/60 shadow-md ring-1 ring-primary/30"
           : "border-border/60 hover:border-primary/40",
-        compact ? "h-44" : "h-60",
+        compact ? "min-h-44" : "min-h-60",
       )}
     >
       {/* Cover band */}
@@ -240,9 +247,21 @@ export function NoteCardV2({
         );
       })()}
 
+      {choiceProperties.length > 0 && (
+        <div aria-label="Note properties" className="space-y-1 px-3.5 pt-2">
+          {choiceProperties.map(({ prop, values }) => (
+            <div key={prop.id} className="flex min-w-0 flex-wrap items-center gap-1" title={prop.name}>
+              <PropertyStyleMark name={prop.name} />
+              <span className="text-[10px] text-muted-foreground">{prop.name}</span>
+              {values.map(value => <OptionChip key={value} prop={prop} option={value} />)}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Tags */}
       {note.tags && note.tags.length > 0 && (
-        <div className="mt-auto flex flex-wrap gap-1 px-3.5 pt-2">
+        <div className="flex flex-wrap gap-1 px-3.5 pt-2">
           {note.tags.slice(0, 3).map(t => {
             const c = tagColor(t, tagsByName);
             return (
@@ -264,7 +283,7 @@ export function NoteCardV2({
       )}
 
       {/* Footer */}
-      <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/40 bg-background/30 px-3.5 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+      <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/40 bg-background/30 px-3.5 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
         <span>{format(parseISO(note.updatedAt), "MMM d")}</span>
         <div className="flex items-center gap-2 normal-case tracking-normal">
           {wordCount > 0 && <span>{wordCount}w</span>}

@@ -16,6 +16,8 @@ import type { NoteProperty, NotePropertyType } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 import { SmartPropertyActions } from "./SmartPropertyActions";
 import { PROPERTY_ICONS, usePropertyStyles, resolveOption, resolveProp, setOptionStyle, setPropStyle } from "@/lib/notes/property-styles";
+import { OPTION_COLORS, optionColor, OptionChip } from "./PropertyStyleDisplay";
+export { OPTION_COLORS, optionColor, OptionChip } from "./PropertyStyleDisplay";
 
 const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
   { type: "text", label: "Text", icon: Type },
@@ -29,19 +31,6 @@ const TYPES: { type: NotePropertyType; label: string; icon: any }[] = [
   { type: "project", label: "Project", icon: FolderKanban },
 ];
 const iconFor = (t: NotePropertyType) => TYPES.find(x => x.type === t)?.icon ?? Type;
-
-export const OPTION_COLORS = ["#e6d3b3", "#f4c7c3", "#f7d9a8", "#fbeaa0", "#c8e6c9", "#b3dfe0", "#bcd4f6", "#d9c8f2", "#f2c6de", "#d6d3d1"];
-export function optionColor(prop: Pick<NoteProperty, "colors"> & { name?: string }, option: string, map?: any): string {
-  const st = prop.name && map ? resolveOption(map, prop.name, option, prop.colors?.[option]).color : prop.colors?.[option];
-  if (st) return st;
-  let h = 0; for (const c of option) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return OPTION_COLORS[h % OPTION_COLORS.length];
-}
-export function OptionChip({ prop, option }: { prop: Pick<NoteProperty, "colors"> & { name?: string }; option: string }) {
-  const map = usePropertyStyles();
-  const Icon = prop.name ? PROPERTY_ICONS[resolveOption(map, prop.name, option).icon ?? ""] : null;
-  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] text-foreground" style={{ backgroundColor: optionColor(prop, option, map) }}>{Icon && <Icon className="h-3 w-3" />}{option}</span>;
-}
 
 function IconGrid({ value, onPick }: { value?: string; onPick: (k: string | undefined) => void }) {
   return (
