@@ -25,7 +25,8 @@ export function useVoiceDictation(onText: (text: string) => void, onFinalDelta?:
 
   const stop = useCallback(() => {
     try { recRef.current?.stop(); } catch {}
-    setListening(false);
+    // Keep the session active until onend: stop() may deliver one last final
+    // result, and another session must not overlap it.
   }, []);
 
   const start = useCallback(() => {
@@ -76,6 +77,8 @@ export function useVoiceDictation(onText: (text: string) => void, onFinalDelta?:
       if (event.error !== "aborted") setError(messages[event.error] ?? "Dictation stopped unexpectedly. Please try again.");
       recRef.current = null;
       setListening(false);
+      // A failed recognizer must not keep collecting audio alongside a new one.
+      try { rec.abort?.(); } catch {}
     };
     recRef.current = rec;
     try { rec.start(); setListening(true); } catch {
@@ -89,7 +92,13 @@ export function useVoiceDictation(onText: (text: string) => void, onFinalDelta?:
     if (listening) stop(); else start();
   }, [listening, start, stop]);
 
-  useEffect(() => () => { try { recRef.current?.stop(); } catch {} }, []);
+  useEffect(() => () => {
+    const rec = recRef.current;
+    // Invalidate first; even synchronous final events during teardown must not
+    // append text to an editor that has been closed or switched to another note.
+    recRef.current = null;
+    try { rec?.abort ? rec.abort() : rec?.stop(); } catch {}
+  }, []);
 
   return { listening, supported, error, start, stop, toggle };
 }
