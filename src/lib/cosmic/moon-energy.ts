@@ -28,3 +28,24 @@ export function phaseSegments(from: Date, cycles = 3): PhaseSegment[] {
   }
   return segs;
 }
+
+const SIGN_PHRASE: Record<string, string> = {
+  Aries: "act boldly and keep it short", Taurus: "go slow and make it comfortable",
+  Gemini: "talk it through and stay curious", Cancer: "stay close to home and feelings",
+  Leo: "lead with warmth and a little play", Virgo: "tidy the details and simplify",
+  Libra: "seek balance and share the load", Scorpio: "go deep and be honest",
+  Sagittarius: "widen your view and try something new", Capricorn: "commit to one steady structure",
+  Aquarius: "rethink the routine and invite friends in", Pisces: "rest, dream and leave room for gentleness",
+};
+const PHASE_LEAD: Record<RhythmPhase, string> = {
+  plan: "set one clear intention", grow: "take one steady step forward",
+  care: "tend to people, home and yourself", letgo: "clear what's finished and rest",
+};
+const PHASE_NAME: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
+
+/** One sentence blending the rhythm phase with the Moon's sign. */
+export function phaseSignAdvice(phase: RhythmPhase, sign: string): string {
+  const word = moonEnergyWord(sign);
+  const how = SIGN_PHRASE[sign] ?? "move gently";
+  return `${PHASE_NAME[phase]} in ${sign}${word ? ` (${word})` : ""}: ${PHASE_LEAD[phase]}, and ${how}.`;
+}
