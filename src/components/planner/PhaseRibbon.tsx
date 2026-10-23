@@ -16,7 +16,7 @@ export function PhaseRibbon({ selected, rangeStart, rangeEnd, onGoto, className 
   const total = segs.reduce((n, s) => n + s.days, 0);
   return (
     <nav aria-label="Moon phases for the next three cycles" className={cn("-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none]", className)}>
-      <ol className="flex min-w-[560px] gap-0.5">
+      <ol className="flex min-w-[880px] lg:min-w-0 gap-0.5">
         {segs.map((s, i) => {
           const Icon = PHASE_ICONS[s.phase];
           const inRange = rangeStart && rangeEnd ? s.end >= rangeStart && s.start <= rangeEnd : false;
