@@ -255,10 +255,22 @@ const isEmptyBody = (body: string) => body.replace(/[#\s>*-]/g, "").trim().lengt
 export async function openPeriodNoteWithTemplate(kind: PeriodKind, keyISO: string, templateId?: string | null): Promise<Note> {
   const note = await getOrCreatePeriodNote(kind, keyISO, periodTitle(kind, keyISO));
   const tpl = getPeriodTemplate(kind, templateId ?? null);
+  const fresh = isEmptyBody(note.body) && !(note.properties ?? []).some(p => p.id.startsWith("period-"));
   if (tpl && isEmptyBody(note.body)) {
     const body = tpl.build(keyISO);
     await updateNote(note.id, { body });
     note.body = body;
+  }
+  if (fresh) {
+    try {
+      const { loadPeriodTemplates, applyPeriodTemplate } = await import("./period-templates");
+      const all = await loadPeriodTemplates();
+      const out = applyPeriodTemplate({ body: note.body, properties: note.properties ?? [] }, all[kind]);
+      if (out.changed) {
+        await updateNote(note.id, { body: out.body, properties: out.properties });
+        note.body = out.body; note.properties = out.properties;
+      }
+    } catch { /* template is optional */ }
   }
   notifyDailyNotesChanged();
   return note;
