@@ -126,6 +126,62 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
     </div>
   );
 
+  if (isMobile) return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-end gap-1">
+        <PlannerMonthFilters />
+        {onCapture && <Button size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={onCapture} aria-label={`Add to ${format(activeDate, "MMMM d")}`}><Plus className="h-4 w-4" /></Button>}
+      </div>
+      <section aria-label={`${format(date, "MMMM")} at a glance`} className="rounded-2xl border border-border/60 bg-card p-2">
+        <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-muted-foreground">{["M", "T", "W", "T", "F", "S", "S"].map((l, i) => <span key={i}>{l}</span>)}</div>
+        <div className="mt-1 grid grid-cols-7 gap-0.5 text-center text-xs">
+          {days.map(day => {
+            const key = format(day, "yyyy-MM-dd");
+            const has = (filteredByDay.get(key) ?? []).length > 0;
+            const sel = key === selectedKey;
+            return <button key={key} type="button" onClick={() => onChangeSelectedDate?.(day)} aria-pressed={sel} aria-label={`${format(day, "EEEE, MMMM d")}${has ? ", has plans" : ""}`}
+              className={cn("relative h-9 rounded-lg tabular-nums", !isSameMonth(day, date) && "opacity-35", sel ? "bg-primary text-primary-foreground" : isSameDay(day, today) ? "ring-1 ring-primary" : "", has && !sel && "font-bold text-primary")}>
+              {format(day, "d")}{has && <i className={cn("absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full", sel ? "bg-primary-foreground" : "bg-primary")} />}
+            </button>;
+          })}
+        </div>
+      </section>
+      <div className="grid grid-cols-7 gap-1" aria-label="Choose a day this week">
+        {activeWeekDays.map(day => {
+          const key = format(day, "yyyy-MM-dd");
+          const sel = key === selectedKey;
+          const phase = lunarRhythmAt(day);
+          return <button key={key} type="button" onClick={() => onChangeSelectedDate?.(day)} aria-pressed={sel}
+            aria-label={`${format(day, "EEEE, MMMM d")}, ${MOON_INFO[getMoonPhase(day)].label}, ${LUNAR_RHYTHM[phase].label} phase`}
+            className={cn("flex min-h-[5.5rem] flex-col items-center gap-1 rounded-xl px-0.5 py-2", sel ? "bg-primary text-primary-foreground" : "bg-muted/40")}>
+            <span className="text-[10px] uppercase">{format(day, "EEEEE")}</span>
+            <span className="text-base font-semibold tabular-nums">{format(day, "d")}</span>
+            <span aria-hidden className="text-base leading-none">{MOON_INFO[getMoonPhase(day)].glyph}</span>
+            <span aria-hidden className="h-1 w-full rounded-full" style={{ background: `hsl(var(--rhythm-${phase}))` }} />
+          </button>;
+        })}
+      </div>
+      <div className="space-y-2">
+        {activeWeekDays.map(day => {
+          const key = format(day, "yyyy-MM-dd");
+          const rows = filteredByDay.get(key) ?? [];
+          const sel = key === selectedKey;
+          return <DayDropZone key={key} dateISO={key} as="section" className={cn("rounded-xl border bg-card px-3 py-2", sel ? "border-primary" : "border-border/50")}>
+            <div className="flex items-center justify-between gap-2">
+              <button type="button" onClick={() => (onOpenDay ?? onSelectDay)(day)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left">
+                <span className="text-sm font-semibold">{format(day, "EEE d")}</span>
+                {isSameDay(day, today) && <span className="rounded-full bg-primary/10 px-2 text-[10px] font-semibold text-primary">Today</span>}
+              </button>
+              <div className="flex shrink-0 items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={10} /><CapacityIndicator minutes={dayLoad(rows)} compact /></div>
+            </div>
+            {rows.length ? <div className="space-y-1 pb-1">{rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}</div> : <p className="pb-1 text-xs text-muted-foreground">Space to breathe.</p>}
+          </DayDropZone>;
+        })}
+      </div>
+      {dialogs}
+    </div>
+  );
+
   if (isMobile && mobileView === "agenda") return (
     <div className="planner-month-agenda">
       {mobileToolbar}
