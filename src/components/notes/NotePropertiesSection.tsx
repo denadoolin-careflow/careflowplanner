@@ -16,7 +16,7 @@ import type { NoteProperty, NotePropertyType } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 import { SmartPropertyActions } from "./SmartPropertyActions";
 import { PROPERTY_ICONS, usePropertyStyles, resolveOption, resolveProp, setOptionStyle, setPropStyle } from "@/lib/notes/property-styles";
-import { OPTION_COLORS, optionColor, OptionChip } from "./PropertyStyleDisplay";
+import { OPTION_COLORS, optionColor, OptionChip, StyleIcon } from "./PropertyStyleDisplay";
 import { propertyColorStyle } from "@/lib/notes/property-colors";
 import { IconGrid, PropertyColorGrid } from "./PropertyStylePicker";
 export { OPTION_COLORS, optionColor, OptionChip } from "./PropertyStyleDisplay";
