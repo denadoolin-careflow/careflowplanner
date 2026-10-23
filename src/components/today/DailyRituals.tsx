@@ -13,6 +13,7 @@ import { RitualWeeklyHistory } from "./RitualWeeklyHistory";
 import { RitualSkyPrompt } from "./RitualSkyPrompt";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { RitualWeather } from "./RitualWeather";
 
 export function DailyRituals({ date, onEveningReflection }: {
   date: Date;
@@ -73,6 +74,7 @@ export function DailyRituals({ date, onEveningReflection }: {
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-semibold leading-tight">{title}</span>
                   <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{detail}</span>
+                  <RitualWeather slot={kind} />
                   <RitualGoalChips kind={kind} />
                 </span>
                 <ChevronRight className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", expanded === kind && "rotate-90")} aria-hidden />
@@ -108,6 +110,7 @@ export function DailyRituals({ date, onEveningReflection }: {
           <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
             {morningDone ? "Completed today · revisit anytime" : morningStarted ? "Your reset is waiting where you left it." : "Arrive, choose your focus, and shape the day."}
           </p>
+          <RitualWeather slot="morning" />
         </div>
         <Button asChild size="sm" variant={morningDone ? "outline" : "default"} className="shrink-0 rounded-full">
           <Link to="/check-in">
@@ -129,6 +132,7 @@ export function DailyRituals({ date, onEveningReflection }: {
           <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
             {eveningDone ? "Completed today · your reflection is saved" : unfinished ? `${unfinished} unfinished ${unfinished === 1 ? "task" : "tasks"} to review gently.` : "Reflect, release, and give tomorrow a soft start."}
           </p>
+          <RitualWeather slot="evening" />
         </div>
         <Button size="sm" variant={eveningDone ? "outline" : "default"} className="shrink-0 rounded-full" onClick={onEveningReflection}>
           {eveningDone ? "Review" : "Begin"}
