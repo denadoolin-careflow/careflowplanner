@@ -3454,7 +3454,7 @@ body.planner-dragging [data-radix-dialog-overlay] {
 .notes-search { border-color: hsl(var(--notes-line) / .75); background: hsl(var(--notes-surface) / .8); }
 .notes-spaces-sheet { background: linear-gradient(180deg, hsl(var(--notes-plum)), hsl(var(--notes-plum-deep))); }
 .notes-editor-experience { min-height: 100dvh; background: linear-gradient(180deg, hsl(var(--notes-plum) / .38), transparent 24rem); }
-.notes-editor-header { position: sticky; top: .5rem; z-index: 30; border: 1px solid hsl(var(--notes-line) / .55); border-radius: 999px; background: hsl(var(--notes-plum-deep) / .86); padding-top: .3rem; padding-bottom: .3rem; backdrop-filter: blur(18px); box-shadow: 0 14px 40px -32px hsl(var(--notes-lavender) / .8); }
+.notes-editor-header { position: sticky; top: .5rem; z-index: 30; border: 1px solid hsl(var(--notes-line) / .55); border-radius: 1.25rem; background: hsl(var(--notes-plum-deep) / .86); padding-top: .3rem; padding-bottom: .3rem; backdrop-filter: blur(18px); box-shadow: 0 14px 40px -32px hsl(var(--notes-lavender) / .8); }
 .notes-editor-experience .note-page-title { color: hsl(var(--notes-beige)); }
 .notes-editor-experience .block-editor { color: hsl(var(--notes-ink)); }
 .notes-notebook-card {
