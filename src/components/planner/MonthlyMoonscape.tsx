@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { MonthlyPhaseIntentions } from "./MonthlyPhaseIntentions";
-import { MoonArc } from "@/components/cosmic/MoonArc";
+import { Moonscape } from "@/components/cosmic/moonscape/Moonscape";
 
 const LEGACY_KEY = { plan: "sow", grow: "grow", care: "glow", letgo: "let-go" } as const;
 const PRINCIPAL = { plan: "new", grow: "first-quarter", care: "full", letgo: "last-quarter" } as const;
@@ -80,7 +80,7 @@ export function MonthlyMoonscape({ month, selectedDate, onSelectDate }: { month:
       <Button asChild variant="ghost" size="sm" className="min-h-11 shrink-0 px-2 text-xs sm:min-h-8"><Link to="/cosmic-flow">Cosmic Flow <ExternalLink className="ml-1 h-3 w-3" /></Link></Button>
     </div>
     <MonthlyPhaseIntentions key={monthKeyFor(month)} month={month} />
-    <div className="mt-3"><MoonArc month={month} selectedDate={selectedDate} onSelectDate={onSelectDate} title={false} /></div>
+    <div className="mt-3"><Moonscape month={month} selectedDate={selectedDate} onSelectDate={onSelectDate} title={false} /></div>
     <div className="mt-3 border-t border-border/50 pt-3">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><strong className="text-sm">{active.info.label} · {active.info.moon}</strong><span className="text-xs text-muted-foreground">{active.context.sign.symbol} {active.context.sign.name} · {active.context.elementEmoji} {active.context.sign.element}</span></div>
       <p className="mt-1 text-xs text-muted-foreground">{ELEMENT_GUIDE[active.context.sign.element]} {active.info.invitation}</p>
