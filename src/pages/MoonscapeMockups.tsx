@@ -11,7 +11,6 @@ import { RHYTHM_LABEL, type RhythmPhase } from "@/lib/planner/rhythm-phase";
 import { cn } from "@/lib/utils";
 
 const g = (s: string) => `${SIGN_GLYPH[s as keyof typeof SIGN_GLYPH] ?? ""}\uFE0E`;
-const ORDER: RhythmPhase[] = ["plan", "grow", "care", "letgo"];
 const tok = (p: RhythmPhase, deep = false, a = 1) => `hsl(var(--rhythm-${p}${deep ? "-deep" : ""}) / ${a})`;
 
 function SeasonLine({ month }: { month: Date }) {
@@ -87,8 +86,8 @@ function Wheel({ days, open }: { days: Day[]; open: (d: Date) => void }) {
 function Journey({ days, open }: { days: Day[]; open: (d: Date) => void }) {
   return (
     <div className="space-y-3">
-      {ORDER.map(p => { const ds = days.filter(d => d.rhythm === p); if (!ds.length) return null; return (
-        <div key={p} className="rounded-xl p-3" style={{ background: tok(p, false, 0.18) }}>
+      {days.reduce<Day[][]>((runs, d) => { const last = runs[runs.length - 1]; if (last && last[0].rhythm === d.rhythm) last.push(d); else runs.push([d]); return runs; }, []).map(ds => { const p = ds[0].rhythm; return (
+        <div key={ds[0].date.toISOString()} className="rounded-xl p-3" style={{ background: tok(p, false, 0.18) }}>
           <div className="flex items-center gap-3">
             <PhaseArt phase={p} />
             <div className="min-w-0">
