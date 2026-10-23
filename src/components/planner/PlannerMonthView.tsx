@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { addDays, differenceInCalendarDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
-import { CalendarDays, Check, ChevronRight, List, Plus, Rows3 } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, Columns3, List, Plus, Rows3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
@@ -159,7 +159,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
       </section>
       <DayDropZone dateISO={selectedKey} as="section" className="planner-month-agenda-day">
         <div className="flex items-start justify-between gap-2 border-b border-border/50 pb-2">
-          <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(activeDate, "EEEE")}</p><h3 className="font-display text-lg">{format(activeDate, "MMMM d")}</h3><DayMeta day={activeDate} /></div>
+          <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(activeDate, "EEEE")}</p><h3 className="font-display text-lg">{format(activeDate, "MMMM d")}</h3>{DayMeta({ day: activeDate })}</div>
           <div className="flex shrink-0 items-center gap-1">
             {onCapture && <Button size="sm" variant="outline" className="h-10" onClick={onCapture} aria-label={`Add to ${format(activeDate, "MMMM d")}`}><Plus className="h-4 w-4" /></Button>}
             <Button size="sm" className="h-10" onClick={() => (onOpenDay ?? onSelectDay)(activeDate)}>Open <ChevronRight className="ml-0.5 h-4 w-4" /></Button>
@@ -175,17 +175,17 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
     return <DayDropZone key={key} dateISO={key} as="section" className={cn("planner-month-list-day", key === selectedKey && "planner-month-list-day--selected")}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <button type="button" onClick={() => onSelectDay(day)} className="flex min-h-11 min-w-0 items-center gap-2 text-left"><span className="font-display text-base font-semibold">{format(day, "EEEE, MMM d")}</span>{isSameDay(day, today) && <span className="rounded-full bg-primary/10 px-2 text-[10px] font-semibold text-primary">Today</span>}</button>
-        <div className="flex items-center gap-2"><DayMeta day={day} /><CapacityIndicator minutes={dayLoad(rows)} /></div>
+        <div className="flex items-center gap-2">{DayMeta({ day: day })}<CapacityIndicator minutes={dayLoad(rows)} /></div>
       </div>
       {rows.length ? <div className="space-y-1 pb-2">{rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}</div> : <p className="pb-2 text-xs text-muted-foreground">Space to breathe.</p>}
     </DayDropZone>; };
 
   if (mobileView === "agenda") {
     const busy = monthDays.filter(day => dayRows(day).length || isSameDay(day, today));
-    return <div className="space-y-2">{mobileToolbar}{busy.length ? busy.map(day => <DayCard key={day.toISOString()} day={day} />) : <p className="py-8 text-center text-sm text-muted-foreground">Nothing planned this month yet.</p>}{dialogs}</div>;
+    return <div className="space-y-2">{mobileToolbar}{busy.length ? busy.map(day => <Fragment key={day.toISOString()}>{DayCard({ day })}</Fragment>) : <p className="py-8 text-center text-sm text-muted-foreground">Nothing planned this month yet.</p>}{dialogs}</div>;
   }
 
-  if (mobileView === "list") return <div className="space-y-2">{mobileToolbar}{monthDays.map(day => <DayCard key={day.toISOString()} day={day} />)}{dialogs}</div>;
+  if (mobileView === "list") return <div className="space-y-2">{mobileToolbar}{monthDays.map(day => <Fragment key={day.toISOString()}>{DayCard({ day })}</Fragment>)}{dialogs}</div>;
 
   if (mobileView === "board") {
     const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, w) => days.slice(w * 7, w * 7 + 7));
@@ -199,7 +199,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
               <div className="space-y-1.5">
                 {week.map(day => { const key = format(day, "yyyy-MM-dd"); const rows = dayRows(day);
                   return <DayDropZone key={key} dateISO={key} as="section" className={cn("rounded-xl border border-border/40 bg-background/60 p-1.5", !isSameMonth(day, date) && "opacity-50", isSameDay(day, today) && "border-primary")}>
-                    <button type="button" onClick={() => onSelectDay(day)} className="flex min-h-9 w-full flex-wrap items-center justify-between gap-1 px-1 text-left"><span className="text-xs font-semibold">{format(day, "EEE d")}</span><DayMeta day={day} /></button>
+                    <button type="button" onClick={() => onSelectDay(day)} className="flex min-h-9 w-full flex-wrap items-center justify-between gap-1 px-1 text-left"><span className="text-xs font-semibold">{format(day, "EEE d")}</span>{DayMeta({ day: day })}</button>
                     {rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} compact />)}
                   </DayDropZone>; })}
               </div>
