@@ -5,9 +5,20 @@ import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { useStore } from "@/lib/store";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
+import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { getMoonSign } from "@/lib/zodiac";
+import { lunarRhythmAt } from "@/lib/cosmic/lunar-rhythm";
+import { moonEnergyWord } from "@/lib/cosmic/moon-energy";
+import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
+import { PHASE_ICONS } from "../PhaseRibbon";
+import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Sun, Zap } from "lucide-react";
+
+const WX: Record<string, typeof Sun> = { clear: Sun, "partly-cloudy": CloudSun, cloudy: Cloud, fog: CloudFog, drizzle: CloudDrizzle, rain: CloudRain, snow: CloudSnow, thunderstorm: Zap };
 
 /** Compact 7-day strip: tap to jump, long-press to peek that day's scheduled tasks. */
-export function MobileWeekAgendaStrip({ day, onSelect }: { day: Date; onSelect: (d: Date) => void }) {
+export function MobileWeekAgendaStrip({ day, onSelect, rich = false }: { day: Date; onSelect: (d: Date) => void; rich?: boolean }) {
+  const snap = useWeatherSnapshot();
+  const [unit] = useTempUnit();
   const { state, toggleTask } = useStore();
   const [peek, setPeek] = useState<string | null>(null);
   const press = useRef<{ t: number; long: boolean; x: number }>({ t: 0, long: false, x: 0 });
@@ -65,13 +76,33 @@ export function MobileWeekAgendaStrip({ day, onSelect }: { day: Date; onSelect: 
                   onContextMenu={(e) => e.preventDefault()}
                   onClick={() => { if (press.current.long) return; haptics.tap(); onSelect(d); }}
                   className={cn(
-                    "flex min-h-[52px] select-none flex-col items-center justify-center rounded-xl border py-1 transition-colors",
+                    rich ? "flex min-h-[112px] min-w-0 select-none flex-col gap-0.5" : "flex min-h-[52px] select-none flex-col",
+                    " items-center justify-center rounded-xl border py-1 transition-colors",
                     selected ? "border-primary bg-primary text-primary-foreground" : "border-border/50 bg-card/60",
                     !selected && isToday && "border-primary/60",
                   )}
                 >
                   <span className="text-[9.5px] uppercase tracking-wide opacity-75">{format(d, "EEEEE")}</span>
                   <span className="text-[14px] font-semibold leading-tight">{format(d, "d")}</span>
+                  {rich && (() => {
+                    const noon = new Date(d); noon.setHours(12);
+                    const phase = lunarRhythmAt(noon);
+                    const PIcon = PHASE_ICONS[phase];
+                    let sign = null as null | { symbol: string; name: string };
+                    try { sign = getMoonSign(noon); } catch { sign = null; }
+                    const wx = snap?.daily?.find(w => w.date === iso);
+                    const WIcon = wx ? (WX[wx.condition] ?? Cloud) : null;
+                    return <>
+                      <span aria-hidden className="text-[13px] leading-none">{MOON_INFO[getMoonPhase(noon)].glyph}</span>
+                      <span className="flex items-center gap-0.5 text-[10px] leading-none" title={sign ? `Moon in ${sign.name}` : undefined}>
+                        <PIcon className="h-3 w-3" style={selected ? undefined : { color: `hsl(var(--rhythm-${phase}-deep))` }} aria-hidden />
+                        {sign && <span aria-hidden>{sign.symbol}</span>}
+                      </span>
+                      {sign && <span className="max-w-full truncate px-0.5 text-[8.5px] font-medium leading-none opacity-90">{moonEnergyWord(sign.name)}</span>}
+                      <span className="flex h-3 items-center gap-0.5 text-[9px] leading-none tabular-nums">{WIcon && <><WIcon className="h-2.5 w-2.5" aria-hidden />{unit === "F" ? cToF(wx!.highC) : wx!.highC}°</>}</span>
+                      <span aria-hidden className="mt-0.5 h-1 w-4/5 rounded-full" style={{ background: `hsl(var(--rhythm-${phase}))` }} />
+                    </>;
+                  })()}
                   <span className="flex h-2 items-center gap-0.5">
                     {tasks.slice(0, 3).map((t) => (
                       <span key={t.id} className={cn("h-1 w-1 rounded-full", selected ? "bg-primary-foreground" : "bg-primary", t.done && "opacity-40")} />

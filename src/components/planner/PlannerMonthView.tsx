@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { addDays, differenceInCalendarDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
-import { CalendarDays, Check, ChevronRight, List, Plus, Rows3 } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, Columns3, List, Plus, Rows3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
@@ -19,6 +19,8 @@ import { fmt12 } from "@/lib/planner/day-plan";
 import { filterFeedItems, useWeekFilters } from "@/lib/planner/week-filters";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { LUNAR_RHYTHM, lunarRhythmAt } from "@/lib/cosmic/lunar-rhythm";
+import { moonEnergyWord } from "@/lib/cosmic/moon-energy";
+import { PHASE_ICONS } from "./PhaseRibbon";
 import { getMoonSign } from "@/lib/zodiac";
 import { useStore } from "@/lib/store";
 import { habitProgress } from "./PlannerRhythmRow";
@@ -26,12 +28,13 @@ import { CosmicEventHover } from "./CosmicEventHover";
 
 const KEY_MOON_PHASES = ["new", "first-quarter", "full", "last-quarter"];
 
-export type MobileMonthView = "calendar" | "agenda" | "list";
+export type MobileMonthView = "calendar" | "agenda" | "list" | "board";
 const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v2";
 const MOBILE_VIEW_ITEMS = [
   { value: "calendar" as const, label: "Calendar", icon: CalendarDays },
   { value: "agenda" as const, label: "Agenda", icon: Rows3 },
   { value: "list" as const, label: "List", icon: List },
+  { value: "board" as const, label: "Board", icon: Columns3 },
 ];
 
 function readMobileView(): MobileMonthView {
@@ -39,6 +42,7 @@ function readMobileView(): MobileMonthView {
     const value = localStorage.getItem(MOBILE_VIEW_KEY);
     if (value === "agenda") return "agenda";
     if (value === "list") return "list";
+    if (value === "board") return "board";
     return "calendar";
   } catch { return "calendar"; }
 }
@@ -94,7 +98,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
       prevPhase = dot ? dot.phase : null;
       map.set(key, {
         moon: KEY_MOON_PHASES.includes(phase) ? MOON_INFO[phase].glyph : undefined,
-        sign: sign.name.slice(0, 3),
+        sign: `${sign.symbol} ${moonEnergyWord(sign.name)}`,
         cycleGlyph: cycleStart ? dot!.glyph : undefined,
         title: [MOON_INFO[phase].label, `Moon in ${sign.name}`, cycleStart ? `${dot!.label} phase begins` : null].filter(Boolean).join(" · "),
       });
@@ -127,110 +131,90 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
     </div>
   );
 
-  if (isMobile) return (
+  const signOf = (day: Date) => { const n = new Date(day); n.setHours(12); try { return getMoonSign(n); } catch { return null; } };
+  const DayMeta = ({ day }: { day: Date }) => { const n = new Date(day); n.setHours(12); const sg = signOf(day); const ph = lunarRhythmAt(n); const PIcon = PHASE_ICONS[ph];
+    return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><span aria-hidden>{MOON_INFO[getMoonPhase(n)].glyph}</span><PIcon className="h-3.5 w-3.5" style={{ color: `hsl(var(--rhythm-${ph}-deep))` }} aria-label={LUNAR_RHYTHM[ph].label} />{sg && <span title={`Moon in ${sg.name}`}>{sg.symbol} {moonEnergyWord(sg.name)}</span>}</span>; };
+  const monthDays = days.filter(day => isSameMonth(day, date));
+  const dayRows = (day: Date) => filteredByDay.get(format(day, "yyyy-MM-dd")) ?? [];
+
+  if (isMobile && mobileView === "calendar") return (
     <div className="space-y-3">
-      <div className="flex items-center justify-end gap-1">
-        <PlannerMonthFilters />
-        {onCapture && <Button size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={onCapture} aria-label={`Add to ${format(activeDate, "MMMM d")}`}><Plus className="h-4 w-4" /></Button>}
-      </div>
+      {mobileToolbar}
       <section aria-label={`${format(date, "MMMM")} at a glance`} className="rounded-2xl border border-border/60 bg-card p-2">
         <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-muted-foreground">{["M", "T", "W", "T", "F", "S", "S"].map((l, i) => <span key={i}>{l}</span>)}</div>
         <div className="mt-1 grid grid-cols-7 gap-0.5 text-center text-xs">
           {days.map(day => {
             const key = format(day, "yyyy-MM-dd");
-            const has = (filteredByDay.get(key) ?? []).length > 0;
+            const has = dayRows(day).length > 0;
             const sel = key === selectedKey;
-            return <button key={key} type="button" onClick={() => onChangeSelectedDate?.(day)} aria-pressed={sel} aria-label={`${format(day, "EEEE, MMMM d")}${has ? ", has plans" : ""}`}
-              className={cn("relative h-9 rounded-lg tabular-nums", !isSameMonth(day, date) && "opacity-35", sel ? "bg-primary text-primary-foreground" : isSameDay(day, today) ? "ring-1 ring-primary" : "", has && !sel && "font-bold text-primary")}>
-              {format(day, "d")}{has && <i className={cn("absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full", sel ? "bg-primary-foreground" : "bg-primary")} />}
+            const sg = signOf(day);
+            return <button key={key} type="button" onClick={() => onChangeSelectedDate?.(day)} aria-pressed={sel} aria-label={`${format(day, "EEEE, MMMM d")}${sg ? `, Moon in ${sg.name}` : ""}${has ? ", has plans" : ""}`}
+              className={cn("relative flex h-11 flex-col items-center justify-center rounded-lg tabular-nums leading-tight", !isSameMonth(day, date) && "opacity-35", sel ? "bg-primary text-primary-foreground" : isSameDay(day, today) ? "ring-1 ring-primary" : "", has && !sel && "font-bold text-primary")}>
+              <span>{format(day, "d")}</span>
+              <span aria-hidden className="text-[9px] font-normal opacity-70">{sg?.symbol}</span>
+              {has && <i className={cn("absolute right-1 top-1 h-1 w-1 rounded-full", sel ? "bg-primary-foreground" : "bg-primary")} />}
             </button>;
           })}
         </div>
       </section>
-      <div className="grid grid-cols-7 gap-1" aria-label="Choose a day this week">
-        {activeWeekDays.map(day => {
-          const key = format(day, "yyyy-MM-dd");
-          const sel = key === selectedKey;
-          const phase = lunarRhythmAt(day);
-          return <button key={key} type="button" onClick={() => onChangeSelectedDate?.(day)} aria-pressed={sel}
-            aria-label={`${format(day, "EEEE, MMMM d")}, ${MOON_INFO[getMoonPhase(day)].label}, ${LUNAR_RHYTHM[phase].label} phase`}
-            className={cn("flex min-h-[5.5rem] flex-col items-center gap-1 rounded-xl px-0.5 py-2", sel ? "bg-primary text-primary-foreground" : "bg-muted/40")}>
-            <span className="text-[10px] uppercase">{format(day, "EEEEE")}</span>
-            <span className="text-base font-semibold tabular-nums">{format(day, "d")}</span>
-            <span aria-hidden className="text-base leading-none">{MOON_INFO[getMoonPhase(day)].glyph}</span>
-            <span aria-hidden className="h-1 w-full rounded-full" style={{ background: `hsl(var(--rhythm-${phase}))` }} />
-          </button>;
-        })}
-      </div>
-      <div className="space-y-2">
-        {activeWeekDays.map(day => {
-          const key = format(day, "yyyy-MM-dd");
-          const rows = filteredByDay.get(key) ?? [];
-          const sel = key === selectedKey;
-          return <DayDropZone key={key} dateISO={key} as="section" className={cn("rounded-xl border bg-card px-3 py-2", sel ? "border-primary" : "border-border/50")}>
-            <div className="flex items-center justify-between gap-2">
-              <button type="button" onClick={() => (onOpenDay ?? onSelectDay)(day)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left">
-                <span className="text-sm font-semibold">{format(day, "EEE d")}</span>
-                {isSameDay(day, today) && <span className="rounded-full bg-primary/10 px-2 text-[10px] font-semibold text-primary">Today</span>}
-              </button>
-              <div className="flex shrink-0 items-center gap-1"><DailyNoteDot date={day} mark={noteMarks.get(key)} size={10} /><CapacityIndicator minutes={dayLoad(rows)} compact /></div>
-            </div>
-            {rows.length ? <div className="space-y-1 pb-1">{rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}</div> : <p className="pb-1 text-xs text-muted-foreground">Space to breathe.</p>}
-          </DayDropZone>;
-        })}
-      </div>
-      {dialogs}
-    </div>
-  );
-
-  if (isMobile && mobileView === "agenda") return (
-    <div className="planner-month-agenda">
-      {mobileToolbar}
-      <div className="planner-month-week-strip" aria-label="Choose a day this week">
-        {activeWeekDays.map(dayOption => {
-          const key = format(dayOption, "yyyy-MM-dd");
-          const selected = key === selectedKey;
-           const count = (filteredByDay.get(key) ?? []).length;
-          return <button key={key} type="button" onClick={() => onChangeSelectedDate?.(dayOption)} aria-pressed={selected} className={cn("planner-month-week-day", selected && "planner-month-week-day--selected")}>
-            <span>{format(dayOption, "EEEEE")}</span><strong>{format(dayOption, "d")}</strong>{count > 0 && <i aria-label={`${count} planned`} />}
-          </button>;
-        })}
-      </div>
       <DayDropZone dateISO={selectedKey} as="section" className="planner-month-agenda-day">
-        <div className="flex items-start justify-between gap-3 border-b border-border/50 pb-3">
-          <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(activeDate, "EEEE")}</p><h3 className="font-display text-xl font-semibold">{format(activeDate, "MMMM d")}</h3><p className="mt-0.5 text-xs text-muted-foreground">{activeRows.length ? `${activeRows.length} plans held here` : "Space to breathe"}</p></div>
-          <div className="flex items-center gap-2"><DailyNoteDot date={activeDate} mark={noteMarks.get(selectedKey)} size={13} /><CapacityIndicator minutes={dayLoad(activeRows)} /></div>
+        <div className="flex items-start justify-between gap-2 border-b border-border/50 pb-2">
+          <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{format(activeDate, "EEEE")}</p><h3 className="font-display text-lg">{format(activeDate, "MMMM d")}</h3>{DayMeta({ day: activeDate })}</div>
+          <div className="flex shrink-0 items-center gap-1">
+            {onCapture && <Button size="sm" variant="outline" className="h-10" onClick={onCapture} aria-label={`Add to ${format(activeDate, "MMMM d")}`}><Plus className="h-4 w-4" /></Button>}
+            <Button size="sm" className="h-10" onClick={() => (onOpenDay ?? onSelectDay)(activeDate)}>Open <ChevronRight className="ml-0.5 h-4 w-4" /></Button>
+          </div>
         </div>
-        <div className="py-2">
-          {activeRows.length ? activeRows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />) : <p className="py-8 text-center text-sm text-muted-foreground">Nothing planned. Drop something here or add a gentle anchor.</p>}
-        </div>
-        <div className="grid grid-cols-2 gap-2"><Button className="h-11" onClick={onCapture}><Plus className="mr-1 h-4 w-4" />Add here</Button><Button variant="outline" className="h-11" onClick={() => onSelectDay(activeDate)}>Day details <ChevronRight className="ml-1 h-4 w-4" /></Button></div>
+        <div className="py-1">{activeRows.length ? activeRows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />) : <p className="py-6 text-center text-sm text-muted-foreground">Nothing planned. Tap + to add a gentle anchor.</p>}</div>
       </DayDropZone>
-      <details className="planner-month-mobile-summary"><summary>Month at a glance</summary><PlannerMonthSummary items={monthItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} /></details>
       {dialogs}
     </div>
   );
 
-  if (isMobile && mobileView === "list") return (
-    <div className="space-y-2">
-       {mobileToolbar}
-      <div className="space-y-2">
-        {days.filter(day => isSameMonth(day, date)).map(day => {
-           const key = format(day, "yyyy-MM-dd"); const rows = filteredByDay.get(key) ?? [];
-          return <DayDropZone key={key} dateISO={key} as="section" className={cn("planner-month-list-day", key === selectedKey && "planner-month-list-day--selected")}>
-            <button type="button" onClick={() => onSelectDay(day)} className="flex min-h-12 w-full items-center justify-between gap-3 text-left"><span className="font-display text-base font-semibold">{format(day, "EEEE, MMM d")}</span><CapacityIndicator minutes={dayLoad(rows)} /></button>
-            {rows.length ? <div className="space-y-1 pb-2">{rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}</div> : <p className="pb-2 text-xs text-muted-foreground">Space to breathe.</p>}
-          </DayDropZone>;
-        })}
+  const DayCard = ({ day }: { day: Date }) => { const key = format(day, "yyyy-MM-dd"); const rows = dayRows(day);
+    return <DayDropZone key={key} dateISO={key} as="section" className={cn("planner-month-list-day", key === selectedKey && "planner-month-list-day--selected")}>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <button type="button" onClick={() => onSelectDay(day)} className="flex min-h-11 min-w-0 items-center gap-2 text-left"><span className="font-display text-base font-semibold">{format(day, "EEEE, MMM d")}</span>{isSameDay(day, today) && <span className="rounded-full bg-primary/10 px-2 text-[10px] font-semibold text-primary">Today</span>}</button>
+        <div className="flex items-center gap-2">{DayMeta({ day: day })}<CapacityIndicator minutes={dayLoad(rows)} /></div>
       </div>
-      {dialogs}
-    </div>
-  );
+      {rows.length ? <div className="space-y-1 pb-2">{rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} />)}</div> : <p className="pb-2 text-xs text-muted-foreground">Space to breathe.</p>}
+    </DayDropZone>; };
+
+  if (mobileView === "agenda") {
+    const busy = monthDays.filter(day => dayRows(day).length || isSameDay(day, today));
+    return <div className="space-y-2">{mobileToolbar}{busy.length ? busy.map(day => <Fragment key={day.toISOString()}>{DayCard({ day })}</Fragment>) : <p className="py-8 text-center text-sm text-muted-foreground">Nothing planned this month yet.</p>}{dialogs}</div>;
+  }
+
+  if (mobileView === "list") return <div className="space-y-2">{mobileToolbar}{monthDays.map(day => <Fragment key={day.toISOString()}>{DayCard({ day })}</Fragment>)}{dialogs}</div>;
+
+  if (mobileView === "board") {
+    const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, w) => days.slice(w * 7, w * 7 + 7));
+    return (
+      <div className="space-y-2">
+        {mobileToolbar}
+        <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
+          {weeks.map(week => (
+            <section key={week[0].toISOString()} className="w-[78vw] max-w-[300px] shrink-0 snap-start rounded-2xl border border-border/60 bg-card/70 p-2 sm:w-64">
+              <h4 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{format(week[0], "MMM d")} – {format(week[6], "MMM d")}</h4>
+              <div className="space-y-1.5">
+                {week.map(day => { const key = format(day, "yyyy-MM-dd"); const rows = dayRows(day);
+                  return <DayDropZone key={key} dateISO={key} as="section" className={cn("rounded-xl border border-border/40 bg-background/60 p-1.5", !isSameMonth(day, date) && "opacity-50", isSameDay(day, today) && "border-primary")}>
+                    <button type="button" onClick={() => onSelectDay(day)} className="flex min-h-9 w-full flex-wrap items-center justify-between gap-1 px-1 text-left"><span className="text-xs font-semibold">{format(day, "EEE d")}</span>{DayMeta({ day: day })}</button>
+                    {rows.map(item => <MonthItem key={item.id} item={item} onOpen={handleOpen} compact />)}
+                  </DayDropZone>; })}
+              </div>
+            </section>
+          ))}
+        </div>
+        {dialogs}
+      </div>
+    );
+  }
 
   return (
     <div className="planner-month-canvas">
        {!isMobile && <PlannerMonthSummary items={filteredItems.filter(item => isSameMonth(new Date(`${item.date}T12:00:00`), date))} weekLoads={weekLoads} />}
-      {isMobile ? mobileToolbar : <div className="flex flex-wrap items-center justify-between gap-2"><PlannerMonthFilters /></div>}
+      {mobileToolbar}
       <div className="planner-month-calendar">
         <div className="planner-month-weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(label => <div key={label}>{isMobile ? label.slice(0, 1) : label}</div>)}</div>
         <div className="planner-month-grid">

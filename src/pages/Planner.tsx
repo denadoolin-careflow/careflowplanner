@@ -1,4 +1,5 @@
 import { MobileWeekAgendaStrip } from "@/components/planner/mobile/MobileWeekAgendaStrip";
+import { PhaseRibbon } from "@/components/planner/PhaseRibbon";
 import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { weekKeyFor } from "@/lib/notes/periods";
 import { PeriodNoteCard } from "@/components/notes/PeriodNoteCard";
@@ -7,7 +8,7 @@ import { ScheduleNotePane } from "@/components/notes/ScheduleNotePane";
 import { OPEN_SCHEDULE_NOTE_EVENT } from "@/lib/schedule-note-pane";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { addDays, addMonths, addYears, differenceInCalendarDays, endOfYear, format, getDaysInMonth, isValid, parseISO, startOfMonth, startOfWeek, startOfYear } from "date-fns";
+import { addDays, addMonths, addYears, differenceInCalendarDays, endOfMonth, endOfYear, format, getDaysInMonth, isValid, parseISO, startOfMonth, startOfWeek, startOfYear } from "date-fns";
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
@@ -405,7 +406,8 @@ export default function Planner() {
              <AutoScheduleSettings size="md" />
            </div>
         </div>
-        <MobileWeekAgendaStrip day={day} onSelect={go} />
+        <MobileWeekAgendaStrip day={day} onSelect={go} rich={view === "month" || view === "week"} />
+        {(view === "month" || view === "week") && <PhaseRibbon selected={day} onGoto={go} rangeStart={format(view === "month" ? startOfMonth(day) : startOfWeek(day, { weekStartsOn: 1 }), "yyyy-MM-dd")} rangeEnd={format(view === "month" ? endOfMonth(day) : addDays(startOfWeek(day, { weekStartsOn: 1 }), 6), "yyyy-MM-dd")} />}
         </div>
       ) : (
         <>
@@ -425,6 +427,7 @@ export default function Planner() {
               />
             </div>
           </div>
+          {(view === "month" || view === "week") && <PhaseRibbon selected={day} onGoto={go} rangeStart={format(view === "month" ? startOfMonth(day) : startOfWeek(day, { weekStartsOn: 1 }), "yyyy-MM-dd")} rangeEnd={format(view === "month" ? endOfMonth(day) : addDays(startOfWeek(day, { weekStartsOn: 1 }), 6), "yyyy-MM-dd")} />}
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} />}
