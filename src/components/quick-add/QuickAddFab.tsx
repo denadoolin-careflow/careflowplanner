@@ -709,7 +709,7 @@ function BrainDumpForm({ onClose, initialText }: { onClose: () => void; initialT
   const [text, setText] = useState(initialText);
   const [busy, setBusy] = useState(false);
   const [autoTriage, setAutoTriage] = useState(true);
-  const dictation = useVoiceDictation((t) => {
+  const dictation = useVoiceDictation(() => {}, (t) => {
     // Append final dictation as a new line so multiple thoughts stay separate.
     setText((prev) => {
       const sep = prev && !prev.endsWith("\n") ? "\n" : "";

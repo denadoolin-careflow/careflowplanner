@@ -43,3 +43,4 @@
 - Property colors preserve synced saved values and use shared theme-aware CSS roles; property/selection pickers share one searchable registry and palette, and text properties auto-size while saving on blur to keep summaries readable without changing note content.
 - Period note templates (day/week/month prompts, properties, connections) sync in note_period_templates; applying adds only missing headings/properties, and connections read live from existing sources.
 - Voice memos store audio in the private note-audio bucket under the user's folder and persist in note bodies as data-voice-memo HTML; transcription runs server-side.
+- Append-only dictation consumers use final-result deltas, tracked by recognition-session result index, while live previews replace cumulative text; this prevents replay without removing intentional repeated speech.
