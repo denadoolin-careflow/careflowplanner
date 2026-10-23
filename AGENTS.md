@@ -41,3 +41,5 @@
 - Property-style sync uses an account-scoped pending cache, atomic field-patch RPC and realtime plus foreground refresh, preventing stale devices from replacing unrelated picks.
 - Note property display marks and choice chips share PropertyStyleDisplay across editors, gallery cards and rhythm controls so saved styling stays consistent.
 - Property colors preserve synced saved values and use shared theme-aware CSS roles; property/selection pickers share one searchable registry and palette, and text properties auto-size while saving on blur to keep summaries readable without changing note content.
+- Period note templates (day/week/month prompts, properties, connections) sync in note_period_templates; applying adds only missing headings/properties, and connections read live from existing sources.
+- Voice memos store audio in the private note-audio bucket under the user's folder and persist in note bodies as data-voice-memo HTML; transcription runs server-side.
