@@ -87,28 +87,38 @@ export interface NlpHighlightedInputProps {
   /** Extra padding for left and right gutters (must match input padding). */
   leftPad?: string;
   rightPad?: string;
+  /** Wrap long text onto new lines and grow (no cut-off words). Enter still submits. */
+  multiline?: boolean;
 }
 
 
 export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedInputProps>(
   function NlpHighlightedInput(
-    { value, onChange, onKeyDown, onFocus, onBlur, placeholder, disabled, className, leftPad = "pl-12 sm:pl-14", rightPad = "pr-24 sm:pr-28" },
+    { value, onChange, onKeyDown, onFocus, onBlur, placeholder, disabled, className, leftPad = "pl-12 sm:pl-14", rightPad = "pr-24 sm:pr-28", multiline = false },
     ref,
   ) {
     const mirrorRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const areaRef = useRef<HTMLTextAreaElement>(null);
+    useLayoutEffect(() => {
+      const el = areaRef.current;
+      if (!multiline || !el) return;
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }, [value, multiline]);
 
     // Forward ref
     useLayoutEffect(() => {
       if (!ref) return;
-      if (typeof ref === "function") ref(inputRef.current);
-      else (ref as React.MutableRefObject<HTMLInputElement | null>).current = inputRef.current;
-    }, [ref]);
+      const node = (multiline ? areaRef.current : inputRef.current) as HTMLInputElement | null;
+      if (typeof ref === "function") ref(node);
+      else (ref as React.MutableRefObject<HTMLInputElement | null>).current = node;
+    }, [ref, multiline]);
 
     // Sync horizontal scroll between input and mirror
     const handleScroll = () => {
-      const el = inputRef.current; const m = mirrorRef.current;
-      if (el && m) m.scrollLeft = el.scrollLeft;
+      const el = multiline ? areaRef.current : inputRef.current; const m = mirrorRef.current;
+      if (el && m) { m.scrollLeft = el.scrollLeft; m.scrollTop = el.scrollTop; }
     };
 
     return (
@@ -127,16 +137,40 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           ref={mirrorRef}
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-0 z-10 overflow-hidden whitespace-pre text-[14px] sm:text-[15px] font-semibold leading-[1.25]",
+            "pointer-events-none absolute inset-0 z-10 overflow-hidden text-[16px] sm:text-[15px] font-semibold leading-[1.35]",
             leftPad, rightPad,
-            "flex items-center",
+            multiline ? "whitespace-pre-wrap break-words py-3 sm:py-4" : "flex items-center whitespace-pre",
           )}
         >
           <div
-            className="min-w-0 truncate font-semibold text-foreground"
+            className={cn("min-w-0 font-semibold text-foreground", !multiline && "truncate")}
             dangerouslySetInnerHTML={{ __html: highlightTokens(value) }}
           />
         </div>
+{multiline ? (
+        <textarea
+          ref={areaRef}
+          rows={1}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown as any}
+          onFocus={onFocus as any}
+          onBlur={onBlur as any}
+          onScroll={handleScroll}
+          placeholder={placeholder}
+          disabled={disabled}
+          spellCheck
+          autoComplete="off"
+          className={cn(
+            "relative z-20 block min-h-11 sm:min-h-14 w-full resize-none overflow-hidden whitespace-pre-wrap break-words py-3 sm:py-4 text-[16px] rounded-2xl border-0 bg-transparent sm:text-[15px] font-semibold leading-[1.35] outline-none transition placeholder:text-[12px] sm:placeholder:text-[13px] placeholder:font-medium placeholder:leading-[1.25] placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
+            "disabled:opacity-60",
+            // The input's own text is transparent so the colored mirror renders, while the caret and selection remain visible.
+            value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "text-foreground",
+            leftPad, rightPad,
+            className,
+          )}
+        />
+        ) : (
         <input
           ref={inputRef}
           type="text"
@@ -151,7 +185,7 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           spellCheck
           autoComplete="off"
           className={cn(
-            "relative z-20 h-11 sm:h-14 w-full rounded-2xl border-0 bg-transparent py-0 text-[14px] sm:text-[15px] font-semibold leading-[1.25] outline-none transition placeholder:text-[12px] sm:placeholder:text-[13px] placeholder:font-medium placeholder:leading-[1.25] placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
+            "relative z-20 h-11 sm:h-14 w-full rounded-2xl border-0 bg-transparent py-0 text-[16px] sm:text-[15px] font-semibold leading-[1.35] outline-none transition placeholder:text-[12px] sm:placeholder:text-[13px] placeholder:font-medium placeholder:leading-[1.25] placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
             "disabled:opacity-60",
             // The input's own text is transparent so the colored mirror renders, while the caret and selection remain visible.
             value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "text-foreground",
@@ -159,6 +193,7 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
             className,
           )}
         />
+        )}
       </div>
     );
   },
