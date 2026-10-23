@@ -21,6 +21,7 @@ import { CalendarColorsSection } from "@/components/settings/CalendarColorsSecti
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { GroceryPrefsSection } from "@/components/settings/GroceryPrefsSection";
 import { MoonGuideSection } from "@/components/settings/MoonGuideSection";
+import { PeriodTemplateEditor } from "@/components/notes/PeriodTemplateEditor";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import { WeatherPrefsSection } from "@/components/settings/WeatherPrefsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
@@ -424,6 +425,9 @@ export default function Settings() {
 
       <CycleSettingsSection />
       <MoonGuideSection />
+      <SectionCard title="Notes · day, week & month templates" subtitle="Prompts, properties and connections for new notebook notes.">
+        <PeriodTemplateEditor />
+      </SectionCard>
       <WeatherPrefsSection />
     </div>
   );

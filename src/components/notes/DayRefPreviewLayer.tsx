@@ -166,7 +166,7 @@ export function DayPreviewCard({ iso, onNavigate }: { iso: string; onNavigate?: 
                   <Clock className="h-2.5 w-2.5" aria-hidden />{t.startTime}
                 </span>
               )}
-              <span className="min-w-0 flex-1 truncate">{t.title}</span>
+              <span className="min-w-0 flex-1 whitespace-normal break-words">{t.title}</span>
             </li>
           ))}
         </ul>

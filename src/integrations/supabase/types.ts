@@ -5380,6 +5380,24 @@ export type Database = {
           },
         ]
       }
+      note_period_templates: {
+        Row: {
+          templates: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          templates?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          templates?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       note_property_styles: {
         Row: {
           styles: Json

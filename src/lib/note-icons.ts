@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { icons as LucideIcons, StickyNote, type LucideIcon } from "lucide-react";
 import * as Astro from "@/components/icons/AstrologyIcons";
 import type { Note } from "@/lib/notes";
@@ -239,8 +240,21 @@ export function resolveNoteIcon(note: Pick<Note, "title" | "body" | "kind" | "ic
 }
 
 /** Look up a Lucide component by PascalCase name (safe fallback to StickyNote). */
+const textIconCache = new Map<string, LucideIcon>();
 export function getLucideIcon(name: string | null | undefined): LucideIcon {
   if (!name) return StickyNote;
+  if (name.startsWith("emoji:") || name.startsWith("glyph:")) {
+    const text = name.slice(6);
+    let C = textIconCache.get(text);
+    if (!C) {
+      C = ((props: { className?: string }) => createElement("span", {
+        "aria-hidden": true,
+        className: `inline-flex shrink-0 items-center justify-center leading-none ${props?.className ?? ""}`,
+      }, text)) as unknown as LucideIcon;
+      textIconCache.set(text, C);
+    }
+    return C;
+  }
   const map = LucideIcons as unknown as Record<string, LucideIcon>;
   const lucide = map[name];
   if (lucide) return lucide;

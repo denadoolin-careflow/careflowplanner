@@ -9,6 +9,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link2, Plus, X, CheckSquare, FolderOpen, Target, Flame, CalendarHeart, Clock, Users, Utensils, BookOpen, FileText, CalendarDays, Sparkles, Layers, PartyPopper, Heart } from "lucide-react";
 import { toast } from "sonner";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { haptics } from "@/lib/haptics";
+import { usePlannerCompletedStrikethrough } from "@/lib/planner-prefs";
 
 const ICONS: Record<EntityType, React.ComponentType<{ className?: string }>> = {
   task: CheckSquare, project: FolderOpen, goal: Target, habit: Flame, appointment: CalendarHeart, time_block: Clock,
@@ -19,7 +23,8 @@ const ICONS: Record<EntityType, React.ComponentType<{ className?: string }>> = {
 interface Props { noteId: string; }
 
 export function NoteLinksSidebar({ noteId }: Props) {
-  const { state } = useStore();
+  const { state, toggleTask } = useStore();
+  const [strike] = usePlannerCompletedStrikethrough();
   const { links, reload } = useNoteLinks(noteId);
   const nav = useNavigate();
 
@@ -88,7 +93,17 @@ export function NoteLinksSidebar({ noteId }: Props) {
                 <ul className="space-y-1">
                   {rows.map(r => (
                     <li key={r.id} className="group flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-1 text-xs">
-                      <button onClick={() => nav(ENTITY_ROUTE[type](r.entityId))} className="min-w-0 flex-1 truncate text-left hover:underline">{r.label}</button>
+                      {type === "task" && (() => {
+                        const done = !!state.tasks.find(t => t.id === r.entityId)?.done;
+                        return (
+                          <button type="button" aria-pressed={done} aria-label={done ? `Mark ${r.label} not done` : `Mark ${r.label} done`}
+                            onClick={() => { done ? haptics.tap() : haptics.success(); void toggleTask(r.entityId); }}
+                            className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors", done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary")}>
+                            {done && <Check className="h-3 w-3" strokeWidth={3} aria-hidden />}
+                          </button>
+                        );
+                      })()}
+                      <button onClick={() => nav(ENTITY_ROUTE[type](r.entityId))} className={cn("min-w-0 flex-1 whitespace-normal break-words text-left hover:underline", type === "task" && strike && state.tasks.find(t => t.id === r.entityId)?.done && "text-muted-foreground line-through")}>{r.label}</button>
                       <Button size="icon" variant="ghost" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive" onClick={() => onUnlink(r)} aria-label="Unlink">
                         <X className="h-3 w-3" />
                       </Button>

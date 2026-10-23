@@ -26,6 +26,27 @@ export const PROPERTY_ICONS: Record<string, any> = {
   utensils: Utensils, wallet: Wallet, waves: Waves, wind: Wind, "moon-star": MoonStar,
 };
 
+export const MOON_GLYPHS = [
+  ["New Moon", "🌑"], ["Waxing Crescent", "🌒"], ["First Quarter", "🌓"], ["Waxing Gibbous", "🌔"],
+  ["Full Moon", "🌕"], ["Waning Gibbous", "🌖"], ["Last Quarter", "🌗"], ["Waning Crescent", "🌘"],
+] as const;
+export const PLANET_GLYPHS = [
+  ["Sun", "☉"], ["Moon", "☽"], ["Mercury", "☿"], ["Venus", "♀"], ["Mars", "♂"], ["Jupiter", "♃"],
+  ["Saturn", "♄"], ["Uranus", "♅"], ["Neptune", "♆"], ["Pluto", "♇"], ["Chiron", "⚷"],
+  ["North Node", "☊"], ["South Node", "☋"],
+] as const;
+export const ZODIAC_GLYPHS = [
+  ["Aries", "♈"], ["Taurus", "♉"], ["Gemini", "♊"], ["Cancer", "♋"], ["Leo", "♌"], ["Virgo", "♍"],
+  ["Libra", "♎"], ["Scorpio", "♏"], ["Sagittarius", "♐"], ["Capricorn", "♑"], ["Aquarius", "♒"], ["Pisces", "♓"],
+] as const;
+/** Moon phase emoji keep their pictures; planet/zodiac symbols use text presentation. */
+export const glyphIcon = (glyph: string) => `glyph:${/[\u{1F311}-\u{1F318}]/u.test(glyph) ? glyph : `${glyph}\uFE0E`}`;
+/** Text glyph/emoji stored as `glyph:♈` / `emoji:🌿`, else undefined. */
+export function textIconValue(icon?: string | null): string | undefined {
+  if (icon?.startsWith("glyph:") || icon?.startsWith("emoji:")) return icon.slice(6);
+  return undefined;
+}
+
 export interface StyleBit { icon?: string; color?: string }
 export interface PropStyle extends StyleBit { options?: Record<string, StyleBit> }
 export type StyleMap = Record<string, PropStyle>;
@@ -35,9 +56,10 @@ export const normKey = (s: string) => s.trim().toLowerCase();
 /** Built-in defaults for the rhythm bundle (overridable). */
 export const DEFAULT_STYLES: StyleMap = {
   "moon phase": { icon: "moon", options: {
-    "new moon": { icon: "circle" }, "full moon": { icon: "sun" },
+    ...Object.fromEntries(MOON_GLYPHS.map(([n, g]) => [normKey(n), { icon: glyphIcon(g) }])),
+    "third quarter": { icon: glyphIcon("🌗") },
   } },
-  "moon sign": { icon: "star" },
+  "moon sign": { icon: "star", options: Object.fromEntries(ZODIAC_GLYPHS.map(([n, g]) => [normKey(n), { icon: glyphIcon(g) }])) },
   "season": { icon: "leaf", options: {
     spring: { icon: "sprout" }, summer: { icon: "sun" }, autumn: { icon: "leaf" }, fall: { icon: "leaf" }, winter: { icon: "snow" },
   } },

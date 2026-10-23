@@ -63,7 +63,7 @@ function NotebookTaskRow({ task, onToggle }: { task: Task; onToggle: () => void 
           <ActivityChip task={task} className="shrink-0" />
         </span>
         <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => openTaskQuickEdit(task.id)}
-                className={cn("min-w-0 flex-1 truncate text-left hover:underline", task.done && "text-muted-foreground")}>
+                className={cn("min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] text-left hover:underline", task.done && "text-muted-foreground")}>
           {task.title}
         </button>
       </div>
@@ -154,7 +154,7 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
             <CosmicPeek item={c}>
               <button type="button" className="flex w-full items-center gap-1.5 rounded-md border border-amber-300/45 bg-amber-50/40 px-2 py-1 text-left text-[11.5px] text-foreground hover:bg-amber-50/80 dark:border-amber-700/40 dark:bg-amber-950/15">
                 <Sparkles className="h-3 w-3 shrink-0 text-amber-500" aria-hidden />
-                <span className="truncate">{c.label}</span>
+                <span className="min-w-0 whitespace-normal break-words">{c.label}</span>
                 <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">Details</span>
               </button>
             </CosmicPeek>
@@ -166,7 +166,7 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
         <EventPeek key={a.id} event={a}>
           <div className="flex items-center gap-1.5 text-[11.5px]">
             <CalendarClock className="h-3 w-3 shrink-0 text-violet-500" aria-hidden />
-            <span className="truncate">{a.title}</span>
+            <span className="min-w-0 whitespace-normal break-words">{a.title}</span>
             {a.time && <span className="text-[10px] text-muted-foreground">{fmt12(a.time)}</span>}
           </div>
         </EventPeek>
@@ -199,7 +199,7 @@ export function PeriodDayPlan({ plan, noteId }: { plan: DayPlan; noteId?: string
                   >
                     <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-yellow-600" aria-hidden />
                     <span className="text-muted-foreground">{m.slot}:</span>
-                    <span className="truncate">{m.name}</span>
+                    <span className="min-w-0 whitespace-normal break-words">{m.name}</span>
                   </button>
                 </li>
               ))}

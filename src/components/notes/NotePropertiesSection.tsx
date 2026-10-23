@@ -16,7 +16,7 @@ import type { NoteProperty, NotePropertyType } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 import { SmartPropertyActions } from "./SmartPropertyActions";
 import { PROPERTY_ICONS, usePropertyStyles, resolveOption, resolveProp, setOptionStyle, setPropStyle } from "@/lib/notes/property-styles";
-import { OPTION_COLORS, optionColor, OptionChip } from "./PropertyStyleDisplay";
+import { OPTION_COLORS, optionColor, OptionChip, StyleIcon } from "./PropertyStyleDisplay";
 import { propertyColorStyle } from "@/lib/notes/property-colors";
 import { IconGrid, PropertyColorGrid } from "./PropertyStylePicker";
 export { OPTION_COLORS, optionColor, OptionChip } from "./PropertyStyleDisplay";
@@ -37,13 +37,13 @@ const iconFor = (t: NotePropertyType) => TYPES.find(x => x.type === t)?.icon ?? 
 function PropertyIcon({ prop }: { prop: NoteProperty }) {
   const map = usePropertyStyles();
   const st = resolveProp(map, prop.name);
-  const Icon = (st.icon && PROPERTY_ICONS[st.icon]) || iconFor(prop.type);
+  const fallback = iconFor(prop.type);
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" aria-label={`Icon and color for ${prop.name}`} className={cn("h-8 w-8 shrink-0 rounded", st.color && "note-property-color")}
           style={propertyColorStyle(st.color)}>
-          <Icon className="h-3.5 w-3.5" />
+          <StyleIcon icon={st.icon} fallback={fallback} className="h-3.5 w-3.5 text-sm" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="max-h-[75dvh] w-[min(92vw,280px)] space-y-2 overflow-y-auto p-2">

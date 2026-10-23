@@ -10,6 +10,7 @@ import {
   getLucideIcon, getRecentNoteIcons, pushRecentNoteIcon,
   type IconCategory,
 } from "@/lib/note-icons";
+import { EmojiPicker } from "./TextIconPicker";
 
 export function NoteIconPicker({
   value,           // user override (null = auto)
@@ -27,6 +28,7 @@ export function NoteIconPicker({
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
+  const [tab, setTab] = useState<"Icons" | "Emoji">(value?.startsWith("emoji:") ? "Emoji" : "Icons");
 
   useEffect(() => {
     if (open) setRecent(getRecentNoteIcons());
@@ -69,13 +71,18 @@ export function NoteIconPicker({
       </PopoverTrigger>
       <PopoverContent align={align} className="w-80 p-0">
         <div className="border-b border-border/60 p-2">
-          <Input
+          <div className="mb-2 flex gap-1">
+            {(["Icons", "Emoji"] as const).map(t => (
+              <Button key={t} type="button" size="sm" variant={tab === t ? "secondary" : "ghost"} aria-pressed={tab === t} className="h-8 px-3 text-xs" onClick={() => setTab(t)}>{t}</Button>
+            ))}
+          </div>
+          {tab === "Icons" && <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search icons…"
             className="h-8 text-sm"
             autoFocus
-          />
+          />}
           <div className="mt-2 flex items-center gap-1">
             <Button
               variant={isAuto ? "default" : "outline"}
@@ -91,6 +98,7 @@ export function NoteIconPicker({
           </div>
         </div>
         <div className="max-h-72 overflow-y-auto p-2">
+          {tab === "Emoji" ? <EmojiPicker value={value} onPick={pick} /> : <>
           {recent.length > 0 && !q && (
             <Section title="Recent">
               <Grid
@@ -115,6 +123,7 @@ export function NoteIconPicker({
           {filtered.length === 0 && (
             <p className="px-2 py-6 text-center text-xs text-muted-foreground">No icons match “{q}”.</p>
           )}
+          </>}
         </div>
       </PopoverContent>
     </Popover>

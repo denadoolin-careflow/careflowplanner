@@ -16,6 +16,7 @@ import { uploadNoteImage } from "@/lib/note-images";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
+import { PeriodConnections } from "@/components/notes/PeriodConnections";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { CareyButton } from "@/components/carey/CareyButton";
 import { BlockEditor, type BlockEditorPlannerApi } from "@/components/notes/BlockEditor";
@@ -766,6 +767,12 @@ export default function NoteDetail() {
             onDueDateChange={setPromoteDate}
             onSendUnchecked={() => void sendUnchecked()}
           />
+        )}
+        {isPeriodKind(note.kind) && note.date && (
+          <PeriodConnections note={{ ...note, body }} onApplied={(p) => {
+            setNote({ ...note, ...p });
+            if (p.body != null) setBody(p.body);
+          }} />
         )}
 
         <div className="mt-6">
