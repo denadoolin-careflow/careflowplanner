@@ -116,6 +116,7 @@ import CosmicPredictive from "./pages/CosmicPredictive";
 import CosmicCalendar from "./pages/CosmicCalendar";
 import CosmicTarot from "./pages/CosmicTarot";
 import CosmicMoon from "./pages/CosmicMoon";
+import MoonscapeMockups from "./pages/MoonscapeMockups";
 import CosmicAlmanac from "./pages/CosmicAlmanac";
 import CosmicSky from "./pages/CosmicSky";
 import CosmicGrid from "./pages/CosmicGrid";
@@ -270,6 +271,7 @@ const App = () => (
                 <Route path="/cosmic-flow/calendar" element={<CosmicCalendar />} />
                 <Route path="/cosmic-flow/tarot" element={<CosmicTarot />} />
                 <Route path="/cosmic-flow/moon" element={<CosmicMoon />} />
+                <Route path="/cosmic-flow/moonscape-mockups" element={<MoonscapeMockups />} />
                 <Route path="/cosmic-flow/almanac" element={<CosmicAlmanac />} />
                 <Route path="/cosmic-flow/sky" element={<CosmicSky />} />
                 <Route path="/cosmic-flow/grid" element={<CosmicGrid />} />

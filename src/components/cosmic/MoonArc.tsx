@@ -8,14 +8,14 @@ import { rhythmPhaseForMoon, RHYTHM_LABEL, type RhythmPhase } from "@/lib/planne
 import { cn } from "@/lib/utils";
 
 const MAJOR: MoonPhase[] = ["new", "first-quarter", "full", "last-quarter"];
-const PHASE_LINE: Record<RhythmPhase, string> = { plan: "Plant the seed.", grow: "Bring it outward.", care: "Tend what you've created.", letgo: "Empty the cup." };
+export const PHASE_LINE: Record<RhythmPhase, string> = { plan: "Plant the seed.", grow: "Bring it outward.", care: "Tend what you've created.", letgo: "Empty the cup." };
 const PHASE_MOON: Record<RhythmPhase, MoonPhase> = { plan: "new", grow: "first-quarter", care: "full", letgo: "last-quarter" };
 const ORDER: RhythmPhase[] = ["plan", "grow", "care", "letgo"];
 const glyph = (sign: string) => `${SIGN_GLYPH[sign as keyof typeof SIGN_GLYPH] ?? ""}\uFE0E`;
 
-interface Day { date: Date; phase: MoonPhase; rhythm: RhythmPhase; illum: number; waxing: boolean; sign: string; major: boolean }
+export interface Day { date: Date; phase: MoonPhase; rhythm: RhythmPhase; illum: number; waxing: boolean; sign: string; major: boolean }
 
-function useMonthDays(month: Date): Day[] {
+export function useMonthDays(month: Date): Day[] {
   return useMemo(() => {
     const out = eachDayOfInterval({ start: startOfMonth(month), end: endOfMonth(month) }).map(d => {
       const date = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12);
@@ -42,7 +42,7 @@ export function MoonDisc({ illum, waxing, rhythm, size = 28 }: { illum: number; 
   );
 }
 
-function PhaseArt({ phase }: { phase: RhythmPhase }) {
+export function PhaseArt({ phase }: { phase: RhythmPhase }) {
   const deep = `hsl(var(--rhythm-${phase}-deep))`, light = `hsl(var(--rhythm-${phase}))`;
   return (
     <svg viewBox="0 0 64 32" className="h-8 w-16" aria-hidden fill="none" strokeLinecap="round" strokeLinejoin="round">
