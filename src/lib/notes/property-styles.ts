@@ -40,7 +40,7 @@ export const ZODIAC_GLYPHS = [
   ["Libra", "♎"], ["Scorpio", "♏"], ["Sagittarius", "♐"], ["Capricorn", "♑"], ["Aquarius", "♒"], ["Pisces", "♓"],
 ] as const;
 /** Moon phase emoji keep their pictures; planet/zodiac symbols use text presentation. */
-export const glyphIcon = (glyph: string) => `glyph:${/\p{Extended_Pictographic}/u.test(glyph) ? glyph : `${glyph}\uFE0E`}`;
+export const glyphIcon = (glyph: string) => `glyph:${/[\u{1F311}-\u{1F318}]/u.test(glyph) ? glyph : `${glyph}\uFE0E`}`;
 /** Text glyph/emoji stored as `glyph:♈` / `emoji:🌿`, else undefined. */
 export function textIconValue(icon?: string | null): string | undefined {
   if (icon?.startsWith("glyph:") || icon?.startsWith("emoji:")) return icon.slice(6);
