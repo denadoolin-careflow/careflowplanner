@@ -488,13 +488,13 @@ export default function NoteDetail() {
           {note.kind === "daily" && note.date && (
             <Button variant="ghost" size="sm" className="h-8 text-xs" title="Insert day's rhythm"
               onClick={() => { const next = appendDayRhythm(body, state, note.date!); setBody(next); save({ body: next }); }}>
-              🌿 <span className="ml-1 hidden sm:inline">Day's rhythm</span>
+              🌿 <span className="ml-1 hidden xl:inline">Day's rhythm</span>
             </Button>
           )}
           {note.kind === "daily" && note.date && (
             <Button variant="ghost" size="sm" className="h-8 text-xs" title="Insert Moon aspects"
               onClick={() => { const next = appendMoonAspects(body, new Date(`${note.date}T12:00:00`)); setBody(next); save({ body: next }); }}>
-              🌙 <span className="ml-1 hidden sm:inline">Moon aspects</span>
+              🌙 <span className="ml-1 hidden xl:inline">Moon aspects</span>
             </Button>
           )}
           <NoteAIButton
