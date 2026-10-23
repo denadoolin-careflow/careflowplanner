@@ -21,6 +21,7 @@ import { CalendarColorsSection } from "@/components/settings/CalendarColorsSecti
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { GroceryPrefsSection } from "@/components/settings/GroceryPrefsSection";
 import { MoonGuideSection } from "@/components/settings/MoonGuideSection";
+import { MoonscapeLayoutPicker } from "@/components/cosmic/moonscape/Moonscape";
 import { PeriodTemplateEditor } from "@/components/notes/PeriodTemplateEditor";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import { WeatherPrefsSection } from "@/components/settings/WeatherPrefsSection";
@@ -425,6 +426,9 @@ export default function Settings() {
 
       <CycleSettingsSection />
       <MoonGuideSection />
+      <SectionCard title="Monthly moonscape" subtitle="Default layout on this device.">
+        <MoonscapeLayoutPicker />
+      </SectionCard>
       <SectionCard title="Notes · day, week & month templates" subtitle="Prompts, properties and connections for new notebook notes.">
         <PeriodTemplateEditor />
       </SectionCard>
