@@ -141,6 +141,13 @@
       "when": 1792689876330,
       "tag": "0019_sync_note_property_style_patches",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792758417730,
+      "tag": "0020_note_audio_and_period_templates",
+      "breakpoints": true
     }
   ]
 }
