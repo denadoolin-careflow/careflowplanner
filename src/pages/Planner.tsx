@@ -8,7 +8,7 @@ import { ScheduleNotePane } from "@/components/notes/ScheduleNotePane";
 import { OPEN_SCHEDULE_NOTE_EVENT } from "@/lib/schedule-note-pane";
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { addDays, addMonths, addYears, differenceInCalendarDays, endOfYear, format, getDaysInMonth, isValid, parseISO, startOfMonth, startOfWeek, startOfYear } from "date-fns";
+import { addDays, addMonths, addYears, differenceInCalendarDays, endOfMonth, endOfYear, format, getDaysInMonth, isValid, parseISO, startOfMonth, startOfWeek, startOfYear } from "date-fns";
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
