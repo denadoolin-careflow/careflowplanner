@@ -27,25 +27,41 @@ Deno.serve(async (req) => {
 
     const key = Deno.env.get("LOVABLE_API_KEY");
     if (!key) return reply(500, { message: "AI is not configured" });
-    const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const upstream = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: "Summarize the user's voice memo warmly and briefly. Return 1-3 sentences, then if any, a short 'Action items:' list with '- ' bullets. Plain text only, no markdown headings." },
-          { role: "user", content: transcript },
-        ],
+        model: "openai/gpt-6-astra",
+        stream: true,
+        store: false,
+        reasoning: { effort: "low" },
+        instructions: "Summarize the user's voice memo warmly and briefly. Return 1-3 sentences, then if any, a short 'Action items:' list with '- ' bullets. Plain text only, no markdown headings.",
+        input: [{ role: "user", content: transcript }],
       }),
     });
-    if (!upstream.ok) {
+    if (!upstream.ok || !upstream.body) {
       const message = upstream.status === 402 ? "AI credits have run out. Add credits to keep summarizing."
         : upstream.status === 429 ? "Too many requests right now — please try again in a minute."
         : `Summary failed (${upstream.status})`;
-      return reply(upstream.status, { message });
+      return reply(upstream.status || 502, { message });
     }
-    const json = await upstream.json();
-    const summary = String(json?.choices?.[0]?.message?.content ?? "").trim();
+    let summary = "";
+    const reader = upstream.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n"); buf = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const d = line.slice(5).trim();
+        if (!d || d === "[DONE]") continue;
+        try { const ev = JSON.parse(d); if (ev.type === "response.output_text.delta") summary += ev.delta ?? ""; } catch { /* noop */ }
+      }
+    }
+    summary = summary.trim();
     if (!summary) return reply(502, { message: "No summary was returned" });
     await client.from("voice_memos").update({ summary }).eq("id", id);
     return reply(200, { summary });
