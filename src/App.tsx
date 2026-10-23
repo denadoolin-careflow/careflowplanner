@@ -65,6 +65,7 @@ import Routines from "./pages/Routines";
 import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
 import Planner from "./pages/Planner";
+import MonthMockups from "./pages/MonthMockups";
 import DailyCheckIn from "./pages/DailyCheckIn";
 import TaskEditorStyles from "./pages/TaskEditorStyles";
 import Whiteboards from "./pages/Whiteboards";
