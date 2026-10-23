@@ -21,10 +21,12 @@ afterEach(() => vi.unstubAllGlobals());
 
 it("keeps the note's original writing and inserts only final spoken phrases once", () => {
   vi.stubGlobal("SpeechRecognition", Recognition);
-  const editor = new Editor({ extensions: [StarterKit], content: "<p>Original writing. </p>" });
+  const editor = new Editor({ extensions: [StarterKit], content: {
+    type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Original writing. " }] }],
+  } });
   editor.commands.setTextSelection(editor.state.doc.content.size - 1);
   const controls = render(<NoteVoiceControls editor={editor} />);
-  fireEvent.click(screen.getByRole("button", { name: "Dictate", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: /^Dictate$/ }));
   const emit = (results: ReturnType<typeof phrase>[]) => act(() => Recognition.current.onresult?.({ results }));
   emit([phrase("water water", false)]);
   expect(editor.getText()).toBe("Original writing. ");
