@@ -82,4 +82,4 @@
 - [x] Verify property icon/color saving and live readback across independent device sessions; temporary picks restored
 - [x] Adapt note property colors to dark mode, expand icon/color choices, add option settings, and wrap AI summaries; verified signed-in temporary note, saved choice readback, 24 colors and 54 icons, desktop/phone wrapping
 - [x] Test today's note recording, playback, transcription and saved readback; correct cumulative-text appending in Brain Dump and verify final deltas in the note; live browser speech failed with audio-capture in the test environment, so real spoken dictation remains unverified; test additions removed and original writing preserved
-- [ ] Harden live dictation session handling and verify overlapping updates produce only finalized text in a saved note
+- [x] Harden dictation stop/failure/unmount session handling; six regression tests pass and overlapping simulated speech saves exactly once in a signed-in note after reload, preserving intentional repeated words; temporary note removed. Actual browser speech recognition accuracy remains unverified.
