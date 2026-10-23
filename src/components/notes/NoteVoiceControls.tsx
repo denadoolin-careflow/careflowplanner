@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { cn } from "@/lib/utils";
+import { createVoiceMemo, currentNoteId } from "@/lib/voice-memos";
 import { Button } from "@/components/ui/button";
 
 const MAX_BYTES = 24 * 1024 * 1024;
@@ -41,6 +42,7 @@ export function NoteVoiceControls({ editor }: { editor: Editor }) {
       const path = `${u.user.id}/${crypto.randomUUID()}.${extFor(mime)}`;
       const { error } = await supabase.storage.from("note-audio").upload(path, out.blob, { contentType: mime, upsert: false });
       if (error) { toast.error("Couldn't save the voice memo"); return; }
+      try { await createVoiceMemo({ path, duration_ms: duration, mime, note_id: currentNoteId() }); } catch { /* card creates it on load */ }
       editor.chain().focus().insertContent({ type: "voiceMemo", attrs: { path, duration }, }).run();
       toast.success("Voice memo added");
     } finally { setUploading(false); }

@@ -286,6 +286,11 @@ export const NAV_GROUPS = [
 
 /** Subpages nested under a parent flow page — shown indented in the sidebar and as connected tabs on the page. */
 export const NAV_SUBPAGES: Record<string, { to: string; label: string }[]> = {
+  "/notes": [
+    { to: "/notes/timeline", label: "Timeline" },
+    { to: "/notes/files", label: "Files" },
+    { to: "/notes/voice-memos", label: "Voice memos" },
+  ],
   "/wellflow": [
     { to: "/wellflow/plan", label: "Eating plan" },
     { to: "/wellflow/report", label: "Weekly report" },

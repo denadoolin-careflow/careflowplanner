@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
       return reply(upstream.status, { message });
     }
     if (typeof result?.text !== "string") return reply(502, { message: "Invalid transcription response" });
+    await client.from("voice_memos").update({ transcript: result.text, transcript_edited: false }).eq("path", path);
     return reply(200, { text: result.text });
   } catch (e) {
     console.error("transcribe-voice-memo failed", e);

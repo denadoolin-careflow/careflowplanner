@@ -45,3 +45,4 @@
 - Voice memos store audio in the private note-audio bucket under the user's folder and persist in note bodies as data-voice-memo HTML; transcription runs server-side.
 - Append-only dictation consumers use final-result deltas, tracked by recognition-session result index, while live previews replace cumulative text; this prevents replay without removing intentional repeated speech.
 - Dictation sessions stay active through graceful stop's final event, and are invalidated before failure/unmount abort; stale recognizers cannot insert into another session or note.
+- Voice memos sync via the voice_memos table keyed by storage path; note bodies keep only data-voice-memo markers, and transcript/summary live on the row so the library and note cards stay in sync.

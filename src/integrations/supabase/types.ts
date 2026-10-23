@@ -8576,6 +8576,48 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_memos: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          id: string
+          mime: string | null
+          note_id: string | null
+          path: string
+          summary: string | null
+          transcript: string | null
+          transcript_edited: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          mime?: string | null
+          note_id?: string | null
+          path: string
+          summary?: string | null
+          transcript?: string | null
+          transcript_edited?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          mime?: string | null
+          note_id?: string | null
+          path?: string
+          summary?: string | null
+          transcript?: string | null
+          transcript_edited?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       waitlist_signups: {
         Row: {
           archetype: string | null
