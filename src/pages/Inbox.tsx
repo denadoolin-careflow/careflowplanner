@@ -940,6 +940,12 @@ function InboxInner() {
               )}
             </div>
           )}
+          {!transcribing && recorder.state === "idle" && (
+            <div className="mt-2 flex items-center gap-2 px-1">
+              <CaptureSaveTo value={saveTo} onChange={setSaveTo} />
+              <span className="ml-auto hidden text-[10px] text-muted-foreground sm:inline">Enter to save · Shift+Enter for a new line</span>
+            </div>
+          )}
 
           {!showControls && recorder.state === "idle" && (
             <button
