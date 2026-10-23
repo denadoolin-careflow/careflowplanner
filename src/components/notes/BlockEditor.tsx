@@ -80,6 +80,8 @@ import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { InlineEntityCard } from "@/components/notes/InlineEntityCardNode";
 import { QueryBlock, DEFAULT_QUERY_FILTERS, DEFAULT_CHORE_FILTERS, QUERY_BLOCK_ATTRS } from "@/components/notes/QueryBlockNode";
 import { GroceryBlock } from "@/components/notes/GroceryBlockNode";
+import { VoiceMemo } from "@/components/notes/VoiceMemoNode";
+import { NoteVoiceControls } from "@/components/notes/NoteVoiceControls";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
@@ -296,6 +298,10 @@ turndown.addRule("fileEmbed", {
     const mime = el.getAttribute("data-mime") || "";
     return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
   },
+});
+turndown.addRule("voiceMemo", {
+  filter: (node) => node.nodeName === "DIV" && (node as HTMLElement).hasAttribute("data-voice-memo"),
+  replacement: (_content, node) => `\n\n<div data-voice-memo="${(node as HTMLElement).getAttribute("data-voice-memo") ?? ""}" data-duration="${(node as HTMLElement).getAttribute("data-duration") ?? "0"}"></div>\n\n`,
 });
 turndown.addRule("webLinkCard", {
   filter: (node) => node.nodeName === "DIV" && (node as HTMLElement).hasAttribute("data-web-link-card"),
@@ -1063,6 +1069,8 @@ function Toolbar({
     : "T";
   return (
     <div className="cf-editor-toolbar z-10 flex w-full max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-border/50 bg-card/70 px-2 py-1.5 backdrop-blur-xl shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <NoteVoiceControls editor={editor} />
+      <Divider />
       {/* Text style */}
       <Popover>
         <PopoverTrigger asChild>
@@ -2359,6 +2367,7 @@ export function BlockEditor({
       }),
       FileEmbed,
       WebLinkCard,
+      VoiceMemo,
       InlineEntityCard,
       QueryBlock,
       GroceryBlock,
