@@ -4,6 +4,12 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { lunarRhythmAt, LUNAR_RHYTHM } from "@/lib/cosmic/lunar-rhythm";
 import { PHASE_ICONS } from "./PhaseRibbon";
+import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { getMoonSign } from "@/lib/zodiac";
+
+const noon = (d: Date) => { const x = new Date(d); x.setHours(12, 0, 0, 0); return x; };
+const moonOf = (d: Date) => MOON_INFO[getMoonPhase(noon(d))];
+const signOf = (d: Date) => getMoonSign(noon(d));
 
 const phaseOf = (d: Date) => { const x = new Date(d); x.setHours(12, 0, 0, 0); return lunarRhythmAt(x); };
 
@@ -60,19 +66,6 @@ export function PlannerYearView({ date, onSelectDay, onSelectMonth }: {
                 <span className="shrink-0 text-[9px] tabular-nums text-muted-foreground">{monthCount}</span>
               )}
             </button>
-            <ol aria-label={`${format(mo, "MMMM")} moon phases`} className="mb-1.5 flex gap-px overflow-hidden rounded-md">
-              {segs.map((sg, si) => {
-                const Icon = PHASE_ICONS[sg.phase];
-                return (
-                  <li key={si} style={{ flexGrow: sg.days, flexBasis: 0, background: `hsl(var(--rhythm-${sg.phase}-tint))`, color: `hsl(var(--rhythm-${sg.phase}-deep))` }}
-                    title={`${LUNAR_RHYTHM[sg.phase].label} from ${format(sg.start, "MMM d")}`}
-                    className="flex h-5 min-w-0 items-center justify-center gap-0.5 text-[9px] font-semibold">
-                    <Icon className="h-2.5 w-2.5 shrink-0" aria-hidden />
-                    {sg.days >= 7 && <span className="truncate">{LUNAR_RHYTHM[sg.phase].label}</span>}
-                  </li>
-                );
-              })}
-            </ol>
             <div className="grid grid-cols-7 gap-[2px] text-center text-[9px] text-muted-foreground">
               {["M","T","W","T","F","S","S"].map((d, i) => (
                 <div key={i} className={cn("leading-4", i > 4 && "text-muted-foreground/60")}>{d}</div>
@@ -87,9 +80,9 @@ export function PlannerYearView({ date, onSelectDay, onSelectMonth }: {
                     key={i}
                     type="button"
                     onClick={() => onSelectDay(d)}
-                    aria-label={`${format(d, "MMMM d")} · ${LUNAR_RHYTHM[ph].label}${n ? ` — ${n} planned` : ""}`}
+                    aria-label={`${format(d, "MMMM d")} · ${LUNAR_RHYTHM[ph].label} · ${moonOf(d).label} in ${signOf(d).name}${n ? ` — ${n} planned` : ""}`}
                     className={cn(
-                       "grid aspect-square min-h-[22px] place-items-center rounded-[5px] text-[10px] leading-none transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                       "flex min-h-[30px] flex-col items-center justify-center rounded-[5px] text-[10px] leading-none transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       dim && "opacity-25",
                       isSameDay(d, today) && "bg-primary font-semibold text-primary-foreground",
                     )}
@@ -97,11 +90,32 @@ export function PlannerYearView({ date, onSelectDay, onSelectMonth }: {
                       ? { backgroundColor: `hsl(var(--rhythm-${ph}-tint))`, color: `hsl(var(--rhythm-${ph}-deep))`, fontWeight: n ? 700 : undefined, boxShadow: n ? `inset 0 -2px 0 hsl(var(--rhythm-${ph}-deep) / ${Math.min(0.9, 0.35 + n * 0.15)})` : undefined }
                       : undefined}
                   >
-                    {dim ? "" : format(d, "d")}
+                    {dim ? "" : (<>
+                      <span>{format(d, "d")}</span>
+                      <span className="mt-px flex items-center gap-px text-[7px] leading-none opacity-90" aria-hidden>{moonOf(d).glyph}<span>{signOf(d).symbol}</span></span>
+                    </>)}
                   </button>
                 );
               })}
             </div>
+            <ul aria-label={`${format(mo, "MMMM")} phases`} className="mt-1.5 space-y-0.5">
+              {segs.map((sg, si) => {
+                const Icon = PHASE_ICONS[sg.phase];
+                const m = moonOf(sg.start); const z = signOf(sg.start);
+                return (
+                  <li key={si}>
+                    <button type="button" onClick={() => onSelectDay(sg.start)}
+                      className="flex min-h-7 w-full items-center gap-1 rounded-md px-1 text-left text-[10px] leading-tight hover:bg-muted"
+                      style={{ background: `hsl(var(--rhythm-${sg.phase}-tint))`, color: `hsl(var(--rhythm-${sg.phase}-deep))` }}>
+                      <span className="w-9 shrink-0 font-semibold tabular-nums">{format(sg.start, "MMM d")}</span>
+                      <Icon className="h-3 w-3 shrink-0" aria-hidden />
+                      <span className="shrink-0 font-semibold">{LUNAR_RHYTHM[sg.phase].label}</span>
+                      <span className="min-w-0 flex-1 truncate text-right">{m.glyph} {z.symbol} {z.name}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         );
       })}
