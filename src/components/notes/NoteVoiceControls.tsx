@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { Loader2, Mic, MicOff, Square, AudioLines, X } from "lucide-react";
 import { toast } from "sonner";
@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const MAX_BYTES = 24 * 1024 * 1024;
 const extFor = (mime: string) => (mime.includes("mp4") ? "mp4" : mime.includes("ogg") ? "ogg" : "webm");
@@ -19,6 +20,8 @@ export function NoteVoiceControls({ editor }: { editor: Editor }) {
   const rec = useAudioRecorder();
   const [uploading, setUploading] = useState(false);
   const recording = rec.state !== "idle";
+  useEffect(() => { if (dictation.error) toast.error(dictation.error); }, [dictation.error]);
+  useEffect(() => { if (rec.error) toast.error(rec.error); }, [rec.error]);
 
   const startMemo = async () => {
     if (dictation.listening) dictation.stop();
@@ -46,31 +49,31 @@ export function NoteVoiceControls({ editor }: { editor: Editor }) {
   const secs = Math.floor(rec.elapsedMs / 1000);
   return (
     <>
-      <button type="button" onMouseDown={(e) => e.preventDefault()}
-        disabled={!dictation.supported || recording}
+      <Button variant="ghost" type="button" onMouseDown={(e) => e.preventDefault()}
+        disabled={!dictation.supported || recording || uploading}
         onClick={() => dictation.toggle()}
         title={dictation.supported ? (dictation.listening ? "Stop dictating" : "Dictate") : "Dictation isn't supported in this browser"}
         aria-label={dictation.listening ? "Stop dictating" : "Dictate"} aria-pressed={dictation.listening}
         className={cn(btn, dictation.listening && "bg-primary/10 text-primary")}>
         {dictation.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
         {dictation.listening && <span>Listening…</span>}
-      </button>
+      </Button>
       {recording ? (
         <>
-          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => void stopMemo()}
+          <Button variant="ghost" type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => void stopMemo()}
             disabled={rec.state === "stopping"} aria-label="Stop and save voice memo" title="Stop and save"
             className={cn(btn, "bg-destructive/10 text-destructive")}>
             <Square className="h-3.5 w-3.5 fill-current" /> {Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}
-          </button>
-          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => rec.cancel()} aria-label="Discard recording" title="Discard" className={btn}>
+          </Button>
+          <Button variant="ghost" type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => rec.cancel()} aria-label="Discard recording" title="Discard" className={btn}>
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </>
       ) : (
-        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => void startMemo()}
+        <Button variant="ghost" type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => void startMemo()}
           disabled={!rec.supported || uploading} aria-label="Record voice memo" title="Record voice memo" className={btn}>
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <AudioLines className="h-4 w-4" />}
-        </button>
+        </Button>
       )}
     </>
   );

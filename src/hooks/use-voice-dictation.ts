@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export function useVoiceDictation(onText: (text: string) => void, onFinalDelta?: (text: string) => void) {
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const recRef = useRef<any>(null);
   const cbRef = useRef(onText);
   cbRef.current = onText;
@@ -33,16 +34,21 @@ export function useVoiceDictation(onText: (text: string) => void, onFinalDelta?:
         ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)) ||
       null;
     if (!SR) return;
+    if (recRef.current) return;
+    setError(null);
     const rec = new SR();
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = navigator.language || "en-US";
-    let consumed = 0;
+    const emitted = new Set<number>();
     rec.onresult = (e: any) => {
+      if (recRef.current !== rec) return;
       const delta: string[] = [];
-      while (consumed < e.results.length && e.results[consumed].isFinal) {
-        delta.push(e.results[consumed][0].transcript);
-        consumed += 1;
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal && !emitted.has(i)) {
+          emitted.add(i);
+          delta.push(e.results[i][0].transcript);
+        }
       }
       const finalText = delta.join(" ").replace(/\s+/g, " ").trim();
       if (finalText) finalRef.current?.(finalText);
@@ -53,10 +59,30 @@ export function useVoiceDictation(onText: (text: string) => void, onFinalDelta?:
         .trim();
       if (text) cbRef.current(text);
     };
-    rec.onend = () => setListening(false);
-    rec.onerror = () => setListening(false);
+    rec.onend = () => {
+      if (recRef.current !== rec) return;
+      recRef.current = null;
+      setListening(false);
+    };
+    rec.onerror = (event: any) => {
+      if (recRef.current !== rec) return;
+      const messages: Record<string, string> = {
+        network: "Live dictation couldn't connect to your browser's speech service. You can record a voice memo and transcribe it instead.",
+        "not-allowed": "Microphone access was denied. Allow microphone access in your browser to dictate.",
+        "service-not-allowed": "Your browser's speech service isn't available. You can record a voice memo and transcribe it instead.",
+        "audio-capture": "No microphone is available. Check your microphone connection.",
+        "no-speech": "No speech was heard. Try dictating again when you're ready.",
+      };
+      if (event.error !== "aborted") setError(messages[event.error] ?? "Dictation stopped unexpectedly. Please try again.");
+      recRef.current = null;
+      setListening(false);
+    };
     recRef.current = rec;
-    try { rec.start(); setListening(true); } catch { setListening(false); }
+    try { rec.start(); setListening(true); } catch {
+      recRef.current = null;
+      setError("Couldn't start dictation. Please check microphone access and try again.");
+      setListening(false);
+    }
   }, []);
 
   const toggle = useCallback(() => {
@@ -65,5 +91,5 @@ export function useVoiceDictation(onText: (text: string) => void, onFinalDelta?:
 
   useEffect(() => () => { try { recRef.current?.stop(); } catch {} }, []);
 
-  return { listening, supported, start, stop, toggle };
+  return { listening, supported, error, start, stop, toggle };
 }
