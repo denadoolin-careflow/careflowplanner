@@ -202,6 +202,7 @@ const App = () => (
                 <Route path="/plan/:date" element={<PlanDay />} />
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/planner/:date" element={<Planner />} />
+                <Route path="/planner-month-mockups" element={<MonthMockups />} />
                 <Route path="/check-in" element={<DailyCheckIn />} />
                 <Route path="/task-editor-styles" element={<TaskEditorStyles />} />
                 <Route path="/week" element={<PlannerRedirect range="week" />} />
