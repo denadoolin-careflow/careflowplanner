@@ -7,6 +7,7 @@ import { Pin, Plus, X, Check, Pencil, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { cn } from "@/lib/utils";
+import { parseTaskInput } from "@/lib/nlp-task";
 
 type Column = { id: string; title: string };
 type Board = { columns: Column[]; pins: { taskId: string; columnId: string }[] };
@@ -47,7 +48,8 @@ function useBoard() {
 const MIME = "application/x-careflow-focus-pin";
 
 export function FocusPinboard() {
-  const { state, toggleTask } = useStore() as any;
+  const { state, toggleTask, addTask } = useStore() as any;
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [board, save] = useBoard();
   const [picking, setPicking] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -63,6 +65,18 @@ export function FocusPinboard() {
 
   const pin = (taskId: string, columnId: string) =>
     save({ ...board, pins: [...board.pins.filter(p => p.taskId !== taskId), { taskId, columnId }] });
+  const addInline = async (columnId: string) => {
+    const raw = (drafts[columnId] ?? "").trim();
+    if (!raw) return;
+    const p = parseTaskInput(raw);
+    setDrafts(d => ({ ...d, [columnId]: "" }));
+    const id = await addTask({
+      title: p.title || raw, dueDate: p.dueDate, dueTime: p.time as any,
+      priority: (p.priority ?? "medium") as any, area: (p.area ?? "Personal") as any,
+      tags: p.tags?.length ? p.tags : undefined, status: p.someday ? "someday" : "active", done: false, inbox: false,
+    });
+    if (id) { const b = read(); save({ ...b, pins: [...b.pins.filter(x => x.taskId !== id), { taskId: id, columnId }] }); }
+  };
   const unpin = (taskId: string) => save({ ...board, pins: board.pins.filter(p => p.taskId !== taskId) });
   const rename = (id: string, title: string) =>
     save({ ...board, columns: board.columns.map(c => (c.id === id ? { ...c, title: title.trim() || c.title } : c)) });
@@ -130,9 +144,6 @@ export function FocusPinboard() {
                 </div>
               )}
 
-              {items.length === 0 && picking !== col.id && (
-                <p className="rounded-md border border-dashed border-border/60 px-2 py-2 text-center text-[11px] text-muted-foreground">Drop or pin a task here.</p>
-              )}
               <ul className="space-y-1">
                 {items.map(p => {
                   const t = byId.get(p.taskId);
@@ -151,6 +162,13 @@ export function FocusPinboard() {
                   );
                 })}
               </ul>
+              <form className="mt-1 flex items-center gap-1" onSubmit={e => { e.preventDefault(); void addInline(col.id); }}>
+                <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                <input value={drafts[col.id] ?? ""} onChange={e => setDrafts(d => ({ ...d, [col.id]: e.target.value }))}
+                  placeholder={items.length ? "Add task…" : "Add task… or drop one here"} aria-label={`Add a task to ${col.title}`}
+                  enterKeyHint="done"
+                  className="h-9 min-w-0 flex-1 rounded-md bg-transparent px-1 text-base outline-none placeholder:text-muted-foreground focus:bg-background sm:text-xs" />
+              </form>
             </div>
           );
         })}

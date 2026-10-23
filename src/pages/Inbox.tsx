@@ -38,6 +38,7 @@ import { TodayNotebookPane } from "@/components/inbox/TodayNotebookPane";
 import { useTodayNotebook } from "@/hooks/useTodayNotebook";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
+import { CaptureSaveTo, appendCaptureToNote, type SaveTo } from "@/components/inbox/CaptureSaveTo";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
 import { BlockEditor } from "@/components/notes/BlockEditor";
@@ -411,6 +412,7 @@ function InboxInner() {
   // Capture-in-flight guard prevents an accidental double-submit when Enter
   // races with a click on the Capture button.
   const submittingRef = useRef(false);
+  const [saveTo, setSaveTo] = useState<SaveTo>("inbox");
   const submitCapture = async (overrideArea?: Area, explicitRaw?: string) => {
     if (submittingRef.current) return;
     const liveDraft = typeof explicitRaw === "string" ? explicitRaw : draft;
@@ -419,6 +421,16 @@ function InboxInner() {
     submittingRef.current = true;
     // Reset the guard after a tick — covers both success and thrown errors.
     setTimeout(() => { submittingRef.current = false; }, 600);
+    if (saveTo !== "inbox") {
+      try {
+        const res = await appendCaptureToNote(saveTo, raw);
+        setDraft("");
+        toast.success(`Added to ${res.title}`, { action: { label: "Open", onClick: () => navigate(`/notes/${res.id}`) } });
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Couldn't add to the note");
+      }
+      return;
+    }
     // When kind is not "task", route into today's schedule instead of inbox.
     if (captureKind !== "task") {
       const today = format(new Date(), "yyyy-MM-dd");
@@ -786,15 +798,16 @@ function InboxInner() {
             </div>
           ) : (
             <div className="relative">
-              <div className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-primary/10 text-primary">
+              <div className="absolute left-3 top-2 z-30 grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-primary sm:top-3.5">
                 <span className="text-base leading-none">＋</span>
               </div>
               <NlpHighlightedInput
                 ref={captureInputRef}
+                multiline
                 value={draft}
                 onChange={setDraft}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     e.stopPropagation();
                     // Pass the input's current value directly so a pending
@@ -822,7 +835,7 @@ function InboxInner() {
                 rightPad={draft.trim() ? "pr-[7.5rem] sm:pr-32" : "pr-12 sm:pr-14"}
                 className={cn(recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40")}
               />
-              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+              <div className="absolute bottom-0.5 right-2 z-30 flex items-center gap-1.5 sm:bottom-2">
                 {draft.trim() && recorder.state === "idle" && (
                   <>
                     <button
@@ -925,6 +938,12 @@ function InboxInner() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          {!transcribing && recorder.state === "idle" && (
+            <div className="mt-2 flex items-center gap-2 px-1">
+              <CaptureSaveTo value={saveTo} onChange={setSaveTo} />
+              <span className="ml-auto hidden text-[10px] text-muted-foreground sm:inline">Enter to save · Shift+Enter for a new line</span>
             </div>
           )}
 

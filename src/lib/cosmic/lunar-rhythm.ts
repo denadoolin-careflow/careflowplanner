@@ -12,6 +12,30 @@ export const LUNAR_RHYTHM = {
 } satisfies Record<RhythmPhase, { label: string; glyph: string; moon: string; invitation: string }>;
 const QUARTER_PHASES: RhythmPhase[] = ["plan", "grow", "care", "letgo"];
 
+/** Short planning guide for each phase, shown from the Today header. */
+export const PHASE_GUIDE: Record<RhythmPhase, { focus: string; actions: string[]; avoid: string }> = {
+  plan: {
+    focus: "A fresh start. Get clear on what matters this cycle and set a few gentle intentions.",
+    actions: ["Write one intention for the month", "Pick a life-area goal and its first step", "Sketch the week ahead"],
+    avoid: "Overcommitting or starting everything at once.",
+  },
+  grow: {
+    focus: "Energy is building. Take steady action and keep momentum on what you started.",
+    actions: ["Schedule focused work blocks", "Make progress on one project", "Keep up a habit you're building"],
+    avoid: "Second-guessing your plan before it has a chance.",
+  },
+  care: {
+    focus: "Things come to light. Tend to people, home and yourself, and celebrate what's working.",
+    actions: ["Check in with someone you care for", "Review progress and adjust", "Plan a restful or nourishing moment"],
+    avoid: "Pushing for output when you need connection or rest.",
+  },
+  letgo: {
+    focus: "Wind down. Clear what's finished, release what isn't yours, and rest before the next cycle.",
+    actions: ["Clear or reschedule old tasks", "Declutter one small space", "Journal what you're letting go of"],
+    avoid: "Taking on new big commitments.",
+  },
+};
+
 export function lunarRhythmAt(date: Date): RhythmPhase {
   const quarter = Math.floor(MoonPhase(date) / 90) % 4;
   return QUARTER_PHASES[quarter] ?? "plan";

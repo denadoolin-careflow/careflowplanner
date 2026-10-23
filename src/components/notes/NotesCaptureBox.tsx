@@ -127,18 +127,18 @@ export function NotesCaptureBox({
   return (
     <section className="notes-quick-capture mb-3 rounded-2xl border p-2" aria-label="Quick capture">
       <div className="relative">
-        <BookOpenText className="pointer-events-none absolute left-3 top-1/2 z-30 h-4 w-4 -translate-y-1/2 text-primary" aria-hidden />
+        <BookOpenText className="pointer-events-none absolute left-3 top-4 z-30 h-4 w-4 text-primary sm:top-5" aria-hidden />
         <NlpHighlightedInput
           value={text}
           onChange={setText}
+          multiline
           onKeyDown={event => {
-            if (event.key === "Enter") { event.preventDefault(); openReview(); }
+            if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); openReview(); }
           }}
           placeholder="What’s on your mind?"
           disabled={saving}
           leftPad="pl-10"
           rightPad="pr-12"
-          className="!h-12"
         />
         <Button
           type="button"
@@ -146,7 +146,7 @@ export function NotesCaptureBox({
           onClick={openReview}
           disabled={!text.trim() || saving}
           aria-label={`Add to ${destinationLabel}`}
-          className="absolute right-1 top-1/2 z-30 h-10 w-10 -translate-y-1/2 rounded-full"
+          className="absolute bottom-0.5 right-1 z-30 h-10 w-10 rounded-full sm:bottom-2"
         >
           <Plus className="h-4 w-4" />
         </Button>

@@ -180,7 +180,7 @@ function TodayInner() {
           onDefaultRoute={(route) => updateProfile({ default_route: route })}
           onTemplates={() => setGalleryOpen(true)}
         />
-        <TodayMoonHeader />
+        <TodayMoonHeader date={day} />
         {isReallyToday && <NewMoonGoalCard />}
         <DemoTasksBanner />
         <MoonJournalReminderBanner date={day} />
