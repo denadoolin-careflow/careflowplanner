@@ -475,7 +475,7 @@ export default function NoteDetail() {
           <ArrowLeft className="h-4 w-4" /> Notes
         </Button>
         <SaveStatus state={saveState} className="ml-1" onRetry={() => flush({})} />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-0.5 sm:gap-1">
           <Button
             variant="ghost"
             size="icon"
