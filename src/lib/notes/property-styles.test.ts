@@ -23,3 +23,14 @@ describe("property styles", () => {
     expect(resolveProp({}, "Moon phase").icon).toBe("moon");
   });
 });
+
+import { resolveOption as _ro } from "./property-styles";
+import { describe as _d, it as _it, expect as _e } from "vitest";
+_d("cosmic glyph defaults", () => {
+  _it("Moon sign Aries resolves to the zodiac glyph", () => {
+    _e(_ro({}, "Moon sign", "Aries").icon).toBe("glyph:♈\uFE0E");
+  });
+  _it("Moon phase Full Moon resolves to the full moon glyph", () => {
+    _e(_ro({}, "Moon phase", "Full Moon").icon).toBe("glyph:🌕");
+  });
+});
