@@ -37,4 +37,49 @@ describe("dictation", () => {
     expect(hook.current.listening).toBe(false);
     expect(hook.current.error).toContain("couldn't connect");
   });
+  it("ignores replayed and revised finalized slots, not intentional repeated words in new slots", () => {
+    vi.stubGlobal("SpeechRecognition", Recognition);
+    const delta = vi.fn();
+    const { result: hook } = renderHook(() => useVoiceDictation(vi.fn(), delta));
+    act(() => hook.current.start());
+    act(() => Recognition.current.onresult?.({ results: [result("very very calm", false)] }));
+    act(() => Recognition.current.onresult?.({ results: [result("very very calm", true)] }));
+    act(() => Recognition.current.onresult?.({ results: [result("very very calm", true)] }));
+    act(() => Recognition.current.onresult?.({ results: [result("very very calm today", true), result("very very calm", false)] }));
+    act(() => Recognition.current.onresult?.({ results: [result("very very calm today", true), result("very very calm", true)] }));
+    expect(delta.mock.calls).toEqual([["very very calm"], ["very very calm"]]);
+  });
+  it("accepts final speech on stop without allowing an overlapping session", () => {
+    class DelayedRecognition extends Recognition { stop() {} }
+    vi.stubGlobal("SpeechRecognition", DelayedRecognition);
+    const delta = vi.fn();
+    const { result: hook } = renderHook(() => useVoiceDictation(vi.fn(), delta));
+    act(() => hook.current.start());
+    const first = Recognition.current;
+    act(() => hook.current.stop());
+    act(() => hook.current.start());
+    expect(Recognition.current).toBe(first);
+    act(() => first.onresult?.({ results: [result("only what I said", true)] }));
+    act(() => first.onend?.());
+    act(() => hook.current.start());
+    const second = Recognition.current;
+    expect(second).not.toBe(first);
+    act(() => first.onresult?.({ results: [result("only what I said", true), result("late replay", true)] }));
+    act(() => second.onresult?.({ results: [result("next phrase", true)] }));
+    expect(delta.mock.calls).toEqual([["only what I said"], ["next phrase"]]);
+  });
+  it("ignores late results after failure and after unmount", () => {
+    vi.stubGlobal("SpeechRecognition", Recognition);
+    const delta = vi.fn();
+    const { result: hook, unmount } = renderHook(() => useVoiceDictation(vi.fn(), delta));
+    act(() => hook.current.start());
+    const failed = Recognition.current;
+    act(() => failed.onerror?.({ error: "network" }));
+    act(() => hook.current.start());
+    act(() => failed.onresult?.({ results: [result("ghost text", true)] }));
+    const active = Recognition.current;
+    unmount();
+    act(() => active.onresult?.({ results: [result("closed note text", true)] }));
+    expect(delta).not.toHaveBeenCalled();
+  });
 });

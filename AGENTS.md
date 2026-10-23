@@ -44,3 +44,4 @@
 - Period note templates (day/week/month prompts, properties, connections) sync in note_period_templates; applying adds only missing headings/properties, and connections read live from existing sources.
 - Voice memos store audio in the private note-audio bucket under the user's folder and persist in note bodies as data-voice-memo HTML; transcription runs server-side.
 - Append-only dictation consumers use final-result deltas, tracked by recognition-session result index, while live previews replace cumulative text; this prevents replay without removing intentional repeated speech.
+- Dictation sessions stay active through graceful stop's final event, and are invalidated before failure/unmount abort; stale recognizers cannot insert into another session or note.
