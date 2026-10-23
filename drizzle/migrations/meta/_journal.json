@@ -148,6 +148,13 @@
       "when": 1792758417730,
       "tag": "0020_note_audio_and_period_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792769631592,
+      "tag": "0021_voice_memos",
+      "breakpoints": true
     }
   ]
 }
