@@ -81,4 +81,4 @@
 - [x] Recommend Projects + dashboard redesign integrated with tasks, planner, goals and 12 life areas
 - [x] Verify property icon/color saving and live readback across independent device sessions; temporary picks restored
 - [x] Adapt note property colors to dark mode, expand icon/color choices, add option settings, and wrap AI summaries; verified signed-in temporary note, saved choice readback, 24 colors and 54 icons, desktop/phone wrapping
-- [ ] Test today's note dictation, recording and transcription; diagnose repeated words and repair confirmed failures
+- [x] Test today's note recording, playback, transcription and saved readback; correct cumulative-text appending in Brain Dump and verify final deltas in the note; live browser speech failed with audio-capture in the test environment, so real spoken dictation remains unverified; test additions removed and original writing preserved
