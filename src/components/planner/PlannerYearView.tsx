@@ -1,4 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { seasonsInMonth } from "@/lib/seasons/zodiac-seasons";
+import { ELEMENT_CLASSES } from "@/lib/seasons/element-classes";
+import { phaseSignAdvice } from "@/lib/cosmic/moon-energy";
 import { addDays, eachMonthOfInterval, endOfYear, format, isSameDay, startOfMonth, startOfWeek, startOfYear, differenceInCalendarDays, endOfMonth, endOfWeek, isSameMonth } from "date-fns";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -22,6 +25,7 @@ export function PlannerYearView({ date, onSelectDay, onSelectMonth }: {
   const { state } = useStore() as any;
   const months = eachMonthOfInterval({ start: startOfYear(date), end: endOfYear(date) });
   const today = new Date();
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const counts = useMemo(() => {
     const m = new Map<string, number>();
@@ -66,6 +70,19 @@ export function PlannerYearView({ date, onSelectDay, onSelectMonth }: {
                 <span className="shrink-0 text-[9px] tabular-nums text-muted-foreground">{monthCount}</span>
               )}
             </button>
+            {(() => {
+              const spans = seasonsInMonth(mo);
+              const s = spans[spans.length - 1].season;
+              const el = ELEMENT_CLASSES[s.element];
+              return (
+                <div className={cn("mb-1.5 rounded-md border px-1.5 py-1 text-[10px] leading-tight", el.bg, el.border)}>
+                  <p className={cn("font-semibold", el.text)}>
+                    {spans.map(x => x.season.glyph).join(" ")} {spans.map(x => x.season.sign).join(" → ")} season
+                  </p>
+                  <p className="text-muted-foreground">{spans.map(x => x.season.theme).join(" · ")}</p>
+                </div>
+              );
+            })()}
             <div className="grid grid-cols-7 gap-[2px] text-center text-[9px] text-muted-foreground">
               {["M","T","W","T","F","S","S"].map((d, i) => (
                 <div key={i} className={cn("leading-4", i > 4 && "text-muted-foreground/60")}>{d}</div>
@@ -102,16 +119,25 @@ export function PlannerYearView({ date, onSelectDay, onSelectMonth }: {
               {segs.map((sg, si) => {
                 const Icon = PHASE_ICONS[sg.phase];
                 const m = moonOf(sg.start); const z = signOf(sg.start);
+                const id = `${format(mo, "yyyy-MM")}-${si}`;
+                const open = openId === id;
                 return (
-                  <li key={si}>
-                    <button type="button" onClick={() => onSelectDay(sg.start)}
-                      className="flex min-h-7 w-full items-center gap-1 rounded-md px-1 text-left text-[10px] leading-tight hover:bg-muted"
-                      style={{ background: `hsl(var(--rhythm-${sg.phase}-tint))`, color: `hsl(var(--rhythm-${sg.phase}-deep))` }}>
+                  <li key={si} className="rounded-md" style={{ background: `hsl(var(--rhythm-${sg.phase}-tint))`, color: `hsl(var(--rhythm-${sg.phase}-deep))` }}>
+                    <button type="button" aria-expanded={open} onClick={() => setOpenId(open ? null : id)}
+                      className="flex min-h-7 w-full items-center gap-1 rounded-md px-1 text-left text-[10px] leading-tight hover:bg-muted/40">
                       <span className="w-9 shrink-0 font-semibold tabular-nums">{format(sg.start, "MMM d")}</span>
                       <Icon className="h-3 w-3 shrink-0" aria-hidden />
                       <span className="shrink-0 font-semibold">{LUNAR_RHYTHM[sg.phase].label}</span>
                       <span className="min-w-0 flex-1 truncate text-right">{m.glyph} {z.symbol} {z.name}</span>
                     </button>
+                    {open && (
+                      <div className="px-1.5 pb-1.5 text-[10px] leading-snug">
+                        <p>{phaseSignAdvice(sg.phase, z.name)}</p>
+                        <button type="button" onClick={() => onSelectDay(sg.start)} className="mt-1 min-h-7 font-semibold underline underline-offset-2">
+                          Open day
+                        </button>
+                      </div>
+                    )}
                   </li>
                 );
               })}
