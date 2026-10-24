@@ -58,6 +58,7 @@ import NoteDetail from "./pages/NoteDetail";
 import NotesTimeline from "./pages/NotesTimeline";
 import NotesFiles from "./pages/NotesFiles";
 import NotesVoiceMemos from "./pages/NotesVoiceMemos";
+import LibraryPage from "./pages/Library";
 import Review from "./pages/Review";
 import Reset from "./pages/Reset";
 import ResetDetail from "./pages/ResetDetail";
@@ -179,6 +180,7 @@ const App = () => (
                 <Route path="/someday" element={<Someday />} />
                 <Route path="/not-today" element={<NotToday />} />
                 <Route path="/logbook" element={<Logbook />} />
+                <Route path="/library" element={<LibraryPage />} />
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/notes/timeline" element={<NotesTimeline />} />
                 <Route path="/notes/files" element={<NotesFiles />} />

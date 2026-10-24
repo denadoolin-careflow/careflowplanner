@@ -5,7 +5,7 @@ import {
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
   Wind, PenLine, Coffee, Share2,
   Zap, Plane, Users, PartyPopper, Gift, CheckSquare, Heart, Album,
-  Salad,
+  Salad, Library,
 } from "lucide-react";
 
 /** Per-flow accent classes for tints and gradients. */
@@ -66,6 +66,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/goals": "Goals, milestones, and progress.",
   "/ideas": "Idea capture and incubation.",
   "/notes": "Notes, docs, and references.",
+  "/library": "Books, films, articles and recipes.",
   "/whiteboards": "Free-form visual thinking.",
   "/graph": "Knowledge graph across notes.",
   "/tags": "Browse and manage tags.",
@@ -216,6 +217,7 @@ export const NAV_GROUPS = [
       { to: "/goals", label: "Goals", icon: Target },
       { to: "/ideas", label: "Ideas", icon: Lightbulb },
       { to: "/notes", label: "Notes", icon: NotebookPen },
+      { to: "/library", label: "Library", icon: Library },
       { to: "/whiteboards", label: "Whiteboards", icon: PenLine },
       { to: "/graph", label: "Knowledge Graph", icon: Share2 },
       { to: "/tags", label: "Tags", icon: BadgeCheck },
