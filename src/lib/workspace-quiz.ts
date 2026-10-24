@@ -34,7 +34,6 @@ export function recommendWorkspace(a: QuizAnswers): Recommendation {
   const pages: Recommendation["pages"] = [{ label: "Goals & life areas", to: "/goals" }];
   if (a.role === "caregiver" || a.role === "both") pages.push({ label: "Care", to: "/care" });
   if (a.role === "parent" || a.role === "both") pages.push({ label: "Home", to: "/home" });
-  if (a.energy === "cycle") pages.push({ label: "Cycle", to: "/cycle" });
   if (a.energy === "varies" || a.energy === "cycle") pages.push({ label: "Moon & rituals", to: "/cosmic-flow/moon" });
   pages.push({ label: "Library", to: "/library" });
   return {

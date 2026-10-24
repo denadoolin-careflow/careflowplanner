@@ -1,4 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import WorkspaceQuiz from "./pages/WorkspaceQuiz";
+import ProjectMockups from "./pages/ProjectMockups";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -213,6 +215,8 @@ const App = () => (
                <Route path="/month/overview" element={<MonthOverview />} />
                 <Route path="/year" element={<Year />} />
                 <Route path="/goals" element={<Goals />} />
+                <Route path="/workspace-quiz" element={<WorkspaceQuiz />} />
+                <Route path="/projects/mockups" element={<ProjectMockups />} />
                 <Route path="/habits" element={<Habits />} />
                 <Route path="/tracking" element={<TimeTracking />} />
                 <Route path="/meals" element={<Meals />} />

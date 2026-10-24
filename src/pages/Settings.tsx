@@ -428,6 +428,7 @@ export default function Settings() {
       <MoonGuideSection />
       <SectionCard title="Monthly moonscape" subtitle="Default layout on this device.">
         <MoonscapeLayoutPicker />
+        <a href="/workspace-quiz" className="mt-3 inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm hover:border-primary hover:text-primary">Retake the workspace quiz</a>
       </SectionCard>
       <SectionCard title="Notes · day, week & month templates" subtitle="Prompts, properties and connections for new notebook notes.">
         <PeriodTemplateEditor />
