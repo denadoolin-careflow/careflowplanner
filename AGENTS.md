@@ -49,3 +49,6 @@
 - Moonscape layout (Arc/Tide/Wheel/Journey) is a device-local pref read by the shared Moonscape switcher, so Planner, Moon & Rituals and Settings stay in step.
 - Library: books/films/articles in library_items; recipes reuse meals_library so Meals and Library share one recipe store, and 'Add to meal plan' inserts meals rows.
 - Cyclical goal extras live in goals.details; an owner-scoped atomic patch RPC and realtime prevent unrelated field overwrites, while missing-only legacy imports preserve synced picks. Compost is a reversible details flag, never deletion, so task/project links and history remain intact.
+- Daily focus goal syncs per account per date in daily_focus_goals; Today, Today header chip and Planner day read the same hook.
+- Generic cross-item links live in entity_links; Connections merges them with existing built-in link columns (tasks.goal_id/project_id, projects.linked_goal_ids, habits meta, notes.project_id) read-only, and suggestions never auto-link.
+- Workspace quiz answers/recommendations sync in workspace_profiles; applying reuses existing goals, Today prefs and profile default_route rather than new visibility settings.
