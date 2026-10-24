@@ -26,7 +26,7 @@ export function ProjectsGardenView({ projects, renderCard }: { projects: Project
       {PHASES.map(({ k, icon: I, hint }) => {
         const list = projects.filter((p) => projectPhase(p) === k);
         return (
-          <section key={k} className="w-[85%] shrink-0 snap-start space-y-3 rounded-2xl border border-border bg-card/70 p-3 md:w-auto">
+          <section key={k} className="w-[88%] shrink-0 snap-center space-y-3 rounded-2xl border border-border bg-card/70 p-3 md:w-auto">
             <header className="flex items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground">
                 <I className="h-3.5 w-3.5" /> {k}

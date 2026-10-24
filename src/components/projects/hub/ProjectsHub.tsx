@@ -690,7 +690,7 @@ export default function ProjectsHub() {
         `,
       }}
     >
-      <div className="mx-auto w-full max-w-7xl space-y-5 p-4 pb-28 md:space-y-8 md:p-8">
+      <div className="mx-auto w-full max-w-7xl space-y-5 p-4 pb-36 md:space-y-8 md:p-8">
         <div className="flex items-center justify-between">
           <DashboardTabs />
           <div className="hidden text-[11px] uppercase tracking-[0.25em] text-muted-foreground sm:block">
