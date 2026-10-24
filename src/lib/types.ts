@@ -173,6 +173,8 @@ export interface Goal {
   /** Astrological house (1-12) used as the goal's life area. */
   lifeHouse?: number | null;
   autoProgress?: boolean;
+  details?: import("./goals/cycle").GoalDetails;
+  updatedAt?: string;
 }
 
 export interface Habit {

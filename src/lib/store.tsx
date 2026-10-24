@@ -111,8 +111,8 @@ const taskTo = (t: Partial<Task>) => ({
   connection_kind: t.connectionKind === undefined ? undefined : (t.connectionKind ?? null),
 });
 
-const goalTo = (g: Partial<Goal>) => { const { lifeHouse, autoProgress, ...rest } = g as any; const o: any = { ...rest }; if (lifeHouse !== undefined) o.life_house = lifeHouse; if (autoProgress !== undefined) o.auto_progress = autoProgress; return o; };
-const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status, lifeHouse: r.life_house ?? null, autoProgress: !!r.auto_progress });
+const goalTo = (g: Partial<Goal>) => { const { lifeHouse, autoProgress, updatedAt, ...rest } = g; const o: any = { ...rest }; if (lifeHouse !== undefined) o.life_house = lifeHouse; if (autoProgress !== undefined) o.auto_progress = autoProgress; return o; };
+const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status, lifeHouse: r.life_house ?? null, autoProgress: !!r.auto_progress, details: r.details ?? {}, updatedAt: r.updated_at });
 
 /**
  * Column map used for PARTIAL task updates.
@@ -314,6 +314,7 @@ interface Ctx {
 
   addGoal: (g: Partial<Goal> & { title: string }) => Promise<string | undefined>;
   updateGoal: (id: string, patch: Partial<Goal>) => Promise<void>;
+  patchGoalDetails: (id: string, patch: Partial<import("./goals/cycle").GoalDetails>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
 
   addHabit: (h: Partial<Habit> & { title: string }) => Promise<void>;
@@ -381,6 +382,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
   const seededRef = useRef(false);
+  const goalWrites = useRef(new Map<string, Promise<void>>());
 
   /* auth subscription (listener BEFORE getSession) */
   useEffect(() => {
@@ -428,6 +430,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       out.push(...part);
     }
     const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles, areas, projects, sections] = out;
+    // Import only extras belonging to goals owned by this account; never delete the legacy cache.
+    try {
+      const legacy = JSON.parse(localStorage.getItem("careflow:goal-extras:v1") || "{}");
+      for (const goal of goals) {
+        if (!legacy[goal.id]) continue;
+        const marker = `careflow:goal-extras-imported:${uid}:${goal.id}`;
+        if (localStorage.getItem(marker)) continue;
+        const { data, error } = await supabase.rpc("patch_goal_details", { p_goal_id: goal.id, p_patch: legacy[goal.id], p_missing_only: true });
+        if (!error) { goal.details = data; localStorage.setItem(marker, "1"); }
+      }
+    } catch { /* Keep legacy extras available for a later retry. */ }
     const profile: any = profiles[0] ?? {};
     // attach habit logs
     const logsByHabit: Record<string, Record<string, boolean>> = {};
@@ -518,9 +531,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     const uid = user.id;
     const filter = `user_id=eq.${uid}`;
-    type Slice = keyof Pick<AppState, "tasks" | "appointments" | "meals" | "birthdays" | "holidays">;
+    type Slice = keyof Pick<AppState, "tasks" | "goals" | "appointments" | "meals" | "birthdays" | "holidays">;
     const subs: Array<{ table: string; key: Slice; mapper: (r: any) => any }> = [
       { table: "tasks", key: "tasks", mapper: taskFrom },
+      { table: "goals", key: "goals", mapper: goalFrom },
       { table: "appointments", key: "appointments", mapper: apptFrom },
       { table: "meals", key: "meals", mapper: mealFrom },
       { table: "birthdays", key: "birthdays", mapper: bdayFrom },
@@ -540,6 +554,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               return { ...s, [key]: list.filter((r: any) => r.id !== id) } as AppState;
             }
             const row = mapper(payload.new);
+            if (key === "goals" && goalWrites.current.has(row.id)) return s;
             // Last-write-wins: ignore inbound rows older than what we have
             // (e.g. our own optimistic edit is newer than what arrived back).
             const existing = list.find((r: any) => r.id === row.id);
@@ -873,13 +888,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addGoal: async (g) => {
       if (!uid) return;
-      const { data } = await supabase.from("goals").insert({ user_id: uid, category: "Personal", timeline: "Q1", progress: 0, ...goalTo(g) }).select().single();
+      const { data, error } = await supabase.from("goals").insert({ user_id: uid, category: "Personal", timeline: "Year", progress: 0, ...goalTo(g) }).select().single();
+      if (error) { toast.error("Could not save this goal"); throw error; }
       if (data) setState(s => ({ ...s, goals: [goalFrom(data), ...s.goals] }));
       return data?.id;
     },
     updateGoal: async (id, patch) => {
-      setState(s => ({ ...s, goals: s.goals.map(g => g.id === id ? { ...g, ...patch } : g) }));
-      await supabase.from("goals").update(goalTo(patch) as any).eq("id", id);
+      const { data, error } = await supabase.from("goals").update(goalTo(patch) as any).eq("id", id).select().single();
+      if (error) { toast.error("Could not save this goal"); return; }
+      setState(s => ({ ...s, goals: s.goals.map(g => g.id === id ? goalFrom(data) : g) }));
+    },
+    patchGoalDetails: async (id, patch) => {
+      if (!uid) return;
+      setState(s => ({ ...s, goals: s.goals.map(g => g.id === id ? { ...g, details: { ...g.details, ...patch } } : g) }));
+      const previous = goalWrites.current.get(id) ?? Promise.resolve();
+      const operation = previous.catch(() => {}).then(async () => {
+        const { data, error } = await supabase.rpc("patch_goal_details", { p_goal_id: id, p_patch: patch as any });
+        if (error) {
+          toast.error("Goal changes could not save. Please try again.");
+          if (goalWrites.current.get(id) === operation) await refreshSlice("goals", "goals", goalFrom);
+          return;
+        }
+        if (goalWrites.current.get(id) === operation) setState(s => ({ ...s, goals: s.goals.map(g => g.id === id ? { ...g, details: data as Goal["details"] } : g) }));
+      });
+      goalWrites.current.set(id, operation);
+      try { await operation; } finally { if (goalWrites.current.get(id) === operation) goalWrites.current.delete(id); }
     },
     deleteGoal: async (id) => {
       setState(s => ({ ...s, goals: s.goals.filter(g => g.id !== id) }));
