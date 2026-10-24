@@ -10,8 +10,9 @@ import { PROJECT_TEMPLATES, applyProjectTemplate, type ProjectTemplateKey } from
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ArrowRight, Sparkles, Folder, Rocket, Leaf, Pause, Lightbulb,
-  CheckSquare, FileText, Paperclip, Heart, Plus, LayoutGrid, List as ListIcon, Images, Hourglass, Clock,
+  CheckSquare, FileText, Paperclip, Heart, Plus, LayoutGrid, List as ListIcon, Images, Hourglass, Clock, Sprout, Target,
 } from "lucide-react";
+import { ProjectsGardenView, ProjectsAreaView } from "./ProjectGroupedViews";
 import { AREAS, type Project, type ProjectStage, type ProjectHealth } from "@/lib/types";
 import { ProjectCoverArt } from "./ProjectCoverArt";
 import { STUDIO, STAGE_META, HEALTH_META, stageOf, healthOf } from "./studio-tokens";
@@ -61,7 +62,7 @@ function useAnimatedPct(pct: number) {
   return v;
 }
 
-type View = "cards" | "list" | "gallery";
+type View = "garden" | "areas" | "cards" | "list" | "gallery";
 const VIEW_KEY = "projects.hub.view";
 
 const ALL_STAGES: Array<ProjectStage | "all"> = ["all", "idea", "planning", "building", "launching", "maintaining"];
@@ -685,7 +686,7 @@ export default function ProjectsHub() {
         `,
       }}
     >
-      <div className="mx-auto w-full max-w-7xl space-y-8 p-4 md:p-8">
+      <div className="mx-auto w-full max-w-7xl space-y-5 p-4 pb-28 md:space-y-8 md:p-8">
         <div className="flex items-center justify-between">
           <DashboardTabs />
           <div className="hidden text-[11px] uppercase tracking-[0.25em] text-muted-foreground sm:block">
@@ -693,7 +694,7 @@ export default function ProjectsHub() {
           </div>
         </div>
         <header
-          className="relative overflow-hidden rounded-3xl border px-6 py-7 md:px-10 md:py-10"
+          className="relative overflow-hidden rounded-3xl border px-5 py-4 md:px-10 md:py-10"
           style={{
             borderColor: `hsl(${STUDIO.sageDeep} / 0.12)`,
             background: `linear-gradient(115deg, ${atmosphere.palette[0] ?? `hsl(${STUDIO.sage})`}26 0%, hsl(${STUDIO.cream} / 0.85) 55%, ${atmosphere.palette[3] ?? `hsl(${STUDIO.blush})`}26 100%)`,
@@ -723,9 +724,9 @@ export default function ProjectsHub() {
         </header>
 
         <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-          <HeroFocusCard focus={focus} metrics={metrics} />
+          <div className="hidden md:block"><HeroFocusCard focus={focus} metrics={metrics} /></div>
           <div className="flex flex-col gap-3">
-            <HeroStatsGrid projects={projects} metrics={metrics} />
+            <div className="hidden md:block"><HeroStatsGrid projects={projects} metrics={metrics} /></div>
             <QuickCapture onCaptureIdea={handleIdeaToProject} onNewProject={() => setNewProjectOpen(true)} />
           </div>
         </div>
@@ -743,18 +744,20 @@ export default function ProjectsHub() {
               type="single"
               value={view}
               onValueChange={(v) => v && setViewPersist(v as View)}
-              className="rounded-2xl border bg-card/60 p-1"
-              style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.15)` }}
+              className="w-full justify-start overflow-x-auto rounded-2xl border border-border bg-card/60 p-1 sm:w-auto"
+              aria-label="Project view"
             >
-              <ToggleGroupItem value="cards" className="gap-1.5 rounded-xl px-3 py-1 text-xs data-[state=on]:bg-[hsl(330_30%_35%)] data-[state=on]:text-white">
-                <LayoutGrid className="h-3.5 w-3.5" /> Cards
-              </ToggleGroupItem>
-              <ToggleGroupItem value="list" className="gap-1.5 rounded-xl px-3 py-1 text-xs data-[state=on]:bg-[hsl(330_30%_35%)] data-[state=on]:text-white">
-                <ListIcon className="h-3.5 w-3.5" /> List
-              </ToggleGroupItem>
-              <ToggleGroupItem value="gallery" className="gap-1.5 rounded-xl px-3 py-1 text-xs data-[state=on]:bg-[hsl(330_30%_35%)] data-[state=on]:text-white">
-                <Images className="h-3.5 w-3.5" /> Gallery
-              </ToggleGroupItem>
+              {([
+                ["garden", Sprout, "Garden"],
+                ["areas", Target, "Life areas"],
+                ["cards", LayoutGrid, "Cards"],
+                ["list", ListIcon, "List"],
+                ["gallery", Images, "Gallery"],
+              ] as const).map(([v, I, label]) => (
+                <ToggleGroupItem key={v} value={v} className="min-h-10 shrink-0 gap-1.5 rounded-xl px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                  <I className="h-3.5 w-3.5" /> {label}
+                </ToggleGroupItem>
+              ))}
             </ToggleGroup>
           </div>
 
@@ -768,7 +771,7 @@ export default function ProjectsHub() {
             }}
           />
 
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border bg-card/60 p-2" style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-2xl border bg-card/60 p-2 md:flex-wrap [&_.flex-wrap]:flex-nowrap md:[&_.flex-wrap]:flex-wrap [&_button]:shrink-0" style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
             <span className="pl-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stage</span>
             <div className="flex flex-wrap gap-1">
               {ALL_STAGES.map((s) => (
@@ -864,6 +867,10 @@ export default function ProjectsHub() {
                 </Button>
               </div>
             </div>
+          ) : view === "garden" ? (
+            <ProjectsGardenView projects={filtered} renderCard={(p) => <ProjectCard p={p} metrics={metrics} />} />
+          ) : view === "areas" ? (
+            <ProjectsAreaView projects={filtered} renderGroup={(ps) => <ProjectsListView projects={ps} metrics={metrics} />} />
           ) : view === "cards" ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filtered.map((p) => <ProjectCard key={p.id} p={p} metrics={metrics} />)}
