@@ -609,7 +609,7 @@ function RecentWins() {
   }, []);
   const taskWins = state.tasks
     .filter(t => t.done && t.lastCompletedAt)
-    .map(t => ({ id: `t-${t.id}`, text: t.title, at: t.lastCompletedAt!, kind: "task" as const }));
+    .map(t => ({ id: `t-${t.id}`, text: t.title, at: t.lastCompletedAt ?? "", kind: "task" as const }));
   const items = [
     ...tinyWins.map(w => ({ id: `w-${w.id}`, text: w.text, at: w.at, kind: "tiny" as const })),
     ...taskWins,
@@ -844,11 +844,11 @@ function JourneyDetail({
   return (
     <>
       <SheetHeader>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className={cn("flex h-12 w-12 items-center justify-center rounded-2xl text-2xl", M.tint)}>{M.emoji}</span>
           <div className="min-w-0 flex-1">
             <div className={cn("text-[10px] uppercase tracking-wider", M.text)}>{goal.category}</div>
-            <SheetTitle className="font-display text-xl leading-tight">{goal.title}</SheetTitle>
+            <SheetTitle className="break-words font-display text-xl leading-tight">{goal.title}</SheetTitle>
           </div>
           <Button variant="outline" size="sm" onClick={shareGoal} title="Share goal">
             <Share2 className="h-3.5 w-3.5" />
