@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import WorkspaceQuiz from "./pages/WorkspaceQuiz";
-import ProjectMockups from "./pages/ProjectMockups";
+import ProjectDetailMockups from "./pages/ProjectDetailMockups";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -216,7 +216,7 @@ const App = () => (
                 <Route path="/year" element={<Year />} />
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/workspace-quiz" element={<WorkspaceQuiz />} />
-                <Route path="/projects/mockups" element={<ProjectMockups />} />
+                <Route path="/projects/detail-mockups" element={<ProjectDetailMockups />} />
                 <Route path="/habits" element={<Habits />} />
                 <Route path="/tracking" element={<TimeTracking />} />
                 <Route path="/meals" element={<Meals />} />
