@@ -4229,6 +4229,63 @@ export type Database = {
         }
         Relationships: []
       }
+      library_items: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          creator: string | null
+          finished_on: string | null
+          format: string | null
+          id: string
+          kind: string
+          notes: string | null
+          platform: string | null
+          rating: number | null
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          creator?: string | null
+          finished_on?: string | null
+          format?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          platform?: string | null
+          rating?: number | null
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          creator?: string | null
+          finished_on?: string | null
+          format?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          platform?: string | null
+          rating?: number | null
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       lifetime_purchases: {
         Row: {
           created_at: string | null
