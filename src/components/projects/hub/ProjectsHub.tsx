@@ -713,10 +713,10 @@ export default function ProjectsHub() {
           <div className="relative text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
             Studio · Creative Work
           </div>
-          <h1 className="relative mt-2 font-display text-4xl tracking-tight md:text-5xl" style={{ color: "var(--brand-ink)" }}>
+          <h1 className="relative mt-1 font-display text-3xl tracking-tight md:mt-2 md:text-5xl" style={{ color: "var(--brand-ink)" }}>
             Creative Projects <Sparkles className="inline h-5 w-5" style={{ color: `hsl(${STUDIO.gold})` }} />
           </h1>
-          <p className="relative mt-2 max-w-xl text-sm text-muted-foreground">
+          <p className="relative mt-2 hidden max-w-xl text-sm text-muted-foreground md:block">
             A calm space for {projects.length} {projects.length === 1 ? "project" : "projects"} —
             turning ideas into impact, one small step at a time.
           </p>
