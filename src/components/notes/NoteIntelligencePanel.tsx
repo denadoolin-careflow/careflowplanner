@@ -1,3 +1,4 @@
+import { ConnectionsPanel } from "@/components/connections/ConnectionsPanel";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -216,6 +217,7 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, on
       </header>
 
       <div className="space-y-4 p-4">
+        <ConnectionsPanel type="note" id={noteId} />
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           <input
