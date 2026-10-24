@@ -1,3 +1,4 @@
+import { ConnectionsPanel } from "@/components/connections/ConnectionsPanel";
 /**
  * Project Hub — calm, visual single-project workspace.
  * Wraps the existing task management UI inside ClassicProjectView for the
@@ -213,6 +214,7 @@ function HubHeader({ project, onUpdate }: { project: Project; onUpdate: (p: Part
         <ProjectGoalPicker ids={project.linkedGoalIds} onChange={ids => onUpdate({ linkedGoalIds: ids })} />
         <Button variant="outline" onClick={() => setEditing(false)}>Done</Button>
       </div>}
+      <ConnectionsPanel type="project" id={project.id} className="w-full" />
 
       <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Quick search">
         <Search className="h-4 w-4" />

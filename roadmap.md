@@ -85,3 +85,9 @@
 - [x] Harden dictation stop/failure/unmount session handling; six regression tests pass and overlapping simulated speech saves exactly once in a signed-in note after reload, preserving intentional repeated words; temporary note removed. Actual browser speech recognition accuracy remains unverified.
 - [x] Step 1: Sync cyclical goal details and migrate existing device-local goal extras safely
 - [x] Step 2: Refresh Goals with seasonal phase planning and reversible composting; verified saves, replanting, independent device readback and phone layout; temporary goal removed
+- [x] Today focus goal picker (Today, header chip, Planner day)
+- [x] Life areas tile redesign with progress rings and Nudge today
+- [x] Personal workspace quiz
+- [x] Project design mockups (A/B/C) — awaiting choice
+- [x] Connections panel + suggestions across goals, projects, tasks, habits, notes, library
+- [ ] Replace project view with the chosen mockup, then remove the preview page (waiting on user's pick)

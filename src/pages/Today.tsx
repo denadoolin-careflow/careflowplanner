@@ -11,6 +11,8 @@ import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { TodayMoonHeader } from "@/components/today/TodayMoonHeader";
+import { FocusGoalChip } from "@/components/goals/FocusGoalCard";
+import { WorkspaceQuizInvite } from "@/pages/WorkspaceQuiz";
 import { NewMoonGoalCard } from "@/components/today/NewMoonGoalCard";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
@@ -181,6 +183,8 @@ function TodayInner() {
           onTemplates={() => setGalleryOpen(true)}
         />
         <TodayMoonHeader date={day} />
+        <FocusGoalChip date={day} />
+        {isReallyToday && <WorkspaceQuizInvite />}
         {isReallyToday && <NewMoonGoalCard />}
         <DemoTasksBanner />
         <MoonJournalReminderBanner date={day} />

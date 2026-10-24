@@ -1,3 +1,4 @@
+import { FocusGoalCard } from "@/components/goals/FocusGoalCard";
 import { MobileWeekAgendaStrip } from "@/components/planner/mobile/MobileWeekAgendaStrip";
 import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
 import { weekKeyFor } from "@/lib/notes/periods";
@@ -636,6 +637,7 @@ export default function Planner() {
                 >
                   <div className="space-y-2 px-2 pb-2">
                      <PlannerOverdueSection date={day} />
+                     <FocusGoalCard date={day} />
                       <PlannerDayRhythm date={day} onSelectDate={openDay} />
 {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
                     <PlannerDayAssistant date={day} />
@@ -651,6 +653,7 @@ export default function Planner() {
                   defaultCollapsed
                 >
                   <div className="space-y-2 px-2 pb-2">
+                    <FocusGoalCard date={day} />
                     <PlannerDayRhythm date={day} onSelectDate={openDay} />
 {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
                     <PlannerDayAssistant date={day} />

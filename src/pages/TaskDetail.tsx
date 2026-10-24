@@ -1,3 +1,4 @@
+import { ConnectionsPanel } from "@/components/connections/ConnectionsPanel";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, MoreVertical, Calendar as CalIcon, Clock, Repeat, Flag, Tag as TagIcon, Layers, FolderKanban, ListTree, StickyNote, Paperclip, Activity, ChevronDown, ChevronUp, Zap, Timer as TimerIcon, Mic, Trash2, Copy, FolderInput, Check, Target, Pin, CalendarDays } from "lucide-react";
@@ -224,6 +225,7 @@ export default function TaskDetail() {
             <LinkedGoalLabels ids={[task.goalId]} />
             {goal && <p className="text-xs text-muted-foreground">{goal.progress}% complete</p>}
           </div>
+          <ConnectionsPanel type="task" id={task.id} />
         </div>
 
         {/* SCHEDULING */}
