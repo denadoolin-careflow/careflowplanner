@@ -4,10 +4,10 @@ import { Progress } from "@/components/ui/progress";
 
 /** Temporary preview: three project designs with sample content. Removed after a choice is made. */
 const PHASES = [
-  { k: "Plan", icon: Sprout, cls: "bg-phase-plan-tint text-phase-plan" },
-  { k: "Grow", icon: Leaf, cls: "bg-phase-grow-tint text-phase-grow" },
-  { k: "Care", icon: Heart, cls: "bg-phase-care-tint text-phase-care" },
-  { k: "Let go", icon: Wind, cls: "bg-phase-letgo-tint text-phase-letgo" },
+  { k: "Plan", icon: Sprout, cls: "bg-secondary/15 text-secondary" },
+  { k: "Grow", icon: Leaf, cls: "bg-accent/20 text-accent-foreground" },
+  { k: "Care", icon: Heart, cls: "bg-primary/10 text-primary" },
+  { k: "Let go", icon: Wind, cls: "bg-muted text-muted-foreground" },
 ];
 const SAMPLE = {
   Plan: ["Sketch garden beds", "Price raised planters"],
@@ -27,7 +27,7 @@ function A() {
 
 function B() {
   return <div className="overflow-hidden rounded-2xl border border-border bg-card">
-    <div className="bg-gradient-brand p-5 text-primary-foreground"><p className="text-xs uppercase tracking-widest opacity-80">Project journal</p><h3 className="font-display text-2xl">Kitchen herb garden</h3><p className="text-sm opacity-90">Joy & creativity · Spring</p></div>
+    <div className="bg-primary p-5 text-primary-foreground"><p className="text-xs uppercase tracking-widest opacity-80">Project journal</p><h3 className="font-display text-2xl">Kitchen herb garden</h3><p className="text-sm opacity-90">Joy & creativity · Spring</p></div>
     <ol className="space-y-3 p-4">
       {[["Oct 2", "Started planning beds", FileText], ["Oct 9", "Read 'The Herb Lover's Guide'", BookOpen], ["Oct 16", "First basil sprouts!", Sprout]].map(([d, t, I]: any) =>
         <li key={d} className="flex gap-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><I className="h-4 w-4" /></span><div><p className="text-xs text-muted-foreground">{d}</p><p className="text-sm">{t}</p></div></li>)}
