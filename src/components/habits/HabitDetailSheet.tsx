@@ -1,3 +1,4 @@
+import { ConnectionsPanel } from "@/components/connections/ConnectionsPanel";
 import { ProjectGoalPicker } from "@/components/goals/LifeAreaGoalPicker";
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -186,6 +187,7 @@ export function HabitDetailSheet({ habitId, open, onOpenChange }: { habitId: str
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Linked goals</Label>
             <ProjectGoalPicker ids={linkedGoals} onChange={ids => updateHabit(habit.id, { linkedGoalIds: ids })} />
           </section>
+          <ConnectionsPanel type="habit" id={habit.id} />
 
           <section className="space-y-2">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Linked tasks</Label>

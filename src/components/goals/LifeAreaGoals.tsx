@@ -12,7 +12,7 @@ import { isComposted, PHASE_GUIDANCE } from "@/lib/goals/cycle";
 import { getMoonPhase } from "@/lib/moon";
 import { rhythmPhaseForMoon, RHYTHM_LABEL } from "@/lib/planner/rhythm-phase";
 import { setFocusGoal } from "@/lib/goals/focus-goal";
-import { LifeAreaRollup } from "@/components/connections/ConnectionsPanel";
+import { LifeAreaRollup, ConnectionsPanel } from "@/components/connections/ConnectionsPanel";
 
 /** Goals for one life area (house), with linked tasks/projects and quick add. */
 export function LifeAreaGoalList({ house, compact }: { house: number; compact?: boolean }) {
@@ -61,6 +61,7 @@ export function LifeAreaGoalList({ house, compact }: { house: number; compact?: 
                     onChange={e => setTaskDraft(d => ({ ...d, [g.id]: e.target.value }))}
                     onKeyDown={e => { if (e.key === "Enter" && taskDraft[g.id]?.trim()) { addTask({ title: taskDraft[g.id].trim(), goalId: g.id, area: "Personal", priority: "medium" } as any); setTaskDraft(d => ({ ...d, [g.id]: "" })); } }} />
                 </div>
+                <ConnectionsPanel type="goal" id={g.id} />
                 <label className="flex min-h-11 items-center justify-between gap-2 text-xs text-muted-foreground">
                   Update progress from finished tasks
                   <Switch checked={!!g.autoProgress} onCheckedChange={v => updateGoal(g.id, { autoProgress: v })} />

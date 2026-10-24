@@ -1,3 +1,4 @@
+import { ConnectionsPanel } from "@/components/connections/ConnectionsPanel";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, Film, Newspaper, ChefHat, Plus, Search, Star, Trash2, ExternalLink, CalendarPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -217,6 +218,7 @@ function ItemDialog({ edit, setEdit, onSave, onDelete }: { edit: Partial<Item> |
           <Textarea placeholder={kind === "article" ? "Highlights and takeaways" : "Notes, quotes, review"} value={edit.notes ?? ""} onChange={(e) => set({ notes: e.target.value })} rows={4} />
           {edit.url && <a href={edit.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary"><ExternalLink className="h-4 w-4" />Open link</a>}
         </div>
+        {edit.id && <ConnectionsPanel type="library" id={edit.id} />}
         <DialogFooter className="gap-2">
           {edit.id && <Button variant="ghost" onClick={() => onDelete(edit.id!)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button>}
           <Button onClick={onSave}>Save</Button>
