@@ -47,3 +47,4 @@
 - Dictation sessions stay active through graceful stop's final event, and are invalidated before failure/unmount abort; stale recognizers cannot insert into another session or note.
 - Voice memos sync via the voice_memos table keyed by storage path; note bodies keep only data-voice-memo markers, and transcript/summary live on the row so the library and note cards stay in sync.
 - Moonscape layout (Arc/Tide/Wheel/Journey) is a device-local pref read by the shared Moonscape switcher, so Planner, Moon & Rituals and Settings stay in step.
+- Library: books/films/articles in library_items; recipes reuse meals_library so Meals and Library share one recipe store, and 'Add to meal plan' inserts meals rows.
