@@ -83,3 +83,5 @@
 - [x] Adapt note property colors to dark mode, expand icon/color choices, add option settings, and wrap AI summaries; verified signed-in temporary note, saved choice readback, 24 colors and 54 icons, desktop/phone wrapping
 - [x] Test today's note recording, playback, transcription and saved readback; correct cumulative-text appending in Brain Dump and verify final deltas in the note; live browser speech failed with audio-capture in the test environment, so real spoken dictation remains unverified; test additions removed and original writing preserved
 - [x] Harden dictation stop/failure/unmount session handling; six regression tests pass and overlapping simulated speech saves exactly once in a signed-in note after reload, preserving intentional repeated words; temporary note removed. Actual browser speech recognition accuracy remains unverified.
+- [x] Step 1: Sync cyclical goal details and migrate existing device-local goal extras safely
+- [x] Step 2: Refresh Goals with seasonal phase planning and reversible composting; verified saves, replanting, independent device readback and phone layout; temporary goal removed

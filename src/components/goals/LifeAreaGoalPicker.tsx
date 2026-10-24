@@ -4,6 +4,7 @@ import { lifeAreaLabel, LIFE_HOUSES } from "@/lib/goals/life-areas";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { isComposted } from "@/lib/goals/cycle";
 
 export function LifeAreaGoalPicker({ value, onChange, label = "Life-area goal", allowNone = true }: {
   value?: string; onChange: (id: string | undefined) => void; label?: string; allowNone?: boolean;
@@ -14,7 +15,7 @@ export function LifeAreaGoalPicker({ value, onChange, label = "Life-area goal", 
     <SelectContent className="z-[80] max-h-80 max-w-[calc(100vw-2rem)]" position="popper" collisionPadding={16}>
       <SelectItem value="none" disabled={!allowNone} className="min-h-11">{allowNone ? "No goal" : "Choose a goal"}</SelectItem>
       {[...LIFE_HOUSES, 0].map(house => {
-        const goals = state.goals.filter(g => (g.lifeHouse ?? 0) === house);
+        const goals = state.goals.filter(g => (g.lifeHouse ?? 0) === house && (!isComposted(g.details) || g.id === value));
         if (!goals.length) return null;
         return <SelectGroup key={house}>
           <SelectLabel className="text-xs text-muted-foreground">{house ? `${house} · ${lifeAreaLabel(house)}` : "Other goals"}</SelectLabel>

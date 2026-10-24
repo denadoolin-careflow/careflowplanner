@@ -22,19 +22,14 @@ import { toast } from "sonner";
 import { LifeAreasBoard } from "@/components/goals/LifeAreaGoals";
 import { LIFE_AREAS, LIFE_HOUSES } from "@/lib/goals/life-areas";
 import { CareyButton } from "@/components/carey/CareyButton";
+import { GoalCycleControls, PHASE_GLYPH, PHASE_STYLE } from "./GoalCycleControls";
+import { compostGoal, restoreGoal, isComposted, GOAL_PHASES, goalSeasonAt, PHASE_GUIDANCE, type GoalDetails } from "@/lib/goals/cycle";
+import { RHYTHM_LABEL } from "@/lib/planner/rhythm-phase";
 
 /* ---------------- Types & local persistence ---------------- */
 
 type CheckIn = "energizing" | "steady" | "neutral" | "heavy";
-type GoalExtras = {
-  why?: string;
-  nextStep?: string;
-  targetDate?: string;
-  milestones?: { id: string; label: string; done: boolean }[];
-  startedAt?: string; // ISO
-  cover?: "sprout" | "moon" | "mountain" | "flower";
-  lastCheckIn?: { tone: CheckIn; at: string };
-};
+type GoalExtras = GoalDetails;
 
 const EXTRAS_KEY = "careflow:goal-extras:v1";
 const SEASON_KEY = "careflow:goal-season:v1";
@@ -105,22 +100,21 @@ function currentQuarter() {
 /* ---------------- Hub ---------------- */
 
 export function GoalsHub() {
-  const { state, addGoal, updateGoal, deleteGoal, addTask, updateTask } = useStore();
-  const [extras, setExtras] = useState<Record<string, GoalExtras>>(() => loadExtras());
+  const { state, addGoal, updateGoal, patchGoalDetails, addTask, updateTask } = useStore();
+  const extras = Object.fromEntries(state.goals.map(g => [g.id, g.details ?? {}]));
   const [openId, setOpenId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [areaFilter, setAreaFilter] = useState<Goal["category"] | "all">("all");
-  const [view, setView] = useState<"vision" | "list" | "board" | "journey" | "areas">("vision");
+  const [view, setView] = useState<"cycle" | "vision" | "list" | "board" | "journey" | "areas" | "compost">("cycle");
+  const [seasonFilter, setSeasonFilter] = useState("all");
   const [checkInQueueDismissed, setCheckInQueueDismissed] = useState<string[]>([]);
 
-  useEffect(() => { saveExtras(extras); }, [extras]);
-
-  const setExtra = (id: string, patch: Partial<GoalExtras>) =>
-    setExtras(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  const setExtra = (id: string, patch: Partial<GoalExtras>) => { void patchGoalDetails(id, patch); };
 
   const goals = state.goals;
-  const filtered = areaFilter === "all" ? goals : goals.filter(g => g.category === areaFilter);
-  const active = goals.filter(g => g.status === "active");
+  const filtered = goals.filter(g => !isComposted(g.details) && (areaFilter === "all" || g.category === areaFilter) && (seasonFilter === "all" || g.details?.season === seasonFilter));
+  const composted = goals.filter(g => isComposted(g.details));
+  const active = goals.filter(g => g.status === "active" && !isComposted(g.details));
 
   // momentum stats
   const tinyWins = state.tasks.filter(t => {
@@ -162,20 +156,17 @@ export function GoalsHub() {
   return (
     <div className="space-y-6">
       {/* HERO */}
-      <section className={cn(
-        "relative overflow-hidden rounded-3xl border border-border/50 p-6 sm:p-8",
-        "bg-gradient-to-br", season.gradient,
-      )}>
+      <section className="relative border-b border-border py-5">
         <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-foreground/60">
               <Sparkles className="h-3.5 w-3.5" /> Seasonal Intentions
             </div>
             <h1 className="font-display mt-1 text-3xl sm:text-4xl text-foreground/90">
-              {season.emoji} {season.label}
+              Goals
             </h1>
             <p className="mt-1 max-w-md text-sm italic text-foreground/70">
-              "What are you growing this season?"
+              {season.emoji} {season.label} · What matters in this season of your life?
             </p>
             <div className="mt-5 grid grid-cols-2 gap-4 sm:flex sm:items-center sm:gap-8">
               <HeroStat icon={Sprout} value={active.length} label="Active Goals" />
@@ -183,9 +174,8 @@ export function GoalsHub() {
               <HeroStat icon={Sparkles} value={tinyWins} label="Tiny Wins" sub="this week" />
             </div>
           </div>
-          <div className="flex flex-col items-end gap-3">
-            <season.illo className="hidden h-24 w-24 text-foreground/30 sm:block" strokeWidth={1.2} />
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            <div className="flex flex-wrap items-center gap-2">
               <CareyButton
                 label="Ask Carey"
                 variant="outline"
@@ -236,7 +226,7 @@ export function GoalsHub() {
           </div>
 
           {/* Top 3 this season */}
-          <div className="rounded-2xl border border-border/60 bg-card/60 p-5">
+          <div className="border-y border-border py-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Top 3 This Season</div>
@@ -260,16 +250,32 @@ export function GoalsHub() {
               <AreaChip key={c} active={areaFilter===c} onClick={()=>setAreaFilter(c)} label={c} emoji={CAT_META[c].emoji} />
             ))}
           </div>
+          <Select value={seasonFilter} onValueChange={setSeasonFilter}><SelectTrigger className="w-44" aria-label="Filter goals by season"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All seasons</SelectItem>{["spring", "summer", "autumn", "winter"].map(s => <SelectItem key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</SelectItem>)}</SelectContent></Select>
 
           {/* View tabs */}
           <Tabs value={view} onValueChange={(v:any)=>setView(v)}>
-            <TabsList className="max-w-full justify-start overflow-x-auto rounded-full">
+            <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1">
+              <TabsTrigger value="cycle" className="min-h-11">Seasonal cycle</TabsTrigger>
               <TabsTrigger value="vision" className="rounded-full">Vision</TabsTrigger>
               <TabsTrigger value="list" className="rounded-full">List</TabsTrigger>
               <TabsTrigger value="board" className="rounded-full">Board</TabsTrigger>
               <TabsTrigger value="journey" className="rounded-full">Journey</TabsTrigger>
               <TabsTrigger value="areas" className="rounded-full">Life areas</TabsTrigger>
+              <TabsTrigger value="compost" className="min-h-11">Compost · {composted.length}</TabsTrigger>
             </TabsList>
+            <TabsContent value="cycle" className="mt-5 space-y-6">
+              {GOAL_PHASES.map(p => {
+                const items = filtered.filter(g => (g.details?.phase ?? "plan") === p && g.status !== "done");
+                return <section key={p} className="space-y-3">
+                  <div className="flex items-start gap-3 border-b border-border pb-3"><span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-xl", PHASE_STYLE[p])}>{PHASE_GLYPH[p]}</span><div><h2 className="font-display text-xl">{RHYTHM_LABEL[p]} <span className="text-sm text-muted-foreground">· {items.length}</span></h2><p className="text-sm text-muted-foreground">{PHASE_GUIDANCE[p]}</p></div></div>
+                  {items.length ? items.map(g => <ListCard key={g.id} goal={g} extras={extras[g.id]} onOpen={() => setOpenId(g.id)} />) : <p className="text-sm text-muted-foreground">No goals in this phase.</p>}
+                </section>;
+              })}
+            </TabsContent>
+            <TabsContent value="compost" className="mt-5 space-y-3">
+              {composted.length === 0 && <p className="text-sm text-muted-foreground">Nothing composted yet.</p>}
+              {composted.map(g => <div key={g.id} className="rounded-lg border border-border p-4"><h3 className="font-display text-lg">{g.title}</h3><p className="mt-1 text-sm text-muted-foreground">{g.details?.compostReason || "Making room for a new season"}</p><div className="mt-3 flex gap-2"><Button variant="outline" onClick={() => setOpenId(g.id)}>Open</Button><Button variant="secondary" onClick={() => setExtra(g.id, restoreGoal())}>Replant</Button></div></div>)}
+            </TabsContent>
 
             <TabsContent value="areas" className="mt-5">
               <p className="mb-3 text-sm text-muted-foreground">Your 12 life areas follow the 12 houses of your chart. Open <a href="/cosmic-flow/houses" className="text-primary underline">Houses</a> to see what's moving through each one.</p>
@@ -375,12 +381,7 @@ export function GoalsHub() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreate={async (g, ex) => {
-          await addGoal(g);
-          // Note: extras keyed by id; we can't get id from addGoal here, so we save by title shortly via effect
-          setTimeout(() => {
-            const created = state.goals.find(x => x.title === g.title);
-            if (created) setExtras(prev => ({ ...prev, [created.id]: { ...prev[created.id], ...ex } }));
-          }, 250);
+          await addGoal({ ...g, details: ex });
         }}
       />
 
@@ -400,11 +401,11 @@ export function GoalsHub() {
                 onPin={()=>togglePin(g.id)}
                 onPatch={(p)=>updateGoal(g.id, p)}
                 onExtra={(p)=>setExtra(g.id, p)}
-                onDelete={async ()=>{ await deleteGoal(g.id); setOpenId(null); toast.success("Goal released gently"); }}
+                onDelete={() => { setExtra(g.id, compostGoal(g.details?.compostReason ?? "", new Date().toISOString())); setOpenId(null); }}
                 linkedTasks={linkedTasks}
                 onAddTask={(title)=>addTask({ title, goalId: g.id, area: "Personal", priority: "medium" } as any)}
                 onToggleTask={(id, done)=>updateTask(id, { done, lastCompletedAt: done ? new Date().toISOString() : undefined })}
-                onUnlinkTask={(id)=>updateTask(id, { goalId: undefined })}
+                onUnlinkTask={(id)=>updateTask(id, { goalId: null } as any)}
               />
             );
           })()}
@@ -531,6 +532,10 @@ function ListCard({ goal, extras, onOpen }: { goal: Goal; extras?: GoalExtras; o
           </div>
           <Progress value={goal.progress} className="mt-1.5 h-1.5" />
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span className={cn("rounded px-2 py-1", PHASE_STYLE[extras?.phase ?? "plan"])}>{PHASE_GLYPH[extras?.phase ?? "plan"]} {RHYTHM_LABEL[extras?.phase ?? "plan"]}</span>
+            {extras?.season && <span className="capitalize">{extras.season} {extras.seasonYear}</span>}
+            {goal.lifeHouse && <span>{LIFE_AREAS[goal.lifeHouse]?.label}</span>}
+            {extras?.reviewDate && <span>Review · {extras.reviewDate}</span>}
             {extras?.why && <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> {extras.why}</span>}
             {extras?.nextStep && <span className="inline-flex items-center gap-1"><Target className="h-3 w-3" /> {extras.nextStep}</span>}
             {extras?.targetDate && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> {extras.targetDate}</span>}
@@ -604,7 +609,7 @@ function RecentWins() {
   }, []);
   const taskWins = state.tasks
     .filter(t => t.done && t.lastCompletedAt)
-    .map(t => ({ id: `t-${t.id}`, text: t.title, at: t.lastCompletedAt!, kind: "task" as const }));
+    .map(t => ({ id: `t-${t.id}`, text: t.title, at: t.lastCompletedAt ?? "", kind: "task" as const }));
   const items = [
     ...tinyWins.map(w => ({ id: `w-${w.id}`, text: w.text, at: w.at, kind: "tiny" as const })),
     ...taskWins,
@@ -698,7 +703,7 @@ function CreateGoalDialog({
   open, onOpenChange, onCreate,
 }: {
   open: boolean; onOpenChange: (o: boolean) => void;
-  onCreate: (g: Partial<Goal> & { title: string }, ex: GoalExtras) => void;
+  onCreate: (g: Partial<Goal> & { title: string }, ex: GoalExtras) => Promise<void>;
 }) {
   const [title, setTitle] = useState("");
   const [cat, setCat] = useState<Goal["category"]>("Family");
@@ -706,13 +711,16 @@ function CreateGoalDialog({
   const [why, setWhy] = useState("");
   const [nextStep, setNextStep] = useState("");
   const [targetDate, setTargetDate] = useState("");
+  const [cycle, setCycle] = useState<GoalDetails>(() => ({ season: goalSeasonAt(new Date()), seasonYear: new Date().getFullYear(), phase: "plan" }));
+  const [saving, setSaving] = useState(false);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display text-xl">🌱 Plant a new intention</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          <GoalCycleControls details={cycle} onChange={patch => setCycle(prev => ({ ...prev, ...patch }))} />
           <div>
             <label className="text-xs text-muted-foreground">Goal</label>
             <Input autoFocus placeholder="What are you growing?" value={title} onChange={e=>setTitle(e.target.value)} />
@@ -751,13 +759,16 @@ function CreateGoalDialog({
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={()=>onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => {
+          <Button disabled={saving || !title.trim()} onClick={async () => {
             if (!title.trim()) return;
-            onCreate({ title: title.trim(), category: cat, ...(house !== "none" ? { lifeHouse: Number(house) } : {}) } as any, { why, nextStep, targetDate, startedAt: new Date().toISOString() });
-            setTitle(""); setWhy(""); setNextStep(""); setTargetDate("");
-            onOpenChange(false);
-            toast.success("Intention planted 🌱");
-          }}>Plant it</Button>
+            setSaving(true);
+            try {
+              await onCreate({ title: title.trim(), category: cat, ...(house !== "none" ? { lifeHouse: Number(house) } : {}) }, { ...cycle, why, nextStep, targetDate, startedAt: new Date().toISOString() });
+              setTitle(""); setWhy(""); setNextStep(""); setTargetDate("");
+              onOpenChange(false);
+              toast.success("Intention planted 🌱");
+            } catch { /* Keep the draft for retry. */ } finally { setSaving(false); }
+          }}>{saving ? "Saving…" : "Plant it"}</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -833,11 +844,11 @@ function JourneyDetail({
   return (
     <>
       <SheetHeader>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className={cn("flex h-12 w-12 items-center justify-center rounded-2xl text-2xl", M.tint)}>{M.emoji}</span>
           <div className="min-w-0 flex-1">
             <div className={cn("text-[10px] uppercase tracking-wider", M.text)}>{goal.category}</div>
-            <SheetTitle className="font-display text-xl leading-tight">{goal.title}</SheetTitle>
+            <SheetTitle className="break-words font-display text-xl leading-tight">{goal.title}</SheetTitle>
           </div>
           <Button variant="outline" size="sm" onClick={shareGoal} title="Share goal">
             <Share2 className="h-3.5 w-3.5" />
@@ -849,6 +860,7 @@ function JourneyDetail({
       </SheetHeader>
 
       <div className="mt-6 space-y-6">
+        <GoalCycleControls details={extras} onChange={onExtra} />
         {/* progress */}
         <div>
           <div className="flex items-center justify-between text-xs uppercase tracking-wider text-muted-foreground">
@@ -982,9 +994,12 @@ function JourneyDetail({
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <Button variant="ghost" size="sm" onClick={onDelete}>
-            <Trash2 className="mr-1 h-3.5 w-3.5" /> Release
+        <div className="space-y-2 border-t border-border pt-4">
+          <label className="text-xs text-muted-foreground" htmlFor="goal-compost-reason">What are you taking with you?</label>
+          <Textarea id="goal-compost-reason" value={extras.compostReason ?? ""} onChange={e => onExtra({ compostReason: e.target.value })} placeholder="A lesson, a change of direction, or something to revisit…" />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button variant="ghost" size="sm" onClick={isComposted(extras) ? () => onExtra(restoreGoal()) : onDelete}>
+            <Leaf className="mr-1 h-3.5 w-3.5" /> {isComposted(extras) ? "Replant" : "Compost goal"}
           </Button>
           <div className="flex gap-2">
             <Select value={goal.status} onValueChange={(v:any)=>onPatch({ status: v })}>
@@ -995,6 +1010,7 @@ function JourneyDetail({
                 <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>
+          </div>
           </div>
         </div>
       </div>
