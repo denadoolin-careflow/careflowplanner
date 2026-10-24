@@ -51,4 +51,5 @@
 - Cyclical goal extras live in goals.details; an owner-scoped atomic patch RPC and realtime prevent unrelated field overwrites, while missing-only legacy imports preserve synced picks. Compost is a reversible details flag, never deletion, so task/project links and history remain intact.
 - Daily focus goal syncs per account per date in daily_focus_goals; Today, Today header chip and Planner day read the same hook.
 - Generic cross-item links live in entity_links; Connections merges them with existing built-in link columns (tasks.goal_id/project_id, projects.linked_goal_ids, habits meta, notes.project_id) read-only, and suggestions never auto-link.
+- Projects hub views (incl. Journal) are device-local prefs over existing project data; the Journal view's active project is device-local.
 - Workspace quiz answers/recommendations sync in workspace_profiles; applying reuses existing goals, Today prefs and profile default_route rather than new visibility settings.

@@ -11,8 +11,10 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ArrowRight, Sparkles, Folder, Rocket, Leaf, Pause, Lightbulb,
   CheckSquare, FileText, Paperclip, Heart, Plus, LayoutGrid, List as ListIcon, Images, Hourglass, Clock, Sprout, Target,
+  BookHeart, SlidersHorizontal,
 } from "lucide-react";
 import { ProjectsGardenView, ProjectsAreaView } from "./ProjectGroupedViews";
+import { ProjectsJournalView } from "./ProjectsJournalView";
 import { AREAS, type Project, type ProjectStage, type ProjectHealth } from "@/lib/types";
 import { ProjectCoverArt } from "./ProjectCoverArt";
 import { STUDIO, STAGE_META, HEALTH_META, stageOf, healthOf } from "./studio-tokens";
@@ -62,7 +64,7 @@ function useAnimatedPct(pct: number) {
   return v;
 }
 
-type View = "garden" | "areas" | "cards" | "list" | "gallery";
+type View = "garden" | "journal" | "areas" | "cards" | "list" | "gallery";
 const VIEW_KEY = "projects.hub.view";
 
 const ALL_STAGES: Array<ProjectStage | "all"> = ["all", "idea", "planning", "building", "launching", "maintaining"];
@@ -650,6 +652,8 @@ export default function ProjectsHub() {
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [folderFilter, setFolderFilter] = useState<string>("all");
   const setViewPersist = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilters = [stageFilter, healthFilter, areaFilter].filter((f) => f !== "all").length;
   const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   const filtered = useMemo(() => projects.filter((p) =>
@@ -686,7 +690,7 @@ export default function ProjectsHub() {
         `,
       }}
     >
-      <div className="mx-auto w-full max-w-7xl space-y-5 p-4 pb-28 md:space-y-8 md:p-8">
+      <div className="mx-auto w-full max-w-7xl space-y-5 p-4 pb-36 md:space-y-8 md:p-8">
         <div className="flex items-center justify-between">
           <DashboardTabs />
           <div className="hidden text-[11px] uppercase tracking-[0.25em] text-muted-foreground sm:block">
@@ -709,10 +713,10 @@ export default function ProjectsHub() {
           <div className="relative text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
             Studio · Creative Work
           </div>
-          <h1 className="relative mt-2 font-display text-4xl tracking-tight md:text-5xl" style={{ color: "var(--brand-ink)" }}>
+          <h1 className="relative mt-1 font-display text-3xl tracking-tight md:mt-2 md:text-5xl" style={{ color: "var(--brand-ink)" }}>
             Creative Projects <Sparkles className="inline h-5 w-5" style={{ color: `hsl(${STUDIO.gold})` }} />
           </h1>
-          <p className="relative mt-2 max-w-xl text-sm text-muted-foreground">
+          <p className="relative mt-2 hidden max-w-xl text-sm text-muted-foreground md:block">
             A calm space for {projects.length} {projects.length === 1 ? "project" : "projects"} —
             turning ideas into impact, one small step at a time.
           </p>
@@ -749,12 +753,13 @@ export default function ProjectsHub() {
             >
               {([
                 ["garden", Sprout, "Garden"],
+                ["journal", BookHeart, "Journal"],
                 ["areas", Target, "Life areas"],
                 ["cards", LayoutGrid, "Cards"],
                 ["list", ListIcon, "List"],
                 ["gallery", Images, "Gallery"],
               ] as const).map(([v, I, label]) => (
-                <ToggleGroupItem key={v} value={v} className="min-h-10 shrink-0 gap-1.5 rounded-xl px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                <ToggleGroupItem key={v} value={v} aria-label={label} className="min-h-11 shrink-0 gap-1.5 rounded-xl px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
                   <I className="h-3.5 w-3.5" /> {label}
                 </ToggleGroupItem>
               ))}
@@ -771,7 +776,12 @@ export default function ProjectsHub() {
             }}
           />
 
-          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-2xl border bg-card/60 p-2 md:flex-wrap [&_.flex-wrap]:flex-nowrap md:[&_.flex-wrap]:flex-wrap [&_button]:shrink-0" style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
+          <button type="button" onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card/70 px-4 text-sm md:hidden">
+            <SlidersHorizontal className="h-4 w-4" /> Filter
+            {activeFilters > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] text-primary-foreground">{activeFilters}</span>}
+          </button>
+          <div className={cn("flex-nowrap items-center gap-2 overflow-x-auto rounded-2xl border bg-card/60 p-2 md:flex md:flex-wrap [&_.flex-wrap]:flex-nowrap md:[&_.flex-wrap]:flex-wrap [&_button]:shrink-0 [&_button]:min-h-9", filtersOpen ? "flex" : "hidden")} style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
             <span className="pl-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stage</span>
             <div className="flex flex-wrap gap-1">
               {ALL_STAGES.map((s) => (
@@ -867,6 +877,8 @@ export default function ProjectsHub() {
                 </Button>
               </div>
             </div>
+          ) : view === "journal" ? (
+            <ProjectsJournalView projects={filtered} />
           ) : view === "garden" ? (
             <ProjectsGardenView projects={filtered} renderCard={(p) => <ProjectCard p={p} metrics={metrics} />} />
           ) : view === "areas" ? (
