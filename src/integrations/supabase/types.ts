@@ -3074,6 +3074,7 @@ export type Database = {
           category: string
           created_at: string
           description: string | null
+          details: Json
           id: string
           life_house: number | null
           progress: number
@@ -3089,6 +3090,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          details?: Json
           id?: string
           life_house?: number | null
           progress?: number
@@ -3104,6 +3106,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          details?: Json
           id?: string
           life_house?: number | null
           progress?: number
@@ -9308,6 +9311,10 @@ export type Database = {
       is_household_owner: {
         Args: { _household_id: string; _user_id: string }
         Returns: boolean
+      }
+      patch_goal_details: {
+        Args: { p_goal_id: string; p_missing_only?: boolean; p_patch: Json }
+        Returns: Json
       }
       patch_note_property_styles: { Args: { p_patch: Json }; Returns: Json }
       set_changelog_pull_schedule: { Args: { _freq: string }; Returns: string }
