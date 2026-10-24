@@ -8,13 +8,14 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { LIFE_AREAS, LIFE_HOUSES, effectiveGoalProgress } from "@/lib/goals/life-areas";
 import { toast } from "sonner";
+import { isComposted } from "@/lib/goals/cycle";
 
 /** Goals for one life area (house), with linked tasks/projects and quick add. */
 export function LifeAreaGoalList({ house, compact }: { house: number; compact?: boolean }) {
   const { state, addGoal, updateGoal, addTask, updateTask } = useStore();
   const [title, setTitle] = useState("");
   const [taskDraft, setTaskDraft] = useState<Record<string, string>>({});
-  const goals = state.goals.filter(g => g.lifeHouse === house && g.status !== "done");
+  const goals = state.goals.filter(g => g.lifeHouse === house && g.status !== "done" && !isComposted(g.details));
   const projects = (state as any).projects ?? [];
 
   const add = async () => {
@@ -75,7 +76,7 @@ export function LifeAreasBoard() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {LIFE_HOUSES.map(h => {
-        const count = state.goals.filter(g => g.lifeHouse === h && g.status !== "done").length;
+        const count = state.goals.filter(g => g.lifeHouse === h && g.status !== "done" && !isComposted(g.details)).length;
         return (
           <section key={h} className="cozy-card space-y-3 p-4 motion-safe:animate-fade-in">
             <div>

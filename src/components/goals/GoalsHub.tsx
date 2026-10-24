@@ -715,11 +715,12 @@ function CreateGoalDialog({
   const [saving, setSaving] = useState(false);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display text-xl">🌱 Plant a new intention</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          <GoalCycleControls details={cycle} onChange={patch => setCycle(prev => ({ ...prev, ...patch }))} />
           <div>
             <label className="text-xs text-muted-foreground">Goal</label>
             <Input autoFocus placeholder="What are you growing?" value={title} onChange={e=>setTitle(e.target.value)} />
@@ -758,13 +759,16 @@ function CreateGoalDialog({
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={()=>onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => {
+          <Button disabled={saving || !title.trim()} onClick={async () => {
             if (!title.trim()) return;
-            onCreate({ title: title.trim(), category: cat, ...(house !== "none" ? { lifeHouse: Number(house) } : {}) } as any, { why, nextStep, targetDate, startedAt: new Date().toISOString() });
-            setTitle(""); setWhy(""); setNextStep(""); setTargetDate("");
-            onOpenChange(false);
-            toast.success("Intention planted 🌱");
-          }}>Plant it</Button>
+            setSaving(true);
+            try {
+              await onCreate({ title: title.trim(), category: cat, ...(house !== "none" ? { lifeHouse: Number(house) } : {}) }, { ...cycle, why, nextStep, targetDate, startedAt: new Date().toISOString() });
+              setTitle(""); setWhy(""); setNextStep(""); setTargetDate("");
+              onOpenChange(false);
+              toast.success("Intention planted 🌱");
+            } catch { /* Keep the draft for retry. */ } finally { setSaving(false); }
+          }}>{saving ? "Saving…" : "Plant it"}</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -856,6 +860,7 @@ function JourneyDetail({
       </SheetHeader>
 
       <div className="mt-6 space-y-6">
+        <GoalCycleControls details={extras} onChange={onExtra} />
         {/* progress */}
         <div>
           <div className="flex items-center justify-between text-xs uppercase tracking-wider text-muted-foreground">
@@ -989,9 +994,12 @@ function JourneyDetail({
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <Button variant="ghost" size="sm" onClick={onDelete}>
-            <Trash2 className="mr-1 h-3.5 w-3.5" /> Release
+        <div className="space-y-2 border-t border-border pt-4">
+          <label className="text-xs text-muted-foreground" htmlFor="goal-compost-reason">What are you taking with you?</label>
+          <Textarea id="goal-compost-reason" value={extras.compostReason ?? ""} onChange={e => onExtra({ compostReason: e.target.value })} placeholder="A lesson, a change of direction, or something to revisit…" />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button variant="ghost" size="sm" onClick={isComposted(extras) ? () => onExtra(restoreGoal()) : onDelete}>
+            <Leaf className="mr-1 h-3.5 w-3.5" /> {isComposted(extras) ? "Replant" : "Compost goal"}
           </Button>
           <div className="flex gap-2">
             <Select value={goal.status} onValueChange={(v:any)=>onPatch({ status: v })}>
@@ -1002,6 +1010,7 @@ function JourneyDetail({
                 <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>
+          </div>
           </div>
         </div>
       </div>

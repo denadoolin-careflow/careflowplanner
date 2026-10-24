@@ -10,8 +10,8 @@ export interface GoalDetails {
   startedAt?: string;
   cover?: "sprout" | "moon" | "mountain" | "flower";
   lastCheckIn?: { tone: GoalCheckIn; at: string };
-  season?: GoalSeason;
-  seasonYear?: number;
+  season?: GoalSeason | null;
+  seasonYear?: number | null;
   phase?: RhythmPhase;
   reviewDate?: string;
   compostedAt?: string | null;
