@@ -30,7 +30,7 @@ function InlineAdd({ placeholder, onAdd, className }: { placeholder: string; onA
   const submit = async () => {
     const s = v.trim(); if (!s || busy) return;
     setBusy(true);
-    try { await onAdd(s); setV(""); haptics.light?.(); } finally { setBusy(false); }
+    try { await onAdd(s); setV(""); haptics.tap(); } finally { setBusy(false); }
   };
   return (
     <form className={cn("flex items-center gap-2", className)} onSubmit={e => { e.preventDefault(); void submit(); }}>
