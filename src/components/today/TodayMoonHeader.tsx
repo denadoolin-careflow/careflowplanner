@@ -53,7 +53,7 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}
           className="absolute inset-0 h-full w-full object-cover" />
       </AnimatePresence>
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-card/80 via-card/55 to-card/10" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-card/80 via-card/55 to-card/10 dark:from-card/95 dark:via-card/80 dark:to-card/30" />
       {temp && (
         <span className="absolute right-3 top-3 z-10 rounded-full bg-card/80 px-3 py-1 text-xs tabular-nums text-foreground shadow-sm backdrop-blur">
           {temp}{snap?.conditionLabel ? ` ${snap.conditionLabel}` : ""}
@@ -100,7 +100,7 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
                           transition={{ duration: 0.5 }}
                           key={`${p}-${active}-${dayKey}`}
                           className={cn("flex items-center justify-center rounded-full transition", active ? "h-16 w-16 border-4 border-card shadow-md sm:h-20 sm:w-20" : "h-12 w-12 sm:h-16 sm:w-16")}
-                          style={{ background: active ? c.light : c.tint, color: c.deep }}
+                          style={{ background: active ? c.light : c.tint, color: active ? "hsl(var(--rhythm-on))" : c.deep }}
                         >
                           <Icon className={active ? "h-7 w-7" : "h-5 w-5"} />
                         </motion.span>
