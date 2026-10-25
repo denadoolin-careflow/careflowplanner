@@ -148,8 +148,8 @@ export function ProjectGardenPage({ project }: { project: Project }) {
 
         {showDone && <CompletedList tasks={completed} onRestore={(t) => void toggleTask(t.id)} />}
 
-        {view === "garden" && <Board groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} moonWindows={moonWindows} currentPhase={currentPhase} />}
-        {view === "list" && <ListView groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} />}
+        {view === "garden" && <Board groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} moonWindows={moonWindows} currentPhase={currentPhase} projectId={project.id} />}
+        {view === "list" && <ListView groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} projectId={project.id} />}
         {view === "journal" && (
           <div className="grid gap-4 md:grid-cols-2">
             <div className={cn(card, "p-4")}><ProjectJournalPanel projectId={project.id} projectName={project.name} /></div>
@@ -371,11 +371,11 @@ type CardActions = {
 
 type MoonWindows = Record<RhythmPhase, { glyph: string; moon: string; date: Date }> | null;
 
-function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, currentPhase }: {
+function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, currentPhase, projectId }: {
   groups: Record<GardenPhase, Task[]>; actions: CardActions;
   onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void;
   onDropTask: (id: string, to: GardenPhase) => void;
-  moonWindows?: MoonWindows; currentPhase?: RhythmPhase | null;
+  moonWindows?: MoonWindows; currentPhase?: RhythmPhase | null; projectId: string;
 }) {
   const [tab, setTab] = useState<GardenPhase>("Plan");
   return (
@@ -392,7 +392,7 @@ function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, cu
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {GARDEN_PHASES.map(p => (
           <div key={p} className={cn(tab !== p && "max-md:hidden")}>
-            <PhaseColumn phase={p} tasks={groups[p]} actions={actions} onCreate={onCreate} onLetGo={onLetGo} onDropTask={id => onDropTask(id, p)}
+            <PhaseColumn phase={p} tasks={groups[p]} actions={actions} onCreate={onCreate} onLetGo={onLetGo} onDropTask={id => onDropTask(id, p)} projectId={projectId}
               moon={moonWindows?.[PHASE[p].key as RhythmPhase]} isCurrent={currentPhase === PHASE[p].key} />
           </div>
         ))}
@@ -401,18 +401,54 @@ function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, cu
   );
 }
 
-/** Inline composer: autofocused, wrapping textbox for adding a task in a column. */
-function InlineAdd({ phase, placeholder, onCreate }: { phase: GardenPhase; placeholder: string; onCreate: (title: string) => Promise<void> }) {
+/** Inline composer: autofocused, wrapping textbox. As you type it searches existing
+ *  tasks to pull into this phase, and offers to create a new task or note. */
+function InlineAdd({ phase, placeholder, projectId, onCreate }: {
+  phase: GardenPhase; placeholder: string; projectId: string;
+  onCreate: (title: string) => Promise<void>;
+}) {
+  const { state, updateTask } = useStore();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const m = PHASE[phase]; const k = m.key;
+
+  const matches = useMemo(() => {
+    const q = text.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return state.tasks
+      .filter(t => !t.done && !t.parentTaskId && t.projectId !== projectId && t.title.toLowerCase().includes(q))
+      .slice(0, 5);
+  }, [state.tasks, text, projectId]);
+
+  const close = () => { setText(""); setOpen(false); };
   const submit = async () => {
     const title = text.trim();
     if (!title || busy) return;
     setBusy(true);
-    try { await onCreate(title); setText(""); setOpen(false); } finally { setBusy(false); }
+    try { await onCreate(title); close(); } finally { setBusy(false); }
   };
+  const pullIn = async (t: Task) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await updateTask(t.id, { projectId, garden: moveGarden(t.garden, phase) } as any);
+      toast.success(`Moved "${t.title}" to ${phase}`);
+      close();
+    } finally { setBusy(false); }
+  };
+  const createLinkedNote = async () => {
+    const title = text.trim();
+    if (!title || busy) return;
+    setBusy(true);
+    try {
+      const { createNote } = await import("@/lib/notes");
+      await createNote({ title, projectId });
+      toast.success("Note added to this project");
+      close();
+    } finally { setBusy(false); }
+  };
+
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} className={cn("flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border bg-card/70 text-sm font-medium hover:bg-card", focus)}
@@ -425,20 +461,37 @@ function InlineAdd({ phase, placeholder, onCreate }: { phase: GardenPhase; place
     <div className="rounded-xl border bg-card p-2" style={{ borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
       <Textarea autoFocus value={text} disabled={busy} placeholder={placeholder} aria-label={m.add} rows={2}
         onChange={e => setText(e.target.value)}
-        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } if (e.key === "Escape") { setText(""); setOpen(false); } }}
+        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } if (e.key === "Escape") close(); }}
         className="min-h-11 resize-none whitespace-pre-wrap break-words border-transparent bg-transparent text-sm shadow-none focus-visible:border-input [field-sizing:content]" />
-      <div className="flex justify-end gap-1">
-        <Button type="button" variant="ghost" size="sm" className="h-9" onClick={() => { setText(""); setOpen(false); }}>Cancel</Button>
+      {matches.length > 0 && (
+        <ul className="mb-1 divide-y divide-border/60 overflow-hidden rounded-lg border border-border/70" aria-label="Existing tasks matching your text">
+          {matches.map(t => (
+            <li key={t.id}>
+              <button type="button" disabled={busy} onClick={() => void pullIn(t)}
+                className={cn("flex min-h-11 w-full items-center gap-2 px-2.5 py-1.5 text-left text-sm hover:bg-muted/60", focus)}>
+                <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{t.title}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">Pull in</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex flex-wrap justify-end gap-1">
+        <Button type="button" variant="ghost" size="sm" className="h-9" onClick={close}>Cancel</Button>
+        <Button type="button" variant="outline" size="sm" className="h-9" disabled={!text.trim() || busy} onClick={() => void createLinkedNote()}>
+          <FileText className="mr-1 h-3.5 w-3.5" aria-hidden />New note
+        </Button>
         <Button type="button" size="sm" className="h-9" disabled={!text.trim() || busy} onClick={() => void submit()}>Add</Button>
       </div>
     </div>
   );
 }
 
-function PhaseColumn({ phase, tasks, actions, onCreate, onLetGo, onDropTask, moon, isCurrent }: {
+function PhaseColumn({ phase, tasks, actions, onCreate, onLetGo, onDropTask, moon, isCurrent, projectId }: {
   phase: GardenPhase; tasks: Task[]; actions: CardActions;
   onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void;
-  onDropTask: (id: string) => void;
+  onDropTask: (id: string) => void; projectId: string;
   moon?: { glyph: string; moon: string; date: Date }; isCurrent?: boolean;
 }) {
   const m = PHASE[phase]; const I = m.icon; const k = m.key;
@@ -473,7 +526,7 @@ function PhaseColumn({ phase, tasks, actions, onCreate, onLetGo, onDropTask, moo
               style={{ color: v(k, "-deep"), borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
               <Wind className="h-4 w-4" aria-hidden />{m.add}
             </button>
-          : <InlineAdd phase={phase} placeholder={m.empty} onCreate={title => onCreate(phase, title)} />}
+          : <InlineAdd phase={phase} placeholder={m.empty} projectId={projectId} onCreate={title => onCreate(phase, title)} />}
       </div>
     </section>
   );
@@ -526,7 +579,7 @@ function TaskCard({ task, phase, actions, compact }: { task: Task; phase: Garden
   );
 }
 
-function ListView({ groups, actions, onCreate, onLetGo }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void }) {
+function ListView({ groups, actions, onCreate, onLetGo, projectId }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void; projectId: string }) {
   return (
     <div className="space-y-4">
       {GARDEN_PHASES.map(p => { const I = PHASE[p].icon; const k = PHASE[p].key; return (
@@ -536,7 +589,7 @@ function ListView({ groups, actions, onCreate, onLetGo }: { groups: Record<Garde
             <h3 className="pg-display text-xl">{p} <span className="font-sans text-sm text-muted-foreground">· {groups[p].length}</span></h3>
             {p === "Let go"
               ? <Button variant="ghost" size="sm" className="ml-auto h-10" onClick={onLetGo}><Wind className="mr-1 h-4 w-4" />{PHASE[p].add}</Button>
-              : <div className="ml-auto w-56 max-w-full"><InlineAdd phase={p} placeholder={PHASE[p].empty} onCreate={title => onCreate(p, title)} /></div>}
+              : <div className="ml-auto w-56 max-w-full"><InlineAdd phase={p} placeholder={PHASE[p].empty} projectId={projectId} onCreate={title => onCreate(p, title)} /></div>}
           </header>
           {groups[p].length === 0 ? <p className="text-sm text-muted-foreground">{PHASE[p].empty}</p>
             : <ul className="space-y-2">{groups[p].map(t => <li key={t.id}><TaskCard task={t} phase={p} actions={actions} compact /></li>)}</ul>}
