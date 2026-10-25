@@ -176,6 +176,13 @@
       "when": 1792881305958,
       "tag": "0024_focus_goals_links_workspace_profile",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792891210908,
+      "tag": "0025_migration",
+      "breakpoints": true
     }
   ]
 }

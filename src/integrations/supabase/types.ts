@@ -6767,6 +6767,7 @@ export type Database = {
           cover_url: string | null
           created_at: string
           deadline: string | null
+          details: Json
           end_date: string | null
           focus_this_week: string | null
           folder_id: string | null
@@ -6803,6 +6804,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           deadline?: string | null
+          details?: Json
           end_date?: string | null
           focus_this_week?: string | null
           folder_id?: string | null
@@ -6839,6 +6841,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           deadline?: string | null
+          details?: Json
           end_date?: string | null
           focus_this_week?: string | null
           folder_id?: string | null
@@ -7983,6 +7986,7 @@ export type Database = {
           est_minutes: number | null
           follow_up_at: string | null
           follow_up_note: string | null
+          garden: Json
           goal_id: string | null
           icon: string | null
           id: string
@@ -8032,6 +8036,7 @@ export type Database = {
           est_minutes?: number | null
           follow_up_at?: string | null
           follow_up_note?: string | null
+          garden?: Json
           goal_id?: string | null
           icon?: string | null
           id?: string
@@ -8081,6 +8086,7 @@ export type Database = {
           est_minutes?: number | null
           follow_up_at?: string | null
           follow_up_note?: string | null
+          garden?: Json
           goal_id?: string | null
           icon?: string | null
           id?: string
