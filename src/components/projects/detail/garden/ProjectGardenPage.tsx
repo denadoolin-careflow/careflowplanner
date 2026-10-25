@@ -577,7 +577,7 @@ function AddTaskDialog({ phase, onClose, onCreate }: { phase: GardenPhase | null
       <DialogContent className="project-garden">
         <DialogHeader><DialogTitle className="pg-display text-2xl">{PHASE[p].add}</DialogTitle></DialogHeader>
         <form onSubmit={async e => { e.preventDefault(); if (!title.trim()) return; await onCreate(p, title.trim()); setTitle(""); onClose(); }} className="space-y-3">
-          <Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder={PHASE[p].empty} aria-label="Task title" className="h-11" />
+          <Textarea autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder={PHASE[p].empty} aria-label="Task title" rows={2} className="min-h-11 resize-none whitespace-pre-wrap break-words [field-sizing:content]" />
           <div role="radiogroup" aria-label="Phase" className="flex flex-wrap gap-2">
             {(["Plan", "Grow", "Care"] as GardenPhase[]).map(x => (
               <button type="button" key={x} role="radio" aria-checked={p === x} onClick={() => setP(x)}
