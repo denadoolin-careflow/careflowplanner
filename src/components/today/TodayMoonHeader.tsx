@@ -2,7 +2,13 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { format, isSameDay } from "date-fns";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Sprout, Leaf, Heart, Wind, ArrowRight } from "lucide-react";
+import { Sprout, Leaf, Heart, Wind, ArrowRight, ChevronRight, CheckCircle2, ListChecks, Sparkles } from "lucide-react";
+import { getMoonAgeDays } from "@/lib/moon";
+import skyPlan from "@/assets/sky-plan.jpg";
+import skyGrow from "@/assets/sky-grow.jpg";
+import skyCare from "@/assets/sky-care.jpg";
+import skyLetgo from "@/assets/sky-letgo.jpg";
+const SKY = { plan: skyPlan, grow: skyGrow, care: skyCare, letgo: skyLetgo } as const;
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
@@ -35,24 +41,6 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
   const dir = selected.getTime() >= prev.current ? 1 : -1;
   const dayKey = selected.toDateString();
   if (Math.abs(selected.getTime() - prev.current) > 3_600_000) prev.current = selected.getTime();
-
-  const moon = (
-    <div aria-hidden className="relative h-20 w-20 shrink-0 sm:h-28 sm:w-28">
-      <AnimatePresence initial={false} custom={dir} mode="popLayout">
-        <motion.div
-          key={dayKey}
-          custom={dir}
-          initial={reduce ? { opacity: 0 } : { opacity: 0, x: dir * 40, rotate: dir * 25, scale: 0.8 }}
-          animate={{ opacity: 1, x: 0, rotate: 0, scale: 1 }}
-          exit={reduce ? { opacity: 0 } : { opacity: 0, x: -dir * 40, rotate: -dir * 25, scale: 0.8 }}
-          transition={{ duration: reduce ? 0.15 : 0.45, ease: "easeOut" }}
-          className="absolute inset-0 grid place-items-center text-6xl leading-none sm:text-8xl"
-        >
-          {ctx.glyph}
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
 
   const sky = SKY[ctx.rhythm as keyof typeof SKY];
   const g0 = PHASE_GUIDE[ctx.rhythm];
@@ -219,14 +207,3 @@ function Clock({ now }: { now: Date }) {
   );
 }
 
-function DateBlock({ selected, now, isToday, ctx }: { selected: Date; now: Date; isToday: boolean; ctx: ReturnType<typeof useDayContext> }) {
-  return (
-    <>
-      <h2 className="font-display text-xl leading-tight text-foreground sm:text-4xl">{format(selected, "EEEE, MMMM d")}</h2>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-        {!isToday && <span>Viewing {format(selected, "MMM d")} · now</span>}
-        <span>{ctx.moonLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}</span>
-      </div>
-    </>
-  );
-}
