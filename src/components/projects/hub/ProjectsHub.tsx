@@ -11,8 +11,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ArrowRight, Sparkles, Folder, Rocket, Leaf, Pause, Lightbulb,
   CheckSquare, FileText, Paperclip, Heart, Plus, LayoutGrid, List as ListIcon, Images, Hourglass, Clock, Sprout, Target,
-  BookHeart, SlidersHorizontal,
+  BookHeart, SlidersHorizontal, Moon,
 } from "lucide-react";
+import { isMonthlyProject } from "@/lib/projects/monthly-planning";
 import { ProjectsGardenView, ProjectsAreaView } from "./ProjectGroupedViews";
 import { ProjectsJournalView } from "./ProjectsJournalView";
 import { AREAS, type Project, type ProjectStage, type ProjectHealth } from "@/lib/types";
