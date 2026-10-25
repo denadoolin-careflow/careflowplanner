@@ -148,8 +148,8 @@ export function ProjectGardenPage({ project }: { project: Project }) {
 
         {showDone && <CompletedList tasks={completed} onRestore={(t) => void toggleTask(t.id)} />}
 
-        {view === "garden" && <Board groups={groups} actions={actions} onAdd={openAdd} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} />}
-        {view === "list" && <ListView groups={groups} actions={actions} onAdd={openAdd} />}
+        {view === "garden" && <Board groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} moonWindows={moonWindows} currentPhase={currentPhase} />}
+        {view === "list" && <ListView groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} />}
         {view === "journal" && (
           <div className="grid gap-4 md:grid-cols-2">
             <div className={cn(card, "p-4")}><ProjectJournalPanel projectId={project.id} projectName={project.name} /></div>
@@ -369,7 +369,14 @@ type CardActions = {
   toggle: (t: Task) => void; remove: (t: Task) => void; nextId: string | null;
 };
 
-function Board({ groups, actions, onAdd, onDropTask }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onAdd: (p: GardenPhase) => void; onDropTask: (id: string, to: GardenPhase) => void }) {
+type MoonWindows = Record<RhythmPhase, { glyph: string; moon: string; date: Date }> | null;
+
+function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, currentPhase }: {
+  groups: Record<GardenPhase, Task[]>; actions: CardActions;
+  onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void;
+  onDropTask: (id: string, to: GardenPhase) => void;
+  moonWindows?: MoonWindows; currentPhase?: RhythmPhase | null;
+}) {
   const [tab, setTab] = useState<GardenPhase>("Plan");
   return (
     <>
