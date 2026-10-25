@@ -41,18 +41,18 @@ export function MonthSeasonHeader({ month, className }: { month: Date; className
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}
           className="absolute inset-0 h-full w-full object-cover" />
       </AnimatePresence>
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-card/90 via-card/70 to-card/10" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-card/90 via-card/70 to-card/10 dark:from-card/95 dark:via-card/85 dark:to-card/40" />
       <div aria-hidden className="absolute inset-0 mix-blend-soft-light" style={{ background: `hsl(var(--element-${el}) / 0.18)` }} />
       <div className="relative max-w-xl p-5 sm:p-7">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/70 sm:text-xs">{nature.emoji} {nature.label} · {meta.theme}</p>
-        <h2 className="mt-1 font-display text-4xl leading-none text-foreground sm:text-5xl">{format(month, "MMMM")} <span className="text-foreground/60">{format(month, "yyyy")}</span></h2>
+        <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/80 sm:text-xs">{nature.emoji} {nature.label} · {meta.theme}</p>
+        <h2 className="mt-1 font-display text-4xl leading-none text-foreground sm:text-5xl">{format(month, "MMMM")} <span className="text-foreground/75">{format(month, "yyyy")}</span></h2>
         <ul className="mt-3 space-y-1.5">
           {zodiac.map(({ season, from, to }) => (
             <li key={season.key} className="text-sm leading-snug text-foreground">
-              <span className="font-semibold" style={{ color: `hsl(var(--element-${season.element}))` }}>{season.glyph}</span>{" "}
+              <span className="font-semibold" aria-hidden style={{ color: `hsl(var(--element-${season.element}))` }}>{season.glyph}</span>{" "}
               <span className="font-medium">{season.sign} season</span>
-              <span className="text-foreground/70"> · {format(from, "MMM d")}–{format(to, "d")}</span>
-              <span className="block text-[13px] text-foreground/75">{season.theme}</span>
+              <span className="text-foreground/80"> · {format(from, "MMM d")}–{format(to, "d")}</span>
+              <span className="block text-[13px] text-foreground/85">{season.theme}</span>
             </li>
           ))}
         </ul>
