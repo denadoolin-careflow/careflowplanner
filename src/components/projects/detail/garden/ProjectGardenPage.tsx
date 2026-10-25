@@ -148,8 +148,8 @@ export function ProjectGardenPage({ project }: { project: Project }) {
 
         {showDone && <CompletedList tasks={completed} onRestore={(t) => void toggleTask(t.id)} />}
 
-        {view === "garden" && <Board groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} moonWindows={moonWindows} currentPhase={currentPhase} />}
-        {view === "list" && <ListView groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} />}
+        {view === "garden" && <Board groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} moonWindows={moonWindows} currentPhase={currentPhase} projectId={project.id} />}
+        {view === "list" && <ListView groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} projectId={project.id} />}
         {view === "journal" && (
           <div className="grid gap-4 md:grid-cols-2">
             <div className={cn(card, "p-4")}><ProjectJournalPanel projectId={project.id} projectName={project.name} /></div>
