@@ -194,16 +194,3 @@ function Clock({ now }: { now: Date }) {
 }
 
 
-function Clock({ now }: { now: Date }) {
-  const [hm, ampm] = [format(now, "h:mm"), format(now, "a")];
-  const [h, m] = hm.split(":");
-  return (
-    <span className="inline-flex shrink-0 items-baseline gap-0.5 whitespace-nowrap rounded-full bg-primary/10 px-4 py-1 font-semibold tabular-nums text-primary" aria-label={`Current time ${hm} ${ampm}`}>
-      <span className="text-lg sm:text-2xl">{h}</span>
-      <span className="animate-pulse text-lg sm:text-2xl" aria-hidden>:</span>
-      <span className="text-lg sm:text-2xl">{m}</span>
-      <span className="ml-1 text-xs">{ampm}</span>
-    </span>
-  );
-}
-
