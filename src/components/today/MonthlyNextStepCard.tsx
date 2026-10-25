@@ -11,7 +11,6 @@ import { validNextStep } from "@/lib/projects/garden-phases";
 export function MonthlyNextStepCard() {
   const { state, updateTask } = useStore();
   const { project } = useMonthlyProject(new Date());
-  console.log("[MonthlyNextStepCard]", JSON.stringify({ project: project?.id, details: project?.details, tasks: state.tasks.length }));
   if (!project) return null;
   const sections = (state.projectSections ?? []).filter((s: any) => s.projectId === project.id);
   const tasks = state.tasks.filter(t => t.projectId === project.id && !t.parentTaskId);
