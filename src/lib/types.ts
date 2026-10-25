@@ -65,6 +65,8 @@ export interface Task {
   inbox?: boolean;
   resetItemId?: string;
   sectionId?: string;
+  /** Project garden placement (phase + Let go disposition), persisted in tasks.garden. */
+  garden?: import("./projects/garden-phases").TaskGarden;
   /** Date (ISO yyyy-mm-dd) when a parked task should automatically return to active. */
   snoozedUntil?: string;
   attachments?: Attachment[];
@@ -160,6 +162,8 @@ export interface Project {
   targetDate?: string;
   /** Folder this project is filed under (ClickUp-style grouping). */
   folderId?: string;
+  /** Intention, energy and next small step, persisted in projects.details. */
+  details?: import("./projects/garden-phases").ProjectDetailsData;
 }
 
 export interface Goal {

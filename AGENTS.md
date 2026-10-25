@@ -53,3 +53,4 @@
 - Generic cross-item links live in entity_links; Connections merges them with existing built-in link columns (tasks.goal_id/project_id, projects.linked_goal_ids, habits meta, notes.project_id) read-only, and suggestions never auto-link.
 - Projects hub views (incl. Journal) are device-local prefs over existing project data; the Journal view's active project is device-local.
 - Workspace quiz answers/recommendations sync in workspace_profiles; applying reuses existing goals, Today prefs and profile default_route rather than new visibility settings.
+- Project detail page is the Plan/Grow/Care/Let go garden: task phase and Let go disposition live in tasks.garden (separate from done; section-name/Plan fallback is display-only), project intention/energy/next step in projects.details; Add to Today sets is_top_three so no duplicate task or deadline change.

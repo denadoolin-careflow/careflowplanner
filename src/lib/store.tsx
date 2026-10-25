@@ -64,6 +64,7 @@ const taskFrom = (r: any): Task => ({
   inbox: !!r.inbox,
   resetItemId: r.reset_item_id ?? undefined,
   sectionId: r.section_id ?? undefined,
+  garden: r.garden ?? {},
   snoozedUntil: r.snoozed_until ?? undefined,
   attachments: Array.isArray(r.attachments) ? r.attachments : [],
   updatedAt: r.updated_at ?? undefined,
@@ -99,6 +100,7 @@ const taskTo = (t: Partial<Task>) => ({
   parent_task_id: t.parentTaskId ?? null,
   inbox: t.inbox ?? false,
   section_id: t.sectionId ?? null,
+  garden: (t.garden ?? {}) as any,
   // Pass through undefined → supabase omits the field, so updates don't accidentally
   // unpark a task. Use `null` explicitly via patch to clear.
   snoozed_until: t.snoozedUntil === undefined ? undefined : t.snoozedUntil,
@@ -133,7 +135,7 @@ const TASK_COLUMNS: Record<string, string> = {
   lastCompletedAt: "last_completed_at", autoReset: "auto_reset",
   recurrenceSeriesId: "recurrence_series_id", reminderMinutesBefore: "reminder_minutes_before",
   projectId: "project_id", parentTaskId: "parent_task_id", inbox: "inbox",
-  resetItemId: "reset_item_id", sectionId: "section_id", snoozedUntil: "snoozed_until",
+  resetItemId: "reset_item_id", sectionId: "section_id", garden: "garden", snoozedUntil: "snoozed_until",
   attachments: "attachments", anchorKey: "anchor_key",
   cosmicTag: "cosmic_tag",
   followUpAt: "follow_up_at", followUpNote: "follow_up_note",
@@ -277,6 +279,7 @@ const projectFrom = (r: any): Project => ({
   focusThisWeek: r.focus_this_week ?? undefined,
   targetDate: r.target_date ?? undefined,
   folderId: r.folder_id ?? undefined,
+  details: r.details ?? {},
 });
 const sectionFrom = (r: any): ProjectSection => ({
   id: r.id, projectId: r.project_id, name: r.name,
@@ -805,6 +808,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if ((patch as any).focusThisWeek !== undefined) dbPatch.focus_this_week = (patch as any).focusThisWeek ?? null;
       if ((patch as any).targetDate !== undefined) dbPatch.target_date = (patch as any).targetDate ?? null;
       if (patch.folderId !== undefined) dbPatch.folder_id = patch.folderId ?? null;
+      if (patch.details !== undefined) dbPatch.details = patch.details ?? {};
+      if (patch.archivedAt !== undefined) dbPatch.archived_at = patch.archivedAt ?? null;
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
     deleteProject: async (id) => {
