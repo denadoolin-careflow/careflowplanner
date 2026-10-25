@@ -371,11 +371,11 @@ type CardActions = {
 
 type MoonWindows = Record<RhythmPhase, { glyph: string; moon: string; date: Date }> | null;
 
-function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, currentPhase }: {
+function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, currentPhase, projectId }: {
   groups: Record<GardenPhase, Task[]>; actions: CardActions;
   onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void;
   onDropTask: (id: string, to: GardenPhase) => void;
-  moonWindows?: MoonWindows; currentPhase?: RhythmPhase | null;
+  moonWindows?: MoonWindows; currentPhase?: RhythmPhase | null; projectId: string;
 }) {
   const [tab, setTab] = useState<GardenPhase>("Plan");
   return (
@@ -392,7 +392,7 @@ function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, cu
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {GARDEN_PHASES.map(p => (
           <div key={p} className={cn(tab !== p && "max-md:hidden")}>
-            <PhaseColumn phase={p} tasks={groups[p]} actions={actions} onCreate={onCreate} onLetGo={onLetGo} onDropTask={id => onDropTask(id, p)}
+            <PhaseColumn phase={p} tasks={groups[p]} actions={actions} onCreate={onCreate} onLetGo={onLetGo} onDropTask={id => onDropTask(id, p)} projectId={projectId}
               moon={moonWindows?.[PHASE[p].key as RhythmPhase]} isCurrent={currentPhase === PHASE[p].key} />
           </div>
         ))}
