@@ -401,18 +401,54 @@ function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, cu
   );
 }
 
-/** Inline composer: autofocused, wrapping textbox for adding a task in a column. */
-function InlineAdd({ phase, placeholder, onCreate }: { phase: GardenPhase; placeholder: string; onCreate: (title: string) => Promise<void> }) {
+/** Inline composer: autofocused, wrapping textbox. As you type it searches existing
+ *  tasks to pull into this phase, and offers to create a new task or note. */
+function InlineAdd({ phase, placeholder, projectId, onCreate }: {
+  phase: GardenPhase; placeholder: string; projectId: string;
+  onCreate: (title: string) => Promise<void>;
+}) {
+  const { state, updateTask } = useStore();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const m = PHASE[phase]; const k = m.key;
+
+  const matches = useMemo(() => {
+    const q = text.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return state.tasks
+      .filter(t => !t.done && !t.parentTaskId && t.projectId !== projectId && t.title.toLowerCase().includes(q))
+      .slice(0, 5);
+  }, [state.tasks, text, projectId]);
+
+  const close = () => { setText(""); setOpen(false); };
   const submit = async () => {
     const title = text.trim();
     if (!title || busy) return;
     setBusy(true);
-    try { await onCreate(title); setText(""); setOpen(false); } finally { setBusy(false); }
+    try { await onCreate(title); close(); } finally { setBusy(false); }
   };
+  const pullIn = async (t: Task) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await updateTask(t.id, { projectId, garden: moveGarden(t.garden, phase) } as any);
+      toast.success(`Moved "${t.title}" to ${phase}`);
+      close();
+    } finally { setBusy(false); }
+  };
+  const createLinkedNote = async () => {
+    const title = text.trim();
+    if (!title || busy) return;
+    setBusy(true);
+    try {
+      const { createNote } = await import("@/lib/notes");
+      await createNote({ title, projectId });
+      toast.success("Note added to this project");
+      close();
+    } finally { setBusy(false); }
+  };
+
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} className={cn("flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border bg-card/70 text-sm font-medium hover:bg-card", focus)}
@@ -425,10 +461,27 @@ function InlineAdd({ phase, placeholder, onCreate }: { phase: GardenPhase; place
     <div className="rounded-xl border bg-card p-2" style={{ borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
       <Textarea autoFocus value={text} disabled={busy} placeholder={placeholder} aria-label={m.add} rows={2}
         onChange={e => setText(e.target.value)}
-        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } if (e.key === "Escape") { setText(""); setOpen(false); } }}
+        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } if (e.key === "Escape") close(); }}
         className="min-h-11 resize-none whitespace-pre-wrap break-words border-transparent bg-transparent text-sm shadow-none focus-visible:border-input [field-sizing:content]" />
-      <div className="flex justify-end gap-1">
-        <Button type="button" variant="ghost" size="sm" className="h-9" onClick={() => { setText(""); setOpen(false); }}>Cancel</Button>
+      {matches.length > 0 && (
+        <ul className="mb-1 divide-y divide-border/60 overflow-hidden rounded-lg border border-border/70" aria-label="Existing tasks matching your text">
+          {matches.map(t => (
+            <li key={t.id}>
+              <button type="button" disabled={busy} onClick={() => void pullIn(t)}
+                className={cn("flex min-h-11 w-full items-center gap-2 px-2.5 py-1.5 text-left text-sm hover:bg-muted/60", focus)}>
+                <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{t.title}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">Pull in</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex flex-wrap justify-end gap-1">
+        <Button type="button" variant="ghost" size="sm" className="h-9" onClick={close}>Cancel</Button>
+        <Button type="button" variant="outline" size="sm" className="h-9" disabled={!text.trim() || busy} onClick={() => void createLinkedNote()}>
+          <FileText className="mr-1 h-3.5 w-3.5" aria-hidden />New note
+        </Button>
         <Button type="button" size="sm" className="h-9" disabled={!text.trim() || busy} onClick={() => void submit()}>Add</Button>
       </div>
     </div>
