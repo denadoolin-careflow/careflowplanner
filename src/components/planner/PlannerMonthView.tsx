@@ -45,6 +45,7 @@ function readMobileView(): MobileMonthView {
     if (value === "agenda") return "agenda";
     if (value === "list") return "list";
     if (value === "board") return "board";
+    if (value === "garden") return "garden";
     return "calendar";
   } catch { return "calendar"; }
 }

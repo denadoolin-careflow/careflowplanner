@@ -651,18 +651,20 @@ export default function ProjectsHub() {
   const [healthFilter, setHealthFilter] = useState<ProjectHealth | "all">("all");
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [folderFilter, setFolderFilter] = useState<string>("all");
+  const [monthlyOnly, setMonthlyOnly] = useState(false);
   const setViewPersist = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilters = [stageFilter, healthFilter, areaFilter].filter((f) => f !== "all").length;
   const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   const filtered = useMemo(() => projects.filter((p) =>
-    (stageFilter === "all" || stageOf(p.stage) === stageFilter)
+    (!monthlyOnly || isMonthlyProject(p))
+    && (stageFilter === "all" || stageOf(p.stage) === stageFilter)
     && (healthFilter === "all" || healthOf(p.health) === healthFilter)
     && (areaFilter === "all" || p.areaName === areaFilter)
     && (folderFilter === "all"
       || (folderFilter === "none" ? !p.folderId : p.folderId === folderFilter))
-  ), [projects, stageFilter, healthFilter, areaFilter, folderFilter]);
+  ), [projects, monthlyOnly, stageFilter, healthFilter, areaFilter, folderFilter]);
 
   const focus = useMemo(() => {
     if (!projects.length) return undefined;
