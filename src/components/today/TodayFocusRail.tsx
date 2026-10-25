@@ -4,6 +4,7 @@ import { PlannerAtmosphereStrip } from "@/components/planner/PlannerAtmosphereSt
 import { DashCard } from "@/components/today/dashboard/DashCard";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
 import { FocusGoalCard } from "@/components/goals/FocusGoalCard";
+import { MonthlyNextStepCard } from "@/components/today/MonthlyNextStepCard";
 import { FocusPinboard } from "@/components/planner/FocusPinboard";
 
 /** Left-hand focus column: what holds the day, and what's waiting to be placed. */
@@ -15,6 +16,7 @@ export function TodayFocusRail({ date, onTaskClick, showSources }: { date: Date;
         <TopThreeStrip date={date} onTaskClick={onTaskClick} />
       </DashCard>
       <FocusGoalCard date={date} />
+      <MonthlyNextStepCard />
       <FocusPinboard />
       <PlannerAtmosphereStrip date={date} />
       {showSources && (

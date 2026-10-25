@@ -35,6 +35,9 @@ import {
 } from "@/lib/projects/garden-phases";
 import type { Project, Task } from "@/lib/types";
 import { format, parseISO } from "date-fns";
+import { useAtmosphere } from "@/lib/atmospheres";
+import { LUNAR_RHYTHM, lunarRhythmAt, monthRhythmMoments } from "@/lib/cosmic/lunar-rhythm";
+import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 
 const PHASE: Record<GardenPhase, {
   icon: typeof Sprout; key: string; subtitle: string; add: string; empty: string;
@@ -95,8 +98,32 @@ export function ProjectGardenPage({ project }: { project: Project }) {
     await addTask({ title, projectId: project.id, garden: moveGarden(undefined, phase, letGo) } as any);
   };
 
+  // Match the page background and fonts to the selected atmosphere.
+  const { atmosphere } = useAtmosphere();
+  const atmosphereStyle = {
+    "--pg-display-font": `'${atmosphere.fontDisplay}', ui-serif, Georgia, serif`,
+    "--pg-body-font": `'${atmosphere.fontBody}', 'Nunito Sans', ui-sans-serif, system-ui, sans-serif`,
+    background: `
+      radial-gradient(60rem 30rem at 0% -10%, ${atmosphere.palette[0]}2e, transparent 60%),
+      radial-gradient(55rem 30rem at 100% 0%, ${atmosphere.palette[3] ?? atmosphere.palette[1]}2e, transparent 60%),
+      radial-gradient(45rem 26rem at 50% 100%, ${atmosphere.palette[4] ?? atmosphere.palette[2]}24, transparent 60%),
+      hsl(var(--background))`,
+  } as React.CSSProperties;
+
+  // Monthly Planning gardens connect their columns to the month's moon phases.
+  const monthDate = details.monthKey ? new Date(`${details.monthKey}-15T12:00:00`) : null;
+  const moonWindows = useMemo(() => {
+    if (!monthDate) return null;
+    const windows = {} as Record<RhythmPhase, { glyph: string; moon: string; date: Date }>;
+    for (const m of monthRhythmMoments(monthDate)) {
+      if (!windows[m.phase]) windows[m.phase] = { glyph: m.info.glyph, moon: m.info.moon, date: m.date };
+    }
+    return windows;
+  }, [monthDate?.getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const currentPhase: RhythmPhase | null = monthDate && details.monthKey === format(new Date(), "yyyy-MM") ? lunarRhythmAt(new Date()) : null;
+
   return (
-    <div className="project-garden min-h-screen">
+    <div className="project-garden min-h-screen" style={atmosphereStyle}>
       <div className="mx-auto w-full max-w-6xl space-y-5 px-4 pb-28 pt-4 md:px-6 md:pt-6">
         <GardenHeader project={project} onAdd={() => setAddOpen("Plan")} />
         <Overview project={project} details={details} setDetails={setDetails} />
@@ -121,8 +148,8 @@ export function ProjectGardenPage({ project }: { project: Project }) {
 
         {showDone && <CompletedList tasks={completed} onRestore={(t) => void toggleTask(t.id)} />}
 
-        {view === "garden" && <Board groups={groups} actions={actions} onAdd={openAdd} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} />}
-        {view === "list" && <ListView groups={groups} actions={actions} onAdd={openAdd} />}
+        {view === "garden" && <Board groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} moonWindows={moonWindows} currentPhase={currentPhase} />}
+        {view === "list" && <ListView groups={groups} actions={actions} onCreate={createIn} onLetGo={() => setLetGoAsk({})} />}
         {view === "journal" && (
           <div className="grid gap-4 md:grid-cols-2">
             <div className={cn(card, "p-4")}><ProjectJournalPanel projectId={project.id} projectName={project.name} /></div>
@@ -342,7 +369,14 @@ type CardActions = {
   toggle: (t: Task) => void; remove: (t: Task) => void; nextId: string | null;
 };
 
-function Board({ groups, actions, onAdd, onDropTask }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onAdd: (p: GardenPhase) => void; onDropTask: (id: string, to: GardenPhase) => void }) {
+type MoonWindows = Record<RhythmPhase, { glyph: string; moon: string; date: Date }> | null;
+
+function Board({ groups, actions, onCreate, onLetGo, onDropTask, moonWindows, currentPhase }: {
+  groups: Record<GardenPhase, Task[]>; actions: CardActions;
+  onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void;
+  onDropTask: (id: string, to: GardenPhase) => void;
+  moonWindows?: MoonWindows; currentPhase?: RhythmPhase | null;
+}) {
   const [tab, setTab] = useState<GardenPhase>("Plan");
   return (
     <>
@@ -358,7 +392,8 @@ function Board({ groups, actions, onAdd, onDropTask }: { groups: Record<GardenPh
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {GARDEN_PHASES.map(p => (
           <div key={p} className={cn(tab !== p && "max-md:hidden")}>
-            <PhaseColumn phase={p} tasks={groups[p]} actions={actions} onAdd={() => onAdd(p)} onDropTask={id => onDropTask(id, p)} />
+            <PhaseColumn phase={p} tasks={groups[p]} actions={actions} onCreate={onCreate} onLetGo={onLetGo} onDropTask={id => onDropTask(id, p)}
+              moon={moonWindows?.[PHASE[p].key as RhythmPhase]} isCurrent={currentPhase === PHASE[p].key} />
           </div>
         ))}
       </div>
@@ -366,14 +401,53 @@ function Board({ groups, actions, onAdd, onDropTask }: { groups: Record<GardenPh
   );
 }
 
-function PhaseColumn({ phase, tasks, actions, onAdd, onDropTask }: { phase: GardenPhase; tasks: Task[]; actions: CardActions; onAdd: () => void; onDropTask: (id: string) => void }) {
+/** Inline composer: autofocused, wrapping textbox for adding a task in a column. */
+function InlineAdd({ phase, placeholder, onCreate }: { phase: GardenPhase; placeholder: string; onCreate: (title: string) => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const m = PHASE[phase]; const k = m.key;
+  const submit = async () => {
+    const title = text.trim();
+    if (!title || busy) return;
+    setBusy(true);
+    try { await onCreate(title); setText(""); setOpen(false); } finally { setBusy(false); }
+  };
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className={cn("flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border bg-card/70 text-sm font-medium hover:bg-card", focus)}
+        style={{ color: v(k, "-deep"), borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
+        {phase === "Let go" ? <Wind className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}{m.add}
+      </button>
+    );
+  }
+  return (
+    <div className="rounded-xl border bg-card p-2" style={{ borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
+      <Textarea autoFocus value={text} disabled={busy} placeholder={placeholder} aria-label={m.add} rows={2}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } if (e.key === "Escape") { setText(""); setOpen(false); } }}
+        className="min-h-11 resize-none whitespace-pre-wrap break-words border-transparent bg-transparent text-sm shadow-none focus-visible:border-input [field-sizing:content]" />
+      <div className="flex justify-end gap-1">
+        <Button type="button" variant="ghost" size="sm" className="h-9" onClick={() => { setText(""); setOpen(false); }}>Cancel</Button>
+        <Button type="button" size="sm" className="h-9" disabled={!text.trim() || busy} onClick={() => void submit()}>Add</Button>
+      </div>
+    </div>
+  );
+}
+
+function PhaseColumn({ phase, tasks, actions, onCreate, onLetGo, onDropTask, moon, isCurrent }: {
+  phase: GardenPhase; tasks: Task[]; actions: CardActions;
+  onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void;
+  onDropTask: (id: string) => void;
+  moon?: { glyph: string; moon: string; date: Date }; isCurrent?: boolean;
+}) {
   const m = PHASE[phase]; const I = m.icon; const k = m.key;
   const [over, setOver] = useState(false);
   return (
     <section aria-label={`${phase} column`}
       onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
       onDrop={e => { e.preventDefault(); setOver(false); const id = e.dataTransfer.getData("text/x-pg-task"); if (id) onDropTask(id); }}
-      className={cn("flex h-full flex-col overflow-hidden rounded-2xl border border-border", over && "ring-2 ring-ring")}
+      className={cn("flex h-full flex-col overflow-hidden rounded-2xl border border-border", over && "ring-2 ring-ring", isCurrent && "ring-2 ring-primary/50")}
       style={{ background: v(k, "-tint") }}>
       <div className="h-1.5" style={{ background: `hsl(var(--pg-${k}))` }} aria-hidden />
       <header className="flex items-start gap-3 px-4 pb-2 pt-3">
@@ -381,6 +455,12 @@ function PhaseColumn({ phase, tasks, actions, onAdd, onDropTask }: { phase: Gard
         <div className="min-w-0">
           <h3 className="pg-display text-2xl leading-none">{phase} <span className="font-sans text-base font-normal text-muted-foreground">· {tasks.length}</span></h3>
           <p className="mt-1 text-sm text-muted-foreground">{m.subtitle}</p>
+          {moon && (
+            <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-card/70 px-2 py-0.5 text-xs text-muted-foreground" title={`${moon.moon} begins this phase`}>
+              <span aria-hidden>{moon.glyph}</span>{moon.moon} · {format(moon.date, "MMM d")}
+              {isCurrent && <span className="ml-1 rounded-full px-1.5 font-semibold" style={{ background: v(k, "-tint"), color: v(k, "-deep") }}>now</span>}
+            </p>
+          )}
         </div>
       </header>
       <ul className="flex flex-1 flex-col gap-2 px-3 pb-2">
@@ -388,10 +468,12 @@ function PhaseColumn({ phase, tasks, actions, onAdd, onDropTask }: { phase: Gard
         {tasks.length === 0 && <li className="rounded-xl border border-dashed border-border/80 px-3 py-4 text-sm text-muted-foreground">{m.empty}</li>}
       </ul>
       <div className="p-3 pt-1">
-        <button onClick={onAdd} className={cn("flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border bg-card/70 text-sm font-medium hover:bg-card", focus)}
-          style={{ color: v(k, "-deep"), borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
-          {phase === "Let go" ? <Wind className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}{m.add}
-        </button>
+        {phase === "Let go"
+          ? <button onClick={onLetGo} className={cn("flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border bg-card/70 text-sm font-medium hover:bg-card", focus)}
+              style={{ color: v(k, "-deep"), borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
+              <Wind className="h-4 w-4" aria-hidden />{m.add}
+            </button>
+          : <InlineAdd phase={phase} placeholder={m.empty} onCreate={title => onCreate(phase, title)} />}
       </div>
     </section>
   );
@@ -444,7 +526,7 @@ function TaskCard({ task, phase, actions, compact }: { task: Task; phase: Garden
   );
 }
 
-function ListView({ groups, actions, onAdd }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onAdd: (p: GardenPhase) => void }) {
+function ListView({ groups, actions, onCreate, onLetGo }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void }) {
   return (
     <div className="space-y-4">
       {GARDEN_PHASES.map(p => { const I = PHASE[p].icon; const k = PHASE[p].key; return (
@@ -452,7 +534,9 @@ function ListView({ groups, actions, onAdd }: { groups: Record<GardenPhase, Task
           <header className="mb-2 flex items-center gap-2">
             <I className="h-5 w-5" style={{ color: v(k, "-deep") }} aria-hidden />
             <h3 className="pg-display text-xl">{p} <span className="font-sans text-sm text-muted-foreground">· {groups[p].length}</span></h3>
-            <Button variant="ghost" size="sm" className="ml-auto h-10" onClick={() => onAdd(p)}><Plus className="mr-1 h-4 w-4" />{PHASE[p].add}</Button>
+            {p === "Let go"
+              ? <Button variant="ghost" size="sm" className="ml-auto h-10" onClick={onLetGo}><Wind className="mr-1 h-4 w-4" />{PHASE[p].add}</Button>
+              : <div className="ml-auto w-56 max-w-full"><InlineAdd phase={p} placeholder={PHASE[p].empty} onCreate={title => onCreate(p, title)} /></div>}
           </header>
           {groups[p].length === 0 ? <p className="text-sm text-muted-foreground">{PHASE[p].empty}</p>
             : <ul className="space-y-2">{groups[p].map(t => <li key={t.id}><TaskCard task={t} phase={p} actions={actions} compact /></li>)}</ul>}
@@ -493,7 +577,7 @@ function AddTaskDialog({ phase, onClose, onCreate }: { phase: GardenPhase | null
       <DialogContent className="project-garden">
         <DialogHeader><DialogTitle className="pg-display text-2xl">{PHASE[p].add}</DialogTitle></DialogHeader>
         <form onSubmit={async e => { e.preventDefault(); if (!title.trim()) return; await onCreate(p, title.trim()); setTitle(""); onClose(); }} className="space-y-3">
-          <Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder={PHASE[p].empty} aria-label="Task title" className="h-11" />
+          <Textarea autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder={PHASE[p].empty} aria-label="Task title" rows={2} className="min-h-11 resize-none whitespace-pre-wrap break-words [field-sizing:content]" />
           <div role="radiogroup" aria-label="Phase" className="flex flex-wrap gap-2">
             {(["Plan", "Grow", "Care"] as GardenPhase[]).map(x => (
               <button type="button" key={x} role="radio" aria-checked={p === x} onClick={() => setP(x)}
@@ -519,7 +603,7 @@ function LetGoDialog({ open, title, onClose, onConfirm }: { open: boolean; title
         <DialogHeader><DialogTitle className="pg-display text-2xl">Set something down</DialogTitle></DialogHeader>
         <form className="space-y-3" onSubmit={async e => { e.preventDefault(); if (!title && !newTitle.trim()) return; await onConfirm({ kind, reason, reviewDate: review }, newTitle.trim() || undefined); }}>
           {title ? <p className="text-[15px]">{title}</p>
-            : <Input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="What can you set down?" aria-label="What to set down" className="h-11" />}
+            : <Textarea autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="What can you set down?" aria-label="What to set down" rows={2} className="min-h-11 resize-none whitespace-pre-wrap break-words [field-sizing:content]" />}
           <div role="radiogroup" aria-label="Released or maybe later" className="grid grid-cols-2 gap-2">
             {([["released", "Released"], ["later", "Maybe later"]] as const).map(([k, l]) => (
               <button type="button" key={k} role="radio" aria-checked={kind === k} onClick={() => setKind(k)}
