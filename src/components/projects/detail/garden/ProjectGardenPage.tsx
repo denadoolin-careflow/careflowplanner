@@ -410,7 +410,7 @@ function TaskCard({ task, phase, actions, compact }: { task: Task; phase: Garden
         : <button onClick={() => actions.toggle(task)} aria-label={`Complete ${task.title}`}
             className={cn("mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 border-muted-foreground/50 hover:border-primary", focus)} />}
       <div className="min-w-0 flex-1">
-        <button onClick={() => openTaskQuickEdit(task.id)} className={cn("text-left text-[15px] leading-snug [overflow-wrap:anywhere] hover:underline", focus)}>{task.title}</button>
+        <button onClick={() => openTaskQuickEdit(task.id)} className={cn("text-left text-[15px] leading-snug break-words hover:underline", focus)}>{task.title}</button>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           {isNext && <span className="rounded-full px-2 py-0.5 font-medium" style={{ background: v("plan", "-tint"), color: v("plan", "-deep") }}>Next step</span>}
           {letGo && <span className="rounded-full px-2 py-0.5 font-medium" style={{ background: `hsl(var(--pg-letgo) / 0.25)`, color: v("letgo", "-deep") }}>{task.garden?.letGo === "later" ? "Maybe later" : "Released"}</span>}
