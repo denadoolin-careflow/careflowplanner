@@ -35,6 +35,9 @@ import {
 } from "@/lib/projects/garden-phases";
 import type { Project, Task } from "@/lib/types";
 import { format, parseISO } from "date-fns";
+import { useAtmosphere } from "@/lib/atmospheres";
+import { LUNAR_RHYTHM, lunarRhythmAt, monthRhythmMoments } from "@/lib/cosmic/lunar-rhythm";
+import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 
 const PHASE: Record<GardenPhase, {
   icon: typeof Sprout; key: string; subtitle: string; add: string; empty: string;
@@ -95,8 +98,32 @@ export function ProjectGardenPage({ project }: { project: Project }) {
     await addTask({ title, projectId: project.id, garden: moveGarden(undefined, phase, letGo) } as any);
   };
 
+  // Match the page background and fonts to the selected atmosphere.
+  const { atmosphere } = useAtmosphere();
+  const atmosphereStyle = {
+    "--pg-display-font": `'${atmosphere.fontDisplay}', ui-serif, Georgia, serif`,
+    "--pg-body-font": `'${atmosphere.fontBody}', 'Nunito Sans', ui-sans-serif, system-ui, sans-serif`,
+    background: `
+      radial-gradient(60rem 30rem at 0% -10%, ${atmosphere.palette[0]}2e, transparent 60%),
+      radial-gradient(55rem 30rem at 100% 0%, ${atmosphere.palette[3] ?? atmosphere.palette[1]}2e, transparent 60%),
+      radial-gradient(45rem 26rem at 50% 100%, ${atmosphere.palette[4] ?? atmosphere.palette[2]}24, transparent 60%),
+      hsl(var(--background))`,
+  } as React.CSSProperties;
+
+  // Monthly Planning gardens connect their columns to the month's moon phases.
+  const monthDate = details.monthKey ? new Date(`${details.monthKey}-15T12:00:00`) : null;
+  const moonWindows = useMemo(() => {
+    if (!monthDate) return null;
+    const windows = {} as Record<RhythmPhase, { glyph: string; moon: string; date: Date }>;
+    for (const m of monthRhythmMoments(monthDate)) {
+      if (!windows[m.phase]) windows[m.phase] = { glyph: m.info.glyph, moon: m.info.moon, date: m.date };
+    }
+    return windows;
+  }, [monthDate?.getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const currentPhase: RhythmPhase | null = monthDate && details.monthKey === format(new Date(), "yyyy-MM") ? lunarRhythmAt(new Date()) : null;
+
   return (
-    <div className="project-garden min-h-screen">
+    <div className="project-garden min-h-screen" style={atmosphereStyle}>
       <div className="mx-auto w-full max-w-6xl space-y-5 px-4 pb-28 pt-4 md:px-6 md:pt-6">
         <GardenHeader project={project} onAdd={() => setAddOpen("Plan")} />
         <Overview project={project} details={details} setDetails={setDetails} />
