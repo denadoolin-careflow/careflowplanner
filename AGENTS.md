@@ -31,6 +31,7 @@
 - Bedside recurring meals reuse meal recurrence definitions; dated meal check-offs sync through meal_completion_logs across Bedside, Planner, and Today so recurring days do not share completion state.
 - Cosmic visuals reuse skyStatus, monthRhythmMoments and NatalWheel; HousesWheel selects existing details without recalculating.
 - Tarot pulls and moon checklists sync via one astro_suite_state row, merged with the local cache on load so no device loses entries.
+- Evening tarot choices reuse synced tarot pulls with a ritual discriminator; morning daily lookup excludes those entries so evening selection never replaces Morning Reset.
 - Astro math is local; chapters cache by birth/date/version. Rhythm uses exact quarters and dated rituals, preserving duplicate lunations. Phase intentions sync in monthly-note properties, reused by reminders.
 - Natal PNGs pre-render for iOS; react-zoom-pan-pinch zoom is separate. Device-local appearance tokens color Natal, Houses and PNGs.
 - Wealth net worth compares against monthly net_worth_snapshots (unique user+month); Overview keeps the current month's row live.

@@ -15,7 +15,7 @@ export const SPREADS: Record<SpreadKind, { label: string; positions: string[] }>
 };
 
 export interface PulledCard { id: string; orientation: TarotOrientation; position: string }
-export interface TarotPull { id: string; date: string; spread: SpreadKind; cards: PulledCard[]; createdAt: number }
+export interface TarotPull { id: string; date: string; spread: SpreadKind; cards: PulledCard[]; createdAt: number; ritual?: "evening" }
 
 const KEY = "careflow.tarot-pulls.v1";
 const MAX = 800;
@@ -40,12 +40,13 @@ export function drawCards(n: number, rand: () => number = Math.random): { card: 
   return deck.slice(0, n).map(card => ({ card, orientation: rand() < 0.25 ? "reversed" : "upright" }));
 }
 
-export function recordPull(spread: SpreadKind, drawn: { card: TarotCard; orientation: TarotOrientation }[]): TarotPull {
+export function recordPull(spread: SpreadKind, drawn: { card: TarotCard; orientation: TarotOrientation }[], ritual?: "evening"): TarotPull {
   const positions = SPREADS[spread].positions;
   const pull: TarotPull = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     date: format(new Date(), "yyyy-MM-dd"),
     spread,
+    ...(ritual ? { ritual } : {}),
     cards: drawn.map((d, i) => ({ id: d.card.id, orientation: d.orientation, position: positions[i] ?? "" })),
     createdAt: Date.now(),
   };
@@ -55,7 +56,15 @@ export function recordPull(spread: SpreadKind, drawn: { card: TarotCard; orienta
 
 export function todaysDailyPull(): TarotPull | undefined {
   const today = format(new Date(), "yyyy-MM-dd");
-  return loadPulls().find(p => p.date === today && p.spread === "single");
+  return dailyPullFor(loadPulls(), today);
+}
+
+export function eveningPullFor(pulls: TarotPull[], date: string): TarotPull | undefined {
+  return pulls.find(p => p.date === date && p.ritual === "evening");
+}
+
+export function eveningCardChoices(morningCardId?: string): TarotCard[] {
+  return TAROT_DECK.filter(card => card.id !== morningCardId);
 }
 
 export function deletePull(id: string) { savePulls(loadPulls().filter(p => p.id !== id)); }
@@ -67,7 +76,7 @@ export function pullToText(pull: TarotPull): string {
     const meaning = c.orientation === "reversed" ? card.reversed : card.upright;
     return `${c.position ? `**${c.position}:** ` : ""}${card.name}${c.orientation === "reversed" ? " (reversed)" : ""} — ${meaning}`;
   }).filter(Boolean);
-  return `🔮 Tarot · ${SPREADS[pull.spread].label}: ${parts.join(" · ")}`;
+  return `🔮 Tarot · ${pull.ritual === "evening" ? "Evening card" : SPREADS[pull.spread].label}: ${parts.join(" · ")}`;
 }
 
 /** Append text as a timestamped entry to today's daily note. */
@@ -90,5 +99,5 @@ export function pullsByDate(pulls: TarotPull[], monthPrefix?: string): Map<strin
 
 /** The daily (single) pull for a date, if any. */
 export function dailyPullFor(pulls: TarotPull[], date: string): TarotPull | undefined {
-  return pulls.find(p => p.date === date && p.spread === "single");
+  return pulls.find(p => p.date === date && p.spread === "single" && p.ritual !== "evening");
 }
