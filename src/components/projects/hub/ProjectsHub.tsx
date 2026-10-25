@@ -11,8 +11,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ArrowRight, Sparkles, Folder, Rocket, Leaf, Pause, Lightbulb,
   CheckSquare, FileText, Paperclip, Heart, Plus, LayoutGrid, List as ListIcon, Images, Hourglass, Clock, Sprout, Target,
-  BookHeart, SlidersHorizontal,
+  BookHeart, SlidersHorizontal, Moon,
 } from "lucide-react";
+import { isMonthlyProject } from "@/lib/projects/monthly-planning";
 import { ProjectsGardenView, ProjectsAreaView } from "./ProjectGroupedViews";
 import { ProjectsJournalView } from "./ProjectsJournalView";
 import { AREAS, type Project, type ProjectStage, type ProjectHealth } from "@/lib/types";
@@ -651,18 +652,20 @@ export default function ProjectsHub() {
   const [healthFilter, setHealthFilter] = useState<ProjectHealth | "all">("all");
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [folderFilter, setFolderFilter] = useState<string>("all");
+  const [monthlyOnly, setMonthlyOnly] = useState(false);
   const setViewPersist = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilters = [stageFilter, healthFilter, areaFilter].filter((f) => f !== "all").length;
   const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   const filtered = useMemo(() => projects.filter((p) =>
-    (stageFilter === "all" || stageOf(p.stage) === stageFilter)
+    (!monthlyOnly || isMonthlyProject(p))
+    && (stageFilter === "all" || stageOf(p.stage) === stageFilter)
     && (healthFilter === "all" || healthOf(p.health) === healthFilter)
     && (areaFilter === "all" || p.areaName === areaFilter)
     && (folderFilter === "all"
       || (folderFilter === "none" ? !p.folderId : p.folderId === folderFilter))
-  ), [projects, stageFilter, healthFilter, areaFilter, folderFilter]);
+  ), [projects, monthlyOnly, stageFilter, healthFilter, areaFilter, folderFilter]);
 
   const focus = useMemo(() => {
     if (!projects.length) return undefined;
@@ -776,11 +779,19 @@ export default function ProjectsHub() {
             }}
           />
 
-          <button type="button" onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card/70 px-4 text-sm md:hidden">
-            <SlidersHorizontal className="h-4 w-4" /> Filter
-            {activeFilters > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] text-primary-foreground">{activeFilters}</span>}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => setMonthlyOnly((v) => !v)} aria-pressed={monthlyOnly}
+              className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm transition",
+                monthlyOnly ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card/70")}
+            >
+              <Moon className="h-4 w-4" /> Monthly Planning
+            </button>
+            <button type="button" onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card/70 px-4 text-sm md:hidden">
+              <SlidersHorizontal className="h-4 w-4" /> Filter
+              {activeFilters > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] text-primary-foreground">{activeFilters}</span>}
+            </button>
+          </div>
           <div className={cn("flex-nowrap items-center gap-2 overflow-x-auto rounded-2xl border bg-card/60 p-2 md:flex md:flex-wrap [&_.flex-wrap]:flex-nowrap md:[&_.flex-wrap]:flex-wrap [&_button]:shrink-0 [&_button]:min-h-9", filtersOpen ? "flex" : "hidden")} style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
             <span className="pl-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stage</span>
             <div className="flex flex-wrap gap-1">

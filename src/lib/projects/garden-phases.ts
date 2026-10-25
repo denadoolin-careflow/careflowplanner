@@ -18,6 +18,8 @@ export interface ProjectDetailsData {
   enoughForNow?: string;
   energy?: "Gentle" | "Moderate" | "Focused";
   nextStepTaskId?: string | null;
+  /** YYYY-MM tag marking this project as that month's Monthly Planning project. */
+  monthKey?: string;
 }
 
 /** Matches a project section to a rhythm phase by its name (case-insensitive). */

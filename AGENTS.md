@@ -54,3 +54,4 @@
 - Projects hub views (incl. Journal) are device-local prefs over existing project data; the Journal view's active project is device-local.
 - Workspace quiz answers/recommendations sync in workspace_profiles; applying reuses existing goals, Today prefs and profile default_route rather than new visibility settings.
 - Project detail page is the Plan/Grow/Care/Let go garden: task phase and Let go disposition live in tasks.garden (separate from done; section-name/Plan fallback is display-only), project intention/energy/next step in projects.details; Add to Today sets is_top_three so no duplicate task or deadline change.
+- Monthly Planning projects are ordinary projects tagged with details.monthKey (YYYY-MM); the Planner month Garden tab and the Projects hub Monthly Planning filter both read/write that same record, so everything stays in sync.

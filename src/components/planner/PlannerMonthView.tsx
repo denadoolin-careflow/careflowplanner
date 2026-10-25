@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { addDays, differenceInCalendarDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
-import { CalendarDays, Check, ChevronRight, Columns3, List, Plus, Rows3 } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, Columns3, List, Plus, Rows3, Sprout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
@@ -25,16 +25,18 @@ import { getMoonSign } from "@/lib/zodiac";
 import { useStore } from "@/lib/store";
 import { habitProgress } from "./PlannerRhythmRow";
 import { CosmicEventHover } from "./CosmicEventHover";
+import { MonthlyPlanningGarden } from "./MonthlyPlanningGarden";
 
 const KEY_MOON_PHASES = ["new", "first-quarter", "full", "last-quarter"];
 
-export type MobileMonthView = "calendar" | "agenda" | "list" | "board";
+export type MobileMonthView = "calendar" | "agenda" | "list" | "board" | "garden";
 const MOBILE_VIEW_KEY = "careflow:month-mobile-view:v2";
 const MOBILE_VIEW_ITEMS = [
   { value: "calendar" as const, label: "Calendar", icon: CalendarDays },
   { value: "agenda" as const, label: "Agenda", icon: Rows3 },
   { value: "list" as const, label: "List", icon: List },
   { value: "board" as const, label: "Board", icon: Columns3 },
+  { value: "garden" as const, label: "Garden", icon: Sprout },
 ];
 
 function readMobileView(): MobileMonthView {
@@ -43,6 +45,7 @@ function readMobileView(): MobileMonthView {
     if (value === "agenda") return "agenda";
     if (value === "list") return "list";
     if (value === "board") return "board";
+    if (value === "garden") return "garden";
     return "calendar";
   } catch { return "calendar"; }
 }
@@ -186,6 +189,8 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
   }
 
   if (mobileView === "list") return <div className="space-y-2">{mobileToolbar}{monthDays.map(day => <Fragment key={day.toISOString()}>{DayCard({ day })}</Fragment>)}{dialogs}</div>;
+
+  if (mobileView === "garden") return <div className="space-y-2">{mobileToolbar}<MonthlyPlanningGarden month={date} />{dialogs}</div>;
 
   if (mobileView === "board") {
     const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, w) => days.slice(w * 7, w * 7 + 7));
