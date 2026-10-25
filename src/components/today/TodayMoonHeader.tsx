@@ -156,12 +156,8 @@ function RealMoon({ date }: { date: Date }) {
   const age = getMoonAgeDays(date) / 29.53058867;
   const illum = (1 - Math.cos(age * 2 * Math.PI)) / 2;
   const waxing = age < 0.5;
-  // terminator ellipse x-radius; lit side right when waxing
   const rx = Math.abs(1 - 2 * illum) * 50;
-  const litBulge = illum > 0.5;
-  const d = waxing
-    ? `M50 0 A50 50 0 0 1 50 100 A${rx} 50 0 0 ${litBulge ? 1 : 0} 50 0 Z`
-    : `M50 0 A50 50 0 0 0 50 100 A${rx} 50 0 0 ${litBulge ? 0 : 1} 50 0 Z`;
+  const half = waxing ? "M50 0 A50 50 0 0 1 50 100 Z" : "M50 0 A50 50 0 0 0 50 100 Z";
   return (
     <svg viewBox="0 0 100 100" className="h-full w-full drop-shadow-lg" aria-hidden>
       <defs>
@@ -172,7 +168,8 @@ function RealMoon({ date }: { date: Date }) {
         </radialGradient>
       </defs>
       <circle cx="50" cy="50" r="50" fill="hsl(220 45% 16%)" />
-      <path d={d} fill="url(#rm-lit)" />
+      <path d={half} fill="url(#rm-lit)" />
+      <ellipse cx="50" cy="50" rx={rx} ry="50" fill={illum > 0.5 ? "url(#rm-lit)" : "hsl(220 45% 16%)"} />
       <g fill="hsl(38 35% 40% / 0.25)">
         <circle cx="38" cy="35" r="7" /><circle cx="60" cy="58" r="9" /><circle cx="45" cy="70" r="5" /><circle cx="68" cy="30" r="4" /><circle cx="28" cy="55" r="5" />
       </g>
