@@ -488,10 +488,10 @@ function InlineAdd({ phase, placeholder, projectId, onCreate }: {
   );
 }
 
-function PhaseColumn({ phase, tasks, actions, onCreate, onLetGo, onDropTask, moon, isCurrent }: {
+function PhaseColumn({ phase, tasks, actions, onCreate, onLetGo, onDropTask, moon, isCurrent, projectId }: {
   phase: GardenPhase; tasks: Task[]; actions: CardActions;
   onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void;
-  onDropTask: (id: string) => void;
+  onDropTask: (id: string) => void; projectId: string;
   moon?: { glyph: string; moon: string; date: Date }; isCurrent?: boolean;
 }) {
   const m = PHASE[phase]; const I = m.icon; const k = m.key;
@@ -526,7 +526,7 @@ function PhaseColumn({ phase, tasks, actions, onCreate, onLetGo, onDropTask, moo
               style={{ color: v(k, "-deep"), borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
               <Wind className="h-4 w-4" aria-hidden />{m.add}
             </button>
-          : <InlineAdd phase={phase} placeholder={m.empty} onCreate={title => onCreate(phase, title)} />}
+          : <InlineAdd phase={phase} placeholder={m.empty} projectId={projectId} onCreate={title => onCreate(phase, title)} />}
       </div>
     </section>
   );
@@ -579,7 +579,7 @@ function TaskCard({ task, phase, actions, compact }: { task: Task; phase: Garden
   );
 }
 
-function ListView({ groups, actions, onCreate, onLetGo }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void }) {
+function ListView({ groups, actions, onCreate, onLetGo, projectId }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void; projectId: string }) {
   return (
     <div className="space-y-4">
       {GARDEN_PHASES.map(p => { const I = PHASE[p].icon; const k = PHASE[p].key; return (
@@ -589,7 +589,7 @@ function ListView({ groups, actions, onCreate, onLetGo }: { groups: Record<Garde
             <h3 className="pg-display text-xl">{p} <span className="font-sans text-sm text-muted-foreground">· {groups[p].length}</span></h3>
             {p === "Let go"
               ? <Button variant="ghost" size="sm" className="ml-auto h-10" onClick={onLetGo}><Wind className="mr-1 h-4 w-4" />{PHASE[p].add}</Button>
-              : <div className="ml-auto w-56 max-w-full"><InlineAdd phase={p} placeholder={PHASE[p].empty} onCreate={title => onCreate(p, title)} /></div>}
+              : <div className="ml-auto w-56 max-w-full"><InlineAdd phase={p} placeholder={PHASE[p].empty} projectId={projectId} onCreate={title => onCreate(p, title)} /></div>}
           </header>
           {groups[p].length === 0 ? <p className="text-sm text-muted-foreground">{PHASE[p].empty}</p>
             : <ul className="space-y-2">{groups[p].map(t => <li key={t.id}><TaskCard task={t} phase={p} actions={actions} compact /></li>)}</ul>}
