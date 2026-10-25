@@ -809,6 +809,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if ((patch as any).targetDate !== undefined) dbPatch.target_date = (patch as any).targetDate ?? null;
       if (patch.folderId !== undefined) dbPatch.folder_id = patch.folderId ?? null;
       if (patch.details !== undefined) dbPatch.details = patch.details ?? {};
+      if (patch.archivedAt !== undefined) dbPatch.archived_at = patch.archivedAt ?? null;
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
     deleteProject: async (id) => {
