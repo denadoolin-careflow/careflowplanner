@@ -526,7 +526,7 @@ function TaskCard({ task, phase, actions, compact }: { task: Task; phase: Garden
   );
 }
 
-function ListView({ groups, actions, onAdd }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onAdd: (p: GardenPhase) => void }) {
+function ListView({ groups, actions, onCreate, onLetGo }: { groups: Record<GardenPhase, Task[]>; actions: CardActions; onCreate: (p: GardenPhase, title: string) => Promise<void>; onLetGo: () => void }) {
   return (
     <div className="space-y-4">
       {GARDEN_PHASES.map(p => { const I = PHASE[p].icon; const k = PHASE[p].key; return (
@@ -534,7 +534,9 @@ function ListView({ groups, actions, onAdd }: { groups: Record<GardenPhase, Task
           <header className="mb-2 flex items-center gap-2">
             <I className="h-5 w-5" style={{ color: v(k, "-deep") }} aria-hidden />
             <h3 className="pg-display text-xl">{p} <span className="font-sans text-sm text-muted-foreground">· {groups[p].length}</span></h3>
-            <Button variant="ghost" size="sm" className="ml-auto h-10" onClick={() => onAdd(p)}><Plus className="mr-1 h-4 w-4" />{PHASE[p].add}</Button>
+            {p === "Let go"
+              ? <Button variant="ghost" size="sm" className="ml-auto h-10" onClick={onLetGo}><Wind className="mr-1 h-4 w-4" />{PHASE[p].add}</Button>
+              : <div className="ml-auto w-56 max-w-full"><InlineAdd phase={p} placeholder={PHASE[p].empty} onCreate={title => onCreate(p, title)} /></div>}
           </header>
           {groups[p].length === 0 ? <p className="text-sm text-muted-foreground">{PHASE[p].empty}</p>
             : <ul className="space-y-2">{groups[p].map(t => <li key={t.id}><TaskCard task={t} phase={p} actions={actions} compact /></li>)}</ul>}
@@ -601,7 +603,7 @@ function LetGoDialog({ open, title, onClose, onConfirm }: { open: boolean; title
         <DialogHeader><DialogTitle className="pg-display text-2xl">Set something down</DialogTitle></DialogHeader>
         <form className="space-y-3" onSubmit={async e => { e.preventDefault(); if (!title && !newTitle.trim()) return; await onConfirm({ kind, reason, reviewDate: review }, newTitle.trim() || undefined); }}>
           {title ? <p className="text-[15px]">{title}</p>
-            : <Input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="What can you set down?" aria-label="What to set down" className="h-11" />}
+            : <Textarea autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="What can you set down?" aria-label="What to set down" rows={2} className="min-h-11 resize-none whitespace-pre-wrap break-words [field-sizing:content]" />}
           <div role="radiogroup" aria-label="Released or maybe later" className="grid grid-cols-2 gap-2">
             {([["released", "Released"], ["later", "Maybe later"]] as const).map(([k, l]) => (
               <button type="button" key={k} role="radio" aria-checked={kind === k} onClick={() => setKind(k)}
