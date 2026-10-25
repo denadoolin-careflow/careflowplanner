@@ -39,6 +39,7 @@ import { ProjectWorkspace } from "@/components/projects/detail/ProjectWorkspace"
 import { LayoutGrid } from "lucide-react";
 import { BacklinksSection } from "@/components/common/BacklinksSection";
 import { ProjectGoalPicker, LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
+import { ProjectCanvas } from "@/components/projects/detail/ProjectCanvas";
 
 /* ----------------------------- Atmospheres ----------------------------- */
 
@@ -63,7 +64,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const { state, updateProject } = useStore();
   const project = (state.projects ?? []).find(p => p.id === id);
-  const [tab, setTab] = useState("board");
+  const [tab, setTab] = useState("canvas");
 
   if (!project) {
     return (
@@ -93,6 +94,7 @@ export default function ProjectDetail() {
               className="h-11 gap-1 rounded-full border border-border/40 bg-card/80 p-1 shadow-sm backdrop-blur"
             >
               {[
+                ["canvas",    "Project",   Leaf],
                 ["board",     "Board",     LayoutGrid],
                 ["overview",  "Overview",  Sparkles],
                 ["tasks",     "Tasks",     ListChecks],
@@ -112,6 +114,10 @@ export default function ProjectDetail() {
               ))}
             </TabsList>
           </div>
+
+          <TabsContent value="canvas" className="mt-0">
+            <ProjectCanvas project={project} />
+          </TabsContent>
 
           <TabsContent value="board" className="mt-0">
             <ProjectWorkspace project={project} card={(c) => <SoftCard>{c}</SoftCard>} />
