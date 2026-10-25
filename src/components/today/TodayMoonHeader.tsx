@@ -7,6 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { phaseSignAdvice } from "@/lib/cosmic/moon-energy";
 import { LUNAR_RHYTHM, PHASE_GUIDE } from "@/lib/cosmic/lunar-rhythm";
 import { RHYTHM_ORDER, phaseStyle, useDayContext, useNow } from "./day-context";
 
@@ -35,7 +37,7 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
   if (Math.abs(selected.getTime() - prev.current) > 3_600_000) prev.current = selected.getTime();
 
   const moon = (
-    <div aria-hidden className="relative h-16 w-16 overflow-hidden sm:h-24 sm:w-24">
+    <div aria-hidden className="relative h-20 w-20 shrink-0 sm:h-28 sm:w-28">
       <AnimatePresence initial={false} custom={dir} mode="popLayout">
         <motion.div
           key={dayKey}
@@ -53,7 +55,8 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
   );
 
   return (
-    <section aria-label="Day at a glance" className="mb-4 rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-6">
+    <section aria-label="Day at a glance" className="mb-4 rounded-3xl border border-border/60 p-4 shadow-sm sm:p-6" style={{ backgroundColor: phaseStyle(ctx.rhythm).tint }}>
+      <div className="mb-4 flex justify-center"><Clock now={now} /></div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
         <div className="flex items-center gap-4 sm:block">
           {moon}
@@ -76,7 +79,7 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
                 <li key={p} aria-current={active ? "step" : undefined}>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button type="button" className="flex min-h-11 w-full flex-col items-center gap-1 rounded-xl py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`How to plan in the ${LUNAR_RHYTHM[p].label} phase`}>
+                      <Button variant="ghost" type="button" className="flex h-auto min-h-11 w-full flex-col items-center gap-1 rounded-xl px-0 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`How to plan in the ${LUNAR_RHYTHM[p].label} phase`}>
                         <motion.span
                           animate={active && !reduce ? { scale: [1, 1.08, 1] } : { scale: 1 }}
                           transition={{ duration: 0.5 }}
@@ -89,11 +92,12 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
                         <span className={cn("text-xs underline-offset-2 hover:underline sm:text-sm", active ? "font-semibold" : "opacity-80")} style={{ color: c.deep }}>
                           {LUNAR_RHYTHM[p].label}
                         </span>
-                      </button>
+                      </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[min(20rem,calc(100vw-2rem))]" align="center">
                       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: c.deep }}>{LUNAR_RHYTHM[p].glyph} {LUNAR_RHYTHM[p].label} · {LUNAR_RHYTHM[p].moon}</p>
                       <p className="mt-1 text-sm text-foreground">{g.focus}</p>
+                      {ctx.sign && <p className="mt-2 text-sm text-foreground">{phaseSignAdvice(p, ctx.sign)}</p>}
                       <p className="mt-3 text-xs font-semibold text-foreground">Try</p>
                       <ul className="mt-1 list-disc space-y-0.5 pl-4 text-sm text-muted-foreground">{g.actions.map(a => <li key={a}>{a}</li>)}</ul>
                       <p className="mt-3 text-xs font-semibold text-foreground">Go easy on</p>
@@ -107,7 +111,12 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
           </ol>
         </div>
       </div>
-      <p className="mt-4 border-t border-border/50 pt-3 text-center font-display text-base italic text-primary sm:text-lg">
+      <div className="mt-4 border-t border-border/50 pt-3 text-sm leading-relaxed text-foreground">
+        <p className="font-medium">{ctx.moonLabel}{ctx.sign ? ` in ${ctx.sign}` : ""} · {ctx.rhythmLabel}</p>
+        <p className="mt-1">{ctx.sign ? phaseSignAdvice(ctx.rhythm, ctx.sign) : PHASE_GUIDE[ctx.rhythm].focus}</p>
+        <p className="mt-1">{LUNAR_RHYTHM[ctx.rhythm].invitation}</p>
+      </div>
+      <p className="mt-3 text-center font-display text-base italic text-primary sm:text-lg">
         {ctx.affirmation}
       </p>
     </section>
@@ -118,7 +127,7 @@ function Clock({ now }: { now: Date }) {
   const [hm, ampm] = [format(now, "h:mm"), format(now, "a")];
   const [h, m] = hm.split(":");
   return (
-    <span className="inline-flex items-baseline gap-0.5 rounded-full bg-primary/10 px-2.5 py-0.5 font-semibold tabular-nums text-primary" aria-label={`Current time ${hm} ${ampm}`}>
+    <span className="inline-flex shrink-0 items-baseline gap-0.5 whitespace-nowrap rounded-full bg-primary/10 px-4 py-1 font-semibold tabular-nums text-primary" aria-label={`Current time ${hm} ${ampm}`}>
       <span className="text-lg sm:text-2xl">{h}</span>
       <span className="animate-pulse text-lg sm:text-2xl" aria-hidden>:</span>
       <span className="text-lg sm:text-2xl">{m}</span>
@@ -133,7 +142,6 @@ function DateBlock({ selected, now, isToday, ctx }: { selected: Date; now: Date;
       <h2 className="font-display text-xl leading-tight text-foreground sm:text-4xl">{format(selected, "EEEE, MMMM d")}</h2>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
         {!isToday && <span>Viewing {format(selected, "MMM d")} · now</span>}
-        <Clock now={now} />
         <span>{ctx.moonLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}</span>
       </div>
     </>
