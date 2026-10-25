@@ -1,3 +1,4 @@
+import { ProjectGardenPage } from "@/components/projects/detail/garden/ProjectGardenPage";
 import { ConnectionsPanel } from "@/components/connections/ConnectionsPanel";
 /**
  * Project Hub — calm, visual single-project workspace.
@@ -74,90 +75,7 @@ export default function ProjectDetail() {
     );
   }
 
-  const atmo = ATMOSPHERES[atmoOf(project.atmosphere)];
-
-  return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: `radial-gradient(1200px 600px at 50% -10%, ${hsl(atmo.tint, 0.45)}, transparent 70%), hsl(var(--background))`,
-      }}
-    >
-      <div className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
-        <HubHeader project={project} onUpdate={(p) => updateProject(project.id, p)} />
-        <ProjectHero project={project} atmo={atmo} onUpdate={(p) => updateProject(project.id, p)} />
-        <LinkedGoalLabels ids={project.linkedGoalIds} />
-
-        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-          <div className="overflow-x-auto">
-            <TabsList
-              className="h-11 gap-1 rounded-full border border-border/40 bg-card/80 p-1 shadow-sm backdrop-blur"
-            >
-              {[
-                ["canvas",    "Project",   Leaf],
-                ["board",     "Board",     LayoutGrid],
-                ["overview",  "Overview",  Sparkles],
-                ["tasks",     "Tasks",     ListChecks],
-                ["milestones","Milestones",Flag],
-                ["notes",     "Notes",     FileText],
-                ["resources", "Resources", Link2],
-                ["files",     "Files",     ImagePlus],
-                ["activity",  "Activity",  ActivityIcon],
-              ].map(([v, label, I]: any) => (
-                <TabsTrigger
-                  key={v}
-                  value={v}
-                  className="h-9 gap-1.5 rounded-full px-4 text-xs font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow"
-                >
-                  <I className="h-3.5 w-3.5" /> {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-
-          <TabsContent value="canvas" className="mt-0">
-            <ProjectCanvas project={project} />
-          </TabsContent>
-
-          <TabsContent value="board" className="mt-0">
-            <ProjectWorkspace project={project} card={(c) => <SoftCard>{c}</SoftCard>} />
-          </TabsContent>
-
-          <TabsContent value="overview" className="mt-0 space-y-6">
-            <OverviewDashboard project={project} atmo={atmo} onUpdate={(p) => updateProject(project.id, p)} />
-          </TabsContent>
-
-          <TabsContent value="tasks" className="mt-0">
-            <SoftCard>
-              <ClassicProjectView embedded projectId={project.id} />
-            </SoftCard>
-          </TabsContent>
-
-          <TabsContent value="milestones" className="mt-0">
-            <SoftCard><MilestonesCard project={project} /></SoftCard>
-          </TabsContent>
-
-          <TabsContent value="notes" className="mt-0 space-y-4">
-            <SoftCard><LinkedNotesPanel entityType="project" entityId={project.id} contextTitle={project.name} /></SoftCard>
-            <BacklinksSection entityType="project" entityId={project.id} />
-            <SoftCard><ProjectJournalPanel projectId={project.id} projectName={project.name} /></SoftCard>
-          </TabsContent>
-
-          <TabsContent value="resources" className="mt-0">
-            <SoftCard><ResourcesCard project={project} /></SoftCard>
-          </TabsContent>
-
-          <TabsContent value="files" className="mt-0">
-            <FilesGallery project={project} />
-          </TabsContent>
-
-          <TabsContent value="activity" className="mt-0">
-            <ActivityFeed project={project} />
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
+  return <ProjectGardenPage project={project} />;
 }
 
 /* ----------------------------- Soft Card ----------------------------- */

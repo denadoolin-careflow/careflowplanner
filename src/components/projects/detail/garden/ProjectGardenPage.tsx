@@ -74,6 +74,7 @@ export function ProjectGardenPage({ project }: { project: Project }) {
   const [letGoAsk, setLetGoAsk] = useState<LetGoAsk>(null);
   const [addOpen, setAddOpen] = useState<GardenPhase | null>(null);
 
+  const openAdd = (p: GardenPhase) => (p === "Let go" ? setLetGoAsk({}) : setAddOpen(p));
   const move = (t: Task, to: GardenPhase) => {
     if (to === "Let go") { setLetGoAsk({ taskId: t.id }); return; }
     void updateTask(t.id, { garden: moveGarden(t.garden, to) });
@@ -120,8 +121,8 @@ export function ProjectGardenPage({ project }: { project: Project }) {
 
         {showDone && <CompletedList tasks={completed} onRestore={(t) => void toggleTask(t.id)} />}
 
-        {view === "garden" && <Board groups={groups} actions={actions} onAdd={setAddOpen} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} />}
-        {view === "list" && <ListView groups={groups} actions={actions} onAdd={setAddOpen} />}
+        {view === "garden" && <Board groups={groups} actions={actions} onAdd={openAdd} onDropTask={(id, to) => { const t = all.find(x => x.id === id); if (t) move(t, to); }} />}
+        {view === "list" && <ListView groups={groups} actions={actions} onAdd={openAdd} />}
         {view === "journal" && (
           <div className="grid gap-4 md:grid-cols-2">
             <div className={cn(card, "p-4")}><ProjectJournalPanel projectId={project.id} projectName={project.name} /></div>
@@ -144,9 +145,7 @@ export function ProjectGardenPage({ project }: { project: Project }) {
           } else if (newTitle) await createIn("Let go", newTitle, pick);
           setLetGoAsk(null);
         }}
-        onNewFromColumn={() => setLetGoAsk({})}
       />
-      {addOpen === "Let go" && (setAddOpen(null), setLetGoAsk({}), null)}
     </div>
   );
 }
@@ -508,7 +507,7 @@ function AddTaskDialog({ phase, onClose, onCreate }: { phase: GardenPhase | null
   );
 }
 
-function LetGoDialog({ open, title, onClose, onConfirm }: { open: boolean; title?: string; onClose: () => void; onConfirm: (p: LetGoPick, newTitle?: string) => Promise<void>; onNewFromColumn: () => void }) {
+function LetGoDialog({ open, title, onClose, onConfirm }: { open: boolean; title?: string; onClose: () => void; onConfirm: (p: LetGoPick, newTitle?: string) => Promise<void>}) {
   const [kind, setKind] = useState<LetGoKind>("released");
   const [reason, setReason] = useState("");
   const [review, setReview] = useState("");
