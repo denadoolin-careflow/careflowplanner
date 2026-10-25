@@ -1,3 +1,4 @@
+import { MonthSeasonHeader } from "@/components/planner/MonthSeasonHeader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams, Link } from "react-router-dom";
@@ -690,6 +691,7 @@ export default function NoteDetail() {
       )}
 
       <div className="mx-auto mt-6 w-full max-w-[760px] px-2">
+        {note.kind === "monthly" && note.date && <MonthSeasonHeader month={new Date(`${note.date.slice(0, 7)}-01T12:00:00`)} className="mb-5" />}
         <div className="flex items-center gap-3">
           <IconEl className="h-7 w-7 shrink-0 text-primary sm:h-8 sm:w-8" />
           <div className="min-w-0 flex-1">
