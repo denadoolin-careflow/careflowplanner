@@ -4176,3 +4176,39 @@ body.planner-dragging [data-radix-dialog-overlay] {
   .cosmic-sky-band::after { animation: cosmic-drift 18s ease-in-out infinite alternate; }
 }
 @keyframes cosmic-drift { from { transform: translate(0,0); } to { transform: translate(18%, 8%); } }
+
+/* Project garden page — page-scoped presentation tokens (project detail only). */
+.project-garden {
+  --background: 40 45% 97%;
+  --foreground: 150 30% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 150 30% 16%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 150 30% 16%;
+  --primary: 152 38% 24%;
+  --primary-foreground: 40 45% 97%;
+  --muted: 40 25% 93%;
+  --muted-foreground: 150 10% 38%;
+  --border: 40 18% 86%;
+  --input: 40 18% 84%;
+  --ring: 152 38% 30%;
+  --pg-sage: 110 22% 92%;
+  --pg-plan: 105 25% 42%; --pg-plan-deep: 105 32% 26%; --pg-plan-tint: 100 25% 94%;
+  --pg-grow: 43 78% 58%;  --pg-grow-deep: 38 70% 28%;  --pg-grow-tint: 45 85% 94%;
+  --pg-care: 16 58% 60%;  --pg-care-deep: 15 55% 34%;  --pg-care-tint: 18 70% 94%;
+  --pg-letgo: 356 62% 70%; --pg-letgo-deep: 352 52% 38%; --pg-letgo-tint: 355 75% 96%;
+  font-family: 'Karla', 'Nunito Sans', ui-sans-serif, system-ui, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+.dark .project-garden {
+  --background: 150 14% 9%; --foreground: 40 30% 92%; --card: 150 12% 12%; --card-foreground: 40 30% 92%;
+  --popover: 150 12% 12%; --popover-foreground: 40 30% 92%; --primary: 140 30% 62%; --primary-foreground: 150 20% 10%;
+  --muted: 150 10% 18%; --muted-foreground: 40 10% 68%; --border: 150 10% 22%; --input: 150 10% 24%;
+  --pg-sage: 120 14% 16%;
+  --pg-plan-deep: 100 35% 70%; --pg-plan-tint: 105 18% 15%;
+  --pg-grow-deep: 45 75% 70%; --pg-grow-tint: 43 30% 14%;
+  --pg-care-deep: 18 70% 72%; --pg-care-tint: 16 28% 15%;
+  --pg-letgo-deep: 355 70% 76%; --pg-letgo-tint: 355 25% 15%;
+}
+.project-garden .pg-display { font-family: 'Cormorant Garamond', ui-serif, Georgia, serif; font-weight: 600; letter-spacing: -0.01em; }
