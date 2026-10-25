@@ -1,3 +1,4 @@
+import { MonthSeasonHeader } from "./MonthSeasonHeader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addMonths, differenceInCalendarDays, endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from "date-fns";
 import { AlertTriangle, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen } from "lucide-react";
@@ -58,6 +59,7 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture, onChangeMon
     </div>;
 
   if (isMobile) return <div className="planner-month-experience pb-24">
+    <MonthSeasonHeader month={date} className="mb-3" />
     {calendar}
     <div className="mt-3 space-y-2">
       {attention}
@@ -70,6 +72,7 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture, onChangeMon
   </div>;
 
   return <div className="planner-month-experience">
+    <MonthSeasonHeader month={date} className="mb-4" />
     <div className="planner-month-intro max-sm:hidden">
       <div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Capture · Anchor · Rhythm · Exhale</p><h2 className="font-display text-xl font-semibold sm:text-3xl">{format(date, "MMMM yyyy")}</h2><p className="mt-1 text-xs text-muted-foreground max-sm:hidden">A gentle view of what your family is carrying this month.</p></div>
       <div className="flex items-center gap-2"><CaptureMenu onCapture={() => onCapture()} writeDate={selectedDate} /><Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setPanel(!panelOpen)} aria-label={panelOpen ? "Hide day schedule" : "Show day schedule"}>{panelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}</Button></div>
