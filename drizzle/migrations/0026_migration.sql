@@ -1,0 +1,1 @@
+ALTER TABLE public.library_items ADD COLUMN IF NOT EXISTS details jsonb NOT NULL DEFAULT '{}'::jsonb;
