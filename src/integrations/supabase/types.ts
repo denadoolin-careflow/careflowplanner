@@ -4294,6 +4294,7 @@ export type Database = {
           cover_url: string | null
           created_at: string
           creator: string | null
+          details: Json
           finished_on: string | null
           format: string | null
           id: string
@@ -4312,6 +4313,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           creator?: string | null
+          details?: Json
           finished_on?: string | null
           format?: string | null
           id?: string
@@ -4330,6 +4332,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           creator?: string | null
+          details?: Json
           finished_on?: string | null
           format?: string | null
           id?: string
