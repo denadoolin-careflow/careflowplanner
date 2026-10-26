@@ -26,34 +26,45 @@ Deno.serve(async (req) => {
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",
       headers: { "Lovable-API-Key": key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
-      body: JSON.stringify({ model: "openai/gpt-image-2.5-sunburst", prompt, size: "1024x1536", stream: true, partial_images: 1 }),
+      body: JSON.stringify({ model: "openai/gpt-image-2.5-sunburst", prompt, size: "1024x1536", quality: "medium", stream: true, partial_images: 0 }),
     });
     if (!upstream.ok || !upstream.body) {
       const message = upstream.status === 402 ? "AI credits have run out. Add credits to generate covers."
         : upstream.status === 429 ? "Too many requests right now — please try again in a minute." : `Cover generation failed (${upstream.status})`;
       return reply(upstream.status || 502, { message });
     }
-    let b64 = ""; let buf = ""; let errMsg = "";
+    let b64 = ""; let errMsg = "";
+    const chunks: string[] = [];
     const reader = upstream.body.getReader(); const dec = new TextDecoder();
+    const handle = (line: string) => {
+      if (!line.startsWith("data:")) return;
+      if (line.includes("partial_image")) return;
+      const d = line.slice(5).trim();
+      if (!d || d === "[DONE]") return;
+      try {
+        const ev = JSON.parse(d);
+        if (ev.error) errMsg = ev.error.message ?? "Cover generation failed";
+        const img = ev.b64_json ?? ev.data?.[0]?.b64_json;
+        if (img) b64 = img;
+      } catch { /* noop */ }
+    };
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split("\n"); buf = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const d = line.slice(5).trim();
-        if (!d || d === "[DONE]") continue;
-        try {
-          const ev = JSON.parse(d);
-          if (ev.error) errMsg = ev.error.message ?? "Cover generation failed";
-          const img = ev.b64_json ?? ev.data?.[0]?.b64_json;
-          if (img && (!b64 || !String(ev.type ?? "").includes("partial"))) b64 = img;
-        } catch { /* noop */ }
+      const text = dec.decode(value, { stream: true });
+      let start = 0; let nl = text.indexOf("\n");
+      while (nl !== -1) {
+        chunks.push(text.slice(start, nl));
+        handle(chunks.join("")); chunks.length = 0;
+        start = nl + 1; nl = text.indexOf("\n", start);
       }
+      if (start < text.length) chunks.push(text.slice(start));
     }
+    if (chunks.length) handle(chunks.join(""));
     if (!b64) return reply(502, { message: errMsg || "No cover was returned" });
-    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const bin = atob(b64); b64 = "";
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const path = `${user.id}/${crypto.randomUUID()}.png`;
     const up = await client.storage.from("library-covers").upload(path, bytes, { contentType: "image/png" });
     if (up.error) return reply(500, { message: "Couldn't save the cover" });
