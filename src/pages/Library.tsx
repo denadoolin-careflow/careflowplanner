@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Sparkles, Wand2, NotebookPen, Loader2 } from "lucide-react";
+import { fetchArticle, generateCover, clipToDailyNote, type ArticleDetails } from "@/lib/library-ai";
 
 type Kind = "book" | "film" | "article";
 type Shelf = "all" | Kind | "recipe";
@@ -16,7 +18,7 @@ type Shelf = "all" | Kind | "recipe";
 interface Item {
   id: string; kind: Kind; title: string; creator: string | null; url: string | null;
   cover_url: string | null; status: string; rating: number | null; format: string | null;
-  platform: string | null; notes: string | null; tags: string[]; created_at: string;
+  platform: string | null; notes: string | null; tags: string[]; created_at: string; details?: ArticleDetails | null;
 }
 
 export const STATUSES: Record<Kind, { value: string; label: string }[]> = {
@@ -80,6 +82,7 @@ export default function LibraryPage() {
       kind: edit.kind ?? "book", title: edit.title.trim(), creator: edit.creator || null, url: edit.url || null,
       cover_url: edit.cover_url || null, status: edit.status ?? "want", rating: edit.rating || null,
       format: edit.format || null, platform: edit.platform || null, notes: edit.notes || null,
+      details: edit.details ?? {}, tags: edit.tags ?? [],
     };
     const res = edit.id
       ? await supabase.from("library_items").update(payload).eq("id", edit.id)
@@ -207,10 +210,11 @@ function ItemDialog({ edit, setEdit, onSave, onDelete }: { edit: Partial<Item> |
           )}
           <Input placeholder="Title" value={edit.title ?? ""} onChange={(e) => set({ title: e.target.value })} />
           <Input placeholder={kind === "book" ? "Author" : kind === "film" ? "Director / creator" : "Publication"} value={edit.creator ?? ""} onChange={(e) => set({ creator: e.target.value })} />
-          {kind === "article" && <Input placeholder="Link (https://…)" value={edit.url ?? ""} onChange={(e) => set({ url: e.target.value })} />}
+          {kind === "article" && <ArticleLinkRow edit={edit} set={set} />}
           {kind === "book" && <Input placeholder="Format (Print, Audio, E-book)" value={edit.format ?? ""} onChange={(e) => set({ format: e.target.value })} />}
           {kind === "film" && <Input placeholder="Where to watch" value={edit.platform ?? ""} onChange={(e) => set({ platform: e.target.value })} />}
           <Input placeholder="Cover image link (optional)" value={edit.cover_url ?? ""} onChange={(e) => set({ cover_url: e.target.value })} />
+          {kind === "article" && <ArticleExtras edit={edit} set={set} />}
           <select value={edit.status ?? "want"} onChange={(e) => set({ status: e.target.value })} className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm" aria-label="Status">
             {STATUSES[kind].map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
@@ -288,5 +292,81 @@ function PlanDialog({ meal, onClose }: { meal: LibraryMeal | null; onClose: () =
         <DialogFooter><Button onClick={add}>Add to plan</Button></DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ArticleLinkRow({ edit, set }: { edit: Partial<Item>; set: (p: Partial<Item>) => void }) {
+  const [busy, setBusy] = useState(false);
+  const run = async (url = edit.url ?? "") => {
+    if (!/^https?:\/\//i.test(url.trim())) return toast.error("Paste a full link starting with https://");
+    setBusy(true);
+    try {
+      const a = await fetchArticle(url.trim());
+      set({
+        url: a.url, title: edit.title?.trim() ? edit.title : a.title ?? edit.title,
+        creator: edit.creator || [a.author, a.site].filter(Boolean).join(" · ") || null,
+        cover_url: edit.cover_url || a.image || null,
+        tags: Array.from(new Set([...(edit.tags ?? []), ...a.tags])),
+        details: { ...(edit.details ?? {}), summary: a.summary, takeaways: a.takeaways, publication: a.site, reading_minutes: a.reading_minutes },
+      });
+      if (a.warning) toast.message(a.warning); else toast.success("Details filled in — review and save");
+    } catch (e: any) { toast.error(e?.message ?? "Couldn't read this article"); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="flex gap-2">
+      <Input placeholder="Link (https://…)" value={edit.url ?? ""} className="min-w-0 flex-1"
+        onChange={(e) => set({ url: e.target.value })}
+        onPaste={(e) => { const t = e.clipboardData.getData("text"); if (/^https?:\/\//i.test(t.trim()) && !edit.title) setTimeout(() => run(t), 0); }} />
+      <Button type="button" variant="outline" className="min-h-10 shrink-0" disabled={busy} onClick={() => run()}>
+        {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}Fetch details
+      </Button>
+    </div>
+  );
+}
+
+function ArticleExtras({ edit, set }: { edit: Partial<Item>; set: (p: Partial<Item>) => void }) {
+  const [cover, setCover] = useState(false);
+  const [clipping, setClipping] = useState(false);
+  const d = edit.details ?? {};
+  const setD = (p: ArticleDetails) => set({ details: { ...d, ...p } });
+  const makeCover = async () => {
+    if (!edit.title?.trim()) return toast.error("Add a title first");
+    setCover(true);
+    try { const r = await generateCover(edit.title, d.summary); set({ cover_url: r.cover_url, details: { ...d, ai_cover: true } }); toast.success("Cover created"); }
+    catch (e: any) { toast.error(e?.message ?? "Couldn't create a cover"); }
+    finally { setCover(false); }
+  };
+  const clip = async () => {
+    if (!edit.id) return toast.error("Save the article first");
+    if (!edit.url) return toast.error("Add the article link first");
+    setClipping(true);
+    try { await clipToDailyNote({ id: edit.id, title: edit.title ?? "Article", url: edit.url, creator: edit.creator, details: d }); toast.success("Clipped to today's Daily Note"); }
+    catch { toast.error("Couldn't clip to your Daily Note"); }
+    finally { setClipping(false); }
+  };
+  return (
+    <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-3">
+      <div className="flex gap-3">
+        {edit.cover_url ? <img src={edit.cover_url} alt="" className="h-24 w-16 shrink-0 rounded-md object-cover" />
+          : <div className="flex h-24 w-16 shrink-0 items-center justify-center rounded-md bg-secondary/15"><Newspaper className="h-6 w-6 text-secondary" /></div>}
+        <div className="min-w-0 flex-1 space-y-2">
+          {d.reading_minutes ? <p className="text-xs text-muted-foreground">{d.publication ? `${d.publication} · ` : ""}{d.reading_minutes} min read</p> : null}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" className="min-h-10" disabled={cover} onClick={makeCover}>
+              {cover ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Wand2 className="mr-1 h-4 w-4" />}{edit.cover_url ? "New AI cover" : "Generate cover"}
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="min-h-10" disabled={clipping || !edit.id} onClick={clip}>
+              {clipping ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <NotebookPen className="mr-1 h-4 w-4" />}Clip to Daily Note
+            </Button>
+          </div>
+          {!edit.id && <p className="text-xs text-muted-foreground">Save first to clip it into today's note.</p>}
+        </div>
+      </div>
+      <Textarea rows={3} placeholder="Summary" value={d.summary ?? ""} onChange={(e) => setD({ summary: e.target.value })} />
+      <Textarea rows={3} placeholder="Key takeaways, one per line" value={(d.takeaways ?? []).join("\n")}
+        onChange={(e) => setD({ takeaways: e.target.value.split("\n") })}
+        onBlur={(e) => setD({ takeaways: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean) })} />
+    </div>
   );
 }
