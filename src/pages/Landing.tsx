@@ -447,7 +447,7 @@ function Footer() {
   );
 }
 
-function Themed({ children }: { children: React.ReactNode }) {
+function Themed({ children }: { children: import("react").ReactNode }) {
   const { doc } = useLandingContent();
   return <div className="min-h-screen bg-background text-foreground" style={landingColorStyle(doc.colors)}>{children}</div>;
 }
