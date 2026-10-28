@@ -175,6 +175,7 @@ const App = () => (
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/gmail/callback" element={<GmailCallback />} />
               <Route path="/" element={<IndexRedirect />} />
+              <Route path="/landing" element={<Landing />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/inbox" element={<Inbox />} />
@@ -254,7 +255,6 @@ const App = () => (
                 <Route path="/automations" element={<Automations />} />
                 <Route path="/admin/updates" element={<AdminUpdates />} />
                 <Route path="/admin/landing" element={<AdminLanding />} />
-                <Route path="/landing" element={<Landing />} />
                 <Route path="/admin/roadmap" element={<AdminRoadmap />} />
                 <Route path="/trips" element={<Trips />} />
                 <Route path="/trips/:id" element={<TripDetail />} />
