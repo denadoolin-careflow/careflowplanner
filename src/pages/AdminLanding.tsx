@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { LandingColorEditor } from "@/components/landing/LandingColorEditor";
 import { DEFAULT_DOC, LandingContentProvider, SECTIONS, TEXT_FIELDS, useLandingContent, type LandingDoc } from "@/lib/landing-content";
 
 function Dashboard() {
@@ -44,6 +45,11 @@ function Dashboard() {
             </Label>
           ))}
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-5">
+        <h2 className="mb-3 font-display text-xl">Theme & colors</h2>
+        <LandingColorEditor value={draft.colors} onChange={(colors) => setDraft({ ...draft, colors })} />
       </section>
 
       {SECTIONS.map((s) => (

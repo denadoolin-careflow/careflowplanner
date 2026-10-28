@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DEFAULT_COLORS, type LandingColors } from "@/lib/landing-colors";
 
 export type Testimonial = { quote: string; name: string; avatar: string };
 export type SectionId = "hero" | "features" | "quiz" | "archetypes" | "community" | "finalCta";
@@ -18,6 +19,7 @@ export type LandingDoc = {
   text: Record<string, string>;
   sections: Record<SectionId, boolean>;
   testimonials: Testimonial[];
+  colors: LandingColors;
 };
 
 /** Editable copy with labels (shown in the dashboard) and defaults (current live copy). */
@@ -74,6 +76,7 @@ export const DEFAULT_DOC: LandingDoc = {
   text: Object.fromEntries(TEXT_FIELDS.map((f) => [f.key, f.value])),
   sections: Object.fromEntries(SECTIONS.map((s) => [s.id, true])) as Record<SectionId, boolean>,
   testimonials: DEFAULT_TESTIMONIALS,
+  colors: DEFAULT_COLORS,
 };
 
 /** Merges saved content over defaults so new fields always have copy. */
@@ -82,6 +85,7 @@ export function mergeDoc(saved: Partial<LandingDoc> | null | undefined): Landing
     text: { ...DEFAULT_DOC.text, ...(saved?.text ?? {}) },
     sections: { ...DEFAULT_DOC.sections, ...(saved?.sections ?? {}) },
     testimonials: Array.isArray(saved?.testimonials) ? saved!.testimonials! : DEFAULT_DOC.testimonials,
+    colors: { preset: saved?.colors?.preset ?? DEFAULT_COLORS.preset, custom: { ...(saved?.colors?.custom ?? {}) } },
   };
 }
 
