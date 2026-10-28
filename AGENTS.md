@@ -1,6 +1,7 @@
 # Project architecture decisions
 
 - Shared brand marks and welcome artwork use CDN asset pointers; browser and install icons are locally resized derivatives of the same mark so all entry points stay consistent.
+- The brand baseline stays active until an atmosphere is saved explicitly; saved and automatic atmosphere selections retain their existing styling.
 
 - Planner density is local; habit/routine done-state syncs.
 - Past-day routine step completions read/write routine_completions; today's live done flags stay on routines.items. Habit weeklyTarget and skip dates live in habits.meta; routine skips in routines.meta — no schema change.
