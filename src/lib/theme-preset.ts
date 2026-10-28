@@ -6,7 +6,7 @@ export type ThemePreset =
   | "plum" | "midnight" | "ember" | "moss" | "sand" | "blossom" | "noir";
 
 export const THEME_PRESETS: { id: ThemePreset; label: string; swatch: string }[] = [
-  { id: "default",  label: "CareFlow", swatch: "hsl(347 67% 33%)" },
+  { id: "default",  label: "CareFlow", swatch: "hsl(var(--brand-forest-hsl))" },
   { id: "plum",     label: "Plum",     swatch: "hsl(285 45% 45%)" },
   { id: "sage",     label: "Sage",     swatch: "hsl(160 40% 45%)" },
   { id: "moss",     label: "Moss",     swatch: "hsl(95 35% 38%)"  },

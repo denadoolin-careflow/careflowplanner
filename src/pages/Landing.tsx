@@ -26,7 +26,7 @@ function LogoLockup({ size = 40, compact = false }: { size?: number; compact?: b
           </span>
         )}
         <span className="block text-[9.5px] font-semibold uppercase tracking-[0.22em] text-primary/80">
-          Plan · Care · Grow
+          Plan ✦ Grow ✦ Care ✦ Let go
         </span>
       </span>
     </span>
@@ -88,7 +88,7 @@ function Hero() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 pb-20 pt-14 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-14 lg:pb-28 lg:pt-20">
         <div className="animate-fade-in">
           <span className="inline-flex items-center rounded-full bg-accent/40 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.25em] text-primary">
-            Plan · Care · Grow
+            Plan ✦ Grow ✦ Care ✦ Let go
           </span>
           <h1 className="mt-6 font-display text-[44px] font-normal leading-[1.05] text-foreground sm:text-6xl lg:text-[68px]">
             The all-in-one planner for the{" "}

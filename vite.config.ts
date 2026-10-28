@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       injectRegister: false,
       devOptions: { enabled: false },
-      includeAssets: ["icons/apple-touch-icon.png", "favicon.ico", "robots.txt"],
+      includeAssets: ["icons/apple-touch-icon.png", "favicon.png", "robots.txt"],
       manifest: {
         name: "CareFlow Planner",
         short_name: "CareFlow",
@@ -28,8 +28,8 @@ export default defineConfig(({ mode }) => ({
         start_url: "/today",
         scope: "/",
         display: "standalone",
-        background_color: "#f4ecdb",
-        theme_color: "#7d9a7a",
+        background_color: "#FFF8EE",
+        theme_color: "#3E5F4A",
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

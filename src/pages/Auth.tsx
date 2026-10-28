@@ -10,8 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { RefreshCw, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
-import { SeasonalDropIcon } from "@/components/ui/SeasonalDropIcon";
+import welcomeArtwork from "@/assets/brand/careflow-welcome.png.asset.json";
 
 // Detect known in-app browsers that block Google OAuth (Instagram/Facebook/
 // TikTok/LinkedIn webviews). These don't let users complete sign-in and just
@@ -173,24 +172,10 @@ export default function Auth() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#faf9f6] text-foreground dark:bg-background">
-      {/* Soft spectrum orbs — violet → blue → green → yellow → orange → red */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-[10%] -top-[10%] h-[50%] w-[50%] rounded-full bg-violet-200/40 blur-[100px] dark:bg-violet-500/10" />
-        <div className="absolute right-[10%] top-[10%] h-[40%] w-[40%] rounded-full bg-blue-200/40 blur-[100px] dark:bg-blue-500/10" />
-        <div className="absolute left-[20%] top-[40%] h-[35%] w-[35%] rounded-full bg-emerald-200/30 blur-[100px] dark:bg-emerald-500/10" />
-        <div className="absolute right-[-5%] top-[30%] h-[30%] w-[30%] rounded-full bg-yellow-200/40 blur-[100px] dark:bg-yellow-500/10" />
-        <div className="absolute -bottom-[10%] right-[20%] h-[45%] w-[45%] rounded-full bg-orange-200/40 blur-[100px] dark:bg-orange-500/10" />
-        <div className="absolute -left-[5%] bottom-[10%] h-[40%] w-[40%] rounded-full bg-rose-200/30 blur-[100px] dark:bg-rose-500/10" />
-      </div>
+    <div className="relative min-h-screen w-full overflow-hidden bg-background text-foreground">
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
-        <Link to="/" className="mb-6 flex flex-col items-center gap-1.5 text-center">
-          <span className="font-brand text-4xl font-extrabold tracking-tight bg-gradient-to-r from-[hsl(var(--season-forest))] via-[hsl(var(--season-summer))] to-[hsl(var(--season-autumn,var(--season-summer)))] bg-clip-text text-transparent sm:text-5xl">
-            CareFlow
-          </span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
-            Plan · Care · Grow
-          </span>
+        <Link to="/" aria-label="CareFlow — Plan, Grow, Care, Let go" className="mb-6 block w-full overflow-hidden rounded-md">
+          <img src={welcomeArtwork.url} alt="Careflow — Plan ✦ Grow ✦ Care ✦ Let go" width={1774} height={887} className="block aspect-[2/1] w-full object-contain" />
         </Link>
 
         <div className="w-full rounded-3xl border border-border/50 bg-card/85 p-6 shadow-cozy backdrop-blur-md sm:p-8">

@@ -25,7 +25,7 @@ export default function Waitlist() {
           <CareFlowMark size={36} />
           <span className="leading-tight">
             <span className="font-display text-lg font-semibold text-foreground">CareFlow</span>
-            <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan · Care · Grow</span>
+            <span className="block text-[10px] uppercase tracking-normal text-muted-foreground">Plan ✦ Grow ✦ Care ✦ Let go</span>
           </span>
         </Link>
         <Link to="/auth" className="rounded-full border border-border/60 bg-card/70 px-4 py-2 text-sm text-foreground/90 hover:bg-card">

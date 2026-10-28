@@ -92,3 +92,5 @@
 - [x] Connections panel + suggestions across goals, projects, tasks, habits, notes, library
 - [ ] Replace project view with the chosen mockup, then remove the preview page (waiting on user's pick)
 - [x] Add independent evening tarot selection and verify Today’s centered clock, phase tint and moon/sign guidance; saved choice survives reload, temporary pull removed, nine tests pass
+- [ ] Apply gradient medallion, welcome banner, browser/app icons and four-phase tagline
+- [ ] Refresh default brand fonts/colors and verify light/dark appearance without changing optional themes or data

@@ -62,7 +62,7 @@ export function AppLayout() {
               <MobileSidebarTrigger />
               <div className="min-w-0">
                 <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground lg:block">
-                  CareFlow · Plan · Care · Grow
+                  CareFlow · Plan ✦ Grow ✦ Care ✦ Let go
                 </p>
                 <h1 className="font-display text-base font-semibold leading-tight sm:text-2xl">{current.label}</h1>
               </div>
