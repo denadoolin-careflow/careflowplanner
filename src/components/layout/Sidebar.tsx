@@ -987,8 +987,8 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         {!collapsed && (
           <div className="min-w-0 flex-1">
             <div className="font-display text-[15px] font-semibold leading-none truncate">CareFlow</div>
-            <div className="mt-1 text-[9.5px] font-medium uppercase tracking-[0.16em] text-muted-foreground truncate">
-              Plan · Care · Grow
+            <div className="mt-1 text-[9px] font-medium uppercase tracking-normal text-muted-foreground whitespace-normal">
+              Plan ✦ Grow ✦ Care ✦ Let go
             </div>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import medallion from "@/assets/brand/careflow-medallion.png.asset.json";
 
 type Rounded = "md" | "lg" | "xl";
 
@@ -9,8 +10,8 @@ const roundedMap: Record<Rounded, string> = {
 };
 
 /**
- * CareFlow brand mark — renders the official burgundy heart and olive
- * checkmark SVG, consistently across atmospheres and dark mode.
+ * CareFlow brand mark — the supplied four-phase medallion, shared
+ * consistently across atmospheres and dark mode.
  */
 export function CareFlowMark({
   size = 36,
@@ -29,19 +30,19 @@ export function CareFlowMark({
       aria-label={decorative ? undefined : "CareFlow"}
       aria-hidden={decorative || undefined}
       className={cn(
-        "relative inline-grid shrink-0 place-items-center overflow-hidden shadow-sm ring-1 ring-border/60",
+        "relative inline-grid shrink-0 place-items-center overflow-hidden bg-card",
         roundedMap[rounded],
         className,
       )}
-      style={{ width: size, height: size, background: "hsl(var(--card))" }}
+      style={{ width: size, height: size }}
     >
       <img
-        src="/brand/careflow-mark.svg"
+        src={medallion.url}
         alt=""
         width={size}
         height={size}
         draggable={false}
-        className="block h-full w-full select-none object-cover"
+        className="block h-full w-full select-none object-contain"
       />
     </span>
   );

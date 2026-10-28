@@ -4,8 +4,8 @@ import { CareFlowMark } from "./CareFlowMark";
 type Rounded = "md" | "lg" | "xl";
 
 /**
- * CareFlow brand logo. Renders the themable SVG mark; optionally
- * pairs it with the wordmark and "Plan · Care · Grow" tagline.
+ * CareFlow brand logo. Renders the supplied medallion; optionally
+ * pairs it with the four-phase wordmark lockup.
  */
 export function CareFlowLogo({
   size = 28,
@@ -37,8 +37,8 @@ export function CareFlowLogo({
           </span>
         )}
         {showTagline && (
-          <span className="block text-[9.5px] font-semibold uppercase tracking-[0.22em] text-accent">
-            Plan · Care · Grow
+          <span className="block text-[9.5px] font-semibold uppercase tracking-normal text-muted-foreground">
+            Plan ✦ Grow ✦ Care ✦ Let go
           </span>
         )}
       </span>
