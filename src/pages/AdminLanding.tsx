@@ -29,7 +29,7 @@ function Dashboard() {
           <p className="text-sm text-muted-foreground">Changes go live as soon as you save.</p>
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline"><Link to="/?edit=1" target="_blank"><ExternalLink className="mr-1 h-4 w-4" /> Edit on page</Link></Button>
+          <Button asChild variant="outline"><Link to="/landing?edit=1" target="_blank"><ExternalLink className="mr-1 h-4 w-4" /> Edit on page</Link></Button>
           <Button onClick={onSave} disabled={!dirty || saving}><Save className="mr-1 h-4 w-4" /> {saving ? "Saving…" : "Save"}</Button>
         </div>
       </header>
