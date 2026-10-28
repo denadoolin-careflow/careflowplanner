@@ -7,6 +7,8 @@ import heroPhone from "@/assets/landing-hero-phone.jpg";
 import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { LandingContentProvider, useLandingContent } from "@/lib/landing-content";
+import { E, EditableSection, EditableTestimonialField, TestimonialControls, AddTestimonialButton, LandingEditBar } from "@/components/landing/LandingEditable";
 
 /* ---------------- Brand lockup ---------------- */
 
@@ -88,25 +90,25 @@ function Hero() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 pb-20 pt-14 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-14 lg:pb-28 lg:pt-20">
         <div className="animate-fade-in">
           <span className="inline-flex items-center rounded-full bg-accent/40 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.25em] text-primary">
-            Plan ✦ Grow ✦ Care ✦ Let go
+            <E k="hero.eyebrow" />
           </span>
           <h1 className="mt-6 font-display text-[44px] font-normal leading-[1.05] text-foreground sm:text-6xl lg:text-[68px]">
-            The all-in-one planner for the{" "}
-            <span className="italic font-display text-gradient-seasonal">beautiful chaos</span>{" "}
-            of family life.
+            <E k="hero.titleStart" />{" "}
+            <E k="hero.titleHighlight" className="italic font-display text-gradient-seasonal" />{" "}
+            <E k="hero.titleEnd" />
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            CareFlow Planner helps you simplify your days, care for what matters most, and make space for yourself — mentally, physically, and emotionally.
+            <E k="hero.body" />
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild size="lg" className="rounded-full bg-foreground px-6 text-background hover:bg-foreground/90">
-              <a href="#"><Apple className="mr-2 h-5 w-5 fill-current" /> Download for iOS</a>
+              <a href="#"><Apple className="mr-2 h-5 w-5 fill-current" /> <E k="hero.ios" /></a>
             </Button>
             <Button asChild size="lg" variant="outline" className="rounded-full border-border/70 bg-card px-6 text-foreground hover:bg-secondary">
-              <a href="#"><Play className="mr-2 h-5 w-5 fill-current" /> Download for Android</a>
+              <a href="#"><Play className="mr-2 h-5 w-5 fill-current" /> <E k="hero.android" /></a>
             </Button>
             <Button asChild size="lg" variant="ghost" className="rounded-full border border-primary/25 bg-primary/5 px-6 text-primary hover:bg-primary/10">
-              <Link to="/quiz"><Sparkles className="mr-2 h-4 w-4" /> Take the Quiz</Link>
+              <Link to="/quiz"><Sparkles className="mr-2 h-4 w-4" /> <E k="hero.quiz" /></Link>
             </Button>
           </div>
           <div className="mt-7 flex items-center gap-4">
@@ -127,7 +129,7 @@ function Hero() {
                 ))}
               </div>
               <p className="mt-0.5 text-[13px] text-muted-foreground">
-                Loved by 10,000+ caregivers <span className="opacity-70">and growing every day.</span>
+                <E k="hero.social" /> <E k="hero.socialSub" className="opacity-70" />
               </p>
             </div>
           </div>
@@ -144,8 +146,8 @@ function Hero() {
           {/* Green circular badge */}
           <div className="absolute -top-4 right-4 hidden h-32 w-32 flex-col items-center justify-center rounded-full bg-primary p-4 text-center text-primary-foreground shadow-xl sm:flex md:right-8 md:h-36 md:w-36">
             <Heart className="mb-1 h-4 w-4" />
-            <p className="text-[11px] font-semibold leading-tight">Designed for caregivers.</p>
-            <p className="text-[11px] leading-tight opacity-90">Built for real life.</p>
+            <p className="text-[11px] font-semibold leading-tight"><E k="hero.badge1" /></p>
+            <p className="text-[11px] leading-tight opacity-90"><E k="hero.badge2" /></p>
           </div>
           {/* Moon card */}
           <div className="absolute -bottom-4 -left-2 hidden max-w-[220px] rounded-2xl border border-border/60 bg-card/95 p-4 shadow-[var(--shadow-cozy)] backdrop-blur sm:block md:-left-6 md:bottom-8">
@@ -153,13 +155,13 @@ function Hero() {
             <div className="grid h-8 w-8 place-items-center rounded-full bg-moon-soft text-moon-foreground">
                 <Moon className="h-4 w-4" />
               </div>
-              <p className="text-sm font-bold text-foreground">Moon in Taurus<br />Today</p>
+              <p className="text-sm font-bold text-foreground"><E k="hero.moonTitle" /></p>
             </div>
             <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
-              A beautiful day for slowing down, grounding, and enjoying the little comforts.
+              <E k="hero.moonBody" />
             </p>
             <a href="#" className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:underline">
-              View Moon Guide <ArrowRight className="h-3 w-3" />
+              <E k="hero.moonLink" /> <ArrowRight className="h-3 w-3" />
             </a>
           </div>
         </div>
@@ -183,7 +185,7 @@ function FeatureStrip() {
     <section id="features" className="mx-auto max-w-7xl px-6 pb-16">
       <div className="rounded-[32px] border border-border/60 bg-card p-8 shadow-[var(--shadow-soft)] sm:p-10">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
-          {FEATURES.map((f) => (
+          {FEATURES.map((f, i) => (
             <div key={f.title} className="text-center">
               <div
                 className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-gradient-seasonal p-[2px] shadow-[0_8px_24px_-10px_hsl(var(--primary)/0.4)]"
@@ -192,8 +194,8 @@ function FeatureStrip() {
                   <f.icon className="h-6 w-6" strokeWidth={2.25} />
                 </div>
               </div>
-              <h3 className="font-display text-lg text-foreground">{f.title}</h3>
-              <p className="mx-auto mt-2 max-w-[200px] text-[13px] leading-relaxed text-muted-foreground">{f.body}</p>
+              <h3 className="font-display text-lg text-foreground"><E k={`features.${i}.title`} /></h3>
+              <p className="mx-auto mt-2 max-w-[200px] text-[13px] leading-relaxed text-muted-foreground"><E k={`features.${i}.body`} /></p>
             </div>
           ))}
         </div>
@@ -229,29 +231,29 @@ function QuizBand() {
               <Heart className="h-5 w-5 fill-current" />
             </div>
             <p className="mt-4 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-              Caregiver Archetype Quiz
+              <E k="quiz.cardEyebrow" />
             </p>
             <h3 className="mt-3 text-center font-display text-2xl leading-tight text-foreground">
-              Which kind of caregiver are you?
+              <E k="quiz.cardTitle" />
             </h3>
             <p className="mt-3 text-center text-sm text-muted-foreground">
-              A 90-second quiz to shape your planner around the way you actually give.
+              <E k="quiz.cardBody" />
             </p>
             <Button asChild className={cn("mt-5 w-full", SEASONAL_CTA)}>
-              <Link to="/quiz">Take the Quiz <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              <Link to="/quiz"><E k="quiz.cardCta" /> <ArrowRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </div>
 
           {/* Middle: copy + archetype tiles */}
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-              Discover Your Caregiver Archetype
+              <E k="quiz.eyebrow" />
             </p>
             <h2 className="mt-2 font-display text-3xl leading-tight text-foreground sm:text-4xl">
-              Understand your natural care style.
+              <E k="quiz.title" />
             </h2>
             <p className="mt-3 text-[15px] text-muted-foreground">
-              Our quick quiz reveals your Caregiver Archetype and creates a personalized planning rhythm that honors your energy, values, and real life.
+              <E k="quiz.body" />
             </p>
             <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
               {ARCHETYPES_MINI.map((a) => (
@@ -314,11 +316,11 @@ function ArchetypeGrid() {
       <div className="mb-8 text-center">
         <h2 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
           <Sparkles className="mr-2 inline h-6 w-6 text-[hsl(var(--season-summer))]" />
-          Which kind of caregiver are you?
+          <E k="archetypes.title" />
           <Sparkles className="ml-2 inline h-6 w-6 text-[hsl(var(--season-summer))]" />
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
-          A 90-second quiz to shape your planner around the way you actually give.
+          <E k="archetypes.body" />
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -344,31 +346,34 @@ const TESTIMONIALS = [
 ];
 
 function Community() {
+  const { doc } = useLandingContent();
   return (
     <section className="mx-auto max-w-7xl px-6 pb-20">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-            Join a community that gets it
+            <E k="community.eyebrow" />
           </p>
           <h2 className="mt-3 font-display text-4xl leading-tight text-foreground sm:text-5xl">
-            You're not alone in this.
+            <E k="community.title" />
           </h2>
           <p className="mt-4 text-[15px] text-muted-foreground">
-            CareFlow is more than an app — it's a community of caregivers supporting caregivers.
+            <E k="community.body" />
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="rounded-2xl border border-border/60 bg-card p-5 shadow-[var(--shadow-soft)]">
+          {doc.testimonials.map((t, i) => (
+            <div key={i} className="relative rounded-2xl border border-border/60 bg-card p-5 shadow-[var(--shadow-soft)]">
+              <TestimonialControls index={i} />
               <Quote className="h-6 w-6 text-primary/50" />
-              <p className="mt-2 text-[13.5px] leading-relaxed text-foreground/85">{t.quote}</p>
+              <p className="mt-2 text-[13.5px] leading-relaxed text-foreground/85"><EditableTestimonialField index={i} field="quote" /></p>
               <div className="mt-4 flex items-center gap-2">
-                <img src={t.avatar} alt="" loading="lazy" className="h-8 w-8 rounded-full object-cover" />
-                <span className="text-[13px] font-semibold text-foreground">— {t.name}</span>
+                {t.avatar ? <img src={t.avatar} alt="" loading="lazy" className="h-8 w-8 rounded-full object-cover" /> : <span aria-hidden className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">{t.name.slice(0, 1)}</span>}
+                <span className="text-[13px] font-semibold text-foreground">— <EditableTestimonialField index={i} field="name" /></span>
               </div>
             </div>
           ))}
+          <AddTestimonialButton />
         </div>
       </div>
     </section>
@@ -387,10 +392,10 @@ function FinalCTA() {
         <div className="text-white">
           <Sparkles className="mb-3 h-5 w-5 opacity-90" />
           <h2 className="font-display text-3xl leading-tight sm:text-4xl">
-            Your calm. Your rhythm.<br />Your flow.
+            <E k="final.title" />
           </h2>
           <p className="mt-3 max-w-md text-[15px] text-white/90">
-            Start your journey with CareFlow Planner today.
+            <E k="final.body" />
           </p>
         </div>
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -414,7 +419,7 @@ function FinalCTA() {
             <div className="h-full w-full bg-[linear-gradient(45deg,transparent_25%,#000_25%_50%,transparent_50%_75%,#000_75%),linear-gradient(-45deg,transparent_25%,#000_25%_50%,transparent_50%_75%,#000_75%)] bg-[length:8px_8px] opacity-90" />
           </div>
           <div className="text-white">
-            <p className="font-display text-lg leading-snug">Plan with intention.<br />Care with love.<br />Grow together.</p>
+            <p className="font-display text-lg leading-snug"><E k="final.tagline" /></p>
             <Heart className="mt-1 h-4 w-4 fill-current opacity-80" />
           </div>
         </div>
@@ -442,18 +447,22 @@ function Footer() {
 }
 
 export default function Landing() {
+  const edit = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("edit") === "1";
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Nav />
-      <main>
-        <Hero />
-        <FeatureStrip />
-        <QuizBand />
-        <ArchetypeGrid />
-        <Community />
-        <FinalCTA />
-      </main>
-      <Footer />
-    </div>
+    <LandingContentProvider initialEditing={edit}>
+      <div className="min-h-screen bg-background text-foreground">
+        <Nav />
+        <main>
+          <EditableSection id="hero"><Hero /></EditableSection>
+          <EditableSection id="features"><FeatureStrip /></EditableSection>
+          <EditableSection id="quiz"><QuizBand /></EditableSection>
+          <EditableSection id="archetypes"><ArchetypeGrid /></EditableSection>
+          <EditableSection id="community"><Community /></EditableSection>
+          <EditableSection id="finalCta"><FinalCTA /></EditableSection>
+        </main>
+        <Footer />
+        <LandingEditBar />
+      </div>
+    </LandingContentProvider>
   );
 }

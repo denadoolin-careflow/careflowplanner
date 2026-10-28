@@ -4271,6 +4271,27 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_content: {
+        Row: {
+          content: Json
+          key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: Json
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: Json
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       laundry_state: {
         Row: {
           loads: Json
