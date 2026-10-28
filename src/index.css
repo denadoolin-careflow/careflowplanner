@@ -131,25 +131,25 @@
     --studio-sage-deep-text: 140 28% 30%;
 
     /* Brand studio — direct hex tokens for the redesign spec (Dashboard + Projects) */
-    --brand-cream: #FBF1E1;
-    --brand-cream-2: #F3E9D2;
-    --brand-ink: #24391C;
-    --brand-muted: #4A5A3A;
-    --brand-lavender: #C65A72;
-    --brand-lavender-deep: #A92E49;
-    --brand-sage: #9AA352;
-    --brand-sage-deep: #727936;
-    --brand-marigold: #C9A24A;
-    --brand-marigold-deep: #B08F42;
-    --brand-plum: #8C1C35;
-    --brand-plum-deep: #6E1429;
-    --gradient-brand-trio: linear-gradient(180deg, #A92E49 0%, #727936 55%, #B08F42 100%);
-    --gradient-brand-trio-h: linear-gradient(90deg, #C65A72 0%, #9AA352 50%, #C9A24A 100%);
-    --gradient-brand-plum: linear-gradient(135deg, #8C1C35 0%, #6E1429 100%);
-    --gradient-brand-plum-sage: linear-gradient(135deg, #8C1C35 0%, #727936 100%);
-    --gradient-brand-lavender: linear-gradient(135deg, #C65A72 0%, #A92E49 100%);
-    --gradient-brand-sage: linear-gradient(135deg, #9AA352 0%, #727936 100%);
-    --gradient-brand-marigold: linear-gradient(135deg, #C9A24A 0%, #B08F42 100%);
+    --brand-cream: hsl(var(--background));
+    --brand-cream-2: hsl(var(--muted));
+    --brand-ink: hsl(var(--foreground));
+    --brand-muted: hsl(var(--muted-foreground));
+    --brand-lavender: hsl(var(--rhythm-letgo));
+    --brand-lavender-deep: hsl(var(--rhythm-letgo-deep));
+    --brand-sage: hsl(var(--rhythm-plan));
+    --brand-sage-deep: hsl(var(--rhythm-plan-deep));
+    --brand-marigold: hsl(var(--rhythm-grow));
+    --brand-marigold-deep: hsl(var(--rhythm-grow-deep));
+    --brand-plum: hsl(var(--primary));
+    --brand-plum-deep: hsl(var(--primary));
+    --gradient-brand-trio: var(--gradient-seasonal);
+    --gradient-brand-trio-h: var(--gradient-seasonal);
+    --gradient-brand-plum: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--rhythm-plan-deep)));
+    --gradient-brand-plum-sage: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--rhythm-plan-deep)));
+    --gradient-brand-lavender: linear-gradient(135deg, hsl(var(--rhythm-letgo)), hsl(var(--rhythm-letgo-deep)));
+    --gradient-brand-sage: linear-gradient(135deg, hsl(var(--rhythm-plan)), hsl(var(--rhythm-plan-deep)));
+    --gradient-brand-marigold: linear-gradient(135deg, hsl(var(--rhythm-grow)), hsl(var(--rhythm-grow-deep)));
     --shadow-brand-soft: 0 10px 30px -14px rgba(43, 31, 56, 0.25);
     --shadow-brand-lift: 0 18px 40px -18px rgba(43, 31, 56, 0.35);
 
