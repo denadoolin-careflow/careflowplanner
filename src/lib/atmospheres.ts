@@ -500,7 +500,9 @@ function readAuto(): AutoRules {
 function applyAtmosphere(id: AtmosphereId) {
   if (typeof document === "undefined") return;
   const html = document.documentElement;
-  html.setAttribute("data-atmosphere", id);
+  // Keep the brand baseline until an atmosphere is explicitly selected.
+  if (localStorage.getItem(K_CURRENT)) html.setAttribute("data-atmosphere", id);
+  else html.removeAttribute("data-atmosphere");
   // smooth transition
   html.classList.add("atmo-transition");
   window.setTimeout(() => html.classList.remove("atmo-transition"), 700);
