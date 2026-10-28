@@ -1,3 +1,6 @@
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { LandingColorEditor } from "@/components/landing/LandingColorEditor";
+import { Palette } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, LayoutDashboard, Pencil, Plus, Trash2, X } from "lucide-react";
@@ -92,10 +95,20 @@ export function AddTestimonialButton() {
 
 /** Floating admin bar: toggle edit mode and jump to the dashboard. */
 export function LandingEditBar() {
-  const { isAdmin, editing, setEditing } = useLandingContent();
+  const { isAdmin, editing, setEditing, doc, save } = useLandingContent();
   if (!isAdmin) return null;
   return (
     <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-border bg-card p-1.5 shadow-xl">
+      {editing && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="ghost" className="rounded-full"><Palette className="mr-1 h-4 w-4" /> Colors</Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" side="top" className="max-h-[70vh] w-[min(92vw,26rem)] overflow-y-auto">
+            <LandingColorEditor value={doc.colors} onChange={(colors) => save({ ...doc, colors })} />
+          </PopoverContent>
+        </Popover>
+      )}
       <Button size="sm" className="rounded-full" variant={editing ? "default" : "secondary"} onClick={() => setEditing(!editing)}>
         {editing ? <><X className="mr-1 h-4 w-4" /> Done editing</> : <><Pencil className="mr-1 h-4 w-4" /> Edit page</>}
       </Button>

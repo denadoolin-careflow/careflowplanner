@@ -7,6 +7,7 @@ import heroPhone from "@/assets/landing-hero-phone.jpg";
 import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { landingColorStyle } from "@/lib/landing-colors";
 import { LandingContentProvider, useLandingContent } from "@/lib/landing-content";
 import { E, EditableSection, EditableTestimonialField, TestimonialControls, AddTestimonialButton, LandingEditBar } from "@/components/landing/LandingEditable";
 
@@ -446,11 +447,16 @@ function Footer() {
   );
 }
 
+function Themed({ children }: { children: React.ReactNode }) {
+  const { doc } = useLandingContent();
+  return <div className="min-h-screen bg-background text-foreground" style={landingColorStyle(doc.colors)}>{children}</div>;
+}
+
 export default function Landing() {
   const edit = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("edit") === "1";
   return (
     <LandingContentProvider initialEditing={edit}>
-      <div className="min-h-screen bg-background text-foreground">
+      <Themed>
         <Nav />
         <main>
           <EditableSection id="hero"><Hero /></EditableSection>
@@ -462,7 +468,7 @@ export default function Landing() {
         </main>
         <Footer />
         <LandingEditBar />
-      </div>
+      </Themed>
     </LandingContentProvider>
   );
 }
