@@ -80,6 +80,7 @@ export const DEFAULT_PLANNER_PANELS: PlannerPanelPrefs = {
   week: { task: false, focus: false, context: false, notes: false },
   month: { task: false, focus: false, context: false, notes: false },
   year: { task: false, focus: false, context: false, notes: false },
+  rhythm: { task: false, focus: false, context: false, notes: false },
 };
 
 export function usePlannerPanels(): [PlannerPanelPrefs, (view: PlannerView, panel: PlannerPanelId, on: boolean) => void] {
@@ -90,6 +91,7 @@ export function usePlannerPanels(): [PlannerPanelPrefs, (view: PlannerView, pane
     week: { ...DEFAULT_PLANNER_PANELS.week, ...(prefs?.week ?? {}) },
     month: { ...DEFAULT_PLANNER_PANELS.month, ...(prefs?.month ?? {}) },
     year: { ...DEFAULT_PLANNER_PANELS.year, ...(prefs?.year ?? {}) },
+    rhythm: { ...DEFAULT_PLANNER_PANELS.rhythm, ...(prefs?.rhythm ?? {}) },
   };
   const set = (view: PlannerView, panel: PlannerPanelId, on: boolean) =>
     setPrefs({ ...merged, [view]: { ...merged[view], [panel]: on } });

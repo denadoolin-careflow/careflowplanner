@@ -407,7 +407,7 @@ export default function Planner() {
              <AutoScheduleSettings size="md" />
            </div>
         </div>
-        <MobileWeekAgendaStrip day={day} onSelect={go} rich={view === "month" || view === "week"} />
+        {view !== "rhythm" && <MobileWeekAgendaStrip day={day} onSelect={go} rich={view === "month" || view === "week"} />}
         </div>
       ) : (
         <>
