@@ -158,15 +158,22 @@ export function LandingContentProvider({ children, initialEditing = false }: { c
 
   useEffect(() => {
     let alive = true;
+    // Safety net: never leave the page stuck on "Loading…" if a request stalls.
+    const timer = setTimeout(() => { if (alive) setLoading(false); }, 8000);
     (async () => {
-      const { data } = await supabase.from("landing_content").select("content").eq("key", ROW_KEY).maybeSingle();
-      if (alive) { setDoc(mergeDoc(data?.content as Partial<LandingDoc>)); setLoading(false); }
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: admin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
-      if (alive) setIsAdmin(Boolean(admin));
+      try {
+        const { data } = await supabase.from("landing_content").select("content").eq("key", ROW_KEY).maybeSingle();
+        if (alive) setDoc(mergeDoc(data?.content as Partial<LandingDoc>));
+      } catch { /* fall back to defaults */ }
+      if (alive) { setLoading(false); clearTimeout(timer); }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+        const { data: admin } = await supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" });
+        if (alive) setIsAdmin(Boolean(admin));
+      } catch { /* not admin */ }
     })();
-    return () => { alive = false; };
+    return () => { alive = false; clearTimeout(timer); };
   }, []);
 
   const save = useCallback(async (next: LandingDoc) => {
