@@ -4,13 +4,16 @@ import { toast } from "sonner";
 import { DEFAULT_COLORS, type LandingColors } from "@/lib/landing-colors";
 
 export type Testimonial = { quote: string; name: string; avatar: string };
-export type SectionId = "hero" | "features" | "quiz" | "archetypes" | "community" | "finalCta";
+export type SectionId = "hero" | "problem" | "phases" | "features" | "difference" | "who" | "philosophy" | "community" | "finalCta";
 
 export const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "hero", label: "Top welcome" },
-  { id: "features", label: "Feature strip" },
-  { id: "quiz", label: "Quiz band" },
-  { id: "archetypes", label: "Caregiver types" },
+  { id: "problem", label: "The problem" },
+  { id: "phases", label: "The four phases" },
+  { id: "features", label: "Features" },
+  { id: "difference", label: "The difference" },
+  { id: "who", label: "Who it's for" },
+  { id: "philosophy", label: "Philosophy lines" },
   { id: "community", label: "Testimonials" },
   { id: "finalCta", label: "Closing call to action" },
 ];
