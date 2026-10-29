@@ -37,7 +37,7 @@ export function JournalCard({ date }: { date: Date }) {
 
   return (
     <DashCard
-      eyebrow="Grow"
+      eyebrow="Let go"
       title="Journal"
       action={
         <button

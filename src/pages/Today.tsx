@@ -12,6 +12,10 @@ import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { TodayMoonHeader } from "@/components/today/TodayMoonHeader";
 import { FocusGoalCard, FocusGoalChip } from "@/components/goals/FocusGoalCard";
+import { HorizonStrip, RhythmReviewReminders } from "@/components/today/HorizonStrip";
+import { PhaseIcon } from "@/lib/phase-icons";
+import { PHASE_CAPTION } from "@/lib/rhythm/horizons";
+import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 import { WorkspaceQuizInvite } from "@/pages/WorkspaceQuiz";
 import { NewMoonGoalCard } from "@/components/today/NewMoonGoalCard";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
@@ -56,12 +60,58 @@ const MOBILE_TABS = [
   ["letgo", "Let go", "Reflect and release", PHASE_ICONS.letgo],
 ] as const satisfies ReadonlyArray<readonly [MobileTab, string, string, unknown]>;
 
+const BAND_PHASE: Record<string, RhythmPhase> = { Plan: "plan", Grow: "grow", Care: "care", "Let go": "letgo" };
+const BAND_ID = (t: string) => `today-${BAND_PHASE[t]}`;
+
 function PhaseBand({ title, children }: { title: string; children: React.ReactNode }) {
+  const phase = BAND_PHASE[title];
+  const key = `today.band.${phase}.folded`;
+  const [folded, setFolded] = useState(() => localStorage.getItem(key) === "1");
+  const toggle = () => setFolded(f => { localStorage.setItem(key, f ? "0" : "1"); return !f; });
   return (
-    <section aria-label={title} className="space-y-3">
-      <h2 className="px-1 font-display text-lg text-foreground">{title}</h2>
-      {children}
+    <section id={BAND_ID(title)} aria-labelledby={`${BAND_ID(title)}-h`} className="scroll-mt-24 space-y-3">
+      <button
+        type="button" onClick={toggle} aria-expanded={!folded}
+        className="flex min-h-11 w-full items-center gap-3 rounded-2xl border-l-4 bg-card/60 px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        style={{ borderLeftColor: `hsl(var(--rhythm-${phase}-deep))` }}
+      >
+        <PhaseIcon phase={phase} />
+        <span className="min-w-0 flex-1">
+          <h2 id={`${BAND_ID(title)}-h`} className="font-display text-lg leading-tight text-foreground">{title}</h2>
+          <span className="block text-xs text-muted-foreground">{PHASE_CAPTION[phase]}</span>
+        </span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", !folded && "rotate-180")} aria-hidden />
+      </button>
+      {!folded && children}
     </section>
+  );
+}
+
+function PhaseSectionNav() {
+  const [active, setActive] = useState("plan");
+  useEffect(() => {
+    const els = Object.values(BAND_PHASE).map(p => document.getElementById(`today-${p}`)).filter(Boolean) as HTMLElement[];
+    const io = new IntersectionObserver(entries => {
+      const vis = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (vis) setActive(vis.target.id.replace("today-", ""));
+    }, { rootMargin: "-20% 0px -60% 0px" });
+    els.forEach(e => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+  return (
+    <nav aria-label="Today sections" className="sticky top-20 hidden self-start lg:block">
+      <ul className="space-y-1">
+        {Object.entries(BAND_PHASE).map(([label, p]) => (
+          <li key={p}>
+            <a href={`#today-${p}`} aria-current={active === p ? "true" : undefined}
+              onClick={e => { e.preventDefault(); document.getElementById(`today-${p}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+              className={cn("flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", active === p ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:bg-card/60")}>
+              <PhaseIcon phase={p} size="sm" />{label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -210,6 +260,7 @@ function TodayInner() {
         />
         <TodayMoonHeader date={day} />
         <FocusGoalChip date={day} />
+        <HorizonStrip date={day} />
         <DemoTasksBanner />
         {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
         {/* Gentle notices: grouped so reminders never push the day below the fold. Hidden when empty. */}
@@ -228,6 +279,7 @@ function TodayInner() {
             {isReallyToday && <MailReminderCard />}
             {isReallyToday && <CabinetExpiryCard />}
             {isReallyToday && <WorkspaceQuizInvite />}
+            {isReallyToday && <RhythmReviewReminders date={day} />}
           </div>
         </details>
         {isReallyToday && <DailyRituals date={day} onEveningReflection={() => setExhaleOpen(true)} />}
@@ -319,7 +371,10 @@ function TodayInner() {
                 <TodayPlanView date={day} />
               </div>
             </div>
-            {secondary}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[150px_minmax(0,1fr)]">
+              <PhaseSectionNav />
+              <div className="min-w-0">{secondary}</div>
+            </div>
           </div>
         )}
       </div>

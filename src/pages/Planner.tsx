@@ -1,3 +1,4 @@
+import { RhythmHub } from "@/components/planner/rhythm/RhythmHub";
 import { FocusGoalCard } from "@/components/goals/FocusGoalCard";
 import { MobileWeekAgendaStrip } from "@/components/planner/mobile/MobileWeekAgendaStrip";
 import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
@@ -136,7 +137,7 @@ export default function Planner() {
   // /planner/:date?range=week — lets Week/Month/Calendar links land on the right range.
   useEffect(() => {
     const r = search.get("range") as PlannerView | null;
-    if (r && ["day", "3day", "week", "month", "year"].includes(r)) {
+    if (r && ["day", "3day", "week", "month", "year", "rhythm"].includes(r)) {
       setView(r);
       const next = new URLSearchParams(search);
       next.delete("range");
@@ -406,7 +407,7 @@ export default function Planner() {
              <AutoScheduleSettings size="md" />
            </div>
         </div>
-        <MobileWeekAgendaStrip day={day} onSelect={go} rich={view === "month" || view === "week"} />
+        {view !== "rhythm" && <MobileWeekAgendaStrip day={day} onSelect={go} rich={view === "month" || view === "week"} />}
         </div>
       ) : (
         <>
@@ -625,6 +626,7 @@ export default function Planner() {
           </>
         )}
         <div className="flex min-w-0 flex-col">
+          {view === "rhythm" && <RhythmHub date={day} />}
            {!showTaskPanel && !isMobile && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
              <div className="mb-2 shrink-0 space-y-2">
