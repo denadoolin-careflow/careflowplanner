@@ -174,4 +174,4 @@ export async function removeLink(docId: string, t: LinkTarget) {
 }
 
 export const linkHref = (t: LinkTarget) =>
-  t.type === "project" ? `/projects/${t.id}` : t.type === "goal" ? `/goals` : t.type === "note" ? `/notes/${t.id}` : t.type === "person" ? `/people` : t.type === "budget" ? `/wealth` : `/planner`;
+  t.type === "project" ? `/projects/${t.id}` : t.type === "goal" ? `/goals` : t.type === "note" ? `/notes/${t.id}` : t.type === "person" ? `/care` : t.type === "budget" ? `/wealth` : `/planner`;
