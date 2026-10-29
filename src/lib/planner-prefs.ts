@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type PlannerView = "day" | "3day" | "week" | "month" | "year";
+export type PlannerView = "day" | "3day" | "week" | "month" | "year" | "rhythm";
 /** Per-range mode pills (Week: grid/board · Month: calendar/overview). */
 export type PlannerWeekMode = "grid" | "board" | "overview" | "list" | "table";
 export type PlannerMonthMode = "calendar" | "overview";
