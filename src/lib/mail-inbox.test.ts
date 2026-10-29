@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isTrashExpired, reviewTaskTitle, suggestTrash } from "./mail-inbox";
+import { isTrashExpired, mailReminderLabel, mailReminders, reviewTaskTitle, suggestTrash, type MailReminder, type CabinetDoc } from "./mail-inbox";
+
+const doc = (over: Partial<CabinetDoc>): CabinetDoc => ({
+  id: over.id ?? "d", drawer_id: null, title: "Paper", storage_path: "p", mime_type: null, size_bytes: null,
+  tags: [], expires_at: null, remind_days: [], summary: null, key_details: [], extracted_text: null,
+  created_at: "2026-10-01T00:00:00Z", kind: "mail", ...over,
+} as CabinetDoc);
 
 const now = new Date(2026, 9, 29, 12);
 
