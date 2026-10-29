@@ -204,6 +204,13 @@
       "when": 1793148997652,
       "tag": "0028_create_landing_content",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793241857695,
+      "tag": "0029_careflow_corner_club_shop",
+      "breakpoints": true
     }
   ]
 }

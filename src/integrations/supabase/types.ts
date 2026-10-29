@@ -532,6 +532,51 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          body: string
+          cover_url: string | null
+          created_at: string
+          excerpt: string
+          id: string
+          published_at: string | null
+          slug: string
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body?: string
+          cover_url?: string | null
+          created_at?: string
+          excerpt?: string
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          cover_url?: string | null
+          created_at?: string
+          excerpt?: string
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       brain_dumps: {
         Row: {
           ai_category: string | null
@@ -1643,6 +1688,41 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "cleaning_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_members: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          freebie_id: string | null
+          id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name?: string
+          freebie_id?: string | null
+          id?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          freebie_id?: string | null
+          id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_freebie_id_fkey"
+            columns: ["freebie_id"]
+            isOneToOne: false
+            referencedRelation: "freebies"
             referencedColumns: ["id"]
           },
         ]
@@ -2974,6 +3054,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      freebies: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          description: string
+          file_url: string | null
+          id: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string
+          file_url?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string
+          file_url?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: []
       }
       glp1_injections: {
         Row: {
@@ -5790,6 +5900,44 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          email: string
+          id: string
+          product_id: string | null
+          provider_ref: string | null
+          status: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          email: string
+          id?: string
+          product_id?: string | null
+          provider_ref?: string | null
+          status?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          email?: string
+          id?: string
+          product_id?: string | null
+          provider_ref?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pantry_items: {
         Row: {
           category: string | null
@@ -6573,6 +6721,57 @@ export type Database = {
           template_id?: string | null
           template_label?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          checkout_url: string | null
+          cover_url: string | null
+          created_at: string
+          currency: string
+          description: string
+          file_path: string | null
+          id: string
+          images: string[]
+          price_cents: number
+          slug: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          checkout_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          file_path?: string | null
+          id?: string
+          images?: string[]
+          price_cents?: number
+          slug: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          checkout_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          file_path?: string | null
+          id?: string
+          images?: string[]
+          price_cents?: number
+          slug?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -9387,6 +9586,15 @@ export type Database = {
     }
     Functions: {
       accept_household_invite: { Args: { _token: string }; Returns: string }
+      active_freebie: {
+        Args: never
+        Returns: {
+          cover_url: string
+          description: string
+          id: string
+          title: string
+        }[]
+      }
       create_household_with_owner: {
         Args: { _name: string }
         Returns: {
@@ -9425,6 +9633,13 @@ export type Database = {
       is_household_owner: {
         Args: { _household_id: string; _user_id: string }
         Returns: boolean
+      }
+      join_careflow_club: {
+        Args: { _email: string; _first_name: string; _source: string }
+        Returns: {
+          freebie_title: string
+          freebie_url: string
+        }[]
       }
       patch_goal_details: {
         Args: { p_goal_id: string; p_missing_only?: boolean; p_patch: Json }
