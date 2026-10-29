@@ -1,8 +1,8 @@
 import { DIFFERENCE, FEATURES, FEATURES_SUB, FEATURES_TITLE, FINAL, HERO, PHASES, PHASE_GRADIENT, PHILOSOPHY, PROBLEM, WAY, WHO, ph } from "./copy";
 import { Brand, Footer, GhostButton, PhoneMock, WaitlistButton } from "./shared";
 
-const Tile = ({ className = "", style, children }: { className?: string; style?: React.CSSProperties; children: React.ReactNode }) => (
-  <div className={`rounded-3xl border border-border bg-card p-6 ${className}`} style={style}>{children}</div>
+const Tile = ({ className = "", style, children, id }: { className?: string; style?: React.CSSProperties; children: React.ReactNode; id?: string }) => (
+  <div id={id} className={`rounded-3xl border border-border bg-card p-6 ${className}`} style={style}>{children}</div>
 );
 
 /** C — Bento Dashboard: modern product grid. */
