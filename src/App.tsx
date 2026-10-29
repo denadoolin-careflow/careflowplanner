@@ -102,7 +102,6 @@ import CornerPost from "./pages/CornerPost";
 import Shop from "./pages/Shop";
 import Landing from "./pages/Landing";
 import LandingMockups from "./pages/landing-mockups";
-import TodayMockups from "./pages/TodayMockups";
 import Roadmap from "./pages/Roadmap";
 import GmailCallback from "./pages/GmailCallback";
 import AdminRoadmap from "./pages/AdminRoadmap";
@@ -185,7 +184,6 @@ const App = () => (
               <Route path="/" element={<IndexRedirect />} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/landing-mockups" element={<LandingMockups />} />
-              <Route path="/today-mockups" element={<TodayMockups />} />
               <Route path="/corner" element={<Corner />} />
               <Route path="/corner/:slug" element={<CornerPost />} />
               <Route path="/shop" element={<Shop />} />
