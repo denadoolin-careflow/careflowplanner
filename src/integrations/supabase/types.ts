@@ -2390,6 +2390,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          ovulation_date: string | null
           period_end: string | null
           period_start: string
           updated_at: string
@@ -2399,6 +2400,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          ovulation_date?: string | null
           period_end?: string | null
           period_start: string
           updated_at?: string
@@ -2408,6 +2410,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          ovulation_date?: string | null
           period_end?: string | null
           period_start?: string
           updated_at?: string
