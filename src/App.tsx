@@ -95,6 +95,7 @@ import Updates from "./pages/Updates";
 import AdminUpdates from "./pages/AdminUpdates";
 import AdminLanding from "./pages/AdminLanding";
 import Landing from "./pages/Landing";
+import LandingMockups from "./pages/landing-mockups";
 import Roadmap from "./pages/Roadmap";
 import GmailCallback from "./pages/GmailCallback";
 import AdminRoadmap from "./pages/AdminRoadmap";
@@ -176,6 +177,7 @@ const App = () => (
               <Route path="/gmail/callback" element={<GmailCallback />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route path="/landing" element={<Landing />} />
+              <Route path="/landing-mockups" element={<LandingMockups />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/inbox" element={<Inbox />} />
