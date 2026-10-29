@@ -1,3 +1,4 @@
+import { HORIZON_PHASES, PHASES, sectionHeading, type Horizon } from "@/lib/rhythm/horizons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -206,10 +207,19 @@ export const MONTHLY_TEMPLATES: PeriodTemplate[] = [
   { id: "blank", name: "Blank page", emoji: "📝", description: "Just the month — write freely.", build: (iso) => `# ${periodTitle("monthly", iso)}\n\n` },
 ];
 
+const phaseTemplate = (kind: PeriodKind, horizon: Horizon): PeriodTemplate => ({
+  id: "four-phases", name: "Plan · Grow · Care · Let go", emoji: "🌿",
+  description: "One section for each phase, with gentle prompts.",
+  build: (iso) => [
+    `# ${periodTitle(kind, iso)}`, "",
+    ...PHASES.flatMap(p => [sectionHeading(horizon, p), "", ...HORIZON_PHASES[horizon][p].prompts.map(q => `- ${q}: `), ""]),
+  ].join("\n"),
+});
+
 export const TEMPLATES_BY_KIND: Record<PeriodKind, PeriodTemplate[]> = {
-  daily: DAILY_TEMPLATES,
-  weekly: WEEKLY_TEMPLATES,
-  monthly: MONTHLY_TEMPLATES,
+  daily: [...DAILY_TEMPLATES, phaseTemplate("daily", "day")],
+  weekly: [...WEEKLY_TEMPLATES, phaseTemplate("weekly", "week")],
+  monthly: [...MONTHLY_TEMPLATES, phaseTemplate("monthly", "month")],
 };
 
 const DEFAULT_ID: Record<PeriodKind, string> = { daily: "morning", weekly: "week-plan-reflect", monthly: "month-focus" };
