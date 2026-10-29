@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 
-export type TodayView = "plan" | "board";
+export type TodayView = "flow" | "tabs" | "quadrant" | "plan" | "board";
 
 export const TODAY_VIEW_LABELS: Record<TodayView, string> = {
+  flow: "Day Flow",
+  tabs: "Phase Tabs",
+  quadrant: "Quadrants",
   plan: "Plan",
   board: "Board",
 };
@@ -16,7 +19,7 @@ const DEFAULT_VIEW_KEY = "careflow:today-default-view:v1";
 const viewListeners = new Set<(v: TodayView) => void>();
 
 function isTodayView(v: unknown): v is TodayView {
-  return v === "plan" || v === "board";
+  return v === "plan" || v === "board" || v === "flow" || v === "tabs" || v === "quadrant";
 }
 
 /** Map the six legacy Today layouts onto the two current ones. */
@@ -28,12 +31,12 @@ function migrateView(v: unknown): TodayView | null {
 }
 
 function readDefaultView(): TodayView {
-  if (typeof localStorage === "undefined") return "plan";
-  return migrateView(localStorage.getItem(DEFAULT_VIEW_KEY)) ?? "plan";
+  if (typeof localStorage === "undefined") return "flow";
+  return migrateView(localStorage.getItem(DEFAULT_VIEW_KEY)) ?? "flow";
 }
 
 function readView(): TodayView {
-  if (typeof localStorage === "undefined") return "plan";
+  if (typeof localStorage === "undefined") return "flow";
   const v = migrateView(localStorage.getItem(VIEW_KEY));
   return v ?? readDefaultView();
 }

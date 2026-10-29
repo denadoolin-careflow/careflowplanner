@@ -51,6 +51,8 @@ import { cn } from "@/lib/utils";
 import { Bell, ChevronDown } from "lucide-react";
 import { PHASE_ICONS } from "@/lib/phase-icons";
 import { LunarCheckInCard } from "@/components/today/LunarCheckInCard";
+import { PhaseInlinePanel } from "@/components/today/PhaseInlinePanel";
+import { PHASE_ORDER, currentPhase } from "@/lib/today-phase-items";
 
 type MobileTab = "plan" | "grow" | "care" | "letgo";
 const MOBILE_TABS = [
@@ -63,11 +65,14 @@ const MOBILE_TABS = [
 const BAND_PHASE: Record<string, RhythmPhase> = { Plan: "plan", Grow: "grow", Care: "care", "Let go": "letgo" };
 const BAND_ID = (t: string) => `today-${BAND_PHASE[t]}`;
 
-function PhaseBand({ title, children }: { title: string; children: React.ReactNode }) {
+function PhaseBand({ title, children, autoFold }: { title: string; children: React.ReactNode; autoFold?: boolean }) {
   const phase = BAND_PHASE[title];
   const key = `today.band.${phase}.folded`;
-  const [folded, setFolded] = useState(() => localStorage.getItem(key) === "1");
-  const toggle = () => setFolded(f => { localStorage.setItem(key, f ? "0" : "1"); return !f; });
+  const [folded, setFolded] = useState(() => autoFold ? sessionStorage.getItem(`${key}.open`) !== "1" : localStorage.getItem(key) === "1");
+  const toggle = () => setFolded(f => {
+    if (autoFold) sessionStorage.setItem(`${key}.open`, f ? "1" : "0"); else localStorage.setItem(key, f ? "0" : "1");
+    return !f;
+  });
   return (
     <section id={BAND_ID(title)} aria-labelledby={`${BAND_ID(title)}-h`} className="scroll-mt-24 space-y-3">
       <button
@@ -202,42 +207,54 @@ function TodayInner() {
     isSpacious: entry.level === "spacious",
   }), [entry.level]);
 
-  const circle = (
+  const P = (phase: RhythmPhase) => <PhaseInlinePanel phase={phase} date={day} onTaskClick={setEditTaskId} />;
+  const phaseContent: Record<RhythmPhase, React.ReactNode> = {
+    plan: (<>
+      {P("plan")}
+      {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+      <TodayNudgeStrip date={day} />
+      <RhythmTodayCard date={day} />
+    </>),
+    grow: (<>
+      <FocusGoalCard date={day} />
+      {P("grow")}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <GrowColumn date={day} />
+        <RoutinesHabitsRow date={day} />
+      </div>
+    </>),
+    care: (<>
+      {P("care")}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <CareColumn date={day} onTaskClick={setEditTaskId} />
+        <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+        <DinnerTonightCard date={day} />
+        <CleaningTodayCard />
+      </div>
+      <LaundryBoard compact />
+      <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
+    </>),
+    letgo: (<>
+      <LunarCheckInCard date={day} />
+      {P("letgo")}
+      <JournalCard date={day} />
+      <CollapsibleSection storageKey="planning.section.debrief.collapsed" eyebrow="Let go" title="Review today's shape">
+        <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+      </CollapsibleSection>
+    </>),
+  };
+  const PHASE_TITLE: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
+  const nowIdx = PHASE_ORDER.indexOf(currentPhase());
+  const bands = (autoFold: boolean) => (
     <div className="animate-fade-in space-y-6">
-      <PhaseBand title="Plan">
-        <TodayNudgeStrip date={day} />
-        <RhythmTodayCard date={day} />
-      </PhaseBand>
-      <PhaseBand title="Grow">
-        <FocusGoalCard date={day} />
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <GrowColumn date={day} />
-          <RoutinesHabitsRow date={day} />
-        </div>
-      </PhaseBand>
-      <PhaseBand title="Care">
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <CareColumn date={day} onTaskClick={setEditTaskId} />
-          <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
-          <DinnerTonightCard date={day} />
-          <CleaningTodayCard />
-        </div>
-        <LaundryBoard compact />
-        <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
-      </PhaseBand>
-      <PhaseBand title="Let go">
-        <LunarCheckInCard date={day} />
-        <JournalCard date={day} />
-        <CollapsibleSection
-          storageKey="planning.section.debrief.collapsed"
-          eyebrow="Let go"
-          title="Review today's shape"
-        >
-          <DailyDebrief date={day} onTaskClick={setEditTaskId} />
-        </CollapsibleSection>
-      </PhaseBand>
+      {PHASE_ORDER.map((ph, i) => (
+        <PhaseBand key={`${ph}-${autoFold && isReallyToday && i < nowIdx}`} title={PHASE_TITLE[ph]} autoFold={autoFold && isReallyToday && i < nowIdx}>
+          {phaseContent[ph]}
+        </PhaseBand>
+      ))}
     </div>
   );
+  const circle = bands(false);
   const secondary = circle;
 
 
@@ -294,8 +311,23 @@ function TodayInner() {
             onExhale={() => setExhaleOpen(true)}
             />
           </>
-        ) : isMobile ? (
-          <div className="animate-fade-in space-y-3">
+        ) : view === "flow" ? (
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-w-0">{bands(true)}</div>
+            {!isMobile && <div className="sticky top-20"><TodayFocusRail date={day} onTaskClick={setEditTaskId} showSources /></div>}
+          </div>
+        ) : view === "quadrant" ? (
+          <div className="animate-fade-in grid grid-cols-1 gap-4 md:grid-cols-2">
+            {PHASE_ORDER.map(ph => (
+              <section key={ph} aria-label={PHASE_TITLE[ph]} className="min-w-0 space-y-3 rounded-3xl border-t-4 bg-card/40 p-3" style={{ borderTopColor: `hsl(var(--rhythm-${ph}-deep))` }}>
+                <h2 className="flex items-center gap-2 font-display text-lg text-foreground"><PhaseIcon phase={ph} size="sm" />{PHASE_TITLE[ph]}</h2>
+                {phaseContent[ph]}
+              </section>
+            ))}
+          </div>
+        ) : isMobile || view === "tabs" ? (
+          <div className={cn("animate-fade-in gap-6", view === "tabs" && !isMobile ? "grid grid-cols-[minmax(0,1fr)_320px] items-start" : "")}>
+          <div className="min-w-0 space-y-3">
             <div role="tablist" aria-label="Today phases" className="today-mobile-section-tabs grid grid-cols-4 gap-1 rounded-xl border border-border/60 bg-card/70 p-1 text-xs">
               {MOBILE_TABS.map(([t, label, detail, Icon]) => (
                 <button
@@ -328,39 +360,11 @@ function TodayInner() {
               ))}
             </div>
             <div role="tabpanel" id={`today-panel-${mobileTab}`} aria-labelledby={`today-tab-${mobileTab}`} className="animate-fade-in space-y-3">
-              {mobileTab === "plan" && (
-                <>
-                  {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
-                  <RhythmTodayCard date={day} />
-                  <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
-                  <TodayPlanView date={day} />
-                </>
-              )}
-              {mobileTab === "grow" && (
-                <>
-                  <FocusGoalCard date={day} />
-                  <GrowColumn date={day} />
-                  <RoutinesHabitsRow date={day} />
-                </>
-              )}
-              {mobileTab === "care" && (
-                <>
-                  <CareColumn date={day} onTaskClick={setEditTaskId} />
-                  <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
-                  <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
-                  <DinnerTonightCard date={day} />
-                  <CleaningTodayCard />
-                  <LaundryBoard compact />
-                </>
-              )}
-              {mobileTab === "letgo" && (
-                <>
-                  <LunarCheckInCard date={day} />
-                  <JournalCard date={day} />
-                  <DailyDebrief date={day} onTaskClick={setEditTaskId} />
-                </>
-              )}
+              {mobileTab === "plan" && (<>{phaseContent.plan}<TodayFocusRail date={day} onTaskClick={setEditTaskId} /><TodayPlanView date={day} /></>)}
+              {mobileTab !== "plan" && phaseContent[mobileTab]}
             </div>
+          </div>
+          {view === "tabs" && !isMobile && <div className="sticky top-20"><TodayFocusRail date={day} onTaskClick={setEditTaskId} showSources /></div>}
           </div>
         ) : (
           <div className="animate-fade-in space-y-4">
