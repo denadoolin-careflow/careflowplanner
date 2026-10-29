@@ -45,7 +45,24 @@ import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
 import { TemplateGallery } from "@/components/today/TemplateGallery";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { CalendarCheck, HeartHandshake, Sprout } from "lucide-react";
+import { Bell, CalendarCheck, ChevronDown, Feather, HeartHandshake, Sprout } from "lucide-react";
+
+type MobileTab = "plan" | "grow" | "care" | "letgo";
+const MOBILE_TABS = [
+  ["plan", "Plan", "Shape the day", CalendarCheck],
+  ["grow", "Grow", "Habits and projects", Sprout],
+  ["care", "Care", "People, home and you", HeartHandshake],
+  ["letgo", "Let go", "Reflect and release", Feather],
+] as const satisfies ReadonlyArray<readonly [MobileTab, string, string, unknown]>;
+
+function PhaseBand({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section aria-label={title} className="space-y-3">
+      <h2 className="px-1 font-display text-lg text-foreground">{title}</h2>
+      {children}
+    </section>
+  );
+}
 
 export default function Today() {
   return (
@@ -69,7 +86,7 @@ function TodayInner() {
   const defaultRoute = state.settings.defaultRoute ?? "/";
   const [galleryOpen, setGalleryOpen] = useState(false);
   const isMobile = useIsMobile();
-  const [mobileTab, setMobileTab] = useState<"plan" | "care" | "grow">("plan");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("plan");
 
   // When arriving with a #slot-morning|afternoon|evening hash, scroll to it.
   useEffect(() => {
@@ -136,32 +153,38 @@ function TodayInner() {
   }), [entry.level]);
 
   const circle = (
-    <div className="animate-fade-in space-y-3">
-      <TodayNudgeStrip date={day} />
-      <RhythmTodayCard date={day} />
-{moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <DinnerTonightCard date={day} />
-        <CleaningTodayCard />
-      </div>
-      <LaundryBoard compact />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <CareColumn date={day} onTaskClick={setEditTaskId} />
-        <GrowColumn date={day} />
-      </div>
-      <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
-      <RoutinesHabitsRow date={day} />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+    <div className="animate-fade-in space-y-6">
+      <PhaseBand title="Plan">
+        <TodayNudgeStrip date={day} />
+        <RhythmTodayCard date={day} />
+        {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
+      </PhaseBand>
+      <PhaseBand title="Grow">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <GrowColumn date={day} />
+          <RoutinesHabitsRow date={day} />
+        </div>
+      </PhaseBand>
+      <PhaseBand title="Care">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <CareColumn date={day} onTaskClick={setEditTaskId} />
+          <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+          <DinnerTonightCard date={day} />
+          <CleaningTodayCard />
+        </div>
+        <LaundryBoard compact />
+        <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
+      </PhaseBand>
+      <PhaseBand title="Let go">
         <JournalCard date={day} />
-      </div>
-      <CollapsibleSection
-        storageKey="planning.section.debrief.collapsed"
-                  eyebrow="Plan insight"
-                  title="Review today's shape"
-      >
-        <DailyDebrief date={day} onTaskClick={setEditTaskId} />
-      </CollapsibleSection>
+        <CollapsibleSection
+          storageKey="planning.section.debrief.collapsed"
+          eyebrow="Let go"
+          title="Review today's shape"
+        >
+          <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+        </CollapsibleSection>
+      </PhaseBand>
     </div>
   );
   const secondary = circle;
@@ -186,13 +209,26 @@ function TodayInner() {
         />
         <TodayMoonHeader date={day} />
         <FocusGoalChip date={day} />
-        {isReallyToday && <WorkspaceQuizInvite />}
-        {isReallyToday && <NewMoonGoalCard />}
         <DemoTasksBanner />
-        <MoonJournalReminderBanner date={day} />
         {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
-        {isReallyToday && <CabinetExpiryCard />}
-        {isReallyToday && <MailReminderCard />}
+        {/* Gentle notices: grouped so reminders never push the day below the fold. Hidden when empty. */}
+        <details
+          open={!isMobile}
+          className="group rounded-2xl border border-border/60 bg-card/60 [&:not(:has(.today-notices>*))]:hidden"
+        >
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-2xl px-3 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Bell className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="flex-1">Gentle reminders</span>
+            <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+          </summary>
+          <div className="today-notices space-y-2 px-2 pb-2">
+            {isReallyToday && <NewMoonGoalCard />}
+            <MoonJournalReminderBanner date={day} />
+            {isReallyToday && <MailReminderCard />}
+            {isReallyToday && <CabinetExpiryCard />}
+            {isReallyToday && <WorkspaceQuizInvite />}
+          </div>
+        </details>
         {isReallyToday && <DailyRituals date={day} onEveningReflection={() => setExhaleOpen(true)} />}
         {view !== "board" && <ArriveBand date={day} />}
 
@@ -207,60 +243,70 @@ function TodayInner() {
           </>
         ) : isMobile ? (
           <div className="animate-fade-in space-y-3">
-            <div role="tablist" aria-label="Today sections" className="today-mobile-section-tabs grid grid-cols-3 gap-1 rounded-xl border border-border/60 bg-card/70 p-1 text-xs">
-              {([[
-                "plan", "Plan", "Shape the day", CalendarCheck,
-              ], ["care", "Care", "People & home", HeartHandshake], ["grow", "Grow", "Habits & reflection", Sprout]] as const).map(([t, label, detail, Icon]) => (
+            <div role="tablist" aria-label="Today phases" className="today-mobile-section-tabs grid grid-cols-4 gap-1 rounded-xl border border-border/60 bg-card/70 p-1 text-xs">
+              {MOBILE_TABS.map(([t, label, detail, Icon]) => (
                 <button
                   key={t}
+                  id={`today-tab-${t}`}
                   role="tab"
                   aria-selected={mobileTab === t}
+                  aria-controls={`today-panel-${t}`}
+                  tabIndex={mobileTab === t ? 0 : -1}
                   type="button"
                   onClick={() => setMobileTab(t)}
+                  onKeyDown={(e) => {
+                    const i = MOBILE_TABS.findIndex(([k]) => k === t);
+                    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+                    if (!step) return;
+                    e.preventDefault();
+                    const next = MOBILE_TABS[(i + step + MOBILE_TABS.length) % MOBILE_TABS.length][0];
+                    setMobileTab(next);
+                    document.getElementById(`today-tab-${next}`)?.focus();
+                  }}
                   className={cn(
-                    "flex min-h-14 items-center justify-center gap-2 rounded-lg px-1 text-left transition-colors",
+                    "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     mobileTab === t ? "bg-primary/15 text-primary shadow-sm" : "text-muted-foreground",
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                  <span><span className="block text-xs font-semibold">{label}</span><span className="hidden text-[9px] leading-tight min-[370px]:block">{detail}</span></span>
+                  <span className="block text-xs font-semibold">{label}</span>
+                  <span className="sr-only">{detail}</span>
                 </button>
               ))}
             </div>
-            {mobileTab === "plan" && (
-              <div className="space-y-3">
-                {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
-                <RhythmTodayCard date={day} />
-{moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
-                <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
-                <TodayPlanView date={day} />
-              </div>
-            )}
-            {mobileTab === "care" && (
-              <div className="animate-fade-in space-y-3">
-                <CareColumn date={day} onTaskClick={setEditTaskId} />
-                <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
-                <DinnerTonightCard date={day} />
-                <CleaningTodayCard />
-                <LaundryBoard compact />
-              </div>
-            )}
-
-            {mobileTab === "grow" && (
-              <div className="animate-fade-in space-y-3">
-                <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
-                <JournalCard date={day} />
-                <GrowColumn date={day} />
-                <RoutinesHabitsRow date={day} />
-                <CollapsibleSection
-                  storageKey="planning.section.debrief.collapsed"
-        eyebrow="Plan insight"
-        title="Review today's shape"
-                >
+            <div role="tabpanel" id={`today-panel-${mobileTab}`} aria-labelledby={`today-tab-${mobileTab}`} className="animate-fade-in space-y-3">
+              {mobileTab === "plan" && (
+                <>
+                  {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                  <RhythmTodayCard date={day} />
+                  {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
+                  <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
+                  <TodayPlanView date={day} />
+                </>
+              )}
+              {mobileTab === "grow" && (
+                <>
+                  <GrowColumn date={day} />
+                  <RoutinesHabitsRow date={day} />
+                </>
+              )}
+              {mobileTab === "care" && (
+                <>
+                  <CareColumn date={day} onTaskClick={setEditTaskId} />
+                  <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+                  <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
+                  <DinnerTonightCard date={day} />
+                  <CleaningTodayCard />
+                  <LaundryBoard compact />
+                </>
+              )}
+              {mobileTab === "letgo" && (
+                <>
+                  <JournalCard date={day} />
                   <DailyDebrief date={day} onTaskClick={setEditTaskId} />
-                </CollapsibleSection>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         ) : (
           <div className="animate-fade-in space-y-4">
