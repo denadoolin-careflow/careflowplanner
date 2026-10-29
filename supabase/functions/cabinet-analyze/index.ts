@@ -7,7 +7,7 @@ const reply = (status: number, body: unknown) => new Response(JSON.stringify(bod
 
 const SCHEMA = {
   type: "object", additionalProperties: false,
-  required: ["summary", "key_details", "suggested_drawer", "suggested_tags", "expires_at", "suggested_title", "text"],
+  required: ["summary", "key_details", "suggested_drawer", "suggested_tags", "expires_at", "suggested_title", "text", "mail_type", "sender", "amount", "due_on"],
   properties: {
     summary: { type: "string" },
     key_details: { type: "array", items: { type: "object", additionalProperties: false, required: ["label", "value"], properties: { label: { type: "string" }, value: { type: "string" } } } },
@@ -15,6 +15,10 @@ const SCHEMA = {
     suggested_tags: { type: "array", items: { type: "string" } },
     expires_at: { type: ["string", "null"], description: "YYYY-MM-DD expiry/renewal date if the document has one" },
     suggested_title: { type: "string" },
+    mail_type: { type: ["string", "null"], enum: ["bill", "coupon", "statement", "letter", "medical", "legal", "junk", "other", null] },
+    sender: { type: ["string", "null"] },
+    amount: { type: ["number", "null"], description: "Amount due/owed if any" },
+    due_on: { type: ["string", "null"], description: "YYYY-MM-DD payment due date, response deadline or coupon expiry" },
     text: { type: "string", description: "Plain text of the document's main content, up to ~3000 words, for search" },
   },
 };
@@ -57,7 +61,7 @@ Deno.serve(async (req) => {
       headers: { "Lovable-API-Key": key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-Lovable-AIG-SDK": "fetch" },
       body: JSON.stringify({
         model: "openai/gpt-6-astra", stream: true, store: false, reasoning: { effort: "low" },
-        instructions: `You file important personal documents for a calm family planner. Read the document and return: a warm, clear 2-3 sentence summary; up to 8 key details (provider, policy/account/ID numbers, names, dates, amounts) as label/value pairs; the best drawer from this list or null: ${JSON.stringify(drawers)}; up to 4 short lowercase tags; an expiry or renewal date (YYYY-MM-DD) or null; a short descriptive title; and the main text for search.`,
+        instructions: `You file important personal documents for a calm family planner. Read the document and return: a warm, clear 2-3 sentence summary; up to 8 key details (provider, policy/account/ID numbers, names, dates, amounts) as label/value pairs; the best drawer from this list or null: ${JSON.stringify(drawers)}; up to 4 short lowercase tags; an expiry or renewal date (YYYY-MM-DD) or null; a short descriptive title; if it is mail, its type, sender, amount due and due/deadline/coupon expiry date (else null); and the main text for search.`,
         text: { format: { type: "json_schema", name: "document", strict: true, schema: SCHEMA } },
         input: [{ role: "user", content: [{ type: "input_text", text: `Current title: ${doc.title}` }, part] }],
       }),
@@ -86,7 +90,7 @@ Deno.serve(async (req) => {
     const expires = typeof ai.expires_at === "string" && /^\d{4}-\d{2}-\d{2}$/.test(ai.expires_at) ? ai.expires_at : null;
     const patch = { summary: String(ai.summary ?? ""), key_details: Array.isArray(ai.key_details) ? ai.key_details.slice(0, 8) : [], extracted_text: String(ai.text ?? "").slice(0, 40000) };
     await client.from("cabinet_documents").update(patch).eq("id", id);
-    return reply(200, { ...patch, suggested_drawer: ai.suggested_drawer ?? null, suggested_tags: (ai.suggested_tags ?? []).slice(0, 4), expires_at: expires, suggested_title: ai.suggested_title ?? "" });
+    return reply(200, { ...patch, suggested_drawer: ai.suggested_drawer ?? null, suggested_tags: (ai.suggested_tags ?? []).slice(0, 4), expires_at: expires, suggested_title: ai.suggested_title ?? "", mail_type: ai.mail_type ?? null, sender: ai.sender ?? null, amount: typeof ai.amount === "number" ? ai.amount : null, due_on: typeof ai.due_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(ai.due_on) ? ai.due_on : null });
   } catch (e) {
     console.error("cabinet-analyze failed", e);
     return reply(500, { message: "Couldn't read this document" });
