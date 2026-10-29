@@ -12,6 +12,7 @@ import { SYMPTOM_CHIPS, MOOD_OPTIONS, type FlowLevel, type EnergyLevel, getPhase
 import { Droplet, Heart, Sparkles, Thermometer, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { CycleDatesSheet } from "./CycleDatesSheet";
 
 const FLOWS: { key: FlowLevel; label: string }[] = [
   { key: "spotting", label: "Spotting" },
@@ -40,6 +41,7 @@ export function CycleLogSheet({ open, onOpenChange, date }: { open: boolean; onO
   const [mucus, setMucus] = useState<string>("");
   const [intimate, setIntimate] = useState(false);
   const [notes, setNotes] = useState("");
+  const [datesOpen, setDatesOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -79,6 +81,8 @@ export function CycleLogSheet({ open, onOpenChange, date }: { open: boolean; onO
             {format(targetDate, "EEEE, MMM d")} · {phase ? `${phase.label} · Day ${phase.cycleDay}` : "No cycle data yet"}
           </SheetDescription>
         </SheetHeader>
+        <Button variant="outline" className="mt-3 min-h-11 w-full" onClick={() => setDatesOpen(true)}>Edit cycle dates &amp; phases</Button>
+        <CycleDatesSheet open={datesOpen} onOpenChange={setDatesOpen} />
 
         <div className="mt-5 space-y-5">
           {/* Period start/end */}
