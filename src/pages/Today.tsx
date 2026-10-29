@@ -153,32 +153,38 @@ function TodayInner() {
   }), [entry.level]);
 
   const circle = (
-    <div className="animate-fade-in space-y-3">
-      <TodayNudgeStrip date={day} />
-      <RhythmTodayCard date={day} />
-{moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <DinnerTonightCard date={day} />
-        <CleaningTodayCard />
-      </div>
-      <LaundryBoard compact />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <CareColumn date={day} onTaskClick={setEditTaskId} />
-        <GrowColumn date={day} />
-      </div>
-      <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
-      <RoutinesHabitsRow date={day} />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+    <div className="animate-fade-in space-y-6">
+      <PhaseBand title="Plan">
+        <TodayNudgeStrip date={day} />
+        <RhythmTodayCard date={day} />
+        {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
+      </PhaseBand>
+      <PhaseBand title="Grow">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <GrowColumn date={day} />
+          <RoutinesHabitsRow date={day} />
+        </div>
+      </PhaseBand>
+      <PhaseBand title="Care">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <CareColumn date={day} onTaskClick={setEditTaskId} />
+          <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
+          <DinnerTonightCard date={day} />
+          <CleaningTodayCard />
+        </div>
+        <LaundryBoard compact />
+        <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
+      </PhaseBand>
+      <PhaseBand title="Let go">
         <JournalCard date={day} />
-      </div>
-      <CollapsibleSection
-        storageKey="planning.section.debrief.collapsed"
-                  eyebrow="Plan insight"
-                  title="Review today's shape"
-      >
-        <DailyDebrief date={day} onTaskClick={setEditTaskId} />
-      </CollapsibleSection>
+        <CollapsibleSection
+          storageKey="planning.section.debrief.collapsed"
+          eyebrow="Let go"
+          title="Review today's shape"
+        >
+          <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+        </CollapsibleSection>
+      </PhaseBand>
     </div>
   );
   const secondary = circle;

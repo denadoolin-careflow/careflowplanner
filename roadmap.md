@@ -94,3 +94,6 @@
 - [x] Add independent evening tarot selection and verify Today’s centered clock, phase tint and moon/sign guidance; saved choice survives reload, temporary pull removed, nine tests pass
 - [x] Apply gradient medallion, welcome banner, browser/app icons and four-phase tagline
 - [x] Refresh default brand fonts/colors; verify light/dark sign-in, hosted images and signed-in shared marks without editing content or optional presets
+- [x] Today page: grouped gentle reminders, Plan/Grow/Care/Let go tabs and desktop phase sections, accessible tabs
+- [ ] Weekly & Quarterly Rhythm Hub (Sunday weekly reset, seasonal quarterly review)
+- [ ] 5-horizon Plan/Grow/Care/Let go framework (day, week, month, quarter, year) across CareFlow
