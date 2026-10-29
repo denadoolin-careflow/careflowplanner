@@ -17,6 +17,7 @@ interface Ctx {
   saveSettings: (patch: Partial<CycleSettings>) => Promise<void>;
   addPeriodStart: (date: string) => Promise<void>;
   setPeriodEnd: (id: string, date: string | null) => Promise<void>;
+  updatePeriod: (id: string, patch: { periodStart?: string; periodEnd?: string | null; ovulationDate?: string | null }) => Promise<void>;
   deletePeriod: (id: string) => Promise<void>;
   upsertDayLog: (date: string, patch: Partial<Omit<DayLog, "id" | "date">>) => Promise<void>;
   deleteDayLog: (id: string) => Promise<void>;
