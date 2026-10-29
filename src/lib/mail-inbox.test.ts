@@ -33,7 +33,7 @@ describe("mail reminders on Today", () => {
   const coupon = doc({ id: "c1", title: "Store coupon", mail_status: "new", mail_type: "coupon", due_on: "2026-10-30" });
   const letter = doc({ id: "l1", title: "School note", mail_status: "new", mail_type: "letter", due_on: "2026-11-05" });
   const done = doc({ id: "z1", title: "Old bill", mail_status: "done", mail_type: "bill", due_on: "2026-10-20" });
-  const trash = doc({ id: "x1", title: "Flyer", mail_status: "trash", mail_type: "junk", trashed_at: "2026-09-29T12:00:00" });
+  const trash = doc({ id: "x1", title: "Flyer", mail_status: "trash", mail_type: "junk", trashed_at: "2026-10-20T12:00:00" });
 
   it("lists a review whose task is due today", () => {
     const r = mailReminders([review], { t1: "2026-10-29" }, now);
