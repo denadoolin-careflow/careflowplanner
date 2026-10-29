@@ -65,3 +65,4 @@
 - Atmosphere auto-switch can follow the Moon: AutoRules.byMoonPhase maps Plan/Grow/Care/Let go (lunarRhythmAt) to atmospheres, defaulting to the four seasonal phase atmospheres.
 - Filing Cabinet (Notes) stores files in the private filing-cabinet bucket with metadata in cabinet_documents/cabinet_drawers; links reuse entity_links (source_type 'document') and AI reading runs server-side in cabinet-analyze.
 - Mail inbox items are cabinet_documents rows with kind 'mail' (status/type/sender/amount/due columns); filing flips kind to 'document', review dates create ordinary tasks whose done-state marks the mail Done, and expired trash is purged when the Mail page loads.
+- Today's mail reminder reads the same mail records through listMailReminders (review task due, nearby bill/coupon date, trash about to be deleted) and links each item to /notes/mail?open=<id>, so no separate reminder store exists.
