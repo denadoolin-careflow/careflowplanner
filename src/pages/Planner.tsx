@@ -1,3 +1,4 @@
+import { RhythmHub } from "@/components/planner/rhythm/RhythmHub";
 import { FocusGoalCard } from "@/components/goals/FocusGoalCard";
 import { MobileWeekAgendaStrip } from "@/components/planner/mobile/MobileWeekAgendaStrip";
 import { ScheduleSheetButton } from "@/components/planner/ScheduleSheetButton";
