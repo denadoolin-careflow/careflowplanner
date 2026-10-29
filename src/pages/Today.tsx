@@ -11,7 +11,7 @@ import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { TodayMoonHeader } from "@/components/today/TodayMoonHeader";
-import { FocusGoalChip } from "@/components/goals/FocusGoalCard";
+import { FocusGoalCard, FocusGoalChip } from "@/components/goals/FocusGoalCard";
 import { WorkspaceQuizInvite } from "@/pages/WorkspaceQuiz";
 import { NewMoonGoalCard } from "@/components/today/NewMoonGoalCard";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
@@ -45,14 +45,16 @@ import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
 import { TemplateGallery } from "@/components/today/TemplateGallery";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { Bell, CalendarCheck, ChevronDown, Feather, HeartHandshake, Sprout } from "lucide-react";
+import { Bell, ChevronDown } from "lucide-react";
+import { PHASE_ICONS } from "@/lib/phase-icons";
+import { LunarCheckInCard } from "@/components/today/LunarCheckInCard";
 
 type MobileTab = "plan" | "grow" | "care" | "letgo";
 const MOBILE_TABS = [
-  ["plan", "Plan", "Shape the day", CalendarCheck],
-  ["grow", "Grow", "Habits and projects", Sprout],
-  ["care", "Care", "People, home and you", HeartHandshake],
-  ["letgo", "Let go", "Reflect and release", Feather],
+  ["plan", "Plan", "Shape the day", PHASE_ICONS.plan],
+  ["grow", "Grow", "Focus goal, habits and projects", PHASE_ICONS.grow],
+  ["care", "Care", "People, home and you", PHASE_ICONS.care],
+  ["letgo", "Let go", "Reflect and release", PHASE_ICONS.letgo],
 ] as const satisfies ReadonlyArray<readonly [MobileTab, string, string, unknown]>;
 
 function PhaseBand({ title, children }: { title: string; children: React.ReactNode }) {
@@ -160,6 +162,7 @@ function TodayInner() {
         {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
       </PhaseBand>
       <PhaseBand title="Grow">
+        <FocusGoalCard date={day} />
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <GrowColumn date={day} />
           <RoutinesHabitsRow date={day} />
@@ -176,6 +179,7 @@ function TodayInner() {
         <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
       </PhaseBand>
       <PhaseBand title="Let go">
+        <LunarCheckInCard date={day} />
         <JournalCard date={day} />
         <CollapsibleSection
           storageKey="planning.section.debrief.collapsed"
@@ -286,6 +290,7 @@ function TodayInner() {
               )}
               {mobileTab === "grow" && (
                 <>
+                  <FocusGoalCard date={day} />
                   <GrowColumn date={day} />
                   <RoutinesHabitsRow date={day} />
                 </>
@@ -302,6 +307,7 @@ function TodayInner() {
               )}
               {mobileTab === "letgo" && (
                 <>
+                  <LunarCheckInCard date={day} />
                   <JournalCard date={day} />
                   <DailyDebrief date={day} onTaskClick={setEditTaskId} />
                 </>

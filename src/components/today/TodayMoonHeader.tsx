@@ -2,7 +2,8 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { format, isSameDay } from "date-fns";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Sprout, Leaf, Heart, Wind, ArrowRight, ChevronRight, CheckCircle2, ListChecks, Sparkles } from "lucide-react";
+import { PHASE_ICONS } from "@/lib/phase-icons";
+import { ArrowRight, ChevronRight, CheckCircle2, ListChecks, Sparkles } from "lucide-react";
 import { getMoonAgeDays } from "@/lib/moon";
 import skyPlan from "@/assets/sky-plan.jpg";
 import skyGrow from "@/assets/sky-grow.jpg";
@@ -18,7 +19,7 @@ import { phaseSignAdvice } from "@/lib/cosmic/moon-energy";
 import { LUNAR_RHYTHM, PHASE_GUIDE } from "@/lib/cosmic/lunar-rhythm";
 import { RHYTHM_ORDER, phaseStyle, useDayContext, useNow } from "./day-context";
 
-const ICONS = { plan: Sprout, grow: Leaf, care: Heart, letgo: Wind } as const;
+const ICONS = PHASE_ICONS;
 
 /** Combine the selected day with the current clock time so moon/sign match that day now. */
 function atSelected(date: Date, now: Date) {

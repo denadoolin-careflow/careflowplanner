@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Sprout, Leaf, Heart, Wind } from "lucide-react";
+import { Sprout, Leaf, Heart, Moon } from "lucide-react";
 import type { Project } from "@/lib/types";
 import { stageOf } from "./studio-tokens";
 
@@ -14,10 +14,10 @@ export function projectPhase(p: Project): "Plan" | "Grow" | "Care" | "Let go" {
 }
 
 const PHASES = [
-  { k: "Plan", icon: Sprout, hint: "Ideas & planning" },
-  { k: "Grow", icon: Leaf, hint: "Building momentum" },
+  { k: "Plan", icon: Leaf, hint: "Ideas & planning" },
+  { k: "Grow", icon: Sprout, hint: "Building momentum" },
   { k: "Care", icon: Heart, hint: "Tending & maintaining" },
-  { k: "Let go", icon: Wind, hint: "Paused or resting" },
+  { k: "Let go", icon: Moon, hint: "Paused or resting" },
 ] as const;
 
 export function ProjectsGardenView({ projects, renderCard }: { projects: Project[]; renderCard: (p: Project) => ReactNode }) {
