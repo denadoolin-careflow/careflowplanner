@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { BookOpen, CheckCircle2, Circle, FileText, Flag, Heart, Leaf, List, NotebookPen, Plus, Sprout, Sun, Wind } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, FileText, Flag, Heart, Leaf, List, NotebookPen, Plus, Sprout, Sun } from "lucide-react";
 import { GARDEN_PHASE_ICONS } from "@/lib/phase-icons";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";

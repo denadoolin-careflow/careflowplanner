@@ -162,6 +162,7 @@ function TodayInner() {
         {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
       </PhaseBand>
       <PhaseBand title="Grow">
+        <FocusGoalCard date={day} />
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <GrowColumn date={day} />
           <RoutinesHabitsRow date={day} />
@@ -178,6 +179,7 @@ function TodayInner() {
         <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
       </PhaseBand>
       <PhaseBand title="Let go">
+        <LunarCheckInCard date={day} />
         <JournalCard date={day} />
         <CollapsibleSection
           storageKey="planning.section.debrief.collapsed"
