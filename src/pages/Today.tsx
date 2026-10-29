@@ -86,7 +86,7 @@ function TodayInner() {
   const defaultRoute = state.settings.defaultRoute ?? "/";
   const [galleryOpen, setGalleryOpen] = useState(false);
   const isMobile = useIsMobile();
-  const [mobileTab, setMobileTab] = useState<"plan" | "care" | "grow">("plan");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("plan");
 
   // When arriving with a #slot-morning|afternoon|evening hash, scroll to it.
   useEffect(() => {
