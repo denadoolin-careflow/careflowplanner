@@ -225,6 +225,13 @@
       "when": 1793266112966,
       "tag": "0031_filing_cabinet",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793266878187,
+      "tag": "0032_mail_inbox",
+      "breakpoints": true
     }
   ]
 }

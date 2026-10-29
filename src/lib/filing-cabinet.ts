@@ -11,6 +11,8 @@ export type CabinetDoc = {
   id: string; drawer_id: string | null; title: string; storage_path: string; mime_type: string | null;
   size_bytes: number | null; tags: string[]; expires_at: string | null; remind_days: number[];
   summary: string | null; key_details: KeyDetail[]; extracted_text: string | null; created_at: string;
+  kind?: "document" | "mail"; mail_status?: "new" | "review" | "done" | "trash"; mail_type?: string | null;
+  sender?: string | null; amount?: number | null; due_on?: string | null; review_task_id?: string | null; trashed_at?: string | null;
 };
 
 const db = supabase as any;
@@ -54,12 +56,12 @@ async function seedDrawers(): Promise<Drawer[]> {
 }
 
 export async function listDocs(): Promise<CabinetDoc[]> {
-  const { data, error } = await db.from("cabinet_documents").select("*").order("created_at", { ascending: false });
+  const { data, error } = await db.from("cabinet_documents").select("*").eq("kind", "document").order("created_at", { ascending: false });
   if (error) throw error;
   return data;
 }
 
-export async function uploadDoc(file: File | Blob, opts: { title: string; drawerId: string | null; mime?: string }): Promise<CabinetDoc> {
+export async function uploadDoc(file: File | Blob, opts: { title: string; drawerId: string | null; mime?: string; kind?: "document" | "mail" }): Promise<CabinetDoc> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Please sign in");
   const name = (file as File).name ?? `${opts.title}.pdf`;
@@ -69,7 +71,7 @@ export async function uploadDoc(file: File | Blob, opts: { title: string; drawer
   const { error } = await supabase.storage.from(CABINET_BUCKET).upload(path, file, { contentType: mime });
   if (error) throw error;
   const { data, error: e2 } = await db.from("cabinet_documents")
-    .insert({ title: opts.title, drawer_id: opts.drawerId, storage_path: path, mime_type: mime, size_bytes: file.size })
+    .insert({ title: opts.title, kind: opts.kind ?? "document", drawer_id: opts.drawerId, storage_path: path, mime_type: mime, size_bytes: file.size })
     .select("*").single();
   if (e2) throw e2;
   return data;
@@ -96,6 +98,7 @@ export async function signedUrl(doc: CabinetDoc, download = false) {
 export type AnalyzeResult = {
   summary: string; key_details: KeyDetail[]; suggested_drawer: string | null; suggested_tags: string[];
   expires_at: string | null; suggested_title: string;
+  mail_type: string | null; sender: string | null; amount: number | null; due_on: string | null;
 };
 
 export async function analyzeDoc(id: string, drawerNames: string[]): Promise<AnalyzeResult> {
@@ -128,13 +131,13 @@ export async function photosToPdf(files: File[]): Promise<Blob> {
   return pdf.output("blob");
 }
 
-export type LinkTarget = { type: "project" | "goal" | "appointment" | "note"; id: string; label: string };
+export type LinkTarget = { type: "project" | "goal" | "appointment" | "note" | "person" | "budget"; id: string; label: string };
 
 export async function listLinks(docId: string): Promise<LinkTarget[]> {
   const { data } = await db.from("entity_links").select("target_type,target_id").eq("source_type", "document").eq("source_id", docId);
   const rows = (data ?? []) as { target_type: LinkTarget["type"]; target_id: string }[];
   const out: LinkTarget[] = [];
-  for (const type of ["project", "goal", "appointment", "note"] as const) {
+  for (const type of Object.keys(LINK_SOURCES) as LinkTarget["type"][]) {
     const ids = rows.filter((r) => r.target_type === type).map((r) => r.target_id);
     if (!ids.length) continue;
     const { table, col } = LINK_SOURCES[type];
@@ -149,6 +152,8 @@ export const LINK_SOURCES = {
   goal: { table: "goals", col: "title", label: "Goal" },
   appointment: { table: "appointments", col: "title", label: "Appointment" },
   note: { table: "notes", col: "title", label: "Note" },
+  person: { table: "loved_ones", col: "name", label: "Person" },
+  budget: { table: "budget_categories", col: "name", label: "Budget" },
 } as const;
 
 export async function searchLinkTargets(type: LinkTarget["type"], q: string): Promise<LinkTarget[]> {
@@ -169,4 +174,4 @@ export async function removeLink(docId: string, t: LinkTarget) {
 }
 
 export const linkHref = (t: LinkTarget) =>
-  t.type === "project" ? `/projects/${t.id}` : t.type === "goal" ? `/goals` : t.type === "note" ? `/notes/${t.id}` : `/planner`;
+  t.type === "project" ? `/projects/${t.id}` : t.type === "goal" ? `/goals` : t.type === "note" ? `/notes/${t.id}` : t.type === "person" ? `/care` : t.type === "budget" ? `/wealth` : `/planner`;

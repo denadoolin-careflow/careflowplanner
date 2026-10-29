@@ -784,53 +784,77 @@ export type Database = {
       }
       cabinet_documents: {
         Row: {
+          amount: number | null
           created_at: string
           drawer_id: string | null
+          due_on: string | null
           expires_at: string | null
           extracted_text: string | null
           id: string
           key_details: Json
+          kind: string
+          mail_status: string
+          mail_type: string | null
           mime_type: string | null
           remind_days: number[]
+          review_task_id: string | null
+          sender: string | null
           size_bytes: number | null
           storage_path: string
           summary: string | null
           tags: string[]
           title: string
+          trashed_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          amount?: number | null
           created_at?: string
           drawer_id?: string | null
+          due_on?: string | null
           expires_at?: string | null
           extracted_text?: string | null
           id?: string
           key_details?: Json
+          kind?: string
+          mail_status?: string
+          mail_type?: string | null
           mime_type?: string | null
           remind_days?: number[]
+          review_task_id?: string | null
+          sender?: string | null
           size_bytes?: number | null
           storage_path: string
           summary?: string | null
           tags?: string[]
           title: string
+          trashed_at?: string | null
           updated_at?: string
           user_id?: string
         }
         Update: {
+          amount?: number | null
           created_at?: string
           drawer_id?: string | null
+          due_on?: string | null
           expires_at?: string | null
           extracted_text?: string | null
           id?: string
           key_details?: Json
+          kind?: string
+          mail_status?: string
+          mail_type?: string | null
           mime_type?: string | null
           remind_days?: number[]
+          review_task_id?: string | null
+          sender?: string | null
           size_bytes?: number | null
           storage_path?: string
           summary?: string | null
           tags?: string[]
           title?: string
+          trashed_at?: string | null
           updated_at?: string
           user_id?: string
         }

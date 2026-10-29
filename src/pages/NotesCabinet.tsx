@@ -27,6 +27,7 @@ const tone = (c: string | null) => DRAWER_TONE[c ?? ""] ?? "bg-muted text-foregr
 const isImage = (d: CabinetDoc) => (d.mime_type ?? "").startsWith("image/");
 const isPdf = (d: CabinetDoc) => d.mime_type === "application/pdf";
 
+export { Field };
 export default function NotesCabinet() {
   const [drawers, setDrawers] = useState<Drawer[]>([]);
   const [docs, setDocs] = useState<CabinetDoc[] | null>(null);
@@ -212,7 +213,7 @@ export default function NotesCabinet() {
   );
 }
 
-function DocSheet({ doc, drawers, allTags, onClose, onChanged }: { doc: CabinetDoc | null; drawers: Drawer[]; allTags: string[]; onClose: () => void; onChanged: () => Promise<void> }) {
+export function DocSheet({ doc, drawers, allTags, onClose, onChanged, extra, hideDrawer, onAnalyzed }: { doc: CabinetDoc | null; drawers: Drawer[]; allTags: string[]; onClose: () => void; onChanged: () => Promise<void>; extra?: (doc: CabinetDoc) => React.ReactNode; hideDrawer?: boolean; onAnalyzed?: (r: import("@/lib/filing-cabinet").AnalyzeResult) => void }) {
   const [url, setUrl] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -247,6 +248,7 @@ function DocSheet({ doc, drawers, allTags, onClose, onChanged }: { doc: CabinetD
     try {
       const r = await analyzeDoc(doc.id, drawers.map((d) => d.name));
       await onChanged();
+      onAnalyzed?.(r);
       setSuggest({ drawer: r.suggested_drawer, tags: r.suggested_tags.filter((t) => !doc.tags.includes(t)), expires: r.expires_at, title: r.suggested_title });
       toast.success("Summary ready");
     } catch (e: any) { toast.error(e.message); } finally { setAnalyzing(false); }
@@ -276,6 +278,8 @@ function DocSheet({ doc, drawers, allTags, onClose, onChanged }: { doc: CabinetD
             )}
           </div>
 
+          {extra?.(doc)}
+
           {suggest && (suggestedDrawer && suggestedDrawer.id !== doc.drawer_id || suggest.tags?.length || suggest.expires && suggest.expires !== doc.expires_at || suggest.title && suggest.title !== doc.title) && (
             <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
               <p className="font-medium text-foreground">Suggestions</p>
@@ -299,7 +303,7 @@ function DocSheet({ doc, drawers, allTags, onClose, onChanged }: { doc: CabinetD
             </Field>
           )}
 
-          <Field label="Drawer">
+          {!hideDrawer && <Field label="Drawer">
             <Select value={doc.drawer_id ?? "none"} onValueChange={(v) => patch({ drawer_id: v === "none" ? null : v })}>
               <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -307,7 +311,7 @@ function DocSheet({ doc, drawers, allTags, onClose, onChanged }: { doc: CabinetD
                 {drawers.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
               </SelectContent>
             </Select>
-          </Field>
+          </Field>}
 
           <Field label="Expires / renews">
             <div className="flex gap-2">

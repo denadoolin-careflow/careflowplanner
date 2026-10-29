@@ -61,6 +61,7 @@ import NotesTimeline from "./pages/NotesTimeline";
 import NotesFiles from "./pages/NotesFiles";
 import NotesVoiceMemos from "./pages/NotesVoiceMemos";
 import NotesCabinet from "./pages/NotesCabinet";
+import NotesMail from "./pages/NotesMail";
 import LibraryPage from "./pages/Library";
 import Review from "./pages/Review";
 import Reset from "./pages/Reset";
@@ -202,6 +203,7 @@ const App = () => (
                 <Route path="/notes/files" element={<NotesFiles />} />
                 <Route path="/notes/voice-memos" element={<NotesVoiceMemos />} />
                 <Route path="/notes/cabinet" element={<NotesCabinet />} />
+                <Route path="/notes/mail" element={<NotesMail />} />
                 <Route path="/notes/:id" element={<NoteDetail />} />
                 <Route path="/graph" element={<Graph />} />
                 <Route path="/review" element={<Review />} />
