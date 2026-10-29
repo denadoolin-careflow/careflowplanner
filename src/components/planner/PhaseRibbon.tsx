@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { Sprout, Leaf, Heart, Wind } from "lucide-react";
+import { PHASE_ICONS } from "@/lib/phase-icons";
 import { LUNAR_RHYTHM } from "@/lib/cosmic/lunar-rhythm";
 import { phaseSegments } from "@/lib/cosmic/moon-energy";
 import { cn } from "@/lib/utils";
 
-export const PHASE_ICONS = { plan: Sprout, grow: Leaf, care: Heart, letgo: Wind } as const;
+export { PHASE_ICONS };
 
 /** Thin Plan/Grow/Care/Let go ribbon for the next three moon cycles. Tap a segment to jump there. */
 export function PhaseRibbon({ selected, rangeStart, rangeEnd, onGoto, className }: {

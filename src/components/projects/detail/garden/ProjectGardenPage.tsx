@@ -42,10 +42,10 @@ import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 const PHASE: Record<GardenPhase, {
   icon: typeof Sprout; key: string; subtitle: string; add: string; empty: string;
 }> = {
-  Plan: { icon: Sprout, key: "plan", subtitle: "Decide what matters", add: "Add a decision", empty: "What would help this feel clearer?" },
+  Plan: { icon: Leaf, key: "plan", subtitle: "Decide what matters", add: "Add a decision", empty: "What would help this feel clearer?" },
   Grow: { icon: Flower2, key: "grow", subtitle: "Take the next small step", add: "Add a step", empty: "What is one manageable action?" },
   Care: { icon: Heart, key: "care", subtitle: "Support what is in motion", add: "Add a check-in", empty: "What needs a little ongoing attention?" },
-  "Let go": { icon: Wind, key: "letgo", subtitle: "Make room for what matters", add: "Set something down", empty: "Is there something you can simplify or set down?" },
+  "Let go": { icon: Moon, key: "letgo", subtitle: "Make room for what matters", add: "Set something down", empty: "Is there something you can simplify or set down?" },
 };
 const v = (k: string, name: string) => `hsl(var(--pg-${k}${name}))`;
 const card = "rounded-2xl border border-border bg-card shadow-[0_1px_2px_hsl(var(--foreground)/0.04)]";
