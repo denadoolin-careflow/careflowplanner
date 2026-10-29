@@ -1,0 +1,5 @@
+CREATE POLICY "Corner media readable" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'corner-media');
+CREATE POLICY "Admins write corner media" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'corner-media' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins update corner media" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'corner-media' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins delete corner media" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'corner-media' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins manage shop files" ON storage.objects FOR ALL TO authenticated USING (bucket_id = 'shop-files' AND public.has_role(auth.uid(), 'admin')) WITH CHECK (bucket_id = 'shop-files' AND public.has_role(auth.uid(), 'admin'));

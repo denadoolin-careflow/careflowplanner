@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { DEFAULT_COLORS, type LandingColors } from "@/lib/landing-colors";
 
 export type Testimonial = { quote: string; name: string; avatar: string };
-export type SectionId = "hero" | "problem" | "phases" | "features" | "difference" | "who" | "philosophy" | "community" | "finalCta";
+export type SectionId = "hero" | "problem" | "phases" | "features" | "difference" | "who" | "philosophy" | "community" | "corner" | "club" | "shop" | "finalCta";
 
 export const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "hero", label: "Top welcome" },
@@ -15,6 +15,9 @@ export const SECTIONS: { id: SectionId; label: string }[] = [
   { id: "who", label: "Who it's for" },
   { id: "philosophy", label: "Philosophy lines" },
   { id: "community", label: "Testimonials" },
+  { id: "corner", label: "CareFlow Corner (blog)" },
+  { id: "club", label: "CareFlow Club signup" },
+  { id: "shop", label: "Shop" },
   { id: "finalCta", label: "Closing call to action" },
 ];
 
@@ -103,6 +106,17 @@ export const TEXT_FIELDS: { key: string; label: string; section: SectionId; mult
   { key: "community.eyebrow", label: "Eyebrow", section: "community", value: "Join a community that gets it" },
   { key: "community.title", label: "Headline", section: "community", value: "You're not alone in this." },
   { key: "community.body", label: "Text", section: "community", multiline: true, value: "CareFlow is more than an app — it's a community of caregivers supporting caregivers." },
+  { key: "corner.eyebrow", label: "Eyebrow", section: "corner", value: "The CareFlow Corner" },
+  { key: "corner.title", label: "Headline", section: "corner", value: "Gentle ideas for planning, caring and living in rhythm." },
+  { key: "corner.body", label: "Text", section: "corner", multiline: true, value: "Stories, seasonal guides and small practices to help you find your flow." },
+  { key: "club.eyebrow", label: "Eyebrow", section: "club", value: "Free to join" },
+  { key: "club.title", label: "Headline", section: "club", value: "Join the CareFlow Club" },
+  { key: "club.body", label: "Text", section: "club", multiline: true, value: "Get seasonal planning guides, free printables and first looks at new CareFlow tools." },
+  { key: "club.cta", label: "Button", section: "club", value: "Join the CareFlow Club" },
+  { key: "club.thanks", label: "Thank-you message", section: "club", multiline: true, value: "Welcome to the CareFlow Club! We're so glad you're here." },
+  { key: "shop.eyebrow", label: "Eyebrow", section: "shop", value: "The CareFlow Shop" },
+  { key: "shop.title", label: "Headline", section: "shop", value: "Digital planners & printables" },
+  { key: "shop.body", label: "Text", section: "shop", multiline: true, value: "Thoughtfully designed tools to plan, grow, care and let go — on paper or on screen." },
   { key: "final.title", label: "Headline", section: "finalCta", multiline: true, value: "Make space for the life you want to live." },
   { key: "final.sub", label: "Subheadline", section: "finalCta", value: "A calmer mind. A more intentional day. A little less to carry." },
   { key: "final.body", label: "Text", section: "finalCta", multiline: true, value: "CareFlow helps you create the space to plan, grow, care, and let go — one day at a time." },

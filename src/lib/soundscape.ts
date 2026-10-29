@@ -34,6 +34,10 @@ export const SOUNDSCAPES: Soundscape[] = [
 ];
 
 export const ATMOSPHERE_SOUND_MAP: Record<AtmosphereId, SoundscapeId[]> = {
+  "spring-bloom": ["forest-birds", "stream"],
+  "summer-sun": ["forest-birds", "wind"],
+  "autumn-harvest": ["wind", "rain"],
+  "winter-rest": ["wind"],
   "tulip-garden": ["forest-birds", "stream"],
   "rain-garden": ["rain", "stream", "wind"],
   "lemon-grove": ["forest-birds", "wind"],

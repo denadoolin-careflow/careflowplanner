@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { lunarRhythmAt } from "@/lib/cosmic/lunar-rhythm";
 
 /** Atmosphere = immersive emotional environment (color + mood + typography + ambient feel). */
 export type AtmosphereId =
@@ -30,7 +31,11 @@ export type AtmosphereId =
   | "apple-orchard"
   | "pumpkin-patch"
   | "christmas-time"
-  | "cocoa-quilts";
+  | "cocoa-quilts"
+  | "spring-bloom"
+  | "summer-sun"
+  | "autumn-harvest"
+  | "winter-rest";
 
 export type AtmosphereVibe = {
   /** how strong the gradients feel */
@@ -382,6 +387,34 @@ export const ATMOSPHERES: Atmosphere[] = [
     fontBody: "Plus Jakarta Sans",
     vibe: { gradient: "soft", glow: "warm", glass: false, prefersDark: false, animation: "still" },
   },
+  {
+    id: "spring-bloom", name: "Spring Bloom", tagline: "Plan season: fresh starts and tender sprouts.",
+    mood: ["fresh", "hopeful", "clear"], bestFor: ["Plan phase", "New moon intentions", "Spring planning"],
+    palette: ["#8CA989", "#5E7F5B", "#F6F8F1", "#EBA7B8", "#2F4A36"],
+    fontDisplay: "Playfair Display", fontBody: "Nunito Sans",
+    vibe: { gradient: "soft", glow: "subtle", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "summer-sun", name: "Summer Sun", tagline: "Grow season: golden light and momentum.",
+    mood: ["bright", "energized", "warm"], bestFor: ["Grow phase", "Project momentum", "Summer days"],
+    palette: ["#F4C56B", "#A9741C", "#FCF7EA", "#8CA989", "#4A3418"],
+    fontDisplay: "Playfair Display", fontBody: "Nunito Sans",
+    vibe: { gradient: "rich", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "autumn-harvest", name: "Autumn Harvest", tagline: "Care season: tending, gathering, gratitude.",
+    mood: ["nurturing", "cozy", "grateful"], bestFor: ["Care phase", "Full moon check-ins", "Fall rhythms"],
+    palette: ["#D77F6B", "#A2492F", "#FAF1E8", "#C99A3E", "#727936"],
+    fontDisplay: "Playfair Display", fontBody: "Nunito Sans",
+    vibe: { gradient: "soft", glow: "warm", glass: false, prefersDark: false, animation: "still" },
+  },
+  {
+    id: "winter-rest", name: "Winter Rest", tagline: "Let go season: quiet, release, rest.",
+    mood: ["restful", "gentle", "spacious"], bestFor: ["Let go phase", "Waning moon", "Winter rest"],
+    palette: ["#E888A1", "#A24A63", "#F5F3F7", "#B7AFCB", "#3A2F45"],
+    fontDisplay: "Playfair Display", fontBody: "Nunito Sans",
+    vibe: { gradient: "whisper", glow: "subtle", glass: false, prefersDark: false, animation: "still" },
+  },
 ];
 
 export const DEFAULT_ATMOSPHERE: AtmosphereId = "sage-sanctuary";
@@ -394,25 +427,25 @@ export const SEASONS: Array<{ id: Season; label: string; emoji: string; atmosphe
     id: "spring",
     label: "Spring",
     emoji: "🌸",
-    atmospheres: ["tulip-garden", "rain-garden", "cherry-mist", "meadow-dew", "lilac-rain", "blossom", "dawn"],
+    atmospheres: ["spring-bloom", "tulip-garden", "rain-garden", "cherry-mist", "meadow-dew", "lilac-rain", "blossom", "dawn"],
   },
   {
     id: "summer",
     label: "Summer",
     emoji: "☀️",
-    atmospheres: ["lemon-grove", "firefly-nights", "peony-bloom", "wisteria-drift", "hibiscus-coast", "coastal-calm"],
+    atmospheres: ["summer-sun", "lemon-grove", "firefly-nights", "peony-bloom", "wisteria-drift", "hibiscus-coast", "coastal-calm"],
   },
   {
     id: "fall",
     label: "Fall",
     emoji: "🍂",
-    atmospheres: ["apple-orchard", "pumpkin-patch", "harvest-ember", "amber-orchard", "foggy-pine", "golden-hearth"],
+    atmospheres: ["autumn-harvest", "apple-orchard", "pumpkin-patch", "harvest-ember", "amber-orchard", "foggy-pine", "golden-hearth"],
   },
   {
     id: "winter",
     label: "Winter",
     emoji: "❄️",
-    atmospheres: ["christmas-time", "cocoa-quilts", "snowfall-hush", "evergreen-hearth", "frosted-plum", "mist", "moonlit-plum", "dark-sage-glass"],
+    atmospheres: ["winter-rest", "christmas-time", "cocoa-quilts", "snowfall-hush", "evergreen-hearth", "frosted-plum", "mist", "moonlit-plum", "dark-sage-glass"],
   },
   {
     id: "anytime",
@@ -437,6 +470,12 @@ export type AutoRules = {
   lowEnergy: AtmosphereId;
   focus: AtmosphereId;
   fullMoon: AtmosphereId;
+  /** Follow the Moon: switch by Plan / Grow / Care / Let go phase. */
+  byMoonPhase: boolean;
+  plan: AtmosphereId;
+  grow: AtmosphereId;
+  care: AtmosphereId;
+  letgo: AtmosphereId;
 };
 
 export const DEFAULT_AUTO_RULES: AutoRules = {
@@ -448,6 +487,11 @@ export const DEFAULT_AUTO_RULES: AutoRules = {
   lowEnergy: "mist",
   focus: "dark-sage-glass",
   fullMoon: "moonlit-plum",
+  byMoonPhase: false,
+  plan: "spring-bloom",
+  grow: "summer-sun",
+  care: "autumn-harvest",
+  letgo: "winter-rest",
 };
 
 export type AutoContext = {
@@ -455,12 +499,15 @@ export type AutoContext = {
   lowEnergy?: boolean;
   focus?: boolean;
   moonPhase?: string | null;
+  /** Current Plan / Grow / Care / Let go phase. */
+  rhythm?: "plan" | "grow" | "care" | "letgo";
 };
 
 /** Resolve which atmosphere should be active given context + rules. Priority: focus > lowEnergy > moon > time. */
 export function resolveAutoAtmosphere(rules: AutoRules, ctx: AutoContext): AtmosphereId {
   if (ctx.focus) return rules.focus;
   if (ctx.lowEnergy) return rules.lowEnergy;
+  if (rules.byMoonPhase && ctx.rhythm) return rules[ctx.rhythm];
   if (ctx.moonPhase && /full/i.test(ctx.moonPhase)) return rules.fullMoon;
   const h = ctx.hour;
   if (h >= 5 && h < 12) return rules.morning;
@@ -579,6 +626,7 @@ export function useAutoAtmosphereResolver(ctx: { lowEnergy?: boolean; focus?: bo
         lowEnergy: ctx.lowEnergy,
         focus: ctx.focus,
         moonPhase: ctx.moonPhase,
+        rhythm: lunarRhythmAt(new Date()),
       });
       if (next !== getCurrentAtmosphere()) setAtmosphere(next, { silent: true });
     };
