@@ -179,9 +179,9 @@ export function LandingContentProvider({ children, initialEditing = false }: { c
   const save = useCallback(async (next: LandingDoc) => {
     const prev = doc;
     setDoc(next);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
     const { error } = await supabase.from("landing_content")
-      .upsert({ key: ROW_KEY, content: next as any, updated_by: user?.id ?? null });
+      .upsert({ key: ROW_KEY, content: next as any, updated_by: session?.user?.id ?? null });
     if (error) { setDoc(prev); toast.error("Couldn't save — admin access needed"); return false; }
     return true;
   }, [doc]);
