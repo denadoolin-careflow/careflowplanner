@@ -1,9 +1,11 @@
 import { useSearchParams } from "react-router-dom";
+import Landing from "../Landing";
 import MockupA from "./MockupA";
 import MockupB from "./MockupB";
 import MockupC from "./MockupC";
 
 const OPTIONS = [
+  { id: "mix", label: "Mix · A hero + B phases (live)", C: Landing },
   { id: "a", label: "A · Calm Lifestyle", C: MockupA },
   { id: "b", label: "B · Seasonal Journey", C: MockupB },
   { id: "c", label: "C · Bento Dashboard", C: MockupC },
