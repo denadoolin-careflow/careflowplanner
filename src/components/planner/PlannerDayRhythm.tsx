@@ -12,6 +12,7 @@ import { solarSeasonFor } from "@/lib/planner/solar-season";
 import { useCycleDot } from "@/lib/planner/day-rhythm";
 import { rhythmPhaseForMoon, RHYTHM_LABEL, todayFavors } from "@/lib/planner/rhythm-phase";
 import { isVoidOfCourse } from "@/lib/transits";
+import { MoonAspectGuide, useMoonGuidePrefs } from "@/components/cosmic/MoonAspectGuide";
 import type { CyclePhase } from "@/lib/cycle";
 import { MOON_PLAIN, VOC_ADVICE, CAPACITY_NOTE, recommendedHours } from "@/lib/rhythm-guidance";
 import { PhaseGroceryButton } from "@/components/cycle/PhaseGroceryButton";
@@ -44,6 +45,7 @@ export function PlannerDayRhythm({ date, onSelectDate, className }: {
   const cycle = useCycleDot(date);
   const cyclePhase = (cycle as { phase?: CyclePhase } | null)?.phase ?? null;
   const voc = useMemo(() => { try { return isVoidOfCourse(date); } catch { return false; } }, [date]);
+  const moonPrefs = useMoonGuidePrefs();
   const phase = rhythmPhaseForMoon(moon);
   const favors = todayFavors(phase, cycle?.label);
   const embedded = "rounded-none border-0 bg-transparent shadow-none";
@@ -93,7 +95,10 @@ export function PlannerDayRhythm({ date, onSelectDate, className }: {
             ))}
           </div>
           <div role="tabpanel">
-            {activeTab === "moon" && <PlannerMoonInsight date={date} onSelectDate={onSelectDate} className={embedded} />}
+            {activeTab === "moon" && <>
+              <PlannerMoonInsight date={date} onSelectDate={onSelectDate} className={embedded} />
+              {moonPrefs.dayRhythm && <div className="px-4 pb-3"><MoonAspectGuide date={date} compact inset /></div>}
+            </>}
             {activeTab === "season" && <SolarSeasonGuide date={date} className={embedded} />}
             {activeTab === "cycle" && <><CyclePlanningGuide date={date} className={embedded} />{cyclePhase && <PhaseGroceryButton phase={cyclePhase} className="px-4 pb-3" />}</>}
             {activeTab === "capacity" && <div className="p-2"><PlannerCapacityBar date={date} className="border-0 bg-transparent" /></div>}

@@ -15,6 +15,7 @@ import { getPhaseInfo } from "@/lib/cycle";
 import { useCycleSuggestion } from "@/lib/planner/cycle-templates";
 import { solarSeasonFor, daysLeftInSolarSeason, ELEMENT_LABEL } from "@/lib/planner/solar-season";
 import { applyOverride, useSeasonOverrides } from "@/lib/planner/solar-season-custom";
+import { MoonAspectGuide, useMoonGuidePrefs } from "@/components/cosmic/MoonAspectGuide";
 
 const OPEN_KEY = "careflow:today:rhythm-open";
 const AREAS_KEY = "careflow:today:rhythm-areas";
@@ -49,9 +50,10 @@ function Chips({ items }: { items: string[] }) {
 
 export function RhythmTodayCard({ date, className }: { date: Date; className?: string }) {
   const [open, setOpen] = useOpen();
-  const [areas, setAreas] = useState<Record<"moon" | "cycle" | "season", boolean>>(() => {
-    try { return { moon: true, cycle: true, season: true, ...JSON.parse(localStorage.getItem(AREAS_KEY) || "{}") }; }
-    catch { return { moon: true, cycle: true, season: true }; }
+  const moonPrefs = useMoonGuidePrefs();
+  const [areas, setAreas] = useState<Record<"moon" | "cycle" | "season" | "aspects", boolean>>(() => {
+    try { return { moon: true, cycle: true, season: true, aspects: true, ...JSON.parse(localStorage.getItem(AREAS_KEY) || "{}") }; }
+    catch { return { moon: true, cycle: true, season: true, aspects: true }; }
   });
   const toggleArea = (key: keyof typeof areas) => setAreas(prev => {
     const next = { ...prev, [key]: !prev[key] };
@@ -113,8 +115,9 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
       <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Visible rhythm areas">
         {([[
           "moon", "Moon", moon.glyph,
-        ], ["cycle", "Cycle", "◌"], ["season", "Season", season.glyph]] as const).map(([key, label, glyph]) => (
+        ], ["cycle", "Cycle", "◌"], ["season", "Season", season.glyph], ["aspects", "Aspects", "☾"]] as const).map(([key, label, glyph]) => (
           <button key={key} type="button" onClick={() => toggleArea(key)} aria-pressed={areas[key]}
+            hidden={key === "aspects" && !moonPrefs.dayRhythm}
             className={cn("min-h-8 rounded-full border px-2.5 text-[11px] transition", areas[key] ? "border-primary/25 bg-primary/12 text-foreground" : "border-border/50 bg-background/35 text-muted-foreground opacity-65")}
           >{glyph} {label}</button>
         ))}
@@ -189,6 +192,9 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
             <Link to="/planner" className="inline-flex items-center gap-1 text-[11.5px] text-primary hover:underline">
               Customise on the planner <ExternalLink className="h-3 w-3" aria-hidden />
             </Link>
+          </section>}
+          {areas.aspects && moonPrefs.dayRhythm && <section className="space-y-1 rounded-2xl border border-primary/15 bg-primary/5 p-3 dark:bg-primary/10">
+            <MoonAspectGuide date={date} compact inset />
           </section>}
         </CollapsibleContent>
       </Collapsible>

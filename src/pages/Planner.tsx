@@ -639,7 +639,6 @@ export default function Planner() {
                      <PlannerOverdueSection date={day} />
                      <FocusGoalCard date={day} />
                       <PlannerDayRhythm date={day} onSelectDate={openDay} />
-{moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
                     <PlannerDayAssistant date={day} />
                      <PlannerRhythmCard date={day} />
                      <PlannerDayReferences date={day} />
@@ -655,7 +654,6 @@ export default function Planner() {
                   <div className="space-y-2 px-2 pb-2">
                     <FocusGoalCard date={day} />
                     <PlannerDayRhythm date={day} onSelectDate={openDay} />
-{moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
                     <PlannerDayAssistant date={day} />
                     <PlannerRhythmCard date={day} />
                     <PlannerDayReferences date={day} />

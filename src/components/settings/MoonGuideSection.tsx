@@ -14,7 +14,7 @@ export function MoonGuideSection() {
   );
   return (
     <SectionCard title="Moon aspect guide">
-      {row("dayRhythm", "Show in Day rhythm", "Option A — a card in the Planner's day context.")}
+      {row("dayRhythm", "Show in Day rhythm", "Inside the Day rhythm card on Today and the Planner.")}
       {row("timeline", "Show with the day timeline", "Option B — the checklist above your schedule.")}
       {row("autoDailyNote", "Add to new daily notes", "New daily notes start with today's Moon aspects checklist.")}
     </SectionCard>
