@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const CABINET_BUCKET = "filing-cabinet";
 export const DEFAULT_DRAWERS = ["Medical", "Home", "Finance", "Legal & ID", "Kids", "Pets", "Insurance", "Warranties"];
-export const DRAWER_COLORS = ["primary", "secondary", "accent", "phase-plan", "phase-grow", "phase-care", "phase-letgo"];
+export const DRAWER_COLORS = ["primary", "secondary", "accent"];
 
 export type Drawer = { id: string; name: string; color: string | null; icon: string | null; sort_order: number };
 export type KeyDetail = { label: string; value: string };
@@ -163,4 +163,4 @@ export async function removeLink(docId: string, t: LinkTarget) {
 }
 
 export const linkHref = (t: LinkTarget) =>
-  t.type === "project" ? `/projects/${t.id}` : t.type === "goal" ? `/goals` : t.type === "note" ? `/notes/${t.id}` : `/calendar`;
+  t.type === "project" ? `/projects/${t.id}` : t.type === "goal" ? `/goals` : t.type === "note" ? `/notes/${t.id}` : `/planner`;
