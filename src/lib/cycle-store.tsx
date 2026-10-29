@@ -17,6 +17,7 @@ interface Ctx {
   saveSettings: (patch: Partial<CycleSettings>) => Promise<void>;
   addPeriodStart: (date: string) => Promise<void>;
   setPeriodEnd: (id: string, date: string | null) => Promise<void>;
+  updatePeriod: (id: string, patch: { periodStart?: string; periodEnd?: string | null; ovulationDate?: string | null }) => Promise<void>;
   deletePeriod: (id: string) => Promise<void>;
   upsertDayLog: (date: string, patch: Partial<Omit<DayLog, "id" | "date">>) => Promise<void>;
   deleteDayLog: (id: string) => Promise<void>;
@@ -40,6 +41,7 @@ const periodFrom = (r: any): PeriodLog => ({
   periodStart: r.period_start,
   periodEnd: r.period_end ?? null,
   notes: r.notes ?? undefined,
+  ovulationDate: r.ovulation_date ?? null,
 });
 
 const dayLogFrom = (r: any): DayLog => ({
@@ -155,6 +157,15 @@ export function CycleProvider({ children }: { children: ReactNode }) {
     }
   }, [uid, dayLogs]);
 
+  const updatePeriod = useCallback(async (id: string, patch: { periodStart?: string; periodEnd?: string | null; ovulationDate?: string | null }) => {
+    setPeriods(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p).sort((a, b) => b.periodStart.localeCompare(a.periodStart)));
+    const row: Record<string, string | null> = {};
+    if (patch.periodStart !== undefined) row.period_start = patch.periodStart;
+    if (patch.periodEnd !== undefined) row.period_end = patch.periodEnd;
+    if (patch.ovulationDate !== undefined) row.ovulation_date = patch.ovulationDate;
+    await supabase.from("cycle_logs").update(row).eq("id", id);
+  }, []);
+
   const deleteDayLog = useCallback(async (id: string) => {
     setDayLogs(prev => prev.filter(d => d.id !== id));
     await supabase.from("cycle_day_logs").delete().eq("id", id);
@@ -162,8 +173,8 @@ export function CycleProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Ctx>(() => ({
     settings, periods, dayLogs, loaded,
-    saveSettings, addPeriodStart, setPeriodEnd, deletePeriod, upsertDayLog, deleteDayLog,
-  }), [settings, periods, dayLogs, loaded, saveSettings, addPeriodStart, setPeriodEnd, deletePeriod, upsertDayLog, deleteDayLog]);
+    saveSettings, addPeriodStart, setPeriodEnd, updatePeriod, deletePeriod, upsertDayLog, deleteDayLog,
+  }), [settings, periods, dayLogs, loaded, saveSettings, addPeriodStart, updatePeriod, setPeriodEnd, deletePeriod, upsertDayLog, deleteDayLog]);
 
   return <C.Provider value={value}>{children}</C.Provider>;
 }

@@ -35,6 +35,8 @@ export interface PeriodLog {
   periodStart: string;
   periodEnd: string | null;
   notes?: string;
+  /** User-corrected ovulation day for this cycle (overrides the luteal estimate). */
+  ovulationDate?: string | null;
 }
 
 export interface DayLog {
@@ -135,9 +137,14 @@ export function getPhaseInfo(date: Date, history: PeriodLog[], settings: CycleSe
   if (!last) return null;
   const cycleLength = predictCycleLength(history, settings);
   const dayOfCycle = differenceInCalendarDays(date, parseISO(last.periodStart)) + 1;
-  const period = settings.avgPeriodLength;
+  // Logged period end and corrected ovulation for this cycle beat the averages.
+  const period = last.periodEnd
+    ? Math.max(1, differenceInCalendarDays(parseISO(last.periodEnd), parseISO(last.periodStart)) + 1)
+    : settings.avgPeriodLength;
   const luteal = settings.lutealLength;
-  const ovulationDay = cycleLength - luteal;
+  const ovulationDay = last.ovulationDate
+    ? differenceInCalendarDays(parseISO(last.ovulationDate), parseISO(last.periodStart)) + 1
+    : cycleLength - luteal;
   const fertileStart = ovulationDay - 4;
   const fertileEnd = ovulationDay + 1;
 
