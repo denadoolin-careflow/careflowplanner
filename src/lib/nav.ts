@@ -292,6 +292,7 @@ export const NAV_SUBPAGES: Record<string, { to: string; label: string }[]> = {
     { to: "/notes/timeline", label: "Timeline" },
     { to: "/notes/files", label: "Files" },
     { to: "/notes/voice-memos", label: "Voice memos" },
+    { to: "/notes/cabinet", label: "Filing Cabinet" },
   ],
   "/wellflow": [
     { to: "/wellflow/plan", label: "Eating plan" },

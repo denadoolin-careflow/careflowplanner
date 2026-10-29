@@ -782,6 +782,98 @@ export type Database = {
           },
         ]
       }
+      cabinet_documents: {
+        Row: {
+          created_at: string
+          drawer_id: string | null
+          expires_at: string | null
+          extracted_text: string | null
+          id: string
+          key_details: Json
+          mime_type: string | null
+          remind_days: number[]
+          size_bytes: number | null
+          storage_path: string
+          summary: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          drawer_id?: string | null
+          expires_at?: string | null
+          extracted_text?: string | null
+          id?: string
+          key_details?: Json
+          mime_type?: string | null
+          remind_days?: number[]
+          size_bytes?: number | null
+          storage_path: string
+          summary?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          drawer_id?: string | null
+          expires_at?: string | null
+          extracted_text?: string | null
+          id?: string
+          key_details?: Json
+          mime_type?: string | null
+          remind_days?: number[]
+          size_bytes?: number | null
+          storage_path?: string
+          summary?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cabinet_documents_drawer_id_fkey"
+            columns: ["drawer_id"]
+            isOneToOne: false
+            referencedRelation: "cabinet_drawers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cabinet_drawers: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          user_id?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       care_ai_notes: {
         Row: {
           body: string

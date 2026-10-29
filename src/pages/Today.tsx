@@ -18,6 +18,7 @@ import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { useTodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
 import { TodayDashboard } from "@/components/today/dashboard/TodayDashboard";
+import { CabinetExpiryCard } from "@/components/today/CabinetExpiryCard";
 import { TodayHeader } from "@/components/today/TodayHeader";
 import { TodayPlanView } from "@/components/today/TodayPlanView";
 import { TodayFocusRail } from "@/components/today/TodayFocusRail";
@@ -189,6 +190,7 @@ function TodayInner() {
         <DemoTasksBanner />
         <MoonJournalReminderBanner date={day} />
         {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
+        {isReallyToday && <CabinetExpiryCard />}
         {isReallyToday && <DailyRituals date={day} onEveningReflection={() => setExhaleOpen(true)} />}
         {view !== "board" && <ArriveBand date={day} />}
 

@@ -218,6 +218,13 @@
       "when": 1793241890290,
       "tag": "0030_corner_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793266112966,
+      "tag": "0031_filing_cabinet",
+      "breakpoints": true
     }
   ]
 }
