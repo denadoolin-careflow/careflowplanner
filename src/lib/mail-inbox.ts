@@ -2,6 +2,8 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { type CabinetDoc, type AnalyzeResult, deleteDoc, updateDoc } from "@/lib/filing-cabinet";
 
+export type { CabinetDoc } from "@/lib/filing-cabinet";
+
 export const MAIL_TYPES = [
   { id: "bill", label: "Bill" }, { id: "coupon", label: "Coupon" }, { id: "statement", label: "Statement" },
   { id: "letter", label: "Letter" }, { id: "medical", label: "Medical" }, { id: "legal", label: "Legal" },
