@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Home, ChevronRight, MoreHorizontal, Plus, Calendar, Zap, Users, Clock, Sun, Sprout, Flower2, Heart, Wind,
+  Home, ChevronRight, MoreHorizontal, Plus, Calendar, Zap, Users, Clock, Sun, Sprout, Flower2, Heart, Wind, Leaf, Moon,
   LayoutGrid, List as ListIcon, BookOpen, CheckCircle2, ChevronDown, FileText, Link2, Sparkles, Star, Share2,
   Archive, Pencil, Check, Undo2, Trash2, ArrowRightLeft, Flag,
 } from "lucide-react";
@@ -43,7 +43,7 @@ const PHASE: Record<GardenPhase, {
   icon: typeof Sprout; key: string; subtitle: string; add: string; empty: string;
 }> = {
   Plan: { icon: Leaf, key: "plan", subtitle: "Decide what matters", add: "Add a decision", empty: "What would help this feel clearer?" },
-  Grow: { icon: Flower2, key: "grow", subtitle: "Take the next small step", add: "Add a step", empty: "What is one manageable action?" },
+  Grow: { icon: Sprout, key: "grow", subtitle: "Take the next small step", add: "Add a step", empty: "What is one manageable action?" },
   Care: { icon: Heart, key: "care", subtitle: "Support what is in motion", add: "Add a check-in", empty: "What needs a little ongoing attention?" },
   "Let go": { icon: Moon, key: "letgo", subtitle: "Make room for what matters", add: "Set something down", empty: "Is there something you can simplify or set down?" },
 };

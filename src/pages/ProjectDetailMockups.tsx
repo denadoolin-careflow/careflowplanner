@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { BookOpen, FileText, Sprout, Leaf, Heart, Wind, CheckCircle2, Flag, Target } from "lucide-react";
+import { BookOpen, FileText, Sprout, Leaf, Heart, Moon, CheckCircle2, Flag, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 /** Temporary preview: three designs for the inside of a project, with sample content. */
 const PHASES = [
-  { k: "Plan", icon: Sprout, tasks: ["Sketch bed layout", "Price planters"] },
-  { k: "Grow", icon: Leaf, tasks: ["Plant basil & thyme", "Set watering rhythm"] },
+  { k: "Plan", icon: Leaf, tasks: ["Sketch bed layout", "Price planters"] },
+  { k: "Grow", icon: Sprout, tasks: ["Plant basil & thyme", "Set watering rhythm"] },
   { k: "Care", icon: Heart, tasks: ["Share herbs with Mom"] },
-  { k: "Let go", icon: Wind, tasks: ["Compost old pots"] },
+  { k: "Let go", icon: Moon, tasks: ["Compost old pots"] },
 ];
 const MILESTONES = [["Beds built", true], ["First harvest", false], ["Share a meal", false]] as const;
 const TIMELINE = [
