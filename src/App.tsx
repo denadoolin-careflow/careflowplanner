@@ -94,6 +94,10 @@ import Terms from "./pages/Terms";
 import Updates from "./pages/Updates";
 import AdminUpdates from "./pages/AdminUpdates";
 import AdminLanding from "./pages/AdminLanding";
+import AdminStudio from "./pages/AdminStudio";
+import Corner from "./pages/Corner";
+import CornerPost from "./pages/CornerPost";
+import Shop from "./pages/Shop";
 import Landing from "./pages/Landing";
 import LandingMockups from "./pages/landing-mockups";
 import Roadmap from "./pages/Roadmap";
@@ -178,6 +182,10 @@ const App = () => (
               <Route path="/" element={<IndexRedirect />} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/landing-mockups" element={<LandingMockups />} />
+              <Route path="/corner" element={<Corner />} />
+              <Route path="/corner/:slug" element={<CornerPost />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/shop/:slug" element={<Shop />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/inbox" element={<Inbox />} />
@@ -257,6 +265,10 @@ const App = () => (
                 <Route path="/automations" element={<Automations />} />
                 <Route path="/admin/updates" element={<AdminUpdates />} />
                 <Route path="/admin/landing" element={<AdminLanding />} />
+                <Route path="/admin/corner" element={<AdminStudio />} />
+                <Route path="/admin/club" element={<AdminStudio />} />
+                <Route path="/admin/shop" element={<AdminStudio />} />
+                <Route path="/admin/guide" element={<AdminStudio />} />
                 <Route path="/admin/roadmap" element={<AdminRoadmap />} />
                 <Route path="/trips" element={<Trips />} />
                 <Route path="/trips/:id" element={<TripDetail />} />

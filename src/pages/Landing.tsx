@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { landingColorStyle } from "@/lib/landing-colors";
 import { LandingContentProvider, useLandingContent } from "@/lib/landing-content";
+import { useEffect, useState } from "react";
+import { ClubSignup } from "@/components/corner/ClubSignup";
+import { PostCard } from "@/pages/Corner";
+import { ProductCard } from "@/pages/Shop";
+import { listPublishedPosts, listVisibleProducts, type BlogPost, type Product } from "@/lib/corner";
 import {
   E, EditableSection, EditableTestimonialField, TestimonialControls,
   AddTestimonialButton, LandingEditBar,
@@ -84,6 +89,8 @@ function Nav() {
           <a href="#phases" className="transition-colors hover:text-primary">The Four Phases</a>
           <a href="#features" className="transition-colors hover:text-primary">Features</a>
           <a href="#community" className="transition-colors hover:text-primary">Community</a>
+          <Link to="/corner" className="transition-colors hover:text-primary">Corner</Link>
+          <Link to="/shop" className="transition-colors hover:text-primary">Shop</Link>
         </nav>
         <div className="flex items-center gap-3">
           <Link to="/auth" className="hidden text-[15px] font-semibold text-foreground/80 hover:text-primary sm:inline">
@@ -359,6 +366,62 @@ function Philosophy() {
 
 /* ---------------- Community / testimonials ---------------- */
 
+function CornerSection() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  useEffect(() => { listPublishedPosts(3).then(setPosts); }, []);
+  return (
+    <section id="corner" className="bg-background px-6 py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <div className="text-sm font-bold uppercase tracking-[0.3em] text-primary"><E k="corner.eyebrow" /></div>
+          <h2 className="mx-auto mt-3 max-w-3xl font-display text-4xl leading-tight text-foreground"><E k="corner.title" /></h2>
+          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground"><E k="corner.body" /></p>
+        </div>
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.length === 0 && <p className="col-span-full text-center text-sm text-muted-foreground">New posts are coming soon.</p>}
+          {posts.map((p) => <PostCard key={p.id} post={p} />)}
+        </div>
+        <div className="mt-8 text-center"><Button asChild variant="outline" className="min-h-11"><Link to="/corner">Visit the Corner <ArrowRight className="ml-1 h-4 w-4" /></Link></Button></div>
+      </div>
+    </section>
+  );
+}
+
+function ClubSection() {
+  const { t } = useLandingContent();
+  return (
+    <section id="club" className="px-6 py-20">
+      <div className="mx-auto max-w-3xl rounded-3xl border border-border bg-secondary/60 p-8 text-center">
+        <div className="text-sm font-bold uppercase tracking-[0.3em] text-primary"><E k="club.eyebrow" /></div>
+        <h2 className="mt-3 font-display text-4xl text-foreground"><E k="club.title" /></h2>
+        <p className="mx-auto mt-3 max-w-xl text-muted-foreground"><E k="club.body" /></p>
+        <ClubSignup source="landing" cta={t("club.cta")} thanks={t("club.thanks")} className="mx-auto mt-6 max-w-xl" />
+      </div>
+    </section>
+  );
+}
+
+function ShopSection() {
+  const [items, setItems] = useState<Product[]>([]);
+  useEffect(() => { listVisibleProducts().then((r) => setItems(r.slice(0, 4))); }, []);
+  return (
+    <section id="shop" className="bg-background px-6 py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <div className="text-sm font-bold uppercase tracking-[0.3em] text-primary"><E k="shop.eyebrow" /></div>
+          <h2 className="mx-auto mt-3 max-w-3xl font-display text-4xl text-foreground"><E k="shop.title" /></h2>
+          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground"><E k="shop.body" /></p>
+        </div>
+        <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {items.length === 0 && <p className="col-span-full text-center text-sm text-muted-foreground">Products are coming soon.</p>}
+          {items.map((p) => <ProductCard key={p.id} p={p} />)}
+        </div>
+        <div className="mt-8 text-center"><Button asChild variant="outline" className="min-h-11"><Link to="/shop">Visit the shop <ArrowRight className="ml-1 h-4 w-4" /></Link></Button></div>
+      </div>
+    </section>
+  );
+}
+
 function Community() {
   const { doc } = useLandingContent();
   return (
@@ -428,6 +491,8 @@ function Footer() {
         <LogoLockup size={34} />
         <p className="text-sm text-muted-foreground"><E k="footer.line" /></p>
         <div className="flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
+          <Link to="/corner" className="hover:text-primary">CareFlow Corner</Link>
+          <Link to="/shop" className="hover:text-primary">Shop</Link>
           <Link to="/pricing" className="hover:text-primary">Pricing</Link>
           <Link to="/privacy" className="hover:text-primary">Privacy</Link>
           <Link to="/terms" className="hover:text-primary">Terms</Link>
@@ -458,6 +523,9 @@ export default function Landing() {
           <EditableSection id="who"><Who /></EditableSection>
           <EditableSection id="philosophy"><Philosophy /></EditableSection>
           <EditableSection id="community"><Community /></EditableSection>
+          <EditableSection id="corner"><CornerSection /></EditableSection>
+          <EditableSection id="club"><ClubSection /></EditableSection>
+          <EditableSection id="shop"><ShopSection /></EditableSection>
           <EditableSection id="finalCta"><FinalCTA /></EditableSection>
         </main>
         <Footer />
