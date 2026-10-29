@@ -29,7 +29,6 @@ import { SelfCareCard } from "@/components/today/SelfCareCard";
 import { JournalCard } from "@/components/today/JournalCard";
 import { CareColumn } from "@/components/today/dashboard/CareColumn";
 import { GrowColumn } from "@/components/today/dashboard/GrowColumn";
-import { MoonAspectGuide, useMoonGuidePrefs } from "@/components/cosmic/MoonAspectGuide";
 import { RhythmTodayCard } from "@/components/today/RhythmTodayCard";
 import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
 import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
@@ -76,7 +75,6 @@ export default function Today() {
 }
 
 function TodayInner() {
-  const moonPrefs = useMoonGuidePrefs();
   const { state, updateProfile } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -159,7 +157,6 @@ function TodayInner() {
       <PhaseBand title="Plan">
         <TodayNudgeStrip date={day} />
         <RhythmTodayCard date={day} />
-        {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
       </PhaseBand>
       <PhaseBand title="Grow">
         <FocusGoalCard date={day} />
@@ -283,7 +280,6 @@ function TodayInner() {
                 <>
                   {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
                   <RhythmTodayCard date={day} />
-                  {moonPrefs.dayRhythm && <MoonAspectGuide date={day} compact />}
                   <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
                   <TodayPlanView date={day} />
                 </>
