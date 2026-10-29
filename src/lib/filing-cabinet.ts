@@ -36,10 +36,16 @@ export function matchesSearch(doc: CabinetDoc, q: string): boolean {
   return n.split(/\s+/).every((w) => hay.includes(w));
 }
 
+let seeding: Promise<Drawer[]> | null = null;
 export async function listDrawers(): Promise<Drawer[]> {
   const { data, error } = await db.from("cabinet_drawers").select("*").order("sort_order").order("created_at");
   if (error) throw error;
   if (data.length) return data;
+  seeding ??= seedDrawers();
+  return seeding;
+}
+
+async function seedDrawers(): Promise<Drawer[]> {
   const { data: seeded, error: e2 } = await db.from("cabinet_drawers")
     .insert(DEFAULT_DRAWERS.map((name, i) => ({ name, sort_order: i, color: DRAWER_COLORS[i % DRAWER_COLORS.length] })))
     .select("*");
