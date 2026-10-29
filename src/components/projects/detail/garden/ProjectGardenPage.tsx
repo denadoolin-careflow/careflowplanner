@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Home, ChevronRight, MoreHorizontal, Plus, Calendar, Zap, Users, Clock, Sun, Sprout, Flower2, Heart, Wind, Leaf, Moon,
+  Home, ChevronRight, MoreHorizontal, Plus, Calendar, Zap, Users, Clock, Sun, Sprout, Flower2, Heart, Leaf, Moon,
   LayoutGrid, List as ListIcon, BookOpen, CheckCircle2, ChevronDown, FileText, Link2, Sparkles, Star, Share2,
   Archive, Pencil, Check, Undo2, Trash2, ArrowRightLeft, Flag,
 } from "lucide-react";
@@ -453,7 +453,7 @@ function InlineAdd({ phase, placeholder, projectId, onCreate }: {
     return (
       <button onClick={() => setOpen(true)} className={cn("flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border bg-card/70 text-sm font-medium hover:bg-card", focus)}
         style={{ color: v(k, "-deep"), borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
-        {phase === "Let go" ? <Wind className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}{m.add}
+        {phase === "Let go" ? <Moon className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}{m.add}
       </button>
     );
   }
@@ -524,7 +524,7 @@ function PhaseColumn({ phase, tasks, actions, onCreate, onLetGo, onDropTask, moo
         {phase === "Let go"
           ? <button onClick={onLetGo} className={cn("flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border bg-card/70 text-sm font-medium hover:bg-card", focus)}
               style={{ color: v(k, "-deep"), borderColor: `hsl(var(--pg-${k}) / 0.6)` }}>
-              <Wind className="h-4 w-4" aria-hidden />{m.add}
+              <Moon className="h-4 w-4" aria-hidden />{m.add}
             </button>
           : <InlineAdd phase={phase} placeholder={m.empty} projectId={projectId} onCreate={title => onCreate(phase, title)} />}
       </div>
@@ -541,7 +541,7 @@ function TaskCard({ task, phase, actions, compact }: { task: Task; phase: Garden
     <div draggable onDragStart={e => { e.dataTransfer.setData("text/x-pg-task", task.id); e.dataTransfer.effectAllowed = "move"; }}
       className={cn(card, "flex items-start gap-3 rounded-xl p-3", compact && "py-2")}>
       {letGo
-        ? <Wind className="mt-0.5 h-5 w-5 shrink-0" style={{ color: v(k, "-deep") }} aria-hidden />
+        ? <Moon className="mt-0.5 h-5 w-5 shrink-0" style={{ color: v(k, "-deep") }} aria-hidden />
         : <button onClick={() => actions.toggle(task)} aria-label={`Complete ${task.title}`}
             className={cn("mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 border-muted-foreground/50 hover:border-primary", focus)} />}
       <div className="min-w-0 flex-1">
@@ -588,7 +588,7 @@ function ListView({ groups, actions, onCreate, onLetGo, projectId }: { groups: R
             <I className="h-5 w-5" style={{ color: v(k, "-deep") }} aria-hidden />
             <h3 className="pg-display text-xl">{p} <span className="font-sans text-sm text-muted-foreground">· {groups[p].length}</span></h3>
             {p === "Let go"
-              ? <Button variant="ghost" size="sm" className="ml-auto h-10" onClick={onLetGo}><Wind className="mr-1 h-4 w-4" />{PHASE[p].add}</Button>
+              ? <Button variant="ghost" size="sm" className="ml-auto h-10" onClick={onLetGo}><Moon className="mr-1 h-4 w-4" />{PHASE[p].add}</Button>
               : <div className="ml-auto w-56 max-w-full"><InlineAdd phase={p} placeholder={PHASE[p].empty} projectId={projectId} onCreate={title => onCreate(p, title)} /></div>}
           </header>
           {groups[p].length === 0 ? <p className="text-sm text-muted-foreground">{PHASE[p].empty}</p>
