@@ -1,3 +1,4 @@
+import { TodayDayEmbed } from "@/pages/Today";
 import { RhythmHub } from "@/components/planner/rhythm/RhythmHub";
 import { FocusGoalCard } from "@/components/goals/FocusGoalCard";
 import { MobileWeekAgendaStrip } from "@/components/planner/mobile/MobileWeekAgendaStrip";
@@ -629,44 +630,9 @@ export default function Planner() {
           {view === "rhythm" && <RhythmHub date={day} />}
            {!showTaskPanel && !isMobile && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
-             <div className="mb-2 shrink-0 space-y-2">
-              {isMobile ? (
-                <CollapsibleSection
-                   storageKey="careflow:planner:mobile-day-context"
-                   eyebrow="Today at a glance"
-                   title="Rhythm, capacity & guidance"
-                  defaultCollapsed
-                >
-                  <div className="space-y-2 px-2 pb-2">
-                     <PlannerOverdueSection date={day} />
-                     <FocusGoalCard date={day} />
-                      <PlannerDayRhythm date={day} onSelectDate={openDay} />
-                    <PlannerDayAssistant date={day} />
-                     <PlannerRhythmCard date={day} />
-                     <PlannerDayReferences date={day} />
-                  </div>
-                </CollapsibleSection>
-              ) : (
-                <CollapsibleSection
-                  storageKey="careflow:planner:desktop-day-context"
-                  eyebrow="Day context"
-                  title="Rhythm, guidance & references"
-                  defaultCollapsed
-                >
-                  <div className="space-y-2 px-2 pb-2">
-                    <FocusGoalCard date={day} />
-                    <PlannerDayRhythm date={day} onSelectDate={openDay} />
-                    <PlannerDayAssistant date={day} />
-                    <PlannerRhythmCard date={day} />
-                    <PlannerDayReferences date={day} />
-                  </div>
-                </CollapsibleSection>
-              )}
-              <PlannerEmptyDay
-                date={day}
-                onPlanMyDay={() => setPlanOpen(true)}
-                onAddTask={() => setCaptureOpen(true)}
-              />
+            <div className="mb-3 shrink-0">
+              <TodayDayEmbed date={day} onDate={go} />
+              <h2 className="mt-4 font-display text-lg text-foreground">Schedule</h2>
             </div>
           )}
           {(view === "day" || view === "week" || view === "month") && (

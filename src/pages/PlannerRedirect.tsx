@@ -12,5 +12,9 @@ export default function PlannerRedirect({ range }: { range: PlannerView }) {
   const raw = date ?? search.get("date") ?? "";
   const parsed = raw ? parseISO(raw) : null;
   const day = parsed && isValid(parsed) ? parsed : new Date();
-  return <Navigate replace to={`/planner/${format(day, "yyyy-MM-dd")}?range=${range}`} />;
+  const rest = new URLSearchParams(search);
+  rest.delete("date");
+  rest.set("range", range);
+  const hash = typeof window !== "undefined" ? window.location.hash : "";
+  return <Navigate replace to={`/planner/${format(day, "yyyy-MM-dd")}?${rest.toString()}${hash}`} />;
 }

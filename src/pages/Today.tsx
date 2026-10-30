@@ -20,7 +20,7 @@ import { WorkspaceQuizInvite } from "@/pages/WorkspaceQuiz";
 import { NewMoonGoalCard } from "@/components/today/NewMoonGoalCard";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
-import { useTodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
+import { useTodayView, useTodayPrefs, useTodayDefaultView, TODAY_VIEW_LABELS } from "@/lib/today-view";
 import { TodayDashboard } from "@/components/today/dashboard/TodayDashboard";
 import { CabinetExpiryCard } from "@/components/today/CabinetExpiryCard";
 import { MailReminderCard } from "@/components/today/MailReminderCard";
@@ -129,7 +129,17 @@ export default function Today() {
   );
 }
 
-function TodayInner() {
+/** The Today page body embedded inside the Planner's Day view so both are one page. */
+export function TodayDayEmbed({ date, onDate }: { date: Date; onDate: (d: Date) => void }) {
+  return (
+    <TaskSelectionProvider storageKey="today">
+      <TodayInner embedded={{ date, onDate }} />
+      <BulkActionBar />
+    </TaskSelectionProvider>
+  );
+}
+
+function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) => void } } = {}) {
   const { state, updateProfile } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -156,6 +166,7 @@ function TodayInner() {
   }, [location.hash, location.key]);
 
   const [day, setDay] = useState<Date>(() => {
+    if (embedded) return embedded.date;
     const d = searchParams.get("date");
     if (d) {
       const parsed = new Date(d + "T00:00:00");
@@ -166,7 +177,7 @@ function TodayInner() {
 
   useEffect(() => {
     const d = searchParams.get("date");
-    if (!d) return;
+    if (!d || embedded) return;
     const parsed = new Date(d + "T00:00:00");
     if (!isNaN(parsed.getTime()) && !isSameDay(parsed, day)) setDay(parsed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -183,13 +194,19 @@ function TodayInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  useEffect(() => {
+    if (embedded && !isSameDay(embedded.date, day)) setDay(embedded.date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded?.date]);
+
   const setDayAndUrl = useCallback((d: Date) => {
+    if (embedded) { embedded.onDate(d); return; }
     setDay(d);
     const next = new URLSearchParams(searchParams);
     if (isSameDay(d, new Date())) next.delete("date");
     else next.set("date", format(d, "yyyy-MM-dd"));
     setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, embedded]);
 
   const isReallyToday = isSameDay(day, new Date());
 
@@ -261,8 +278,17 @@ function TodayInner() {
 
   return (
     <CapacityProvider value={capacity}>
-      <div className="today-mobile-feed mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4">
-        <TodayHeader
+      <div className={cn("today-mobile-feed mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip", embedded ? "pb-2" : "px-2 pb-12 sm:px-4")}>
+        {embedded ? (
+          <div role="tablist" aria-label="Day layout" className="flex max-w-full items-center gap-0.5 self-start overflow-x-auto rounded-full border border-border/60 bg-card/70 p-0.5 text-xs">
+            {(Object.keys(TODAY_VIEW_LABELS) as Array<keyof typeof TODAY_VIEW_LABELS>).map(k => (
+              <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)}
+                className={cn("min-h-9 shrink-0 rounded-full px-3 transition-colors", view === k ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:text-foreground")}>
+                {TODAY_VIEW_LABELS[k]}
+              </button>
+            ))}
+          </div>
+        ) : <TodayHeader
           date={day}
           onDate={setDayAndUrl}
           view={view}
@@ -274,7 +300,7 @@ function TodayInner() {
           defaultRoute={defaultRoute}
           onDefaultRoute={(route) => updateProfile({ default_route: route })}
           onTemplates={() => setGalleryOpen(true)}
-        />
+        />}
         <TodayMoonHeader date={day} />
         <FocusGoalChip date={day} />
         <HorizonStrip date={day} />
