@@ -166,6 +166,7 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
   }, [location.hash, location.key]);
 
   const [day, setDay] = useState<Date>(() => {
+    if (embedded) return embedded.date;
     const d = searchParams.get("date");
     if (d) {
       const parsed = new Date(d + "T00:00:00");
@@ -176,7 +177,7 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
 
   useEffect(() => {
     const d = searchParams.get("date");
-    if (!d) return;
+    if (!d || embedded) return;
     const parsed = new Date(d + "T00:00:00");
     if (!isNaN(parsed.getTime()) && !isSameDay(parsed, day)) setDay(parsed);
     // eslint-disable-next-line react-hooks/exhaustive-deps

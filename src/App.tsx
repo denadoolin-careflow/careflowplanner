@@ -216,7 +216,7 @@ const App = () => (
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/areas/:name" element={<AreaPage />} />
                 <Route path="/areas" element={<AreasManager />} />
-                <Route path="/today" element={<Today />} />
+                <Route path="/today" element={<PlannerRedirect range="day" />} />
                 <Route path="/rhythm" element={<RhythmOverview />} />
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/plan" element={<PlanTimeline />} />
