@@ -15,7 +15,6 @@ import { InlineTagPreviewLayer } from "@/components/tags/InlineTagPreviewLayer";
 import { DayRefPreviewLayer } from "@/components/notes/DayRefPreviewLayer";
 import { MediaLightbox } from "@/components/media/MediaLightbox";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
-import Today from "./pages/Today";
 import MonthOverview from "./pages/MonthOverview";
 import PlannerRedirect from "./pages/PlannerRedirect";
 import Year from "./pages/Year";
