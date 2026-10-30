@@ -190,6 +190,7 @@ export function useCycle(): Ctx {
       saveSettings: async () => {},
       addPeriodStart: async () => {},
       setPeriodEnd: async () => {},
+      updatePeriod: async () => {},
       deletePeriod: async () => {},
       upsertDayLog: async () => {},
       deleteDayLog: async () => {},
