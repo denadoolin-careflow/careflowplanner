@@ -92,7 +92,7 @@ export function TwinRingsWidget({ date }: { date: Date }) {
               {CycIcon && <CycIcon className="h-4 w-4" />} Cycle · {d.cycle ? `${PHASE_META[d.cycle].label}, day ${d.cycleDay}` : "Not logged yet"}
             </span>
             {d.cycle ? <span className="block text-xs text-foreground/80">{PHASE_META[d.cycle].invitation}</span>
-              : <Link to="/cycle" className="text-xs underline">Log a period start to see your inner ring</Link>}
+              : <Link to="/health" className="text-xs underline">Log a period start to see your inner ring</Link>}
           </li>
         </ul>
       </div>
