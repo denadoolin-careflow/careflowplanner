@@ -34,6 +34,7 @@ import { JournalCard } from "@/components/today/JournalCard";
 import { CareColumn } from "@/components/today/dashboard/CareColumn";
 import { GrowColumn } from "@/components/today/dashboard/GrowColumn";
 import { RhythmTodayCard } from "@/components/today/RhythmTodayCard";
+import { TwinRingsWidget } from "@/components/cycle/TwinRingsWidget";
 import { DinnerTonightCard } from "@/components/today/DinnerTonightCard";
 import { CleaningTodayCard } from "@/components/today/CleaningTodayCard";
 import { LaundryBoard } from "@/components/laundry/LaundryBoard";
@@ -230,6 +231,7 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
       {P("plan")}
       {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
       <TodayNudgeStrip date={day} />
+      <TwinRingsWidget date={day} />
       <RhythmTodayCard date={day} />
     </>),
     grow: (<>
