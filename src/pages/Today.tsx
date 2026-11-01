@@ -304,8 +304,6 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
           onTemplates={() => setGalleryOpen(true)}
         />}
         <TodayMoonHeader date={day} />
-        <FocusGoalChip date={day} />
-        <HorizonStrip date={day} />
         <DemoTasksBanner />
         {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
         {/* Gentle notices: grouped so reminders never push the day below the fold. Hidden when empty. */}
