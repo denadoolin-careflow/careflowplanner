@@ -17,7 +17,6 @@ import { MediaLightbox } from "@/components/media/MediaLightbox";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import MonthOverview from "./pages/MonthOverview";
 import PlannerRedirect from "./pages/PlannerRedirect";
-import CycleWidgetMockups from "./pages/CycleWidgetMockups";
 import Year from "./pages/Year";
 import Goals from "./pages/Goals";
 import Habits from "./pages/Habits";
@@ -217,7 +216,6 @@ const App = () => (
                 <Route path="/areas/:name" element={<AreaPage />} />
                 <Route path="/areas" element={<AreasManager />} />
                 <Route path="/today" element={<PlannerRedirect range="day" />} />
-                <Route path="/cycle-widget-mockups" element={<CycleWidgetMockups />} />
                 <Route path="/rhythm" element={<RhythmOverview />} />
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/plan" element={<PlanTimeline />} />
