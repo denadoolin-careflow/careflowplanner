@@ -466,7 +466,7 @@
     .today-mobile-feed,
     .planner-surface--mobile { font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif; }
     .today-mobile-feed :is(h1, h2, h3, h4, .font-display),
-    .planner-surface--mobile :is(h1, h2, h3, h4, .font-display) { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; letter-spacing: 0; }
+    .planner-surface--mobile :is(h1, h2, h3, h4, .font-display) { font-family: 'Playfair Display', ui-serif, Georgia, serif; letter-spacing: 0; }
     .today-mobile-feed,
     .planner-surface--mobile { color: hsl(var(--mobile-botanical-ink)); }
     .today-mobile-feed { @apply space-y-2 px-0; }
