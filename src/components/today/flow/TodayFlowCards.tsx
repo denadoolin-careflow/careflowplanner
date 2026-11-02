@@ -120,7 +120,7 @@ export function SlimDayHeader({ date, onDate, view, onView, labels }: {
           <div className="space-y-1">
             <p className="text-xs font-semibold text-muted-foreground">View</p>
             <div className="grid grid-cols-3 gap-1">
-              {[["Day", `/planner/${format(date, "yyyy-MM-dd")}`], ["Week", "/planner?range=week"], ["Month", "/planner?range=month"]].map(([l, to]) => (
+              {[["Day", `/planner/${format(date, "yyyy-MM-dd")}`], ["Week", `/planner/${format(date, "yyyy-MM-dd")}?range=week`], ["Month", `/planner/${format(date, "yyyy-MM-dd")}?range=month`]].map(([l, to]) => (
                 <Link key={l} to={to} className="grid min-h-11 place-items-center rounded-xl text-sm hover:bg-muted">{l}</Link>
               ))}
             </div>
