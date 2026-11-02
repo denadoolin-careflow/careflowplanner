@@ -101,6 +101,7 @@ import CornerPost from "./pages/CornerPost";
 import Shop from "./pages/Shop";
 import Landing from "./pages/Landing";
 import LandingMockups from "./pages/landing-mockups";
+import MonthPicMockups from "./pages/month-pic-mockups";
 import Roadmap from "./pages/Roadmap";
 import GmailCallback from "./pages/GmailCallback";
 import AdminRoadmap from "./pages/AdminRoadmap";
@@ -189,6 +190,7 @@ const App = () => (
               <Route path="/shop/:slug" element={<Shop />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/month-pic-mockups" element={<MonthPicMockups />} />
                 <Route path="/inbox" element={<Inbox />} />
                 <Route path="/tasks/:id" element={<TaskDetail />} />
                 <Route path="/upcoming" element={<Upcoming />} />
