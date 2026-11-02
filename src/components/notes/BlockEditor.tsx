@@ -175,32 +175,11 @@ const PHASE_HEADING_LABELS = [
   { label: "Let go", phase: "letgo" },
 ] as const;
 
-/**
- * Tag a heading whose text opens with a rhythm phase label so styles can give
- * it that phase's icon and deep color. Derived from the visible text only —
- * nothing is stored, so the markdown body is untouched.
- */
-export function applyPhaseHeadingMarks(root: HTMLElement) {
-  root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
-    const text = (h.textContent ?? "").trim();
-    const hit = PHASE_HEADING_LABELS.find(
-      p => text === p.label || text.startsWith(`${p.label} · `),
-    );
-    if (hit) h.setAttribute("data-phase", hit.phase);
-    else h.removeAttribute("data-phase");
-  });
-}
 
 export function applyHeadingFolds(root: HTMLElement) {
   root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
   root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
   root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
-    const text = (h.textContent ?? "").trim();
-    const hit = PHASE_HEADING_LABELS.find(
-      p => text === p.label || text.startsWith(`${p.label} · `),
-    );
-    if (hit) h.setAttribute("data-phase", hit.phase);
-    else h.removeAttribute("data-phase");
     const section = headingSectionElements(h);
     const firstLine = section[0] ?? null;
     if (firstLine && !/^H[1-6]$/.test(firstLine.tagName)) firstLine.setAttribute("data-heading-fold-proxy", "true");
@@ -2500,9 +2479,6 @@ export function BlockEditor({
       lastSyncedRef.current = md;
       onChange(md, html);
       syncBodyTags(md);
-      // Re-tag phase headings: ProseMirror rebuilds the node on every edit,
-      // which drops the derived data-phase attribute.
-      applyPhaseHeadingMarks(editor.view.dom as HTMLElement);
     },
   }, []);
 
