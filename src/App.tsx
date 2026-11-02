@@ -190,6 +190,7 @@ const App = () => (
               <Route path="/shop/:slug" element={<Shop />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/month-pic-mockups" element={<MonthPicMockups />} />
                 <Route path="/inbox" element={<Inbox />} />
                 <Route path="/tasks/:id" element={<TaskDetail />} />
                 <Route path="/upcoming" element={<Upcoming />} />
