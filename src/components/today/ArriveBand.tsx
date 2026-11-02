@@ -30,11 +30,11 @@ export function ArriveBand({ date }: { date: Date }) {
   return (
     <section aria-label="Arrive" className="animate-fade-in space-y-3">
       <div className="rounded-3xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="flex flex-col gap-3 xl:flex-col">
           <div
             role="radiogroup"
             aria-label="Capacity today"
-            className="flex shrink-0 flex-wrap gap-1.5"
+            className="grid w-full grid-cols-4 gap-1.5"
           >
             {LEVELS.map(o => {
               const active = entry.level === o.level;
@@ -46,7 +46,7 @@ export function ArriveBand({ date }: { date: Date }) {
                   aria-checked={active}
                   onClick={() => setLevel(active ? null : o.level)}
                   className={cn(
-                    "inline-flex min-h-[38px] items-center gap-1.5 rounded-full border px-3 text-[12px] transition-colors",
+                    "flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-2xl border px-1 text-xs transition-colors",
                     active
                       ? "border-primary/50 bg-primary/10 font-medium text-foreground"
                       : "border-border/50 bg-background/40 text-muted-foreground hover:bg-muted/40",

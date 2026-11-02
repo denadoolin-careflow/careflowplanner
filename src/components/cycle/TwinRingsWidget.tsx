@@ -72,7 +72,7 @@ export function TwinRingsWidget({ date }: { date: Date }) {
 
   return (
     <section className="rounded-2xl border bg-card p-3 sm:p-4" aria-label="Moon and cycle rhythm">
-      <div className="flex flex-col items-center gap-3 sm:flex-row">
+      <div className="flex flex-col items-center gap-3 sm:flex-row lg:flex-col">
         <svg viewBox="-82 -82 164 164" className="h-52 w-52 shrink-0" role="img"
           aria-label={`${format(sel, "MMM d")}: Moon ${LUNAR_RHYTHM[d.moon].label}${d.cycle ? `, cycle ${PHASE_META[d.cycle].label}` : ""}`}>
           <Ring r={68} frac={d.moonFrac} active={d.moon} />
