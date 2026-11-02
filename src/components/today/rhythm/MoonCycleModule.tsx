@@ -69,9 +69,9 @@ export function MoonCycleModule({ date }: Props) {
           className="group flex flex-col items-center gap-1.5 rounded-xl px-1.5 py-2 text-center transition hover:bg-background/40"
         >
           <MoonGlyph date={date} size={28} />
-          <p className="font-display text-[11px] italic text-muted-foreground">Moon</p>
+          <p className="font-display text-xs italic text-muted-foreground">Moon</p>
           <p className="text-[13px] font-medium leading-tight text-foreground">{moon.label}</p>
-          <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground tabular-nums">
+          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground tabular-nums">
             {illum}% lit
           </p>
         </Link>
@@ -89,10 +89,10 @@ export function MoonCycleModule({ date }: Props) {
           >
             {SIGN_EMOJI[sign.name]}
           </span>
-          <p className="font-display text-[11px] italic text-muted-foreground">Zodiac</p>
+          <p className="font-display text-xs italic text-muted-foreground">Zodiac</p>
           <p className="text-[13px] font-medium leading-tight text-foreground">{sign.name}</p>
           <p
-            className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em]"
+            className="inline-flex items-center gap-1 text-xs uppercase tracking-[0.14em]"
             style={{ color: tone.soft }}
           >
             <span aria-hidden>{ELEMENT_EMOJI[sign.element]}</span>
@@ -114,10 +114,10 @@ export function MoonCycleModule({ date }: Props) {
             >
               {PHASE_META[cycle.phase].glyph}
             </span>
-            <p className="font-display text-[11px] italic text-muted-foreground">Cycle</p>
+            <p className="font-display text-xs italic text-muted-foreground">Cycle</p>
             <p className="text-[13px] font-medium leading-tight text-foreground">Day {cycle.cycleDay}</p>
             <p
-              className="text-[10px] uppercase tracking-[0.14em]"
+              className="text-xs uppercase tracking-[0.14em]"
               style={{ color: `hsl(var(${PHASE_META[cycle.phase].tokenVar}) / 0.85)` }}
             >
               {PHASE_META[cycle.phase].label}
@@ -129,8 +129,8 @@ export function MoonCycleModule({ date }: Props) {
             className="group flex flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-center transition hover:bg-background/40"
           >
             <span aria-hidden className="text-xl leading-none opacity-60">🌸</span>
-            <p className="font-display text-[11px] italic text-muted-foreground">Cycle</p>
-            <p className="text-[11px] leading-tight text-muted-foreground">Log to track</p>
+            <p className="font-display text-xs italic text-muted-foreground">Cycle</p>
+            <p className="text-xs leading-tight text-muted-foreground">Log to track</p>
           </Link>
         )}
       </div>

@@ -68,7 +68,7 @@ export function TodayHabitsCard({ date, collapsibleId }: { date: Date; collapsib
         <div className="space-y-3">
           {GROUPS.filter(g => grouped[g.key]?.length).map(g => (
             <div key={g.key}>
-              <div className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">{g.label}</div>
+              <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">{g.label}</div>
               <ul className="space-y-1">
                 {grouped[g.key].map(h => {
                   const tended = !!h.log[iso];
@@ -83,7 +83,7 @@ export function TodayHabitsCard({ date, collapsibleId }: { date: Date; collapsib
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium">{h.title}</div>
                           <LinkedGoalLabels ids={h.linkedGoalIds} className="my-0.5" />
-                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <span className="inline-flex items-center gap-0.5"><Flame className="h-2.5 w-2.5" />{growth.forgivingStreak}d</span>
                             {project && <><span>·</span><span className="truncate">{project}</span></>}
                           </div>
@@ -92,7 +92,7 @@ export function TodayHabitsCard({ date, collapsibleId }: { date: Date; collapsib
                       <Button
                         size="sm"
                         variant={tended ? "secondary" : "default"}
-                        className="h-7 rounded-full px-2 text-[11px]"
+                        className="h-7 rounded-full px-2 text-xs"
                         onClick={async () => { await toggleHabit(h.id, iso); if (!tended) haptics.success(); else haptics.tap(); }}
                       >
                         {tended ? <Check className="h-3 w-3" /> : "Tend"}

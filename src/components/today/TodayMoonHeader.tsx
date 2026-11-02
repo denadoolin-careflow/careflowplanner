@@ -74,7 +74,7 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
           </AnimatePresence>
         </div>
         <div className="min-w-0 flex-1 text-center">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/70 sm:text-xs">{format(selected, "EEEE, MMMM d")}</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-foreground/70 sm:text-xs">{format(selected, "EEEE, MMMM d")}</p>
           <Clock now={now} />
           {!isToday && <p className="text-xs text-muted-foreground">Viewing {format(selected, "MMM d")} · now</p>}
           <p className="font-display text-lg leading-tight text-foreground sm:text-2xl">{ctx.moonLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}</p>
@@ -100,14 +100,15 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
                           animate={active && !reduce ? { scale: [1, 1.08, 1] } : { scale: 1 }}
                           transition={{ duration: 0.5 }}
                           key={`${p}-${active}-${dayKey}`}
-                          className={cn("flex items-center justify-center rounded-full transition", active ? "h-16 w-16 border-4 border-card shadow-md sm:h-20 sm:w-20" : "h-12 w-12 sm:h-16 sm:w-16")}
-                          style={{ background: active ? c.light : c.tint, color: active ? "hsl(var(--rhythm-on))" : c.deep }}
+                          className={cn("flex items-center justify-center rounded-full transition", active ? "h-16 w-16 ring-4 ring-offset-2 ring-offset-card shadow-md sm:h-20 sm:w-20" : "h-12 w-12 sm:h-16 sm:w-16")}
+                          style={{ background: active ? c.light : c.tint, color: active ? "hsl(var(--rhythm-on))" : c.deep, ["--tw-ring-color" as string]: c.light }}
                         >
                           <Icon className={active ? "h-7 w-7" : "h-5 w-5"} />
                         </motion.span>
                         <span className={cn("text-sm", active ? "font-semibold" : "opacity-85")} style={{ color: c.deep }}>
                           {LUNAR_RHYTHM[p].label}
                         </span>
+                        {active && <span className="rounded-full px-2 py-0.5 text-xs font-bold tracking-wider" style={{ background: c.deep, color: "hsl(var(--card))" }}>NOW</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[min(20rem,calc(100vw-2rem))]" align="center">
@@ -132,7 +133,7 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
         <div className="flex gap-4">
           <img src={sky} alt="" aria-hidden loading="lazy" className="hidden h-28 w-28 shrink-0 rounded-full object-cover object-right-bottom sm:block" />
           <div className="min-w-0 flex-1 pr-10">
-            <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: activeStyle.deep }}>Today's guidance</p>
+            <p className="text-xs uppercase tracking-[0.28em]" style={{ color: activeStyle.deep }}>Today's guidance</p>
             <h3 className="mt-1 font-display text-2xl leading-tight text-foreground sm:text-3xl">{ctx.rhythmLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}</h3>
             <p className="mt-2 text-sm leading-relaxed text-foreground/85">{ctx.sign ? phaseSignAdvice(ctx.rhythm, ctx.sign) : g0.focus} {LUNAR_RHYTHM[ctx.rhythm].invitation}</p>
           </div>
@@ -183,9 +184,9 @@ function Clock({ now }: { now: Date }) {
   const [h, m] = hm.split(":");
   return (
     <p className="my-1 inline-flex items-baseline gap-0.5 whitespace-nowrap font-display tabular-nums text-foreground" aria-label={`Current time ${hm} ${ampm}`}>
-      <span className="text-5xl leading-none sm:text-7xl">{h}</span>
-      <span className="animate-pulse text-5xl leading-none sm:text-7xl" aria-hidden>:</span>
-      <span className="text-5xl leading-none sm:text-7xl">{m}</span>
+      <span className="text-[44px] leading-none sm:text-[64px]">{h}</span>
+      <span className="motion-safe:animate-pulse text-[44px] leading-none sm:text-[64px]" aria-hidden>:</span>
+      <span className="text-[44px] leading-none sm:text-[64px]">{m}</span>
       <span className="ml-1.5 text-lg sm:text-2xl">{ampm}</span>
     </p>
   );

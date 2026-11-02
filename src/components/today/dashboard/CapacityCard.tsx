@@ -33,7 +33,7 @@ export function CapacityCard({ date }: { date: Date }) {
               )}
             >
               <span className="text-xl" aria-hidden>{o.emoji}</span>
-              <span className="text-[11px] font-medium leading-tight">{o.label}</span>
+              <span className="text-xs font-medium leading-tight">{o.label}</span>
             </button>
           );
         })}

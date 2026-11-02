@@ -139,7 +139,7 @@ export function PlanColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
         eyebrow="Plan"
         title="Timeline"
         action={
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
             {doneCount} of {today.length} done
           </span>
         }
@@ -149,7 +149,7 @@ export function PlanColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
             const list = grouped[key];
             return (
               <div key={key}>
-                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <Icon className="h-3.5 w-3.5 text-primary" aria-hidden /> {label}
                 </div>
                 {list.length === 0 ? (
@@ -164,7 +164,7 @@ export function PlanColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
                         onToggle={(id) => void toggleTask(id)} onOpen={onTaskClick} onRename={rename} />
                     ))}
                     {list.length > perPart && (
-                      <li className="text-[11px] text-muted-foreground">+ {list.length - perPart} more</li>
+                      <li className="text-xs text-muted-foreground">+ {list.length - perPart} more</li>
                     )}
                     <QuickAddLine label={label} onAdd={(t) => quickAdd(t, key)} />
                   </ul>
@@ -174,7 +174,7 @@ export function PlanColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
           })}
           {grouped.Anytime.length > 0 && !capacity.isLow && (
             <div>
-              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Anytime</div>
+              <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anytime</div>
               <ul className="space-y-1.5">
                 {grouped.Anytime.slice(0, perPart).map(t => (
                   <TaskLine key={t.id} id={t.id} title={t.title} done={!!t.done} goalId={t.goalId}
@@ -192,7 +192,7 @@ export function PlanColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
         title="Upcoming"
         action={
           <button type="button" onClick={() => navigate("/calendar")}
-            className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
             Calendar <ChevronRight className="h-3 w-3" aria-hidden />
           </button>
         }
@@ -203,7 +203,7 @@ export function PlanColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
           <ul className="space-y-2">
             {upcoming.map(a => (
               <li key={a.id} className="flex items-baseline gap-2 text-[12.5px]">
-                <span className="w-16 shrink-0 text-[11px] text-muted-foreground">
+                <span className="w-16 shrink-0 text-xs text-muted-foreground">
                   {a.allDay || !a.time ? "All day" : a.time}
                 </span>
                 <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{a.title}</span>

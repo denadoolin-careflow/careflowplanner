@@ -255,7 +255,7 @@ export function WeatherRemindersCard({ className }: { className?: string }) {
             <p className="text-xs text-muted-foreground">From today's weather — small, kind nudges.</p>
           </div>
         </div>
-        <span className="hidden text-[10px] uppercase tracking-wider text-muted-foreground sm:inline">
+        <span className="hidden text-xs uppercase tracking-wider text-muted-foreground sm:inline">
           {reminders.length} note{reminders.length === 1 ? "" : "s"}
         </span>
       </header>

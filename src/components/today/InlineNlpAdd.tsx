@@ -66,7 +66,7 @@ export function InlineNlpAdd({ label = "Add task", placeholder = "Add task… (t
         type="button"
         onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 0); }}
         className={cn(
-          "mt-1.5 flex w-full items-center justify-center gap-1 rounded-full py-1 text-[11px] font-medium text-primary/80 transition hover:bg-primary/10 hover:text-primary",
+          "mt-1.5 flex w-full items-center justify-center gap-1 rounded-full py-1 text-xs font-medium text-primary/80 transition hover:bg-primary/10 hover:text-primary",
           className,
         )}
       >

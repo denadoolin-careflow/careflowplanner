@@ -60,7 +60,7 @@ export function PersonCareCard({
       eyebrow="Care"
       title={
         <span className="flex items-center gap-2">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-care-capture-soft text-[11px] font-semibold text-care-capture">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-care-capture-soft text-xs font-semibold text-care-capture">
             {person.name.slice(0, 1).toUpperCase()}
           </span>
           <span className="truncate">{person.name}</span>
@@ -71,7 +71,7 @@ export function PersonCareCard({
           type="button"
           onClick={() => navigate("/care")}
           aria-label={`Open ${person.name}'s care page`}
-          className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground"
         >
           Open <ChevronRight className="h-3 w-3" aria-hidden />
         </button>
@@ -84,7 +84,7 @@ export function PersonCareCard({
               <li key={a.id} className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
                 <Clock3 className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-foreground">{a.title}</span>
-                {a.time && <span className="text-[11px]">{a.time}</span>}
+                {a.time && <span className="text-xs">{a.time}</span>}
               </li>
             ))}
           </ul>
@@ -123,7 +123,7 @@ export function PersonCareCard({
         )}
 
         {meds.length > 0 && (
-          <p className="flex items-start gap-1.5 text-[11.5px] text-muted-foreground">
+          <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
             <Pill className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             <span className="[overflow-wrap:anywhere]">
               {meds.slice(0, 3).map(m => [m.name, m.schedule].filter(Boolean).join(" · ")).join(" • ")}
@@ -132,7 +132,7 @@ export function PersonCareCard({
         )}
 
         {note && (
-          <p className="flex items-start gap-1.5 text-[11.5px] text-muted-foreground">
+          <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
             <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             <span className="line-clamp-2 [overflow-wrap:anywhere]">{note.body}</span>
           </p>
@@ -156,7 +156,7 @@ export function PersonCareCard({
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="inline-flex min-h-[32px] items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground"
+            className="inline-flex min-h-[32px] items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden /> Add for {person.name}
           </button>

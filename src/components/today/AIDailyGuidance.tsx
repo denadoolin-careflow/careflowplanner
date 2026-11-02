@@ -76,7 +76,7 @@ export function AIDailyGuidance({ date, snap, onPlanWithEnergy }: Props) {
         style={{ background: "radial-gradient(50% 60% at 90% 0%, hsl(var(--primary)/0.18), transparent 65%)" }}
       />
       <div className="relative">
-        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <Sparkles className="h-3 w-3" /> Today's guidance
         </div>
         {text ? (

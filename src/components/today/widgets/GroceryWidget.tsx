@@ -32,7 +32,7 @@ export function GroceryWidget() {
           <ShoppingBasket className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Grocery</h3>
         </div>
-        <Link to="/meals" className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        <Link to="/meals" className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
           Open <ArrowRight className="h-2.5 w-2.5" />
         </Link>
       </div>
@@ -46,14 +46,14 @@ export function GroceryWidget() {
             <li key={g.id} className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-muted/40">
               <Checkbox checked={g.bought} onCheckedChange={() => void toggleGrocery(g.id)} />
               <span className="min-w-0 flex-1 truncate text-xs text-foreground">{g.name}</span>
-              {g.qty && <span className="text-[10px] text-muted-foreground">{g.qty}</span>}
+              {g.qty && <span className="text-xs text-muted-foreground">{g.qty}</span>}
               <ItemPrice name={g.name} qty={g.qty} store={prefs.preferred_store} overrides={overrides} onSave={setPrice} />
             </li>
           ))}
         </ul>
       )}
       {unbought.length > 0 && (
-        <p className="mt-1.5 text-right text-[10px] tabular-nums text-muted-foreground">
+        <p className="mt-1.5 text-right text-xs tabular-nums text-muted-foreground">
           {total.estimatedCount > 0 ? "~" : ""}{formatMoney(total.cents)} estimated
         </p>
       )}

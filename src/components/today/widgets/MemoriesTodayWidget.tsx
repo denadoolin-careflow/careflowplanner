@@ -36,7 +36,7 @@ export function MemoriesTodayWidget() {
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Memories today</h3>
         </div>
-        <Link to="/memories" className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        <Link to="/memories" className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
           All <ArrowRight className="h-2.5 w-2.5" />
         </Link>
       </div>

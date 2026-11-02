@@ -13,7 +13,7 @@ function Bar({ label, value, goal, unit = "" }: { label: string; value: number; 
   const pct = goal && goal > 0 ? Math.min(100, (value / goal) * 100) : 0;
   return (
     <div>
-      <div className="mb-1 flex items-baseline justify-between text-[11px]">
+      <div className="mb-1 flex items-baseline justify-between text-xs">
         <span className="text-muted-foreground">{label}</span>
         <span className="tabular-nums">
           {Math.round(value)}{unit}{goal ? ` / ${Math.round(goal)}${unit}` : ""}
@@ -57,7 +57,7 @@ export function WellFlowTodayCard() {
         </div>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1"><UtensilsCrossed className="h-3 w-3" /> {totals.meals} logged</span>
         <span className="inline-flex items-center gap-1"><Droplets className="h-3 w-3" /> {Math.round(waterTotal)} oz</span>
         {latest && <span className="inline-flex items-center gap-1"><Scale className="h-3 w-3" /> {latest.weight_lb} lb</span>}

@@ -53,7 +53,7 @@ export function AnchorTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
               {anchor.title}
             </button>
             <LinkedGoalLabels ids={[anchor.goalId]} className="mt-0.5" />
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               <Anchor className="mr-1 inline h-3 w-3" aria-hidden />
               If only this happens, today still counts.
             </p>
@@ -70,7 +70,7 @@ export function AnchorTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
               type="button"
               onClick={() => setMvdTaskId(t.id)}
               className={cn(
-                "max-w-[14rem] truncate rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                "max-w-[14rem] truncate rounded-full border px-2.5 py-1 text-xs transition-colors",
                 anchor?.id === t.id
                   ? "border-care-anchor/60 bg-care-anchor-soft text-care-anchor"
                   : "border-border/50 text-muted-foreground hover:bg-muted/50",

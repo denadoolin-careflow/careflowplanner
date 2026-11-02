@@ -114,18 +114,18 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
       action={
         <div className="flex items-center gap-2">
           {allServed && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10.5px] text-primary">
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs text-primary">
               <Check className="h-3 w-3" aria-hidden /> Served
             </span>
           )}
-          <Link to="/meals" className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+          <Link to="/meals" className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
             Meals <ChevronRight className="h-3 w-3" aria-hidden />
           </Link>
         </div>
       }
       footer={
         unfed.length > 0 ? (
-          <p className="text-[11px] text-muted-foreground [overflow-wrap:anywhere]">
+          <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">
             No meal linked yet for {unfed.slice(0, 3).map(p => p.name).join(", ")}
             {unfed.length > 3 ? ` +${unfed.length - 3}` : ""}.
           </p>
@@ -142,7 +142,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
               aria-selected={slot === s}
               onClick={() => setSlot(s)}
               className={cn(
-                "rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                "rounded-full border px-2.5 py-1 text-xs transition-colors",
                 slot === s ? "border-primary/40 bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:text-foreground",
               )}
             >
@@ -156,7 +156,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
             <UtensilsCrossed className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-[14px] font-medium leading-snug [overflow-wrap:anywhere]">{meal.name}</p>
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] text-muted-foreground">
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                 {meal.prepMinutes ? (
                   <span className="inline-flex items-center gap-1">
                     <Clock3 className="h-3 w-3" aria-hidden /> {meal.prepMinutes} min prep
@@ -184,7 +184,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
               return (
                 <li key={l.personId} className="flex items-center gap-2 text-[12.5px]">
                   {person
-                    ? <PersonAvatar person={person} className="h-4 w-4 text-[9px]" />
+                    ? <PersonAvatar person={person} className="h-4 w-4 text-xs" />
                     : <UsersRound className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />}
                   <span className={cn("min-w-0 flex-1 truncate", served && "text-muted-foreground")}>
                     {person?.name ?? "Someone"}
@@ -195,7 +195,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
                     aria-pressed={served}
                     aria-label={served ? `Mark ${person?.name ?? "person"} not served` : `Mark ${person?.name ?? "person"} served`}
                     className={cn(
-                      "inline-flex min-h-[26px] shrink-0 items-center gap-1 rounded-full border px-2 text-[11px] transition-all active:scale-95",
+                      "inline-flex min-h-[26px] shrink-0 items-center gap-1 rounded-full border px-2 text-xs transition-all active:scale-95",
                       served
                         ? "border-primary/40 bg-primary/10 text-primary"
                         : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -213,7 +213,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
         {/* Gentle suggestions when nothing is planned */}
         {!meal && suggestions.length > 0 && (
           <div className="space-y-1.5">
-            <p className="inline-flex items-center gap-1 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="inline-flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <Sparkles className="h-3 w-3" aria-hidden />
               Ideas{carePeople.length > 0 ? ` for ${carePeople.map(p => p.name).slice(0, 2).join(" & ")}` : ""}
             </p>
@@ -223,10 +223,10 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
                   key={s.id}
                   type="button"
                   onClick={() => pick({ name: s.title, prep_minutes: s.prep_minutes, ingredients: s.ingredients, steps: s.steps, tags: s.tags })}
-                  className="inline-flex min-h-[30px] items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2.5 text-[11.5px] transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  className="inline-flex min-h-[30px] items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2.5 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
                   <span className="max-w-[10rem] truncate">{s.title}</span>
-                  {s.prep_minutes ? <span className="shrink-0 text-[10px] text-muted-foreground">{s.prep_minutes}m</span> : null}
+                  {s.prep_minutes ? <span className="shrink-0 text-xs text-muted-foreground">{s.prep_minutes}m</span> : null}
                 </button>
               ))}
             </div>
@@ -255,7 +255,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
               trigger={
                 <button
                   type="button"
-                  className="inline-flex min-h-[32px] items-center gap-1 rounded-full border border-border/60 bg-background/60 px-3 text-[11.5px] hover:bg-muted"
+                  className="inline-flex min-h-[32px] items-center gap-1 rounded-full border border-border/60 bg-background/60 px-3 text-xs hover:bg-muted"
                 >
                   {meal ? <Pencil className="h-3.5 w-3.5" aria-hidden /> : <Plus className="h-3.5 w-3.5" aria-hidden />}
                   {meal ? "Change" : "Pick a meal"}
@@ -265,7 +265,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
             <button
               type="button"
               onClick={() => { setDraft(meal?.name ?? ""); setTyping(true); }}
-              className="inline-flex min-h-[32px] items-center text-[11.5px] text-muted-foreground hover:text-foreground"
+              className="inline-flex min-h-[32px] items-center text-xs text-muted-foreground hover:text-foreground"
             >
               Type it in
             </button>
@@ -276,7 +276,7 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
                   <button
                     type="button"
                     aria-label="Choose who this meal is for"
-                    className="inline-flex min-h-[32px] items-center gap-1 rounded-full border border-border/60 bg-background/60 px-3 text-[11.5px] hover:bg-muted"
+                    className="inline-flex min-h-[32px] items-center gap-1 rounded-full border border-border/60 bg-background/60 px-3 text-xs hover:bg-muted"
                   >
                     <UsersRound className="h-3.5 w-3.5" aria-hidden /> Who &amp; when
                   </button>
@@ -296,14 +296,14 @@ export function DinnerTonightCard({ date, className }: { date: Date; className?:
                               on && "bg-primary/10 text-primary",
                             )}
                           >
-                            <PersonAvatar person={p} className="h-4 w-4 text-[9px]" />
+                            <PersonAvatar person={p} className="h-4 w-4 text-xs" />
                             <span className="min-w-0 flex-1 truncate">{p.name}</span>
                           </button>
                         </li>
                       );
                     })}
                     {people.length === 0 && (
-                      <li className="px-2 py-1.5 text-[11.5px] text-muted-foreground">No people yet.</li>
+                      <li className="px-2 py-1.5 text-xs text-muted-foreground">No people yet.</li>
                     )}
                   </ul>
                   <label className="flex items-center justify-between gap-2 border-t border-border/50 pt-2 text-[12px]">

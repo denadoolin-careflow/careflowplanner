@@ -54,13 +54,13 @@ export function HomeResetWidget() {
             <button
               type="button"
               onClick={() => setAdding(v => !v)}
-              className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-0.5 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
               aria-label="Add reset item"
             >
               <Plus className="h-3 w-3" /> Add
             </button>
           )}
-          <Link to="/reset" className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+          <Link to="/reset" className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
             Open <ArrowRight className="h-2.5 w-2.5" />
           </Link>
         </div>
@@ -104,7 +104,7 @@ export function HomeResetWidget() {
                 <>
                   <div className="min-w-0 flex-1" style={{ overflowWrap: "anywhere" }}>
                     <div className="whitespace-normal break-words text-xs leading-snug text-foreground">{i.title}</div>
-                    <div className="whitespace-normal break-words text-[10px] text-muted-foreground">{i.listName}</div>
+                    <div className="whitespace-normal break-words text-xs text-muted-foreground">{i.listName}</div>
                   </div>
                   <button
                     type="button"

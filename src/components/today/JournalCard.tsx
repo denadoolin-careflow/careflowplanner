@@ -43,14 +43,14 @@ export function JournalCard({ date }: { date: Date }) {
         <button
           type="button"
           onClick={() => navigate("/journal")}
-          className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground"
         >
           Open <ChevronRight className="h-3 w-3" aria-hidden />
         </button>
       }
     >
       <div className="space-y-2.5">
-        <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+        <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
           {ctx.glyph} {ctx.phaseLabel} · {ctx.sign.symbol} {ctx.sign.name}
         </p>
         <p className="text-[12.5px] leading-relaxed text-muted-foreground">{ctx.prompts[0]?.text}</p>
@@ -68,14 +68,14 @@ export function JournalCard({ date }: { date: Date }) {
         />
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {entry ? "Adds to today's entry" : "Starts today's entry"}
           </span>
           <button
             type="button"
             onClick={() => void save()}
             disabled={!draft.trim() || saving}
-            className="min-h-[32px] rounded-full bg-primary/10 px-3 text-[11.5px] font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
+            className="min-h-[32px] rounded-full bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
           >
             Save
           </button>

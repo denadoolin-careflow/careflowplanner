@@ -88,7 +88,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
     >
       <div className="flex items-center justify-center gap-1.5">
         <Moon className="h-3 w-3" style={{ color: accent }} />
-        <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
           Daily Energy
         </p>
       </div>
@@ -99,7 +99,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
         “{g.headline}”
       </blockquote>
 
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] font-medium uppercase tracking-[0.16em]">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs font-medium uppercase tracking-[0.16em]">
         {g.focus.map((word, i) => (
           <span key={word} className="inline-flex items-center gap-2">
             {i > 0 && <span className="text-muted-foreground/40">•</span>}
@@ -109,7 +109,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
       </div>
 
       <div className="mt-3 border-t border-border/40 pt-3 text-center">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
           Reflection
         </p>
         <p className="mt-1 font-display text-[13px] italic leading-snug text-foreground/80">
@@ -117,7 +117,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
         </p>
       </div>
 
-      <p className="mt-3 text-center text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+      <p className="mt-3 text-center text-xs uppercase tracking-[0.14em] text-muted-foreground/70">
         Moon Day {g.moonDay}
         {g.cyclePhase ? <> · <span className="capitalize">{g.cyclePhase}</span></> : null}
         {" · "}{g.element}
@@ -127,7 +127,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
         <button
           type="button"
           onClick={() => setJournalOpen(v => !v)}
-          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-foreground/80 transition hover:bg-background"
+          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-background"
           style={{ borderColor: accent.replace(")", " / 0.35)") }}
         >
           <BookHeart className="h-3 w-3" style={{ color: accent }} />
@@ -136,7 +136,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
         <button
           type="button"
           onClick={() => setEditorOpen(true)}
-          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-foreground/80 transition hover:bg-background"
+          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-background"
           style={{ borderColor: accent.replace(")", " / 0.35)") }}
         >
           <PenLine className="h-3 w-3" style={{ color: accent }} />
@@ -146,7 +146,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
           type="button"
           onClick={openDailyNote}
           disabled={busy === "daily"}
-          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-foreground/80 transition hover:bg-background disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-background disabled:opacity-50"
           style={{ borderColor: accent.replace(")", " / 0.35)") }}
         >
           {busy === "daily" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" style={{ color: accent }} />}
@@ -156,7 +156,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
           type="button"
           onClick={newSeededNote}
           disabled={busy === "new"}
-          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-foreground/80 transition hover:bg-background disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-xs text-foreground/80 transition hover:bg-background disabled:opacity-50"
           style={{ borderColor: accent.replace(")", " / 0.35)") }}
         >
           {busy === "new" ? <Loader2 className="h-3 w-3 animate-spin" /> : <StickyNote className="h-3 w-3" style={{ color: accent }} />}
@@ -178,7 +178,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
             <button
               type="button"
               onClick={() => { setJournalOpen(false); setJournalText(""); }}
-              className="rounded-full px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+              className="rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
             >
               Cancel
             </button>
@@ -186,7 +186,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
               type="button"
               onClick={saveJournal}
               disabled={!journalText.trim() || busy === "save"}
-              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-soft transition disabled:opacity-40"
+              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-soft transition disabled:opacity-40"
             >
               {busy === "save" && <Loader2 className="h-3 w-3 animate-spin" />}
               Save

@@ -76,7 +76,7 @@ export function PlannedTasksWidget({ date = new Date() }: { date?: Date }) {
               type="button"
               onClick={() => setScope(t.id)}
               className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider transition-colors",
+                "rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-wider transition-colors",
                 scope === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -92,7 +92,7 @@ export function PlannedTasksWidget({ date = new Date() }: { date?: Date }) {
           onDragLeave={() => setDropHover(false)}
           onDrop={onDropToToday}
           className={cn(
-            "mb-2 rounded-xl border border-dashed px-2 py-2 text-center text-[10px] font-medium uppercase tracking-wider transition-all",
+            "mb-2 rounded-xl border border-dashed px-2 py-2 text-center text-xs font-medium uppercase tracking-wider transition-all",
             dropHover
               ? "border-primary/70 bg-primary/15 text-primary"
               : "border-border/60 bg-background/40 text-muted-foreground",
@@ -129,12 +129,12 @@ export function PlannedTasksWidget({ date = new Date() }: { date?: Date }) {
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className="min-w-0 flex-1 truncate text-foreground">{t.title}</span>
                   {t.dueDate && t.dueDate !== todayISO && (
-                    <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] tabular-nums text-muted-foreground">
+                    <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
                       {format(parseISO(t.dueDate + "T00:00:00"), "MMM d")}
                     </span>
                   )}
                   {t.startTime && (
-                    <span className="shrink-0 text-[9px] tabular-nums text-muted-foreground">{t.startTime}</span>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{t.startTime}</span>
                   )}
                 </span>
                 <LinkedGoalLabels ids={[t.goalId]} className="mt-0.5" />

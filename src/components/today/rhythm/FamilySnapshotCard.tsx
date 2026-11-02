@@ -82,7 +82,7 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
           <Users className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Family Snapshot</h3>
         </div>
-        <Link to="/caregiving" className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        <Link to="/caregiving" className="inline-flex items-center gap-0.5 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
           View all <ArrowRight className="h-2.5 w-2.5" />
         </Link>
       </div>
@@ -96,12 +96,12 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
             <li key={r.id} className="group">
               <div className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-muted/40 transition-colors">
                 <Link to={`/caregiving?recipient=${r.id}`} className="flex min-w-0 flex-1 items-center gap-2.5">
-                  <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold", KIND_TINT[r.kind] ?? KIND_TINT.self)}>
+                  <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold", KIND_TINT[r.kind] ?? KIND_TINT.self)}>
                     {r.name.slice(0, 2).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-foreground">{r.name}</div>
-                    <div className="truncate text-[11px] text-muted-foreground">{r.status}</div>
+                    <div className="truncate text-xs text-muted-foreground">{r.status}</div>
                   </div>
                 </Link>
                 <button
@@ -125,7 +125,7 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
                           type="button"
                           onClick={() => setKind(opt.value)}
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors",
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition-colors",
                             active
                               ? "bg-primary text-primary-foreground"
                               : "bg-muted text-muted-foreground hover:bg-muted/70",

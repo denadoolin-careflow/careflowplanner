@@ -41,7 +41,7 @@ export function GreetingBlock({ date, pageKey = "today" }: { date: Date; pageKey
       <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
       <div className="relative">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Today</p>
+        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Today</p>
         <HeaderImagePicker
           value={header.raw}
           onChange={(v) => header.set(v)}

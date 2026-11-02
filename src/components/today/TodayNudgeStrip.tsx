@@ -70,7 +70,7 @@ export function TodayNudgeStrip({
             <button
               type="button"
               aria-label="Nudge settings"
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
               <Settings2 className="h-3 w-3" aria-hidden /> Nudge settings
             </button>
@@ -121,7 +121,7 @@ function NudgeRow({ nudge, dayIso, onAction }: { nudge: TodayNudge; dayIso: stri
       <button
         type="button"
         onClick={onAction}
-        className="shrink-0 rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[11px] hover:bg-muted"
+        className="shrink-0 rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-xs hover:bg-muted"
       >
         {nudge.actionLabel}
       </button>

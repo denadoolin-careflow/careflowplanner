@@ -16,7 +16,7 @@ export function GrowingSeasonCard() {
           <Sprout className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Growing This Season</h3>
         </div>
-        <Link to="/goals" className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        <Link to="/goals" className="inline-flex items-center gap-0.5 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
           View goals <ArrowRight className="h-2.5 w-2.5" />
         </Link>
       </div>
@@ -30,7 +30,7 @@ export function GrowingSeasonCard() {
             <li key={g.id}>
               <div className="mb-1 flex items-baseline justify-between gap-2">
                 <span className="truncate text-sm font-medium text-foreground">{g.title}</span>
-                <span className="text-[11px] text-muted-foreground">{g.progress ?? 0}%</span>
+                <span className="text-xs text-muted-foreground">{g.progress ?? 0}%</span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
                 <div
@@ -39,7 +39,7 @@ export function GrowingSeasonCard() {
                 />
               </div>
               {g.description && (
-                <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">{g.description}</p>
+                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{g.description}</p>
               )}
             </li>
           ))}

@@ -18,7 +18,7 @@ export function CycleSidebarCard({ date = new Date() }: { date?: Date }) {
         </div>
         <Link
           to="/health"
-          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
         >
           Open <ArrowRight className="h-2.5 w-2.5" />
         </Link>
@@ -36,12 +36,12 @@ export function CycleSidebarCard({ date = new Date() }: { date?: Date }) {
               <p className="font-display text-sm font-semibold leading-tight text-foreground">
                 {info.label} phase
               </p>
-              <p className="text-[11px] tabular-nums text-muted-foreground">
+              <p className="text-xs tabular-nums text-muted-foreground">
                 Day {info.cycleDay} of {info.cycleLength} · {info.daysUntilNextPeriod === 0 ? "period due" : `${info.daysUntilNextPeriod}d to next`}
               </p>
             </div>
           </div>
-          <p className="border-t border-border/40 pt-1.5 text-[11.5px] italic leading-snug text-foreground/80">
+          <p className="border-t border-border/40 pt-1.5 text-xs italic leading-snug text-foreground/80">
             {info.invitation}
           </p>
         </div>

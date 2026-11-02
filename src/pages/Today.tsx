@@ -54,7 +54,7 @@ import { PHASE_ICONS } from "@/lib/phase-icons";
 import { LunarCheckInCard } from "@/components/today/LunarCheckInCard";
 import { PhaseInlinePanel } from "@/components/today/PhaseInlinePanel";
 import { PHASE_ORDER, PHASE_WINDOW, currentPhase, phaseSummary, readPhasePins } from "@/lib/today-phase-items";
-import { RhythmsCard, TodayNotebookCard, ReminderRow, flowCard } from "@/components/today/flow/TodayFlowCards";
+import { RhythmsCard, TodayNotebookCard, ReminderRow, flowCard, SlimDayHeader } from "@/components/today/flow/TodayFlowCards";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -305,17 +305,7 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
     <CapacityProvider value={capacity}>
       <div className={cn("today-mobile-feed mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip", embedded ? "pb-2" : "px-2 pb-12 sm:px-4")}>
         {embedded ? (
-          <div className="flex items-center gap-2">
-            <label htmlFor="today-layout" className="text-sm text-muted-foreground">Layout</label>
-            <Select value={view} onValueChange={(v) => setView(v as typeof view)}>
-              <SelectTrigger id="today-layout" className="h-11 w-44 rounded-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(Object.keys(TODAY_VIEW_LABELS) as Array<keyof typeof TODAY_VIEW_LABELS>).map(k => (
-                  <SelectItem key={k} value={k}>{TODAY_VIEW_LABELS[k]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <SlimDayHeader date={day} onDate={setDayAndUrl} view={view} onView={(v) => setView(v as typeof view)} labels={TODAY_VIEW_LABELS} />
         ) : <TodayHeader
           date={day}
           onDate={setDayAndUrl}

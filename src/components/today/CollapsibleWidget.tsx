@@ -39,7 +39,7 @@ export function CollapsibleWidget({ id, title, collapsed, onToggle, children }: 
           className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border/40 bg-card/60 px-3 py-2 text-left text-xs font-medium text-muted-foreground hover:bg-card/80"
         >
           <span className="min-w-0 break-words">{title}</span>
-          <span className="shrink-0 text-[10px] uppercase tracking-wider">Show</span>
+          <span className="shrink-0 text-xs uppercase tracking-wider">Show</span>
         </button>
       ) : (
         <div className="min-w-0 [overflow-wrap:anywhere]">{children}</div>

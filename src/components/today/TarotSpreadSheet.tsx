@@ -55,7 +55,7 @@ export function TarotSpreadSheet({
               <ul className="mt-3 grid gap-2 sm:grid-cols-3">
                 {cards.map((c, i) => (
                   <li key={c.name} className="rounded-xl border border-border/50 bg-gradient-to-br from-card via-accent-soft/30 to-primary-soft/20 p-3">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                       {spread.positions[i]}
                     </p>
                     <div className="mt-1 flex items-center gap-2">
@@ -63,7 +63,7 @@ export function TarotSpreadSheet({
                       <span className="font-display text-sm leading-tight">{c.name}</span>
                     </div>
                     <p className="mt-1.5 text-[12px] text-foreground/80">{c.meaning}</p>
-                    <p className="mt-1 text-[11.5px] italic text-foreground/65">{c.guidance}</p>
+                    <p className="mt-1 text-xs italic text-foreground/65">{c.guidance}</p>
                   </li>
                 ))}
               </ul>

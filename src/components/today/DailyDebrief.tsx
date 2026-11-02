@@ -120,15 +120,15 @@ export function DailyDebrief({
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="inline-flex items-center gap-2 text-primary">
           <Sparkles className="h-3.5 w-3.5" />
-          <p className="text-[10px] uppercase tracking-[0.28em]">Plan insight</p>
-          <span className="text-[10px] text-muted-foreground">· {format(date, "EEE, MMM d")}</span>
+          <p className="text-xs uppercase tracking-[0.28em]">Plan insight</p>
+          <span className="text-xs text-muted-foreground">· {format(date, "EEE, MMM d")}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <Popover>
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] capitalize text-foreground/80 transition hover:border-primary/40 hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-xs capitalize text-foreground/80 transition hover:border-primary/40 hover:text-foreground"
                 title="Debrief tone"
               >
                 {tone}
@@ -136,7 +136,7 @@ export function DailyDebrief({
               </button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-56 p-1.5">
-              <p className="px-2 pb-1.5 pt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Tone</p>
+              <p className="px-2 pb-1.5 pt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">Tone</p>
               {DEBRIEF_TONES.map(t => (
                 <button
                   key={t.id}
@@ -148,7 +148,7 @@ export function DailyDebrief({
                   )}
                 >
                   <div className="font-medium">{t.label}</div>
-                  <div className="text-[11px] text-muted-foreground">{t.hint}</div>
+                  <div className="text-xs text-muted-foreground">{t.hint}</div>
                 </button>
               ))}
             </PopoverContent>
@@ -157,7 +157,7 @@ export function DailyDebrief({
             type="button"
             onClick={refresh}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-3 py-1 text-[11px] text-foreground/80 transition hover:border-primary/40 hover:text-foreground disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-3 py-1 text-xs text-foreground/80 transition hover:border-primary/40 hover:text-foreground disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCcw className="h-3 w-3" />}
             {payload ? "Refresh" : "Get AI insight"}
@@ -171,7 +171,7 @@ export function DailyDebrief({
 
       {/* Capacity bar */}
       <div className="mt-4">
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span className="uppercase tracking-[0.18em]">Capacity</span>
           <span className="tabular-nums">
             {Math.round(capacity.plannedMinutes / 60 * 10) / 10}h / {Math.round(capacity.ceilingMinutes / 60 * 10) / 10}h
@@ -193,7 +193,7 @@ export function DailyDebrief({
             />
           )}
         </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
           {cycle && (
             <span>Tuned for your {PHASE_META[cycle.phase].label.toLowerCase()} phase (day {cycle.cycleDay}).</span>
           )}
@@ -245,7 +245,7 @@ function DebriefList({
 }) {
   return (
     <div className="rounded-2xl border border-border/40 bg-background/50 p-3">
-      <div className="mb-2 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em]" style={{ color: tone }}>
+      <div className="mb-2 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.18em]" style={{ color: tone }}>
         {icon} {title}
       </div>
       {items.length === 0 ? (

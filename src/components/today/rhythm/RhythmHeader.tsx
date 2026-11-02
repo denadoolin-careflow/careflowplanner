@@ -62,7 +62,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
         />
         <div className="relative flex flex-col items-center gap-4 text-center">
           <div className="flex flex-col items-center gap-1">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground inline-flex items-center gap-1.5">
+            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground inline-flex items-center gap-1.5">
               <Sparkles className="h-3 w-3 text-primary" />
               {personalGreeting(state.settings.name)}
             </p>
@@ -129,10 +129,10 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-1.5">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Plan with
             </span>
-            <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
+            <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-xs">
               {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
                 <button
                   key={k}
@@ -153,14 +153,14 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/70 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/70 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
                   title="Today preferences"
                 >
                   <Settings2 className="h-3 w-3" /> Preferences
                 </button>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-72 space-y-3 p-3">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                   Today preferences
                 </div>
                 <PrefRow
@@ -194,7 +194,7 @@ function PrefRow({
     <label className="flex items-start justify-between gap-3">
       <span className="min-w-0">
         <span className="block text-sm font-medium text-foreground">{label}</span>
-        <span className="block text-[11px] leading-snug text-muted-foreground">{hint}</span>
+        <span className="block text-xs leading-snug text-muted-foreground">{hint}</span>
       </span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>

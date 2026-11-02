@@ -151,7 +151,7 @@ export function ExhaleFlow({ open, onOpenChange, date }: Props) {
             }}
           />
           <DialogHeader className="relative">
-            <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+            <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">
               <Wind className="h-3.5 w-3.5" /> Evening Reflection · {format(date, "EEEE, MMM d")}
             </div>
             <DialogTitle className="font-display text-2xl font-semibold leading-tight">
@@ -303,7 +303,7 @@ function ReflectScreen({ value, onChange }: { value: string; onChange: (v: strin
         rows={5}
         className="resize-none rounded-xl border-border/60 bg-background/60 text-sm leading-relaxed"
       />
-      <div className="flex flex-wrap gap-1.5 text-[11px]">
+      <div className="flex flex-wrap gap-1.5 text-xs">
         {["Today asked for…", "I'm proud of…", "I struggled with…", "I needed more of…"].map(p => (
           <button
             key={p}
@@ -340,7 +340,7 @@ function GratitudeScreen({ items, onChange }: { items: string[]; onChange: (v: s
           />
         </div>
       ))}
-      <p className="px-1 text-[11px] text-muted-foreground">Optional. Fill in just the ones that arrive easily.</p>
+      <p className="px-1 text-xs text-muted-foreground">Optional. Fill in just the ones that arrive easily.</p>
     </div>
   );
 }
@@ -403,7 +403,7 @@ function TomorrowScreen({
               );
             })}
             {unfinished.length > 8 && (
-              <li className="px-1 text-[11px] italic text-muted-foreground">+ {unfinished.length - 8} more on today's list</li>
+              <li className="px-1 text-xs italic text-muted-foreground">+ {unfinished.length - 8} more on today's list</li>
             )}
           </ul>
         </section>
@@ -468,7 +468,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-border/50 bg-card/60 px-2 py-2.5">
       <div className="font-display text-lg font-semibold tabular-nums">{value}</div>
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
   );
 }

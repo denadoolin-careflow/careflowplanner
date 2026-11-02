@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, BookOpen, ChevronDown, ExternalLink } from "lucide-react";
+import { Bell, BookOpen, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { addDays, format, isSameDay } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
 import { PhaseIcon } from "@/lib/phase-icons";
 import { HORIZONS, HORIZON_LABEL, PHASE_LABEL, phaseFor } from "@/lib/rhythm/horizons";
 import { TwinRingsWidget } from "@/components/cycle/TwinRingsWidget";
@@ -80,5 +84,49 @@ export function ReminderRow({ children }: { children: React.ReactNode }) {
         </button>
       )}
     </section>
+  );
+}
+
+/** Slim sticky day header: weekday line, big date, prev/next and one calendar menu (date, layout, scope). */
+export function SlimDayHeader({ date, onDate, view, onView, labels }: {
+  date: Date; onDate: (d: Date) => void; view: string; onView: (v: string) => void; labels: Record<string, string>;
+}) {
+  const isToday = isSameDay(date, new Date());
+  const btn = "grid h-11 w-11 place-items-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  return (
+    <header className="sticky top-0 z-20 -mx-1 flex items-center gap-1 rounded-b-[20px] bg-background/90 px-1 py-1 backdrop-blur">
+      <div className="min-w-0 flex-1 px-1">
+        <p className="text-xs text-muted-foreground">{format(date, "EEEE")}{isToday ? " · Today" : ""}</p>
+        <p className="font-display text-2xl leading-tight text-foreground">{format(date, "MMMM d")}</p>
+      </div>
+      <button type="button" className={btn} aria-label="Previous day" onClick={() => onDate(addDays(date, -1))}><ChevronLeft className="h-5 w-5" aria-hidden /></button>
+      <button type="button" className={btn} aria-label="Next day" onClick={() => onDate(addDays(date, 1))}><ChevronRight className="h-5 w-5" aria-hidden /></button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" className={cn(btn, "bg-card shadow-soft")} aria-label="Choose date, layout and view"><CalendarDays className="h-5 w-5" aria-hidden /></button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-[min(20rem,calc(100vw-2rem))] space-y-3 p-3">
+          <Calendar mode="single" selected={date} onSelect={(d) => d && onDate(d)} initialFocus />
+          {!isToday && <Button variant="outline" className="h-11 w-full rounded-full" onClick={() => onDate(new Date())}>Back to today</Button>}
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground">Layout</p>
+            <div role="radiogroup" aria-label="Day layout" className="grid grid-cols-2 gap-1">
+              {Object.entries(labels).map(([k, l]) => (
+                <button key={k} type="button" role="radio" aria-checked={view === k} onClick={() => onView(k)}
+                  className={cn("min-h-11 rounded-xl px-2 text-sm", view === k ? "bg-primary/15 font-semibold text-primary" : "text-foreground hover:bg-muted")}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground">View</p>
+            <div className="grid grid-cols-3 gap-1">
+              {[["Day", `/planner/${format(date, "yyyy-MM-dd")}`], ["Week", `/planner/${format(date, "yyyy-MM-dd")}?range=week`], ["Month", `/planner/${format(date, "yyyy-MM-dd")}?range=month`]].map(([l, to]) => (
+                <Link key={l} to={to} className="grid min-h-11 place-items-center rounded-xl text-sm hover:bg-muted">{l}</Link>
+              ))}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </header>
   );
 }

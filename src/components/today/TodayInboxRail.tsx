@@ -38,12 +38,12 @@ export function TodayInboxRail({ date, className }: { date: Date; className?: st
     <div className={cn("rounded-2xl border border-border/50 bg-card/60 p-2 backdrop-blur-sm", className)}>
       <div className="mb-1.5 flex items-center gap-2 px-1">
         <Inbox className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[11.5px] font-semibold tracking-tight">Inbox</span>
-        <span className="rounded-full bg-primary/10 px-1.5 text-[10.5px] tabular-nums text-primary">{tasks.length}</span>
-        <span className="hidden text-[11px] text-muted-foreground sm:inline">Drag onto the grid to schedule</span>
+        <span className="text-xs font-semibold tracking-tight">Inbox</span>
+        <span className="rounded-full bg-primary/10 px-1.5 text-xs tabular-nums text-primary">{tasks.length}</span>
+        <span className="hidden text-xs text-muted-foreground sm:inline">Drag onto the grid to schedule</span>
         <Link
           to="/inbox"
-          className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+          className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
         >
           See all <ArrowRight className="h-3 w-3" />
         </Link>

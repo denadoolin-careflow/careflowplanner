@@ -93,10 +93,10 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
   return (
     <section className="cozy-card overflow-hidden">
       <div className="flex flex-wrap items-center justify-end gap-2 px-3 pt-3 sm:px-4 sm:pt-4">
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <ArrowUpDown className="h-3 w-3" />
           <Select value={sortMode} onValueChange={(v) => onSortChange(v as SortMode)}>
-            <SelectTrigger className="h-7 w-[120px] rounded-full border-border/50 bg-background/70 px-2.5 text-[11px]">
+            <SelectTrigger className="h-7 w-[120px] rounded-full border-border/50 bg-background/70 px-2.5 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -107,10 +107,10 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Layers className="h-3 w-3" />
           <Select value={groupMode} onValueChange={(v) => onGroupChange(v as GroupMode)}>
-            <SelectTrigger className="h-7 w-[120px] rounded-full border-border/50 bg-background/70 px-2.5 text-[11px]">
+            <SelectTrigger className="h-7 w-[120px] rounded-full border-border/50 bg-background/70 px-2.5 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -135,7 +135,7 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
                 </span>
                 <div className="min-w-0">
                   <div className="font-display text-base font-semibold text-foreground">{s.label}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
                     {allSlotTasks.length} task{allSlotTasks.length === 1 ? "" : "s"}
                   </div>
                 </div>
@@ -211,10 +211,10 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
       {/* Anytime tasks — full width below the three columns */}
       {tasksByPart.Anytime.length > 0 && (
         <div className="border-t border-border/40 p-3 sm:p-4">
-          <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <ListChecks className="h-3.5 w-3.5 text-primary" />
             Anytime
-            <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] tabular-nums text-primary">
+            <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs tabular-nums text-primary">
               {tasksByPart.Anytime.length}
             </span>
           </div>
@@ -266,7 +266,7 @@ function QuickAddSlot({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
       {draft.trim() && (
         <button
           type="submit"
-          className="inline-flex items-center gap-0.5 rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/25"
+          className="inline-flex items-center gap-0.5 rounded-md bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/25"
         >
           <CornerDownLeft className="h-2.5 w-2.5" />
         </button>
@@ -313,7 +313,7 @@ function TaskGroup({
         hover ? "border-primary/70 bg-primary/10 ring-2 ring-primary/40" : "border-border/40",
       )}
     >
-      <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {IconComp ? <IconComp className="h-3 w-3 text-primary" /> : null}
         <span>{label}</span>
         <span className="ml-1 text-muted-foreground/60">· {tasks.length}</span>
@@ -350,7 +350,7 @@ function TaskGroup({
                 {t.title}
               </button>
               <QuickDayPartButton task={t} />
-              {t.estMinutes ? <span className="mt-0.5 text-[10px] text-muted-foreground">{t.estMinutes}m</span> : null}
+              {t.estMinutes ? <span className="mt-0.5 text-xs text-muted-foreground">{t.estMinutes}m</span> : null}
             </li>
           ))}
         </ul>
@@ -375,7 +375,7 @@ function TaskGroup({
         <button
           type="submit"
           disabled={!draft.trim()}
-          className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary disabled:opacity-40"
+          className="rounded-md bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary disabled:opacity-40"
         >
           Add
         </button>

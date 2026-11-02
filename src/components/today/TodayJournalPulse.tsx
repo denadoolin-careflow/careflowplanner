@@ -123,14 +123,14 @@ export function TodayJournalPulse() {
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
             <Heart className="h-3 w-3" /> Journal pulse
           </div>
           <p className="mt-2 font-display text-lg leading-snug">{todayPrompt}</p>
         </div>
         <Link
           to="/journal"
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/50 bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/50 bg-background/70 px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
         >
           Open journal <ArrowRight className="h-3 w-3" />
         </Link>
@@ -164,7 +164,7 @@ export function TodayJournalPulse() {
       {/* Wins & themes (cached daily) */}
       {(topThemes.length > 0 || topWins.length > 0) && (
         <div className="mt-4 rounded-2xl border border-border/40 bg-background/50 p-3 shadow-soft">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <Sparkles className="h-3 w-3" /> Wins &amp; themes
           </div>
           <ul className="mt-1.5 space-y-1 text-sm">

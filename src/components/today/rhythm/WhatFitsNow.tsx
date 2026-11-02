@@ -109,7 +109,7 @@ export function WhatFitsNow({ date, onTaskClick }: Props) {
                 <div className="break-words text-sm font-medium leading-snug text-foreground">
                   {t.title}
                 </div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   {t.area && <span>{t.area}</span>}
                   <span className="inline-flex items-center gap-0.5">
                     <Clock className="h-2.5 w-2.5" /> {mins} min
@@ -134,7 +134,7 @@ export function WhatFitsNow({ date, onTaskClick }: Props) {
           onClick={doOneThing}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full",
-            "bg-gradient-to-r from-primary/90 to-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-soft",
+            "bg-gradient-to-r from-primary/90 to-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-soft",
             "transition-all hover:from-primary hover:to-primary/90",
           )}
           title="Complete top pick"

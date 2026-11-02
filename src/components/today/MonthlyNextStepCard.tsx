@@ -20,7 +20,7 @@ export function MonthlyNextStepCard() {
 
   return (
     <section aria-label="This month's next small step" className="rounded-2xl border border-border/60 bg-card p-4">
-      <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         <Moon className="h-3.5 w-3.5" aria-hidden />{format(new Date(), "MMMM")} planning · next small step
       </p>
       <p className="mt-1.5 font-display text-lg leading-snug">{task.title}</p>

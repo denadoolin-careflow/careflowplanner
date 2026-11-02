@@ -21,7 +21,7 @@ export function DashCard({
         <header className="mb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
             {eyebrow && (
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{eyebrow}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{eyebrow}</p>
             )}
             {title && <h3 className="font-display text-base font-semibold leading-tight">{title}</h3>}
           </div>
