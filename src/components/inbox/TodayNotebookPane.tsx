@@ -14,7 +14,7 @@ export function TodayNotebookPane({ notebook }: { notebook: ReturnType<typeof us
   const [orderOpen, setOrderOpen] = useState(false);
   const entries = timestampedEntries(notebook.body);
   return (
-    <section aria-label="Today's notebook note" className="notes-editor-experience min-w-0 space-y-3">
+    <section aria-label="Today's notebook note" className="today-notebook-phase-headings notes-editor-experience min-w-0 space-y-3">
       <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border pb-3">
         <div><h2 className="flex items-center gap-2 font-display text-xl"><BookOpen className="h-4 w-4 text-primary" />Today's notebook note</h2><p className="mt-1 text-xs text-muted-foreground">{format(new Date(), "EEEE, MMMM d")}</p></div>
         <div className="flex items-center gap-1">

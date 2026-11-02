@@ -39,6 +39,7 @@ import { Extension, Node as TiptapNode } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { TextSelection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { Node as PMNode } from "@tiptap/pm/model";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { marked } from "marked";
@@ -166,6 +167,15 @@ export function extractAllTags(source: string): string[] {
  * same or higher level) and mark each heading's first line as its fold proxy.
  * Pure DOM — safe to run at any time (load, edits, external content sync).
  */
+/** Day-section headings written by the rhythm templates: "Plan · Morning Set". */
+const PHASE_HEADING_LABELS = [
+  { label: "Plan", phase: "plan" },
+  { label: "Grow", phase: "grow" },
+  { label: "Care", phase: "care" },
+  { label: "Let go", phase: "letgo" },
+] as const;
+
+
 export function applyHeadingFolds(root: HTMLElement) {
   root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
   root.querySelectorAll<HTMLElement>("[data-heading-fold-proxy]").forEach(n => n.removeAttribute("data-heading-fold-proxy"));
@@ -2334,6 +2344,40 @@ export function BlockEditor({
     },
   }), []);
 
+  /**
+   * Day-section headings ("Plan · Morning Set") get a data-phase attribute so
+   * styles can give them that phase's icon and deep color. Applied as a node
+   * decoration, so it survives every redraw (unlike a one-off DOM pass).
+   */
+  const phaseHeadingExtension = useMemo(() => Extension.create({
+    name: "phaseHeadingMarks",
+    addProseMirrorPlugins() {
+      const build = (doc: PMNode) => {
+        const decos: Decoration[] = [];
+        doc.descendants((node, pos) => {
+          if (node.type.name !== "heading") return;
+          const text = node.textContent.trim();
+          const hit = PHASE_HEADING_LABELS.find(
+            p => text === p.label || text.startsWith(`${p.label} · `),
+          );
+          if (hit) decos.push(Decoration.node(pos, pos + node.nodeSize, { "data-phase": hit.phase }));
+        });
+        return DecorationSet.create(doc, decos);
+      };
+      const key = new PluginKey("phaseHeadingMarks");
+      return [new Plugin({
+        key,
+        state: {
+          init: (_config, state) => build(state.doc),
+          apply: (tr, value) => (tr.docChanged ? build(tr.doc) : value),
+        },
+        props: {
+          decorations: state => key.getState(state) as DecorationSet,
+        },
+      })];
+    },
+  }), []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -2385,6 +2429,7 @@ export function BlockEditor({
       toggleKeymap,
       foldAttributes,
       focusBlockExtension,
+      phaseHeadingExtension,
       embeddedInExtension,
     ],
     content: bodyToHtml(body),
