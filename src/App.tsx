@@ -101,6 +101,7 @@ import CornerPost from "./pages/CornerPost";
 import Shop from "./pages/Shop";
 import Landing from "./pages/Landing";
 import LandingMockups from "./pages/landing-mockups";
+import MonthPicMockups from "./pages/month-pic-mockups";
 import Roadmap from "./pages/Roadmap";
 import GmailCallback from "./pages/GmailCallback";
 import AdminRoadmap from "./pages/AdminRoadmap";
