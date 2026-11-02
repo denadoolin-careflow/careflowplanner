@@ -638,12 +638,12 @@ export default function Planner() {
           {view === "day" && (
             <div className="mb-3 shrink-0">
               <MonthSeasonHeader month={startOfMonth(day)} className="mb-3" />
-              <details open className="planner-month-fold mb-3">
+              <MobileWeekAgendaStrip day={day} onSelect={go} />
+              <PlannerPriorityStrip date={day} scope="day" className="mt-3" />
+              <details open className="planner-month-fold mt-3">
                 <summary>Monthly moonscape · Plan · Grow · Care · Let go</summary>
                 <div className="pt-2"><MonthlyMoonscape month={startOfMonth(day)} selectedDate={day} onSelectDate={go} /></div>
               </details>
-              <MobileWeekAgendaStrip day={day} onSelect={go} />
-              <PlannerPriorityStrip date={day} scope="day" className="mt-3" />
               <TodayDayEmbed date={day} onDate={go} />
               <h2 className="mt-4 font-display text-lg text-foreground">Schedule</h2>
             </div>
