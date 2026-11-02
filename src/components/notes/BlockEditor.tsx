@@ -2464,6 +2464,9 @@ export function BlockEditor({
       lastSyncedRef.current = md;
       onChange(md, html);
       syncBodyTags(md);
+      // Re-tag phase headings: ProseMirror rebuilds the node on every edit,
+      // which drops the derived data-phase attribute.
+      applyPhaseHeadingMarks(editor.view.dom as HTMLElement);
     },
   }, []);
 
