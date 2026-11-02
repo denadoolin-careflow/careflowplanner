@@ -66,7 +66,7 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
 
   const moonPhase = getMoonPhase(date);
   const moon = MOON_INFO[moonPhase];
-  const illum = Math.round(getIllumination(date) * 100);
+  const illum = Math.round(getIllumination(date));
   const tip = useMemo(() => moonPlanningTip(date), [date]);
 
   const cycle = useMemo(() => {
