@@ -15,6 +15,7 @@ import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { useOverdueTasks } from "./PlannerOverdueSection";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { isDeliberateSwipe } from "@/lib/swipe-intent";
 import { MonthlyMoonscape } from "./MonthlyMoonscape";
 import { MonthQuickAddSheet } from "./MonthQuickAddSheet";
 
@@ -23,7 +24,9 @@ const ATTENTION_KEY = "careflow:planner:month-attention:v1";
 
 export function PlannerMonthExperience({ date, onOpenDay, onCapture, onChangeMonth }: { date: Date; onOpenDay: (date: Date) => void; onCapture: () => void; onChangeMonth?: (date: Date) => void }) {
   const isMobile = useIsMobile();
-  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const swipe = useRef<{ x: number; y: number; t: number } | null>(null);
+  /** Month-changing flick: long and flat, so typing or scrolling never flips months. */
+  const MONTH_SWIPE = { minPx: 110, ratio: 2.5, maxVertical: 60, maxMs: 700 };
   const [selectedDate, setSelectedDate] = useState(date);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -50,10 +53,10 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture, onChangeMon
       {attentionOpen && <div className="grid gap-2 border-t border-border/50 p-3 sm:grid-cols-2"><div className="rounded-md bg-background/60 p-3"><p className="text-sm font-semibold">{overdue.length} overdue</p><p className="text-xs text-muted-foreground">Review when you have space—nothing is failing.</p></div><div className="rounded-md bg-background/60 p-3"><p className="text-sm font-semibold">{unscheduled} without a time</p><p className="text-xs text-muted-foreground">They can remain flexible or become an anchor.</p></div></div>}
     </section>;
   const calendar = <div className={cn("planner-month-layout", !panelOpen && "planner-month-layout--panel-closed")}>
-       <div className="min-w-0" onTouchStart={isMobile ? (e) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; } : undefined} onTouchEnd={isMobile ? (e) => {
+       <div className="min-w-0" onTouchStart={isMobile ? (e) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() }; } : undefined} onTouchEnd={isMobile ? (e) => {
          const s = swipe.current; swipe.current = null; if (!s || !onChangeMonth) return;
          const dx = e.changedTouches[0].clientX - s.x; const dy = e.changedTouches[0].clientY - s.y;
-         if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) onChangeMonth(addMonths(date, dx < 0 ? 1 : -1));
+         if (isDeliberateSwipe(dx, dy, Date.now() - s.t, MONTH_SWIPE)) onChangeMonth(addMonths(date, dx < 0 ? 1 : -1));
        } : undefined}><PlannerMonthView date={date} selectedDate={selectedDate} onSelectDay={selectDay} onChangeSelectedDate={selectAgendaDay} onCapture={() => isMobile ? setQuickAddOpen(true) : onCapture()} onOpenItem={openItem} onOpenDay={onOpenDay} /></div>
       {panelOpen && !isMobile && panel}
     </div>;

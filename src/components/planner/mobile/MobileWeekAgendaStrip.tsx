@@ -10,6 +10,7 @@ import { getMoonSign } from "@/lib/zodiac";
 import { lunarRhythmAt } from "@/lib/cosmic/lunar-rhythm";
 import { moonEnergyWord } from "@/lib/cosmic/moon-energy";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
+import { isDeliberateSwipe, swipeAxisCancelled } from "@/lib/swipe-intent";
 import { PHASE_ICONS } from "../PhaseRibbon";
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Sun, Zap } from "lucide-react";
 
@@ -22,7 +23,7 @@ export function MobileWeekAgendaStrip({ day, onSelect, rich = false }: { day: Da
   const { state, toggleTask } = useStore();
   const [peek, setPeek] = useState<string | null>(null);
   const press = useRef<{ t: number; long: boolean; x: number }>({ t: 0, long: false, x: 0 });
-  const swipeX = useRef<number | null>(null);
+  const swipe = useRef<{ x: number; y: number; t: number; cancel: boolean } | null>(null);
   const start = startOfWeek(day, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const today = new Date();
@@ -44,12 +45,23 @@ export function MobileWeekAgendaStrip({ day, onSelect, rich = false }: { day: Da
   return (
     <div
       className="flex items-center gap-1"
-      onTouchStart={(e) => { swipeX.current = e.touches[0].clientX; }}
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        swipe.current = { x: t.clientX, y: t.clientY, t: Date.now(), cancel: false };
+      }}
+      onTouchMove={(e) => {
+        const s = swipe.current; if (!s) return;
+        const t = e.touches[0];
+        // A drag that drifts vertically first is scrolling or a typo, not a week change.
+        if (swipeAxisCancelled(t.clientX - s.x, t.clientY - s.y)) s.cancel = true;
+      }}
       onTouchEnd={(e) => {
-        if (swipeX.current == null) return;
-        const dx = e.changedTouches[0].clientX - swipeX.current;
-        swipeX.current = null;
-        if (Math.abs(dx) > 60) shiftWeek(dx < 0 ? 1 : -1);
+        const s = swipe.current; swipe.current = null;
+        if (!s || s.cancel) return;
+        const t = e.changedTouches[0];
+        if (isDeliberateSwipe(t.clientX - s.x, t.clientY - s.y, Date.now() - s.t)) {
+          shiftWeek(t.clientX < s.x ? 1 : -1);
+        }
       }}
     >
       <button type="button" aria-label="Previous week" onClick={() => shiftWeek(-1)} className="grid h-11 w-6 shrink-0 place-items-center text-muted-foreground">

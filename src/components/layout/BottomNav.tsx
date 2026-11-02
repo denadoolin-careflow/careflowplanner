@@ -12,9 +12,12 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useStore } from "@/lib/store";
 import { haptics } from "@/lib/haptics";
+import { isDeliberateSwipe } from "@/lib/swipe-intent";
 import { toast } from "sonner";
 
 const NAV_ORDER_KEY = "careflow:mobile-nav-order";
+/** Page-switching flick: stricter than the week strip so typing never flips pages. */
+const NAV_SWIPE = { minPx: 110, ratio: 4, maxVertical: 25, maxMs: 600 };
 const MAX_NAV_ITEMS = 5; // center slot of the dock is reserved for the quick-actions FAB
 const DEFAULT_NAV_IDS = MOBILE_NAV.slice(0, MAX_NAV_ITEMS).map(n => n.to);
 
@@ -102,6 +105,9 @@ export function BottomNav() {
   const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
+    const el = e.target as HTMLElement | null;
+    // Never treat a gesture that starts in a typing field as a page swipe.
+    if (el?.closest('input, textarea, [contenteditable="true"], .ProseMirror')) { swipeStart.current = null; return; }
     swipeStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
   };
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -111,7 +117,8 @@ export function BottomNav() {
     const dx = end.clientX - s.x;
     const dy = end.clientY - s.y;
     if (Date.now() - s.t > 600) return;
-    if (Math.abs(dx) < 60 || Math.abs(dy) > 50) return;
+    // Deliberate only: a long, flat, horizontal flick.
+    if (!isDeliberateSwipe(dx, dy, Date.now() - s.t, NAV_SWIPE)) return;
     const order = navIds;
     const idx = order.indexOf(pathname);
     if (idx < 0) return;

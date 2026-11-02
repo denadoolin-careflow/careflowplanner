@@ -366,7 +366,7 @@ export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
           </div>
           {/* Swipeable sections — horizontal scroll-snap, single column inside */}
           <div
-            className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             onScroll={(e) => {
               const el = e.currentTarget;
               const idx = Math.round(el.scrollLeft / el.clientWidth);

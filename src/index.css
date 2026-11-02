@@ -395,10 +395,15 @@
 
 @layer base {
   * { @apply border-border; }
-  html { font-family: 'Nunito Sans', 'Inter', ui-sans-serif, system-ui, sans-serif; }
+  html {
+    font-family: 'Nunito Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    /* A sideways thumb-drag while typing must not fly through page history. */
+    overscroll-behavior-x: none;
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01", "cv11";
+    overscroll-behavior-x: none;
   }
   h1, h2, h3, h4, h5, h6, .font-display {
     font-family: "Playfair Display", 'Lora', ui-serif, Georgia, serif;
