@@ -10,6 +10,7 @@ import { getMoonSign } from "@/lib/zodiac";
 import { lunarRhythmAt } from "@/lib/cosmic/lunar-rhythm";
 import { moonEnergyWord } from "@/lib/cosmic/moon-energy";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
+import { isDeliberateSwipe, swipeAxisCancelled } from "@/lib/swipe-intent";
 import { PHASE_ICONS } from "../PhaseRibbon";
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Sun, Zap } from "lucide-react";
 
