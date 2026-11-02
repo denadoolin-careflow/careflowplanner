@@ -4286,3 +4286,31 @@ body.planner-dragging [data-radix-dialog-overlay] {
   --muted: 265 14% 16%; --muted-foreground: 265 14% 70%; --border: 265 14% 20%; --input: 265 14% 20%; --ring: 344 62% 72%;
   --gradient-dawn: linear-gradient(160deg, hsl(265 22% 9%) 0%, hsl(258 20% 14%) 60%, hsl(344 20% 13%) 100%);
 }
+
+/* Today's notebook: day-section headings carry their phase icon + deep color.
+   Derived in the editor from the heading text — nothing is stored in the note body. */
+.today-notebook-phase-headings [data-phase="plan"] { color: hsl(var(--rhythm-plan-deep)); }
+.today-notebook-phase-headings [data-phase="grow"] { color: hsl(var(--rhythm-grow-deep)); }
+.today-notebook-phase-headings [data-phase="care"] { color: hsl(var(--rhythm-care-deep)); }
+.today-notebook-phase-headings [data-phase="letgo"] { color: hsl(var(--rhythm-letgo-deep)); }
+
+.today-notebook-phase-headings h1[data-phase]::before,
+.today-notebook-phase-headings h2[data-phase]::before,
+.today-notebook-phase-headings h3[data-phase]::before,
+.today-notebook-phase-headings h4[data-phase]::before,
+.today-notebook-phase-headings h5[data-phase]::before,
+.today-notebook-phase-headings h6[data-phase]::before {
+  content: "";
+  display: inline-block;
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.4em;
+  vertical-align: -0.12em;
+  background-color: currentColor;
+  -webkit-mask: var(--phase-heading-icon) no-repeat center / contain;
+  mask: var(--phase-heading-icon) no-repeat center / contain;
+}
+.today-notebook-phase-headings [data-phase="plan"]::before { --phase-heading-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M11%2020A7%207%200%200%201%209.8%206.1C15.5%205%2017%204.48%2019%202c1%202%202%204.18%202%208%200%205.5-4.78%2010-10%2010Z%27%2F%3E%3Cpath%20d%3D%27M2%2021c0-3%201.85-5.36%205.08-6C9.5%2014.52%2012%2013%2013%2012%27%2F%3E%3C%2Fsvg%3E"); }
+.today-notebook-phase-headings [data-phase="grow"]::before { --phase-heading-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M7%2020h10%27%2F%3E%3Cpath%20d%3D%27M10%2020c5.5-2.5.8-6.4%203-10%27%2F%3E%3Cpath%20d%3D%27M9.5%209.4c1.1.8%201.8%202.2%202.3%203.7-2%20.4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2%202.8-.5%204.4%200%205.5.8z%27%2F%3E%3Cpath%20d%3D%27M14.1%206a7%207%200%200%200-1.1%204c1.9-.1%203.3-.6%204.3-1.4%201-1%201.6-2.3%201.7-4.6-2.7.1-4%201-4.9%202z%27%2F%3E%3C%2Fsvg%3E"); }
+.today-notebook-phase-headings [data-phase="care"]::before { --phase-heading-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M19%2014c1.49-1.46%203-3.21%203-5.5A5.5%205.5%200%200%200%2016.5%203c-1.76%200-3%20.5-4.5%202-1.5-1.5-2.74-2-4.5-2A5.5%205.5%200%200%200%202%208.5c0%202.3%201.5%204.05%203%205.5l7%207Z%27%2F%3E%3C%2Fsvg%3E"); }
+.today-notebook-phase-headings [data-phase="letgo"]::before { --phase-heading-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M12%203a6%206%200%200%200%209%209%209%209%200%201%201-9-9Z%27%2F%3E%3C%2Fsvg%3E"); }
