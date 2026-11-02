@@ -12,9 +12,12 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useStore } from "@/lib/store";
 import { haptics } from "@/lib/haptics";
+import { isDeliberateSwipe } from "@/lib/swipe-intent";
 import { toast } from "sonner";
 
 const NAV_ORDER_KEY = "careflow:mobile-nav-order";
+/** Page-switching flick: stricter than the week strip so typing never flips pages. */
+const NAV_SWIPE = { minPx: 110, ratio: 4, maxVertical: 25, maxMs: 600 };
 const MAX_NAV_ITEMS = 5; // center slot of the dock is reserved for the quick-actions FAB
 const DEFAULT_NAV_IDS = MOBILE_NAV.slice(0, MAX_NAV_ITEMS).map(n => n.to);
 
@@ -115,7 +118,7 @@ export function BottomNav() {
     const dy = end.clientY - s.y;
     if (Date.now() - s.t > 600) return;
     // Deliberate only: a long, flat, horizontal flick.
-    if (Math.abs(dx) < 110 || Math.abs(dy) > 25 || Math.abs(dx) < Math.abs(dy) * 4) return;
+    if (!isDeliberateSwipe(dx, dy, Date.now() - s.t, NAV_SWIPE)) return;
     const order = navIds;
     const idx = order.indexOf(pathname);
     if (idx < 0) return;

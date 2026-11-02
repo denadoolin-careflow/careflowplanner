@@ -51,19 +51,16 @@ export function MobileWeekAgendaStrip({ day, onSelect, rich = false }: { day: Da
       onTouchMove={(e) => {
         const s = swipe.current; if (!s) return;
         const t = e.touches[0];
-        const dx = t.clientX - s.x, dy = t.clientY - s.y;
         // A drag that drifts vertically first is scrolling or a typo, not a week change.
-        if (Math.abs(dy) > 18 && Math.abs(dy) > Math.abs(dx)) s.cancel = true;
+        if (swipeAxisCancelled(t.clientX - s.x, t.clientY - s.y)) s.cancel = true;
       }}
       onTouchEnd={(e) => {
         const s = swipe.current; swipe.current = null;
         if (!s || s.cancel) return;
         const t = e.changedTouches[0];
-        const dx = t.clientX - s.x, dy = t.clientY - s.y;
-        // Deliberate only: a long, flat, horizontal flick.
-        if (Date.now() - s.t > 700) return;
-        if (Math.abs(dx) < 100 || Math.abs(dx) < Math.abs(dy) * 3) return;
-        shiftWeek(dx < 0 ? 1 : -1);
+        if (isDeliberateSwipe(t.clientX - s.x, t.clientY - s.y, Date.now() - s.t)) {
+          shiftWeek(t.clientX < s.x ? 1 : -1);
+        }
       }}
     >
       <button type="button" aria-label="Previous week" onClick={() => shiftWeek(-1)} className="grid h-11 w-6 shrink-0 place-items-center text-muted-foreground">
