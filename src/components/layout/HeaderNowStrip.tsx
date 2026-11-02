@@ -98,10 +98,10 @@ function TaskMiniRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof use
     const dx = e.clientX - p.x;
     const dy = e.clientY - p.y;
     if (!p.active) {
-      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+      if (Math.abs(dx) > 22 && Math.abs(dx) > Math.abs(dy) * 1.5) {
         p.active = true;
         try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch { /* */ }
-      } else if (Math.abs(dy) > 12) {
+      } else if (Math.abs(dy) > 16) {
         ptr.current = null;
         return;
       } else {
