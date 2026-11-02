@@ -15,6 +15,7 @@ import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { useOverdueTasks } from "./PlannerOverdueSection";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { isDeliberateSwipe } from "@/lib/swipe-intent";
 import { MonthlyMoonscape } from "./MonthlyMoonscape";
 import { MonthQuickAddSheet } from "./MonthQuickAddSheet";
 
@@ -23,7 +24,9 @@ const ATTENTION_KEY = "careflow:planner:month-attention:v1";
 
 export function PlannerMonthExperience({ date, onOpenDay, onCapture, onChangeMonth }: { date: Date; onOpenDay: (date: Date) => void; onCapture: () => void; onChangeMonth?: (date: Date) => void }) {
   const isMobile = useIsMobile();
-  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const swipe = useRef<{ x: number; y: number; t: number } | null>(null);
+  /** Month-changing flick: long and flat, so typing or scrolling never flips months. */
+  const MONTH_SWIPE = { minPx: 110, ratio: 2.5, maxVertical: 60, maxMs: 700 };
   const [selectedDate, setSelectedDate] = useState(date);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
