@@ -77,7 +77,7 @@ export function EndOfDaySummary({ date }: Props) {
               <Moon className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Wind down</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Wind down</p>
               <h3 className="truncate font-display text-xl font-semibold">End of day</h3>
             </div>
             <Button
@@ -162,14 +162,14 @@ export function EndOfDaySummary({ date }: Props) {
                 <span className="shrink-0 text-base leading-none">{moon.glyph}</span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-medium">{moon.label}</p>
-                  <p className="text-[11px] text-muted-foreground line-clamp-2">{moon.invitation}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{moon.invitation}</p>
                 </div>
               </li>
               <li className="flex min-w-0 items-start gap-2 overflow-hidden rounded-xl bg-muted/40 px-3 py-2">
                 <CloudSun className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium">Weather</p>
-                  <p className="line-clamp-2 break-words text-[11px] text-muted-foreground">
+                  <p className="line-clamp-2 break-words text-xs text-muted-foreground">
                     {weather
                       ? `${weather.locationLabel} · ${weather.conditionLabel}, ${formatTemp(weather.highC, unit)} / ${formatTemp(weather.lowC, unit)}`
                       : "Forecast loading…"}
@@ -180,7 +180,7 @@ export function EndOfDaySummary({ date }: Props) {
                 <Flame className="mt-0.5 h-4 w-4 shrink-0 text-accent-foreground" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium">Habits</p>
-                  <p className="line-clamp-2 text-[11px] text-muted-foreground">
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
                     {habitsToday.length === 0
                       ? "No daily habits set."
                       : `${habitsDone}/${habitsToday.length} kept today — gentle start tomorrow.`}
@@ -191,7 +191,7 @@ export function EndOfDaySummary({ date }: Props) {
                 <CalIcon className="mt-0.5 h-4 w-4 shrink-0 text-secondary-foreground" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium">Upcoming</p>
-                  <p className="line-clamp-2 break-words text-[11px] text-muted-foreground">
+                  <p className="line-clamp-2 break-words text-xs text-muted-foreground">
                     {tomorrowAppts.length === 0
                       ? "A clear morning."
                       : `${tomorrowAppts.length} on the calendar${tomorrowFirst ? ` · first: ${tomorrowFirst.title}${tomorrowFirst.time ? " @ " + tomorrowFirst.time.slice(0,5) : ""}` : ""}`}

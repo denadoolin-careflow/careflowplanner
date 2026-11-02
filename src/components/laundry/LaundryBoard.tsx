@@ -167,7 +167,7 @@ export function LaundryBoard({ compact = false }: { compact?: boolean }) {
                         <div className="mt-2 flex gap-1">
                           {[30, 45, 60, 75].map(m => (
                             <button key={m} type="button" onClick={() => setMinutes(l, m)}
-                              className={cn("flex-1 rounded-md border px-1 py-1 text-[11px]", l.minutes === m ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>
+                              className={cn("flex-1 rounded-md border px-1 py-1 text-xs", l.minutes === m ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>
                               {m}m
                             </button>
                           ))}

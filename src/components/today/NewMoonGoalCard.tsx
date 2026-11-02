@@ -34,7 +34,7 @@ export function NewMoonGoalCard({ date = new Date() }: { date?: Date }) {
     <section aria-label="New moon intention" className="rounded-2xl border border-border/50 bg-card/70 p-4 shadow-soft">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">🌑 New moon intention · {moon.sign}</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">🌑 New moon intention · {moon.sign}</p>
           <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-primary"><Target className="h-3 w-3" /> {area}</p>
         </div>
         {!s.addedGoalId && <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0" aria-label="Not this time" onClick={() => save({ ...s, dismissed: true })}><X className="h-4 w-4" /></Button>}

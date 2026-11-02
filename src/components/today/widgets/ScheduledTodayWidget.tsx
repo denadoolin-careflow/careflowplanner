@@ -35,7 +35,7 @@ export function ScheduledTodayWidget({ date = new Date() }: { date?: Date }) {
         </div>
         <Link
           to="/calendar"
-          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
         >
           Calendar <ArrowRight className="h-2.5 w-2.5" />
         </Link>
@@ -56,7 +56,7 @@ export function ScheduledTodayWidget({ date = new Date() }: { date?: Date }) {
                   "group flex w-full items-start gap-2 rounded-lg border border-border/40 bg-background/60 px-2 py-1.5 text-left transition-colors hover:bg-muted/50",
                 )}
               >
-                <span className="mt-0.5 inline-flex shrink-0 items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary">
+                <span className="mt-0.5 inline-flex shrink-0 items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium tabular-nums text-primary">
                   {fmtTime(t.startTime!)}
                   {t.endTime ? `–${fmtTime(t.endTime)}` : ""}
                 </span>
@@ -64,7 +64,7 @@ export function ScheduledTodayWidget({ date = new Date() }: { date?: Date }) {
                   {t.title}
                 </span>
                 {t.area && (
-                  <span className="mt-1 hidden truncate text-[10px] text-muted-foreground sm:inline">
+                  <span className="mt-1 hidden truncate text-xs text-muted-foreground sm:inline">
                     {t.area}
                   </span>
                 )}

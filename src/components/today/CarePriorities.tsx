@@ -99,7 +99,7 @@ export function CarePriorities({ date, onTaskClick, collapsibleId }: { date: Dat
       collapsedPreview={preview}
       action={
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="rounded-full text-[10px] uppercase tracking-wide">
+          <Badge variant="outline" className="rounded-full text-xs uppercase tracking-wide">
             {seasonLabel}
           </Badge>
           <Button
@@ -174,7 +174,7 @@ export function CarePriorities({ date, onTaskClick, collapsibleId }: { date: Dat
                 "hover:border-primary/30 hover:bg-card/80",
               )}
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                 {idx + 1}
               </span>
               <Checkbox

@@ -29,14 +29,14 @@ export function RitualStepsEditor({ kind, iso, onComplete }: { kind: RitualKind;
   return (
     <div className="mt-3 border-t border-border/40 pt-2">
       <div className="mb-1 flex items-center justify-between">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           My steps · {steps.filter(s => done.includes(s.id)).length}/{steps.length}
         </p>
-        <Button type="button" size="sm" variant="ghost" className="h-7 gap-1 px-2 text-[11px]" onClick={() => setEditing(e => !e)} aria-pressed={editing} aria-label={`Edit ${label}`}>
+        <Button type="button" size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs" onClick={() => setEditing(e => !e)} aria-pressed={editing} aria-label={`Edit ${label}`}>
           {editing ? <><Check className="h-3 w-3" /> Done</> : <><Pencil className="h-3 w-3" /> Edit</>}
         </Button>
       </div>
-      {editing ? <div className="mb-2 space-y-1"><p className="text-[11px] font-medium text-muted-foreground">Life-area goal</p><ProjectGoalPicker ids={goalIds} onChange={setGoalIds} /></div>
+      {editing ? <div className="mb-2 space-y-1"><p className="text-xs font-medium text-muted-foreground">Life-area goal</p><ProjectGoalPicker ids={goalIds} onChange={setGoalIds} /></div>
         : <LinkedGoalLabels ids={goalIds} className="mb-1.5" />}
       <ul className="space-y-1">
         {steps.map((s, i) => (

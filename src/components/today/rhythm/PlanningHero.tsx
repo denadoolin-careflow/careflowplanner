@@ -31,7 +31,7 @@ export function PlanningHero({
 
   return (
     <section className="relative text-center">
-      <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
+      <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">
         <Sparkles className="mr-1.5 inline h-3 w-3 text-primary" />
         {personalGreeting(state.settings.name)}
       </p>

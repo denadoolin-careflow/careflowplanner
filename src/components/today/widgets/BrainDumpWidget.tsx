@@ -111,7 +111,7 @@ export function BrainDumpWidget() {
         </div>
         <Link
           to="/inbox"
-          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
         >
           Inbox <ArrowRight className="h-2.5 w-2.5" />
         </Link>
@@ -128,7 +128,7 @@ export function BrainDumpWidget() {
       />
 
       <div className="mt-2 flex items-center justify-between gap-2">
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {value.trim() ? `${value.split("\n").map(s => s.trim()).filter(Boolean).length} item${value.split("\n").map(s => s.trim()).filter(Boolean).length === 1 ? "" : "s"}` : "Lands in Inbox"}
         </span>
         <Button size="sm" className="h-7 rounded-full px-3 text-xs" onClick={() => void capture()} disabled={!value.trim()}>
@@ -141,11 +141,11 @@ export function BrainDumpWidget() {
           {recent.map((r, i) => (
             <li
               key={i}
-              className="group flex items-center gap-1.5 rounded-md px-1 py-0.5 text-[11px] text-muted-foreground hover:bg-muted/30"
+              className="group flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs text-muted-foreground hover:bg-muted/30"
             >
               <span className="min-w-0 flex-1 truncate" title={r.title}>· {r.title}</span>
               {r.converted ? (
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] uppercase tracking-wider">
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-xs uppercase tracking-wider">
                   <Check className="h-2.5 w-2.5" />
                   {r.converted === "task" ? "Today" : "Journal"}
                 </span>

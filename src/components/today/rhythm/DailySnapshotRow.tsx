@@ -36,7 +36,7 @@ function Chip({
       </div>
       <div className="min-w-0 text-left">
         <div className="truncate font-display text-sm font-semibold leading-none text-foreground sm:text-lg">{value}</div>
-        <div className="mt-0.5 truncate text-[9px] uppercase tracking-wider text-muted-foreground sm:text-[10px]">{label}</div>
+        <div className="mt-0.5 truncate text-xs uppercase tracking-wider text-muted-foreground sm:text-xs">{label}</div>
       </div>
     </>
   );

@@ -74,7 +74,7 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
           </AnimatePresence>
         </div>
         <div className="min-w-0 flex-1 text-center">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/70 sm:text-xs">{format(selected, "EEEE, MMMM d")}</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-foreground/70 sm:text-xs">{format(selected, "EEEE, MMMM d")}</p>
           <Clock now={now} />
           {!isToday && <p className="text-xs text-muted-foreground">Viewing {format(selected, "MMM d")} · now</p>}
           <p className="font-display text-lg leading-tight text-foreground sm:text-2xl">{ctx.moonLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}</p>
@@ -132,7 +132,7 @@ export function TodayMoonHeader({ date }: { date?: Date }) {
         <div className="flex gap-4">
           <img src={sky} alt="" aria-hidden loading="lazy" className="hidden h-28 w-28 shrink-0 rounded-full object-cover object-right-bottom sm:block" />
           <div className="min-w-0 flex-1 pr-10">
-            <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: activeStyle.deep }}>Today's guidance</p>
+            <p className="text-xs uppercase tracking-[0.28em]" style={{ color: activeStyle.deep }}>Today's guidance</p>
             <h3 className="mt-1 font-display text-2xl leading-tight text-foreground sm:text-3xl">{ctx.rhythmLabel}{ctx.sign ? ` in ${ctx.sign}` : ""}</h3>
             <p className="mt-2 text-sm leading-relaxed text-foreground/85">{ctx.sign ? phaseSignAdvice(ctx.rhythm, ctx.sign) : g0.focus} {LUNAR_RHYTHM[ctx.rhythm].invitation}</p>
           </div>

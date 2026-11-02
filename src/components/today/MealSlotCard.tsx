@@ -90,7 +90,7 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
         ) : (
           <Icon className="h-3 w-3 shrink-0 text-accent" />
         )}
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {slot}
         </span>
         {meal ? (
@@ -185,7 +185,7 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
             />
             <div className="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1">
               {filtered.length === 0 && (
-                <p className="rounded-lg bg-muted/40 px-2 py-1.5 text-[11px] text-muted-foreground">
+                <p className="rounded-lg bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground">
                   {query ? "Press Enter to add as a new meal." : "Your library is empty — start by typing a name."}
                 </p>
               )}
@@ -217,7 +217,7 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
       {meal && expanded && (
         <div className="mt-2 space-y-1 rounded-lg bg-muted/30 px-2 py-1.5">
           {ingredients.length === 0 && (
-            <p className="text-[11px] italic text-muted-foreground">No ingredients yet — add some below.</p>
+            <p className="text-xs italic text-muted-foreground">No ingredients yet — add some below.</p>
           )}
           {ingredients.map((ing, idx) => {
             return (
@@ -230,7 +230,7 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
                     if (v.trim() !== ing) void setIngredient(idx, v);
                   }}
                   onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                  className="min-w-0 flex-1 bg-transparent text-[11px] text-foreground outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none"
                 />
                 <button
                   type="button"
@@ -253,13 +253,13 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
               value={newIng}
               onChange={(e) => setNewIng(e.target.value)}
               placeholder="Add ingredient…"
-              className="min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/70"
+              className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/70"
             />
           </form>
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-primary hover:underline"
+            className="mt-1 inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-primary hover:underline"
           >
             <BookOpen className="h-3 w-3" /> Full recipe
           </button>

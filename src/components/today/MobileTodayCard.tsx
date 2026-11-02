@@ -98,13 +98,13 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
 
       <div className="relative">
         {/* Greeting */}
-        <p className="text-center text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
+        <p className="text-center text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
           {greeting}
         </p>
 
         {/* Date + time */}
         <div className="mt-2 text-center">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground/80">Today is</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground/80">Today is</p>
           <h2 className="text-gradient-glow font-display text-2xl font-semibold leading-tight">
             {format(date, "EEEE, MMMM d")}
           </h2>
@@ -117,7 +117,7 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
         <div className="mt-4 flex flex-col items-center text-center">
           <span aria-hidden className="text-5xl leading-none drop-shadow-sm">{forecast.glyph}</span>
           <p className="mt-2 font-display text-base font-medium">{forecast.phaseLabel}</p>
-          <p className="text-[11px] tabular-nums text-muted-foreground">{forecast.illumination}% Lit</p>
+          <p className="text-xs tabular-nums text-muted-foreground">{forecast.illumination}% Lit</p>
         </div>
 
         {/* Energy + cycle */}
@@ -150,7 +150,7 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
 
         {/* Guidance quote */}
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
             🌙 Moon + Cycle Guidance
           </p>
           <p className="mt-2 font-display text-[15px] italic leading-snug text-foreground/90">
@@ -169,7 +169,7 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
 
         {/* Today's focus */}
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
             ✨ Today's Focus
           </p>
           {focus.length === 0 ? (
@@ -199,7 +199,7 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
 
         {/* Next up */}
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
             📅 Next Up
           </p>
           {upcoming.length === 0 ? (

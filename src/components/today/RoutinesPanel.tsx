@@ -157,15 +157,15 @@ function RoutineSlotColumn({
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
           <Icon className="h-3 w-3" />
         </span>
-        <span className="min-w-0 break-words text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-        <span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+        <span className="min-w-0 break-words text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
           {done}/{items.length}
         </span>
       </div>
       {people.length > 0 && (
         <div className="mb-2">
           <Select value={person} onValueChange={onPersonChange}>
-            <SelectTrigger className="h-7 w-full rounded-full border-border/60 bg-background/70 text-[11px]">
+            <SelectTrigger className="h-7 w-full rounded-full border-border/60 bg-background/70 text-xs">
               <SelectValue placeholder="Pick person…" />
             </SelectTrigger>
             <SelectContent>
@@ -177,14 +177,14 @@ function RoutineSlotColumn({
         </div>
       )}
       {!person ? (
-        <p className="text-[11px] italic text-muted-foreground">
+        <p className="text-xs italic text-muted-foreground">
           Pick a person above to load routines.
         </p>
       ) : (
         <>
           <ul className="min-w-0 flex-1 space-y-1">
             {items.length === 0 && (
-              <li className="rounded-lg border border-dashed border-border/50 px-2 py-2 text-center text-[11px] text-muted-foreground">
+              <li className="rounded-lg border border-dashed border-border/50 px-2 py-2 text-center text-xs text-muted-foreground">
                 Nothing yet. Add a small ritual.
               </li>
             )}
@@ -238,7 +238,7 @@ function RoutineSlotColumn({
             <button
               type="submit"
               disabled={!draft.trim() || busy}
-              className="rounded-md bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary disabled:opacity-40"
+              className="rounded-md bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary disabled:opacity-40"
             >
               Add
             </button>

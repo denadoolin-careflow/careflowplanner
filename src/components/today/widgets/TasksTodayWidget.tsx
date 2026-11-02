@@ -105,7 +105,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
           <CalendarDays className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Tasks</h3>
           {scope === "today" && scheduledCount > 0 && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
               <Clock className="h-2.5 w-2.5" /> {scheduledCount} scheduled
             </span>
           )}
@@ -117,7 +117,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
               type="button"
               onClick={() => setScope(t.id)}
               className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider transition-colors",
+                "rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-wider transition-colors",
                 scope === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -133,7 +133,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
           onDragLeave={() => setDropHover(false)}
           onDrop={onDropToToday}
           className={cn(
-            "mb-2 rounded-xl border border-dashed px-2 py-2 text-center text-[10px] font-medium uppercase tracking-wider transition-all",
+            "mb-2 rounded-xl border border-dashed px-2 py-2 text-center text-xs font-medium uppercase tracking-wider transition-all",
             dropHover
               ? "border-primary/70 bg-primary/15 text-primary"
               : "border-border/60 bg-background/40 text-muted-foreground",
@@ -168,7 +168,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
                   className="shrink-0"
                 />
                 {t.startTime ? (
-                  <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary">
+                  <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium tabular-nums text-primary">
                     {fmtTime(t.startTime)}
                   </span>
                 ) : null}
@@ -180,7 +180,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
                   {t.title}
                 </button>
                 {t.dueDate && t.dueDate !== todayISO && (
-                  <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] tabular-nums text-muted-foreground">
+                  <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
                     {format(parseISO(t.dueDate + "T00:00:00"), "MMM d")}
                   </span>
                 )}

@@ -76,7 +76,7 @@ function TemplateCard({
       <div className="flex-1 space-y-2 p-4">
         <div>
           <div className="font-display text-sm font-semibold text-foreground">{template.name}</div>
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{template.tagline}</div>
+          <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{template.tagline}</div>
         </div>
         <p className="text-xs leading-snug text-muted-foreground">{template.description}</p>
         <Button

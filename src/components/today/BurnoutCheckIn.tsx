@@ -42,13 +42,13 @@ export function BurnoutCheckIn({ date }: { date: Date }) {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="inline-flex items-center gap-2" style={{ color: tone }}>
           <Heart className="h-3.5 w-3.5" />
-          <p className="text-[10px] uppercase tracking-[0.28em]">Capacity check-in</p>
+          <p className="text-xs uppercase tracking-[0.28em]">Capacity check-in</p>
         </div>
         {entry.level && (
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-xs text-muted-foreground transition hover:text-foreground"
             title="Reset after a hard day"
           >
             <RotateCcw className="h-3 w-3" /> Reset after a hard day
@@ -103,7 +103,7 @@ export function BurnoutCheckIn({ date }: { date: Date }) {
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             Minimum viable day
           </div>
-          <p className="text-[11px] leading-snug text-muted-foreground">
+          <p className="text-xs leading-snug text-muted-foreground">
             Pick one tender thing. The debrief will protect it and soften the rest.
           </p>
         </div>
@@ -115,14 +115,14 @@ export function BurnoutCheckIn({ date }: { date: Date }) {
           {mvdTask ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-primary/80">One tender thing</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-primary/80">One tender thing</p>
                 <p className="truncate text-sm font-medium text-foreground">{mvdTask.title}</p>
               </div>
               <div className="inline-flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setPicking(true)}
-                  className="rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-foreground/80 hover:text-foreground"
+                  className="rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-xs text-foreground/80 hover:text-foreground"
                 >
                   Change
                 </button>
@@ -149,7 +149,7 @@ export function BurnoutCheckIn({ date }: { date: Date }) {
           {picking && (
             <div className="mt-2 max-h-48 space-y-1 overflow-y-auto rounded-xl border border-border/40 bg-background/70 p-1">
               {todays.length === 0 && (
-                <p className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+                <p className="px-2 py-3 text-center text-xs text-muted-foreground">
                   Nothing on the plate. Add something to today first.
                 </p>
               )}
@@ -166,7 +166,7 @@ export function BurnoutCheckIn({ date }: { date: Date }) {
               <button
                 type="button"
                 onClick={() => setPicking(false)}
-                className="block w-full rounded-lg px-2.5 py-1.5 text-center text-[11px] text-muted-foreground hover:text-foreground"
+                className="block w-full rounded-lg px-2.5 py-1.5 text-center text-xs text-muted-foreground hover:text-foreground"
               >
                 Cancel
               </button>

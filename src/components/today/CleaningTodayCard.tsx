@@ -65,7 +65,7 @@ export function CleaningTodayCard({ className }: { className?: string }) {
             aria-pressed={lowEnergy}
             aria-label="Show only low-energy essentials"
             className={cn(
-              "inline-flex min-h-[28px] items-center gap-1 rounded-full border px-2 text-[10.5px] transition-colors",
+              "inline-flex min-h-[28px] items-center gap-1 rounded-full border px-2 text-xs transition-colors",
               lowEnergy
                 ? "border-primary/40 bg-primary/10 text-primary"
                 : "border-border/60 text-muted-foreground hover:text-foreground",
@@ -73,20 +73,20 @@ export function CleaningTodayCard({ className }: { className?: string }) {
           >
             <Sparkles className="h-3 w-3" aria-hidden /> Low
           </button>
-          <Link to="/home-reset" className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+          <Link to="/home-reset" className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
             Reset <ChevronRight className="h-3 w-3" aria-hidden />
           </Link>
         </div>
       }
       footer={
         openCount > items.length ? (
-          <p className="text-[11px] text-muted-foreground">{openCount - items.length} more waiting — that's allowed.</p>
+          <p className="text-xs text-muted-foreground">{openCount - items.length} more waiting — that's allowed.</p>
         ) : undefined
       }
     >
       {total > 0 && (
         <div className="mb-2.5 space-y-1" aria-live="polite">
-          <div className="flex items-center justify-between text-[10.5px] text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{doneCount} of {total} done</span>
             <span className="tabular-nums">{pct}%</span>
           </div>
@@ -115,7 +115,7 @@ export function CleaningTodayCard({ className }: { className?: string }) {
                 exit={{ opacity: 0 }}
                 className="space-y-1.5"
               >
-                <p className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">{zone}</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{zone}</p>
                 <ul className="space-y-1.5">
                   <AnimatePresence initial={false}>
                     {list.map(c => (
@@ -138,7 +138,7 @@ export function CleaningTodayCard({ className }: { className?: string }) {
                           <Check className="h-2.5 w-2.5" aria-hidden />
                         </motion.button>
                         <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{c.title}</span>
-                        <span className="shrink-0 text-[10.5px] capitalize text-muted-foreground">{c.cadence}</span>
+                        <span className="shrink-0 text-xs capitalize text-muted-foreground">{c.cadence}</span>
                       </motion.li>
                     ))}
                   </AnimatePresence>

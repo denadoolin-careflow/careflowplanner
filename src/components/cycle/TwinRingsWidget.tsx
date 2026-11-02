@@ -109,7 +109,7 @@ export function TwinRingsWidget({ date }: { date: Date }) {
                 onClick={() => setSel(day)}
                 className={cn("flex min-h-11 w-11 shrink-0 snap-center flex-col items-center rounded-lg py-1 text-xs",
                   on ? "bg-primary text-primary-foreground" : "hover:bg-muted", isSameDay(day, base) && !on && "ring-1 ring-primary")}>
-                <span className="text-[10px] opacity-80">{format(day, "EEEEE")}</span>
+                <span className="text-xs opacity-80">{format(day, "EEEEE")}</span>
                 <span className="font-semibold">{format(day, "d")}</span>
                 <span className="mt-0.5 flex gap-0.5">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone(m) }} />

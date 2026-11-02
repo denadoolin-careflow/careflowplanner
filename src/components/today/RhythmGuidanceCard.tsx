@@ -77,9 +77,9 @@ export function RhythmGuidanceCard({ date }: Props) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <MoonLogo size={14} className="opacity-70" />
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Today's Energy</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Today's Energy</p>
             <span
-              className="rounded-full px-1.5 py-px text-[9px] font-medium uppercase tracking-wider"
+              className="rounded-full px-1.5 py-px text-xs font-medium uppercase tracking-wider"
               style={{ background: tint.chip, color: tint.chipText }}
               title={`Moon in ${f.sign.sign} — ${f.element} element`}
             >
@@ -89,7 +89,7 @@ export function RhythmGuidanceCard({ date }: Props) {
           <p className="font-display text-lg leading-tight">
             {f.phaseLabel} <span className="text-muted-foreground">·</span> Moon in {f.sign.glyph} {f.sign.sign}
           </p>
-          <p className="text-[11.5px] text-muted-foreground tabular-nums">
+          <p className="text-xs text-muted-foreground tabular-nums">
             {f.illumination}% lit · {elemMeta.recommendation}
           </p>
         </div>
@@ -97,9 +97,9 @@ export function RhythmGuidanceCard({ date }: Props) {
 
       {/* Focus chips */}
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Focus</span>
+        <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Focus</span>
         {elemMeta.focusAreas.map(area => (
-          <span key={area} className="rounded-full bg-muted/60 px-2.5 py-1 text-[11px] capitalize text-foreground/80">{area}</span>
+          <span key={area} className="rounded-full bg-muted/60 px-2.5 py-1 text-xs capitalize text-foreground/80">{area}</span>
         ))}
       </div>
 
@@ -113,7 +113,7 @@ export function RhythmGuidanceCard({ date }: Props) {
           "hover:bg-card hover:shadow-[var(--shadow-soft)]",
         )}
       >
-        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs uppercase tracking-[0.18em] text-muted-foreground">
           <Heart className="h-3 w-3" /> Affirmation
           <span className="ml-auto inline-flex items-center gap-1 text-muted-foreground/70">
             <BookHeart className="h-3 w-3" /> save
@@ -135,7 +135,7 @@ export function RhythmGuidanceCard({ date }: Props) {
           >
             <TarotCard card={card} />
           </button>
-          <p className="mt-1 px-1 text-[11px] italic text-muted-foreground">
+          <p className="mt-1 px-1 text-xs italic text-muted-foreground">
             Tap card for a 3-card spread.
           </p>
         </div>
@@ -143,7 +143,7 @@ export function RhythmGuidanceCard({ date }: Props) {
 
       {/* Footer */}
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
-        <p className="text-[11.5px] italic text-muted-foreground">{f.guidance.caregiverNote}</p>
+        <p className="text-xs italic text-muted-foreground">{f.guidance.caregiverNote}</p>
         <div className="flex shrink-0 items-center gap-1.5">
           <Button
             size="sm"

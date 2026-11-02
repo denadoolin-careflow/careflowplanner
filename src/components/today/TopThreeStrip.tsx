@@ -42,15 +42,15 @@ export function TopThreeStrip({
   return (
     <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-2.5">
       <div className="flex flex-col gap-2">
-        <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+        <div className="flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
           <Sparkles className="h-3 w-3 shrink-0" />
           <span>Top 3 today</span>
-          <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] tabular-nums text-primary">
+          <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs tabular-nums text-primary">
             {doneCount}/{Math.max(top.length, 1)}
           </span>
         </div>
         {top.length === 0 ? (
-          <p className="flex-1 text-[11px] text-muted-foreground">
+          <p className="flex-1 text-xs text-muted-foreground">
             Star up to 3 tasks below to anchor your day.
           </p>
         ) : (
@@ -66,7 +66,7 @@ export function TopThreeStrip({
                     t.done && "opacity-60",
                   )}
                 >
-                  <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
+                  <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
                     {idx + 1}
                   </span>
                   <Checkbox

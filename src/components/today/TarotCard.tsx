@@ -27,7 +27,7 @@ export function TarotCard({ card }: { card: TarotCardType }) {
           {card.glyph}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          <div className="flex items-center gap-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
             <Sparkles className="h-3 w-3" /> Card of the day
           </div>
           <p className="font-display text-base leading-tight">{card.name}</p>
@@ -44,7 +44,7 @@ export function TarotCard({ card }: { card: TarotCardType }) {
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1">
                 {card.keywords.map(k => (
-                  <span key={k} className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{k}</span>
+                  <span key={k} className="rounded-full bg-muted/60 px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground">{k}</span>
                 ))}
               </div>
             </div>

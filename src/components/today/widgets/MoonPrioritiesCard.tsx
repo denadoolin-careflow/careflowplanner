@@ -45,16 +45,16 @@ export function MoonPrioritiesCard({
       <MoonPhaseWidget compact />
       <section className="cozy-card p-3">
         <div className="mb-2 flex items-center justify-between gap-2 px-1">
-          <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+          <div className="flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
             <Sparkles className="h-3 w-3 shrink-0" />
             <span className="truncate">Top 3 today</span>
           </div>
-          <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
             {doneCount}/{Math.max(top.length, 1)} done
           </span>
         </div>
         {top.length === 0 ? (
-          <p className="px-1 py-1 text-[11px] text-muted-foreground">
+          <p className="px-1 py-1 text-xs text-muted-foreground">
             Star up to 3 tasks to anchor your day.
           </p>
         ) : (
@@ -69,7 +69,7 @@ export function MoonPrioritiesCard({
                     t.done && "opacity-60",
                   )}
                 >
-                  <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
+                  <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
                     {idx + 1}
                   </span>
                   <Checkbox

@@ -140,7 +140,7 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
               : <Cloud className="h-6 w-6" />}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <div className="flex items-center gap-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
               <MapPin className="h-3 w-3" />
               <span className="truncate">
                 {snap?.locationLabel ?? (status === "needs-location"
@@ -170,14 +170,14 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
                 const active = unit === u;
                 return (
                   <button key={u} type="button" onClick={() => setUnit(u)} aria-pressed={active}
-                    className={cn("h-7 min-w-[28px] px-2 rounded-full text-[11px] font-semibold transition-colors",
+                    className={cn("h-7 min-w-[28px] px-2 rounded-full text-xs font-semibold transition-colors",
                       active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>°{u}</button>
                 );
               })}
             </div>
             <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-full px-3 text-[11px] uppercase tracking-[0.16em] bg-card/60 backdrop-blur">
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-full px-3 text-xs uppercase tracking-[0.16em] bg-card/60 backdrop-blur">
                   <Search className="h-3.5 w-3.5" /> City
                 </Button>
               </PopoverTrigger>
@@ -192,7 +192,7 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
         {heroParts.length > 0 && (
           <>
           <div className="mt-4 flex items-center justify-between gap-2 sm:hidden">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
               {mobileNowOnly ? `Right now · ${currentPart}` : "All day parts"}
             </span>
             <div role="group" aria-label="Day part filter" className="inline-flex rounded-full border border-border/60 bg-card/60 backdrop-blur p-0.5">
@@ -208,7 +208,7 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
                     onClick={() => setMobileNowOnly(opt.id === "now")}
                     aria-pressed={active}
                     className={cn(
-                      "h-7 min-w-[40px] px-2.5 rounded-full text-[11px] font-semibold transition-colors",
+                      "h-7 min-w-[40px] px-2.5 rounded-full text-xs font-semibold transition-colors",
                       active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -234,19 +234,19 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
                     style={{ background: PART_GRADIENT[p.part] }}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-foreground/70">
+                      <div className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-foreground/70">
                         <Icon className="h-3.5 w-3.5" /> {p.part}
                       </div>
                       <ConditionIcon condition={p.condition} isNight={p.isNight} className="h-4 w-4 text-foreground/80" />
                     </div>
                     <div className="mt-1.5 flex items-baseline gap-2">
                       <span className="font-display text-2xl tabular-nums">{fmtTemp(p.avgTempC, unit)}</span>
-                      <span className="text-[11px] text-foreground/70 tabular-nums">H {fmtTemp(p.highC, unit)} · L {fmtTemp(p.lowC, unit)}</span>
+                      <span className="text-xs text-foreground/70 tabular-nums">H {fmtTemp(p.highC, unit)} · L {fmtTemp(p.lowC, unit)}</span>
                     </div>
                     <p className="mt-0.5 truncate text-[12px] text-foreground/80">{p.conditionLabel}</p>
-                    <div className="mt-1 flex items-center gap-3 text-[11px] text-foreground/70">
+                    <div className="mt-1 flex items-center gap-3 text-xs text-foreground/70">
                       {p.precipChance >= 10 && <span className="inline-flex items-center gap-1">💧 {p.precipChance}%</span>}
-                      <span className="ml-auto text-[10px] uppercase tracking-wider text-foreground/60">Tap for details</span>
+                      <span className="ml-auto text-xs uppercase tracking-wider text-foreground/60">Tap for details</span>
                     </div>
                   </button>
                 </li>
@@ -330,7 +330,7 @@ function DayPartDetailDialog({
           <>
             <div className="p-5" style={{ background: PART_GRADIENT[part.part] }}>
               <DialogHeader>
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground/70">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-foreground/70">
                   <Icon className="h-3.5 w-3.5" /> {part.part}
                 </div>
                 <DialogTitle className="mt-1 flex items-baseline gap-2 font-display">
@@ -345,7 +345,7 @@ function DayPartDetailDialog({
             </div>
             <div className="p-5 pt-3 space-y-3">
               <div>
-                <h4 className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Hourly forecast</h4>
+                <h4 className="mb-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">Hourly forecast</h4>
                 {partHours.length > 0 ? (
                   <HourlyList hours={partHours} unit={unit} />
                 ) : (
@@ -402,7 +402,7 @@ function HourlyList({ hours, unit, compact = false }: { hours: HourlyForecast[];
               <ConditionIcon condition={h.condition} isNight={h.isNight} className="h-4 w-4 shrink-0 text-foreground/70" />
               <span className="min-w-0 flex-1 truncate text-foreground/80">{h.conditionLabel}</span>
               {h.precipChance >= 10 && (
-                <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] text-foreground/65 tabular-nums">
+                <span className="inline-flex shrink-0 items-center gap-0.5 text-xs text-foreground/65 tabular-nums">
                   💧 {h.precipChance}%
                 </span>
               )}
@@ -410,7 +410,7 @@ function HourlyList({ hours, unit, compact = false }: { hours: HourlyForecast[];
                 {fmtTemp(h.tempC, unit)}
               </span>
               {isNow && (
-                <span className="ml-0.5 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary-foreground">
+                <span className="ml-0.5 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-primary-foreground">
                   Now
                 </span>
               )}
@@ -441,17 +441,17 @@ function CitySearch({ onPick }: { onPick: (p: GeoPlace) => void }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Find a city</label>
+      <label className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Find a city</label>
       <Input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="e.g. Lisbon, Kyoto" className="h-9 text-sm" />
-      {q.trim().length < 2 && <p className="text-[11px] text-muted-foreground">Type at least 2 characters.</p>}
-      {searching && <p className="text-[11px] text-muted-foreground">Searching…</p>}
+      {q.trim().length < 2 && <p className="text-xs text-muted-foreground">Type at least 2 characters.</p>}
+      {searching && <p className="text-xs text-muted-foreground">Searching…</p>}
       {results.length > 0 && (
         <ul className="max-h-56 overflow-auto rounded-md border divide-y divide-border/60">
           {results.map((r,i) => (
             <li key={`${r.name}-${i}`}>
               <button type="button" onClick={() => onPick(r)} className="w-full text-left px-3 py-2 text-[13px] hover:bg-muted/60">
                 <div className="font-medium leading-tight">{r.name}</div>
-                <div className="text-[11px] text-muted-foreground leading-tight">{[r.admin1, r.country].filter(Boolean).join(", ")}</div>
+                <div className="text-xs text-muted-foreground leading-tight">{[r.admin1, r.country].filter(Boolean).join(", ")}</div>
               </button>
             </li>
           ))}

@@ -30,13 +30,13 @@ export function TodayPlanView({ date }: { date: Date }) {
   const capacityHints = (
     <>
       {capacity.isLow && (
-        <p className="flex items-center gap-1.5 rounded-2xl border border-border/40 bg-muted/40 px-3 py-2 text-[11.5px] text-muted-foreground">
+        <p className="flex items-center gap-1.5 rounded-2xl border border-border/40 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           <Leaf className="h-3.5 w-3.5 shrink-0" />
           Low capacity today — keep the anchor and let the optional blocks slide.
         </p>
       )}
       {capacity.isSpacious && (
-        <p className="flex items-center gap-1.5 rounded-2xl border border-border/40 bg-muted/40 px-3 py-2 text-[11.5px] text-muted-foreground">
+        <p className="flex items-center gap-1.5 rounded-2xl border border-border/40 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 shrink-0" />
           Room to stretch — there's space for one bigger block today.
         </p>
@@ -56,7 +56,7 @@ export function TodayPlanView({ date }: { date: Date }) {
       >
         <Inbox className="mr-1.5 h-3.5 w-3.5" /> Tray
         {taskIds.length > 0 && (
-          <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 text-[10px]">{taskIds.length}</span>
+          <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 text-xs">{taskIds.length}</span>
         )}
       </Button>
       <Sheet>
@@ -125,7 +125,7 @@ export function TodayPlanView({ date }: { date: Date }) {
         >
           <Inbox className="mr-1.5 h-3.5 w-3.5" /> Tray
           {taskIds.length > 0 && (
-            <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 text-[10px]">{taskIds.length}</span>
+            <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 text-xs">{taskIds.length}</span>
           )}
         </Button>
       </div>

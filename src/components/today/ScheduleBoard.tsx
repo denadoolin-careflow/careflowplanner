@@ -38,7 +38,7 @@ export function ScheduleBoard({ date, onTaskClick, onApptClick }: {
       <DailySnapshotRow date={date} />
       <WhatFitsNow date={date} onTaskClick={onTaskClick} />
       <div className="cozy-card p-4">
-        <div className="mb-3 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <CalendarClock className="h-3.5 w-3.5 text-primary" /> Schedule for {format(date, "MMM d")}
         </div>
         {items.length === 0 ? (
@@ -55,13 +55,13 @@ export function ScheduleBoard({ date, onTaskClick, onApptClick }: {
                   r.done && "opacity-60",
                 )}
               >
-                <span className="w-14 shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                <span className="w-14 shrink-0 text-xs tabular-nums text-muted-foreground">
                   {r.time ? r.time.slice(0, 5) : <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />Any</span>}
                 </span>
                 {r.kind === "task" ? (
                   <Checkbox checked={!!r.done} onCheckedChange={() => void toggleTask(r.id)} />
                 ) : (
-                  <span className="grid h-4 w-4 place-items-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">·</span>
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">·</span>
                 )}
                 <span className="flex min-w-0 flex-1 flex-col">
                   <button
@@ -79,7 +79,7 @@ export function ScheduleBoard({ date, onTaskClick, onApptClick }: {
                 {r.kind === "task" && r.task && (
                   <QuickDayPartButton task={r.task} />
                 )}
-                <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
+                <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-xs uppercase tracking-wider text-muted-foreground">
                   {r.kind}
                 </span>
               </li>

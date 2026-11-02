@@ -29,7 +29,7 @@ export function JournalTodayWidget() {
           <BookHeart className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Journal today</h3>
         </div>
-        <Link to="/journal" className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        <Link to="/journal" className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
           Open <ArrowRight className="h-2.5 w-2.5" />
         </Link>
       </div>
@@ -42,7 +42,7 @@ export function JournalTodayWidget() {
           {entries.map(j => (
             <li key={j.id} className="rounded-lg border border-border/40 bg-background/60 px-2 py-1.5">
               {j.title && <div className="truncate text-xs font-medium text-foreground">{j.title}</div>}
-              <p className="line-clamp-2 text-[11px] text-muted-foreground">{j.body}</p>
+              <p className="line-clamp-2 text-xs text-muted-foreground">{j.body}</p>
             </li>
           ))}
         </ul>

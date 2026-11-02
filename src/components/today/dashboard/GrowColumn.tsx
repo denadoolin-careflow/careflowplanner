@@ -39,7 +39,7 @@ export function GrowColumn({ date }: { date: Date }) {
         eyebrow="Grow" title="Goals"
         action={
           <button type="button" onClick={() => navigate("/goals")}
-            className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
             All <ChevronRight className="h-3 w-3" aria-hidden />
           </button>
         }
@@ -52,7 +52,7 @@ export function GrowColumn({ date }: { date: Date }) {
               <li key={g.id}>
                 <div className="flex items-baseline justify-between gap-2 text-[12.5px]">
                   <span className="min-w-0 flex-1 truncate">{g.title}</span>
-                  <span className="text-[11px] text-muted-foreground">{g.progress}%</span>
+                  <span className="text-xs text-muted-foreground">{g.progress}%</span>
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div className="h-full rounded-full bg-primary/70 transition-all" style={{ width: `${Math.min(100, Math.max(0, g.progress))}%` }} />
@@ -67,7 +67,7 @@ export function GrowColumn({ date }: { date: Date }) {
         eyebrow="Grow" title="Journal"
         action={
           <button type="button" onClick={() => navigate("/journal")}
-            className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
             Write <ChevronRight className="h-3 w-3" aria-hidden />
           </button>
         }
@@ -78,7 +78,7 @@ export function GrowColumn({ date }: { date: Date }) {
           <ul className="space-y-2">
             {notes.map(n => (
               <li key={n.id} className="rounded-2xl bg-muted/40 p-2.5">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{n.date}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{n.date}</p>
                 <p className="mt-0.5 line-clamp-2 text-[12.5px] [overflow-wrap:anywhere]">{n.title || n.body}</p>
               </li>
             ))}

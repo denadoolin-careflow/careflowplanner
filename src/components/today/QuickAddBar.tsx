@@ -155,7 +155,7 @@ export function QuickAddBar({ date }: { date: Date }) {
       onSubmit={submit}
       className="cozy-card flex flex-wrap items-center gap-1.5 p-2 sm:p-2.5"
     >
-      <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-[11px]">
+      <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-xs">
         {(["task", "home", "care", "meal", "note"] as Kind[]).map(k => {
           const Icon =
             k === "task" ? ListChecks
@@ -211,13 +211,13 @@ export function QuickAddBar({ date }: { date: Date }) {
           <button
             type="button"
             onClick={() => navigate("/caregiving")}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border/60 bg-card/60 px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border/60 bg-card/60 px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
           >
             <HeartHandshake className="h-3 w-3" /> Add a person
           </button>
         ) : (
           <Select value={careRecipientId} onValueChange={setCareRecipientId}>
-            <SelectTrigger className="h-7 w-auto gap-1 rounded-full border-border/60 bg-card/60 px-2.5 text-[11px]">
+            <SelectTrigger className="h-7 w-auto gap-1 rounded-full border-border/60 bg-card/60 px-2.5 text-xs">
               <HeartHandshake className="h-3 w-3 text-muted-foreground" />
               <SelectValue placeholder="Auto" />
             </SelectTrigger>
@@ -231,7 +231,7 @@ export function QuickAddBar({ date }: { date: Date }) {
         )
       )}
 
-      <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-[11px]">
+      <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-xs">
         {(["auto", "morning", "afternoon", "evening"] as Slot[]).map(s => {
           const Icon = SLOT_ICON[s];
           const isAuto = s === "auto";
@@ -266,7 +266,7 @@ export function QuickAddBar({ date }: { date: Date }) {
       <button
         type="submit"
         disabled={!text.trim()}
-        className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-soft transition disabled:opacity-40"
+        className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-soft transition disabled:opacity-40"
       >
         Add
       </button>
@@ -280,7 +280,7 @@ export function QuickAddBar({ date }: { date: Date }) {
             navigate(`/notes/${n.id}`);
           } catch { toast.error("Couldn't open today's note"); }
         }}
-        className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:text-foreground"
+        className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-xs text-muted-foreground transition hover:text-foreground"
       >
         <FileText className="h-3 w-3" />
         <span className="hidden sm:inline">Today's note</span>

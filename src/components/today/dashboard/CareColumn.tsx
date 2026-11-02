@@ -55,13 +55,13 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
     <div className="space-y-3">
       {state.recipients.length > 0 && (
         <div className="flex items-center justify-between gap-2 px-1">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Care circle</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Care circle</p>
           <Popover>
             <PopoverTrigger asChild>
               <button
                 type="button"
                 aria-label="Choose which people show on Today"
-                className="inline-flex min-h-[28px] items-center gap-1 rounded-full border border-border/60 bg-background/60 px-2.5 text-[11px] text-muted-foreground hover:text-foreground"
+                className="inline-flex min-h-[28px] items-center gap-1 rounded-full border border-border/60 bg-background/60 px-2.5 text-xs text-muted-foreground hover:text-foreground"
               >
                 <Users className="h-3 w-3" aria-hidden /> Choose people
               </button>
@@ -93,7 +93,7 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
               <button
                 type="button"
                 onClick={clear}
-                className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-[11.5px] text-muted-foreground hover:bg-muted"
+                className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted"
               >
                 Automatic (show first few)
               </button>
@@ -107,7 +107,7 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
           eyebrow="Care" title="People"
           action={
             <button type="button" onClick={() => navigate("/care")}
-              className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+              className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
               All <ChevronRight className="h-3 w-3" aria-hidden />
             </button>
           }
@@ -130,7 +130,7 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
         eyebrow="Care" title="Home"
         action={
           <button type="button" onClick={() => navigate("/home")}
-            className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
             Reset <ChevronRight className="h-3 w-3" aria-hidden />
           </button>
         }
@@ -150,7 +150,7 @@ export function CareColumn({ date, onTaskClick }: { date: Date; onTaskClick?: (i
                   <Check className="h-2.5 w-2.5" aria-hidden />
                 </button>
                 <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{c.title}</span>
-                <span className="text-[11px] text-muted-foreground">{c.zone}</span>
+                <span className="text-xs text-muted-foreground">{c.zone}</span>
               </li>
             ))}
            </ul>

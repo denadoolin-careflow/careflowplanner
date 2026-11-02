@@ -108,7 +108,7 @@ export function TasksWidget({ date = new Date() }: Props) {
         <button
           type="button"
           onClick={toggleCollapsed}
-          className="inline-flex w-full items-center justify-between gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted/40"
+          className="inline-flex w-full items-center justify-between gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/40"
           aria-label="Expand tasks"
           title="Expand tasks"
         >
@@ -131,7 +131,7 @@ export function TasksWidget({ date = new Date() }: Props) {
           <button
             type="button"
             onClick={() => setShowAll(s => !s)}
-            className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-muted"
+            className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-xs uppercase tracking-wider text-muted-foreground hover:bg-muted"
           >
             {showAll ? "All open" : <><Inbox className="h-2.5 w-2.5" /> Unscheduled</>}
           </button>
@@ -172,7 +172,7 @@ export function TasksWidget({ date = new Date() }: Props) {
               onDragLeave={() => setHover(h => (h === b.id ? null : h))}
               onDrop={(e) => onBucketDrop(e, b.id)}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed px-2 py-2 text-center text-[10px] font-medium transition-all",
+                "flex flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed px-2 py-2 text-center text-xs font-medium transition-all",
                 isHover
                   ? "border-primary/70 bg-primary/15 text-primary scale-[1.02]"
                   : dragging
@@ -219,12 +219,12 @@ export function TasksWidget({ date = new Date() }: Props) {
               >
                 <span className="min-w-0 flex-1 truncate text-foreground">{t.title}</span>
                 {t.dueDate && (
-                  <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] text-muted-foreground">
+                  <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-xs text-muted-foreground">
                     {format(new Date(t.dueDate + "T00:00:00"), "MMM d")}
                   </span>
                 )}
                 {t.estMinutes ? (
-                  <span className="shrink-0 text-[9px] text-muted-foreground">{t.estMinutes}m</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{t.estMinutes}m</span>
                 ) : null}
               </button>
               <QuickDayPartButton task={t} />

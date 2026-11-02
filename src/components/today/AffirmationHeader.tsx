@@ -45,7 +45,7 @@ export function AffirmationHeader({ date, className }: { date: Date; className?:
     >
       <Sparkles className="mt-1 h-4 w-4 shrink-0 text-primary" />
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+        <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
           A note for you · {atmosphere?.name ?? "today"}
         </p>
         <p className="font-display text-lg italic leading-snug text-foreground sm:text-xl">

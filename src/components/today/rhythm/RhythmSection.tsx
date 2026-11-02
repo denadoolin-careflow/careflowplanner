@@ -157,7 +157,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
               </div>
               <div className="truncate text-xs text-muted-foreground">{meta.subtitle}</div>
             </div>
-            <div className="hidden items-center gap-3 text-[11px] uppercase tracking-wider text-muted-foreground sm:flex">
+            <div className="hidden items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground sm:flex">
               <span>{tasks.length} task{tasks.length === 1 ? "" : "s"}</span>
               <span>·</span>
               <span>{meal ? "1 meal" : "0 meals"}</span>
@@ -198,9 +198,9 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                   : "border-border/40",
               )}
             >
-              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <ListChecks className="h-3 w-3 text-primary" /> Tasks
-                <span className="ml-auto text-[10px] normal-case tracking-normal text-muted-foreground/70">
+                <span className="ml-auto text-xs normal-case tracking-normal text-muted-foreground/70">
                   Drop here
                 </span>
               </div>
@@ -228,7 +228,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                         {t.title}
                       </button>
                       {t.estMinutes ? (
-                        <span className="text-[10px] text-muted-foreground">{t.estMinutes}m</span>
+                        <span className="text-xs text-muted-foreground">{t.estMinutes}m</span>
                       ) : null}
                     </li>
                   ))}
@@ -248,7 +248,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                 <button
                   type="submit"
                   disabled={!draft.trim() || adding}
-                  className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary disabled:opacity-40"
+                  className="rounded-md bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary disabled:opacity-40"
                 >
                   Add
                 </button>
@@ -258,7 +258,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
             {/* Meal column */}
             <div className="rounded-2xl border border-border/40 bg-background/60 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <UtensilsCrossed className="h-3 w-3 text-accent" /> {meta.mealSlot}
                 </div>
                 <div className="flex items-center gap-2">
@@ -266,14 +266,14 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                     <button
                       type="button"
                       onClick={() => setQuickMeal(meal)}
-                      className="inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent hover:bg-accent/25"
+                      className="inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wider text-accent hover:bg-accent/25"
                     >
                       <BookOpen className="h-2.5 w-2.5" /> Recipe
                     </button>
                   )}
                   <Link
                     to="/meals"
-                    className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                    className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
                   >
                     Plan
                   </Link>
@@ -286,10 +286,10 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                     <p className="line-clamp-3 text-xs text-muted-foreground">{meal.notes}</p>
                   )}
                   {meal.prepMinutes ? (
-                    <p className="text-[11px] text-muted-foreground">{meal.prepMinutes} min prep</p>
+                    <p className="text-xs text-muted-foreground">{meal.prepMinutes} min prep</p>
                   ) : null}
                   {meal.ingredients && meal.ingredients.length > 0 && (
-                    <ul className="text-[11px] text-muted-foreground">
+                    <ul className="text-xs text-muted-foreground">
                       {meal.ingredients.slice(0, 3).map((ing, i) => (
                         <li key={i}>• {ing}</li>
                       ))}
@@ -311,13 +311,13 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
             {/* Routine column */}
             <div className="rounded-2xl border border-border/40 bg-background/60 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <Sunrise className="h-3 w-3 text-primary" /> {meta.routineLabel}
                 </div>
                 <div className="flex items-center gap-2">
                   {peopleList.length > 0 && (
                     <Select value={person || "__all__"} onValueChange={(v) => setPersonPref(v === "__all__" ? "" : v)}>
-                      <SelectTrigger className="h-6 gap-1 rounded-md border-border/50 bg-background/70 px-2 py-0 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+                      <SelectTrigger className="h-6 gap-1 rounded-md border-border/50 bg-background/70 px-2 py-0 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
                         <User className="h-2.5 w-2.5" />
                         <SelectValue placeholder="Person" />
                       </SelectTrigger>
@@ -330,7 +330,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                   )}
                   <Link
                     to="/routines"
-                    className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                    className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
                   >
                     Edit
                   </Link>
@@ -353,7 +353,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                       style={{ width: `${routineTotal === 0 ? 0 : (routineDone / routineTotal) * 100}%` }}
                     />
                   </div>
-                  <div className="mb-2 text-[11px] text-muted-foreground">
+                  <div className="mb-2 text-xs text-muted-foreground">
                     {routineDone}/{routineTotal} complete
                   </div>
                   <ul className="space-y-1">

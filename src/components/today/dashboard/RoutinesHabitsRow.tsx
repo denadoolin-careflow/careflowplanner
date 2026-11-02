@@ -81,7 +81,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
         eyebrow="Rhythm" title="Routines"
         action={
           <button type="button" onClick={() => navigate("/routines")}
-            className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
             All <ChevronRight className="h-3 w-3" aria-hidden />
           </button>
         }
@@ -103,7 +103,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
                     <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium">
                       {r.person_name} · <span className="capitalize">{r.slot}</span>
                     </span>
-                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                    <span className="shrink-0 text-xs text-muted-foreground">
                       {mins > 0 && (<><Clock className="mr-0.5 inline h-3 w-3" aria-hidden />{mins}m · </>)}
                       {done}/{r.items.length} steps
                     </span>
@@ -135,7 +135,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
         eyebrow="Grow" title="Habits"
         action={
           <button type="button" onClick={() => navigate("/habits")}
-            className="inline-flex items-center text-[11px] text-muted-foreground hover:text-foreground">
+            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
             All <ChevronRight className="h-3 w-3" aria-hidden />
           </button>
         }
@@ -168,7 +168,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
                       )} />
                     ))}
                   </span>
-                  <span className="w-8 shrink-0 text-right text-[11px] text-muted-foreground">{weekDone}/7</span>
+                  <span className="w-8 shrink-0 text-right text-xs text-muted-foreground">{weekDone}/7</span>
                 </li>
               );
             })}

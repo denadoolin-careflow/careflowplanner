@@ -38,7 +38,7 @@ export function TodayHeader({
         <div
             role="tablist"
             aria-label="Today layout"
-            className="today-layout-tabs inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]"
+            className="today-layout-tabs inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-xs"
           >
             {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
               <button
@@ -59,25 +59,25 @@ export function TodayHeader({
       }
       prefs={
         <>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Today preferences</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Today preferences</div>
               <label className="flex items-start justify-between gap-3">
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-foreground">Try this now from Carey</span>
-                  <span className="block text-[11px] leading-snug text-muted-foreground">Carey's suggestions at the top of Today.</span>
+                  <span className="block text-xs leading-snug text-muted-foreground">Carey's suggestions at the top of Today.</span>
                 </span>
                 <Switch checked={prefs.showCareyNudges} onCheckedChange={(v) => onPrefs({ showCareyNudges: v })} />
               </label>
               <label className="flex items-start justify-between gap-3">
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-foreground">Quick add bar</span>
-                  <span className="block text-[11px] leading-snug text-muted-foreground">Inline input to drop tasks or meals into a slot.</span>
+                  <span className="block text-xs leading-snug text-muted-foreground">Inline input to drop tasks or meals into a slot.</span>
                 </span>
                 <Switch checked={prefs.showQuickAdd} onCheckedChange={(v) => onPrefs({ showQuickAdd: v })} />
               </label>
               <div className="space-y-1.5 border-t border-border/50 pt-3">
                 <div className="text-sm font-medium text-foreground">Pin as default page</div>
-                <p className="text-[11px] leading-snug text-muted-foreground">Where the app opens after you sign in.</p>
-                <div className="inline-flex w-full items-center gap-1 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
+                <p className="text-xs leading-snug text-muted-foreground">Where the app opens after you sign in.</p>
+                <div className="inline-flex w-full items-center gap-1 rounded-full border border-border/60 bg-card/70 p-0.5 text-xs">
                   {([
                     { route: "/today", label: "Today" },
                     { route: "/week", label: "Week" },
@@ -99,7 +99,7 @@ export function TodayHeader({
               </div>
               <div className="space-y-1.5 border-t border-border/50 pt-3">
                 <div className="text-sm font-medium text-foreground">Pin default Today layout</div>
-                <div className="inline-flex w-full items-center gap-1 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
+                <div className="inline-flex w-full items-center gap-1 rounded-full border border-border/60 bg-card/70 p-0.5 text-xs">
                   {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
                     <button
                       key={k}
@@ -117,7 +117,7 @@ export function TodayHeader({
               </div>
               <div className="space-y-1.5 border-t border-border/50 pt-3">
                 <div className="text-sm font-medium text-foreground">Board templates</div>
-                <p className="text-[11px] leading-snug text-muted-foreground">Start the Board layout from a curated set of cards.</p>
+                <p className="text-xs leading-snug text-muted-foreground">Start the Board layout from a curated set of cards.</p>
                 <Button variant="outline" size="sm" className="w-full rounded-full" onClick={onTemplates}>
                   <LayoutTemplate className="mr-1.5 h-3.5 w-3.5" /> Browse templates
                 </Button>

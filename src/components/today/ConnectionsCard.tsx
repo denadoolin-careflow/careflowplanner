@@ -131,7 +131,7 @@ export function ConnectionsCard({
           onClick={() => setView(v => (v === "reach" ? "history" : "reach"))}
           aria-pressed={view === "history"}
           className={cn(
-            "inline-flex min-h-[28px] items-center gap-1 rounded-full border px-2 text-[10.5px] transition-colors",
+            "inline-flex min-h-[28px] items-center gap-1 rounded-full border px-2 text-xs transition-colors",
             view === "history"
               ? "border-primary/40 bg-primary/10 text-primary"
               : "border-border/60 text-muted-foreground hover:text-foreground",
@@ -144,14 +144,14 @@ export function ConnectionsCard({
       footer={
         view === "reach" && recent.length > 0 ? (
           <div className="space-y-1">
-            <p className="inline-flex items-center gap-1 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="inline-flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <History className="h-3 w-3" aria-hidden /> Recent
             </p>
             <ul className="flex flex-wrap gap-1.5">
               {recent.map(c => (
                 <li
                   key={c.id}
-                  className="rounded-full border border-border/50 bg-muted/30 px-2 py-0.5 text-[11px] text-muted-foreground"
+                  className="rounded-full border border-border/50 bg-muted/30 px-2 py-0.5 text-xs text-muted-foreground"
                 >
                   {personName(c.personId, c.personName)} ·{" "}
                   {formatDistanceToNowStrict(new Date(c.checkedInAt), { addSuffix: true })}
@@ -164,7 +164,7 @@ export function ConnectionsCard({
     >
       {view === "history" ? (
         <div className="space-y-3">
-          <p className="text-[11.5px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {totals.total} check-in{totals.total === 1 ? "" : "s"} · {totals.people} {totals.people === 1 ? "person" : "people"} · {totals.week} this week
           </p>
           <div className="flex flex-wrap gap-1" role="tablist" aria-label="History filter">
@@ -176,7 +176,7 @@ export function ConnectionsCard({
                 aria-selected={filter === f.id}
                 onClick={() => setFilter(f.id)}
                 className={cn(
-                  "rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                  "rounded-full border px-2.5 py-1 text-xs transition-colors",
                   filter === f.id
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border/60 text-muted-foreground hover:text-foreground",
@@ -196,13 +196,13 @@ export function ConnectionsCard({
                 return (
                   <li key={c.id} className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-2.5 py-1.5 text-[12.5px]">
                     {person
-                      ? <PersonAvatar person={person} className="h-4 w-4 text-[9px]" />
+                      ? <PersonAvatar person={person} className="h-4 w-4 text-xs" />
                       : <MessageCircleHeart className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{personName(c.personId, c.personName)}</p>
-                      {c.note && <p className="truncate text-[11px] text-muted-foreground">{c.note}</p>}
+                      {c.note && <p className="truncate text-xs text-muted-foreground">{c.note}</p>}
                     </div>
-                    <span className="shrink-0 text-right text-[10.5px] text-muted-foreground">
+                    <span className="shrink-0 text-right text-xs text-muted-foreground">
                       {format(at, "MMM d")}
                       <br />
                       {format(at, "h:mm a")}
@@ -226,7 +226,7 @@ export function ConnectionsCard({
                 <p className="flex items-center gap-1.5 text-[12px] font-medium">
                   {g.person ? <PersonAvatar person={g.person} /> : <MessageCircleHeart className="h-4 w-4 text-muted-foreground" aria-hidden />}
                   <span className="min-w-0 truncate">{g.person?.name ?? "Someone"}</span>
-                  <span className="ml-auto shrink-0 text-[10.5px] font-normal text-muted-foreground">
+                  <span className="ml-auto shrink-0 text-xs font-normal text-muted-foreground">
                     {gap === null ? "not yet reached" : gap === 0 ? "reached today" : `${gap}d ago`}
                   </span>
                 </p>
@@ -280,10 +280,10 @@ export function ConnectionsCard({
                   type="button"
                   onClick={() => { setAdding(p); setDraft(`Check in with ${p.name}`); }}
                   aria-label={`Add a check-in with ${p.name}`}
-                  className="inline-flex min-h-[30px] items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2.5 text-[11.5px] hover:bg-muted"
+                  className="inline-flex min-h-[30px] items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2.5 text-xs hover:bg-muted"
                 >
                   <Plus className="h-3 w-3" aria-hidden />
-                  <PersonAvatar person={p} className="h-4 w-4 text-[9px]" />
+                  <PersonAvatar person={p} className="h-4 w-4 text-xs" />
                   <span className="max-w-[7rem] truncate">{p.name}</span>
                 </button>
               ))}

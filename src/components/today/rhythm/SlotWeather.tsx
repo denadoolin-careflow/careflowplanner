@@ -56,7 +56,7 @@ export function SlotWeather({ slot }: { slot: Slot }) {
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{partKey}</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{partKey}</span>
             {hasData && (
               <span className="font-display text-2xl font-semibold leading-none tabular-nums text-foreground">
                 {fmt(dp!.avgTempC, unit)}
@@ -70,13 +70,13 @@ export function SlotWeather({ slot }: { slot: Slot }) {
             )}
           </div>
           {hasData && (
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-muted-foreground">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs tabular-nums text-muted-foreground">
               <span>H {fmt(dp!.highC, unit)} · L {fmt(dp!.lowC, unit)}</span>
               {dp!.precipChance >= 10 && <span>💧 {dp!.precipChance}%</span>}
             </div>
           )}
           {tip && (
-            <p className="mt-1.5 text-[11px] italic leading-snug text-muted-foreground">{tip}</p>
+            <p className="mt-1.5 text-xs italic leading-snug text-muted-foreground">{tip}</p>
           )}
           {hasData && slotHours.length > 0 && (() => {
             const sampled = slotHours.filter((_, i) => i % 2 === 0);
@@ -88,7 +88,7 @@ export function SlotWeather({ slot }: { slot: Slot }) {
                 {sampled.map(h => (
                   <div
                     key={h.hour}
-                    className="flex min-w-0 flex-col items-center gap-0.5 text-[11px] tabular-nums text-muted-foreground"
+                    className="flex min-w-0 flex-col items-center gap-0.5 text-xs tabular-nums text-muted-foreground"
                     title={`${h.conditionLabel}${h.precipChance >= 10 ? ` · ${h.precipChance}% rain` : ""}`}
                   >
                     <span>{h.hour % 12 === 0 ? 12 : h.hour % 12}{h.hour < 12 ? "a" : "p"}</span>

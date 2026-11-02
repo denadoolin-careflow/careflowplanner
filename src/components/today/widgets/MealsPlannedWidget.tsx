@@ -85,7 +85,7 @@ function EditPopover({ date, slot, meal }: { date: string; slot: Meal["slot"]; m
         />
         <div className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1">
           {filtered.length === 0 && (
-            <p className="rounded-lg bg-muted/40 px-2 py-1.5 text-[11px] text-muted-foreground">
+            <p className="rounded-lg bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground">
               {query ? "Press Enter to save as a new meal." : "Your library is empty — type a name."}
             </p>
           )}
@@ -111,7 +111,7 @@ function EditPopover({ date, slot, meal }: { date: string; slot: Meal["slot"]; m
           <button
             type="button"
             onClick={async () => { await deleteMeal(meal.id); toast.success(`Cleared ${slot.toLowerCase()}`); setOpen(false); }}
-            className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-destructive"
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-destructive"
           >
             <X className="h-3 w-3" /> Clear meal
           </button>
@@ -144,11 +144,11 @@ export function MealsPlannedWidget({ date }: { date: Date }) {
           <UtensilsCrossed className="h-3.5 w-3.5 text-accent" />
           <h3 className="font-display text-sm font-semibold text-foreground">Meals today</h3>
         </div>
-        <Link to="/meals" className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        <Link to="/meals" className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
           Plan <ArrowRight className="h-2.5 w-2.5" />
         </Link>
       </div>
-      <p className="mb-2 text-[11px] text-muted-foreground">
+      <p className="mb-2 text-xs text-muted-foreground">
         {plannedCount} of {SLOTS.length} planned · {completedCount} done
       </p>
       <ul className="space-y-1">
@@ -176,7 +176,7 @@ export function MealsPlannedWidget({ date }: { date: Date }) {
               >
                 {isDone ? <Check className="h-3.5 w-3.5 text-primary" /> : <Circle className="h-3.5 w-3.5 text-muted-foreground/60" />}
               </button>
-              <span className="w-16 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="w-16 shrink-0 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {slot}
               </span>
               <span

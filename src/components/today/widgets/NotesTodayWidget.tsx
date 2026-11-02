@@ -40,7 +40,7 @@ export function NotesTodayWidget() {
           <StickyNote className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Notes today</h3>
         </div>
-        <Link to="/notes" className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        <Link to="/notes" className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
           All <ArrowRight className="h-2.5 w-2.5" />
         </Link>
       </div>
@@ -60,7 +60,7 @@ export function NotesTodayWidget() {
                 }}
                 className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none"
               />
-              <Link to={`/notes/${n.id}`} className="text-[10px] text-muted-foreground hover:text-foreground">
+              <Link to={`/notes/${n.id}`} className="text-xs text-muted-foreground hover:text-foreground">
                 Open
               </Link>
             </li>

@@ -8,7 +8,7 @@ export function MoonPhaseSidebarCard() {
       <MoonPhaseWidget compact />
       <Link
         to="/rhythm"
-        className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
+        className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-0.5 text-xs uppercase tracking-wider text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
         aria-label="Open lunar rhythm page"
       >
         Rhythm <ArrowRight className="h-2.5 w-2.5" />

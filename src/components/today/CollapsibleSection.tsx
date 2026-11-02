@@ -42,7 +42,7 @@ export function CollapsibleSection({
       >
         <span className="min-w-0">
           {eyebrow && (
-            <span className="block text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+            <span className="block text-xs uppercase tracking-[0.22em] text-muted-foreground">
               {eyebrow}
             </span>
           )}

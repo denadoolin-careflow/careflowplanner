@@ -35,8 +35,8 @@ function LoopCard({
         <Icon className={cn("h-4 w-4", t.fg)} aria-hidden />
       </span>
       <span className="mt-3 font-display text-sm font-semibold">{title}</span>
-      <span className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{hint}</span>
-      {meta && <span className={cn("mt-2 text-[11px] font-medium", t.fg)}>{meta}</span>}
+      <span className="mt-0.5 text-xs leading-snug text-muted-foreground">{hint}</span>
+      {meta && <span className={cn("mt-2 text-xs font-medium", t.fg)}>{meta}</span>}
     </button>
   );
 }

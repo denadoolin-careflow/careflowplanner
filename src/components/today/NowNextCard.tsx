@@ -61,7 +61,7 @@ export function NowNextCard({ date, onTaskClick }: { date: Date; onTaskClick?: (
       aria-label="Now and next"
       className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border border-border/40 bg-card/60 px-4 py-3 shadow-soft backdrop-blur-xl"
     >
-      <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+      <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.18em] text-muted-foreground">
         <Clock className="h-3 w-3" /> Now
       </span>
       <button

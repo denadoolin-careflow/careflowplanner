@@ -24,7 +24,7 @@ export function ClothingStrip({ snap }: { snap: WeatherSnapshot | null }) {
 
   return (
     <section aria-label="What to wear" className="cozy-card p-4">
-      <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+      <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
         <Shirt className="h-3 w-3" /> What to wear
       </div>
       <ul className="flex flex-wrap gap-2">

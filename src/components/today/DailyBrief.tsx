@@ -79,10 +79,10 @@ export function DailyBrief({ date }: { date: Date }) {
   return (
     <section aria-label="Daily brief" className="cozy-card overflow-hidden p-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <Sparkles className="h-3 w-3" /> Daily Brief
         </div>
-        <span className="text-[10px] text-muted-foreground">{format(date, "EEE MMM d")}</span>
+        <span className="text-xs text-muted-foreground">{format(date, "EEE MMM d")}</span>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -100,7 +100,7 @@ export function DailyBrief({ date }: { date: Date }) {
 
       {topThree.length > 0 && (
         <div className="mt-3">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Top 3</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Top 3</div>
           <ul className="mt-1 space-y-0.5">
             {topThree.map(t => (
               <li key={t.id} className="truncate text-xs">• {t.title}</li>
@@ -157,7 +157,7 @@ function Stat({ label, value, icon, tone = "default", compact = false, onClick }
       onClick={onClick}
       className={`rounded-lg border border-border/50 bg-card/40 p-2 text-left transition-colors ${onClick ? "hover:bg-muted/60 cursor-pointer" : ""}`}
     >
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] text-muted-foreground">{icon} {label}</div>
+      <div className="flex items-center gap-1 text-xs uppercase tracking-[0.15em] text-muted-foreground">{icon} {label}</div>
       <div className={`mt-0.5 ${compact ? "text-xs font-medium" : "text-lg font-semibold"} ${toneCls}`}>{value}</div>
     </Comp>
   );
@@ -198,7 +198,7 @@ function BriefDialog({
             {appts.map(a => (
               <div key={a.id} className="min-w-0 rounded-md border border-border/50 p-2">
                 <div className="break-words text-sm font-medium">{a.title}</div>
-                <div className="break-words text-[11px] text-muted-foreground">{a.time ?? "All day"}{a.location ? ` · ${a.location}` : ""}</div>
+                <div className="break-words text-xs text-muted-foreground">{a.time ?? "All day"}{a.location ? ` · ${a.location}` : ""}</div>
               </div>
             ))}
           </div>
@@ -224,7 +224,7 @@ function BriefDialog({
                     onClick={() => setEditingId(editingId === t.id ? null : t.id)}
                   >
                     <div className="break-words text-sm font-medium">{t.title}</div>
-                    <div className="break-words text-[11px] text-muted-foreground">
+                    <div className="break-words text-xs text-muted-foreground">
                       {t.dueDate ? format(parseISO(t.dueDate), "EEE MMM d") : "No date"}
                       {t.area ? ` · ${t.area}` : ""}
                     </div>
@@ -263,7 +263,7 @@ function BriefDialog({
                     </Popover>
                   )}
                   <Button
-                    variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-[11px]"
+                    variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs"
                     onClick={() => { onClose(); openTaskEditor(t.id); }}
                   >Open</Button>
                 </div>
@@ -289,12 +289,12 @@ function MoonDetail({ forecast, date }: { forecast: ReturnType<typeof getRhythmF
         <div className="text-4xl">{info.glyph}</div>
         <div>
           <div className="font-display text-base">{forecast.phaseLabel} in {forecast.sign.sign} {forecast.sign.glyph}</div>
-          <div className="text-[11px] text-muted-foreground">{format(date, "EEEE, MMMM d")} · {forecast.illumination}% lit</div>
+          <div className="text-xs text-muted-foreground">{format(date, "EEEE, MMMM d")} · {forecast.illumination}% lit</div>
         </div>
       </div>
       <p className="rounded-md bg-muted/40 p-3 text-sm italic text-foreground/85">{info.invitation}</p>
       <p className="text-xs text-muted-foreground">{forecast.sign.insight}</p>
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Affirmation</p>
+      <p className="text-xs uppercase tracking-wider text-muted-foreground">Affirmation</p>
       <p className="text-sm">{info.affirmation}</p>
     </div>
   );

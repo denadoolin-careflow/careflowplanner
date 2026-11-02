@@ -29,9 +29,9 @@ export function TodayPlannedRail({ date, className }: { date: Date; className?: 
     <div className={cn("rounded-2xl border border-border/50 bg-card/60 p-2 backdrop-blur-sm", className)}>
       <div className="mb-1.5 flex items-center gap-2 px-1">
         <CalendarClock className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[11.5px] font-semibold tracking-tight">Planned today</span>
-        <span className="rounded-full bg-primary/10 px-1.5 text-[10.5px] tabular-nums text-primary">{tasks.length}</span>
-        <span className="hidden text-[11px] text-muted-foreground sm:inline">Drag to a new time on the grid</span>
+        <span className="text-xs font-semibold tracking-tight">Planned today</span>
+        <span className="rounded-full bg-primary/10 px-1.5 text-xs tabular-nums text-primary">{tasks.length}</span>
+        <span className="hidden text-xs text-muted-foreground sm:inline">Drag to a new time on the grid</span>
       </div>
       <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:thin]">
         {tasks.map(task => (
@@ -80,11 +80,11 @@ function PlannedChip({ task, onToggle }: { task: Task; onToggle: () => void }) {
       >
         {task.done && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
       </button>
-      {time && <span className="font-mono text-[10.5px] tabular-nums text-muted-foreground">{time.slice(0, 5)}</span>}
+      {time && <span className="font-mono text-xs tabular-nums text-muted-foreground">{time.slice(0, 5)}</span>}
       <span className="truncate">{task.title}</span>
       {goal && (
         <span
-          className="flex min-w-0 max-w-[7rem] shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] leading-none text-primary"
+          className="flex min-w-0 max-w-[7rem] shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs leading-none text-primary"
           title={`Goal: ${goal.title}`}
         >
           <Target className="h-2.5 w-2.5 shrink-0" aria-hidden />

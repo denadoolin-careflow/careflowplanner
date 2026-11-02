@@ -110,7 +110,7 @@ export function TileFrame({
       )}
       {editing && (
         <div
-          className="absolute -top-3 left-3 z-30 flex items-center gap-0.5 rounded-full border border-border/60 bg-card/95 px-1 py-0.5 text-[10px] shadow-sm backdrop-blur"
+          className="absolute -top-3 left-3 z-30 flex items-center gap-0.5 rounded-full border border-border/60 bg-card/95 px-1 py-0.5 text-xs shadow-sm backdrop-blur"
           draggable
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
@@ -126,7 +126,7 @@ export function TileFrame({
           <button type="button" onClick={() => move(id, 1)} className="grid h-5 w-5 place-items-center rounded-full hover:bg-muted" aria-label="Move down">
             <ChevronRight className="h-3 w-3" />
           </button>
-          <button type="button" onClick={() => cycleSize(id)} className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/10" title="Resize">
+          <button type="button" onClick={() => cycleSize(id)} className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-semibold text-primary hover:bg-primary/10" title="Resize">
             <Maximize2 className="h-3 w-3" /> {SIZE_LABEL[size]}
           </button>
           <button type="button" onClick={() => toggleHidden(id)} className="grid h-5 w-5 place-items-center rounded-full hover:bg-muted" aria-label={isHidden ? "Show tile" : "Hide tile"}>
@@ -135,7 +135,7 @@ export function TileFrame({
         </div>
       )}
       {isHidden && editing ? (
-        <div className="grid h-24 place-items-center rounded-3xl border border-dashed border-border/50 bg-muted/20 text-[11px] text-muted-foreground">
+        <div className="grid h-24 place-items-center rounded-3xl border border-dashed border-border/50 bg-muted/20 text-xs text-muted-foreground">
           {title} — hidden
         </div>
       ) : (
@@ -154,7 +154,7 @@ export function TileEditToggle() {
         <button
           type="button"
           onClick={reset}
-          className="rounded-full border border-border/60 bg-card/70 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+          className="rounded-full border border-border/60 bg-card/70 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
         >
           Reset layout
         </button>
@@ -163,7 +163,7 @@ export function TileEditToggle() {
         type="button"
         onClick={() => setEditing(!editing)}
         className={cn(
-          "rounded-full border border-border/60 bg-card/70 px-2 py-1 text-[11px]",
+          "rounded-full border border-border/60 bg-card/70 px-2 py-1 text-xs",
           editing ? "text-primary" : "text-muted-foreground hover:text-foreground",
         )}
       >
@@ -181,14 +181,14 @@ export function TilePalette({ tiles }: { tiles: { id: string; title: string }[] 
   if (hiddenList.length === 0) return null;
   return (
     <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-3">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">Hidden tiles — tap to restore</div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">Hidden tiles — tap to restore</div>
       <div className="flex flex-wrap gap-1.5">
         {hiddenList.map(t => (
           <button
             key={t.id}
             type="button"
             onClick={() => toggleHidden(t.id)}
-            className="rounded-full border border-border/60 bg-card/80 px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-card"
+            className="rounded-full border border-border/60 bg-card/80 px-2.5 py-1 text-xs font-medium text-foreground hover:bg-card"
           >
             + {t.title}
           </button>

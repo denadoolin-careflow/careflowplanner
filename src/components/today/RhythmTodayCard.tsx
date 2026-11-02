@@ -40,7 +40,7 @@ function Chips({ items }: { items: string[] }) {
   return (
     <div className="flex flex-wrap gap-1">
       {items.slice(0, 4).map(i => (
-        <span key={i} className="rounded-full border border-border/50 bg-background/50 px-2 py-0.5 text-[11px] text-foreground/80">
+        <span key={i} className="rounded-full border border-border/50 bg-background/50 px-2 py-0.5 text-xs text-foreground/80">
           {i}
         </span>
       ))}
@@ -103,7 +103,7 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           aria-label={open ? "Collapse rhythm details" : "Expand rhythm details"}
-          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
           {open ? "Less" : "More"}
           <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} aria-hidden />
@@ -118,7 +118,7 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
         ], ["cycle", "Cycle", "◌"], ["season", "Season", season.glyph], ["aspects", "Aspects", "☾"]] as const).map(([key, label, glyph]) => (
           <button key={key} type="button" onClick={() => toggleArea(key)} aria-pressed={areas[key]}
             hidden={key === "aspects" && !moonPrefs.dayRhythm}
-            className={cn("min-h-8 rounded-full border px-2.5 text-[11px] transition", areas[key] ? "border-primary/25 bg-primary/12 text-foreground" : "border-border/50 bg-background/35 text-muted-foreground opacity-65")}
+            className={cn("min-h-8 rounded-full border px-2.5 text-xs transition", areas[key] ? "border-primary/25 bg-primary/12 text-foreground" : "border-border/50 bg-background/35 text-muted-foreground opacity-65")}
           >{glyph} {label}</button>
         ))}
       </div>
@@ -128,13 +128,13 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
         <CollapsibleContent className="mt-3 space-y-3">
           {/* Moon */}
           {areas.moon && <section className="space-y-1 rounded-2xl border border-[#9e7bc7]/20 bg-[#eee7f7]/60 p-3 dark:bg-[#9e7bc7]/10">
-            <h4 className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            <h4 className="flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <Moon className="h-3 w-3" aria-hidden /> Moon
             </h4>
             <Row>{moon.label} · {illum}% lit · {ELEMENT_LABEL[season.element]} season sky</Row>
             <Link
               to="/cosmic-flow"
-              className="inline-flex items-center gap-1 text-[11.5px] text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
               Open Cosmic Flow <ExternalLink className="h-3 w-3" aria-hidden />
             </Link>
@@ -142,7 +142,7 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
 
           {/* Cycle */}
           {areas.cycle && <section className="space-y-1.5 rounded-2xl border border-[#d58d78]/20 bg-[#f8e7e0]/65 p-3 dark:bg-[#d58d78]/10">
-            <h4 className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Cycle</h4>
+            <h4 className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Cycle</h4>
             {!cycle ? (
               <Row>
                 Cycle tracking is off. <Link to="/health" className="text-primary hover:underline">Log a period</Link> to see your phase here.
@@ -167,7 +167,7 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
                     </p>
                   </>
                 )}
-                <Link to="/health" className="inline-flex items-center gap-1 text-[11.5px] text-primary hover:underline">
+                <Link to="/health" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                   Open Health <ExternalLink className="h-3 w-3" aria-hidden />
                 </Link>
               </>
@@ -176,20 +176,20 @@ export function RhythmTodayCard({ date, className }: { date: Date; className?: s
 
           {/* Solar season */}
           {areas.season && <section className="space-y-1.5 rounded-2xl border border-[#7da184]/25 bg-[#e3eee2]/70 p-3 dark:bg-[#7da184]/10">
-            <h4 className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            <h4 className="flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <Sparkles className="h-3 w-3" aria-hidden /> {season.label}
             </h4>
             <Row>{season.theme} · {seasonLeft.days}d left</Row>
             <Row>{season.energy}</Row>
             <div className="space-y-1.5 pt-0.5">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Focus</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Focus</p>
               <Chips items={season.focus} />
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Habits</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Habits</p>
               <Chips items={season.habits} />
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Meals</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Meals</p>
               <Chips items={season.meals} />
             </div>
-            <Link to="/planner" className="inline-flex items-center gap-1 text-[11.5px] text-primary hover:underline">
+            <Link to="/planner" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
               Customise on the planner <ExternalLink className="h-3 w-3" aria-hidden />
             </Link>
           </section>}

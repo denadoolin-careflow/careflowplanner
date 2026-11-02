@@ -36,7 +36,7 @@ export function DayPlanBoard({ date, onTaskClick }: { date: Date; onTaskClick?: 
       <div className="grid gap-3 p-3 sm:p-4 md:grid-cols-3">
         {(["Breakfast", "Lunch", "Dinner"] as const).map(slot => (
           <div key={slot} className="rounded-2xl border border-border/40 bg-background/60 p-3">
-            <div className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <UtensilsCrossed className="h-3 w-3 text-accent" /> {slot}
             </div>
             <MealSlotCard date={date} slot={slot} />
@@ -46,9 +46,9 @@ export function DayPlanBoard({ date, onTaskClick }: { date: Date; onTaskClick?: 
 
       <div className="border-t border-border/40 p-3 sm:p-4">
         <div className="mb-3 flex items-center justify-between">
-          <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <ListChecks className="h-3.5 w-3.5 text-primary" /> Today’s tasks
-            <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] tabular-nums text-primary">
+            <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs tabular-nums text-primary">
               {tasks.length}
             </span>
           </div>
@@ -77,7 +77,7 @@ export function DayPlanBoard({ date, onTaskClick }: { date: Date; onTaskClick?: 
             if (list.length === 0) return null;
             return (
               <div key={part}>
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {part}
                 </div>
                 <ul className="space-y-1">

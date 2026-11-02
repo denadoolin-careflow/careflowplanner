@@ -36,7 +36,7 @@ export function FocusGoalCard({ date }: { date: Date }) {
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/15 text-primary"><Target className="h-3.5 w-3.5" /></span>
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-base leading-tight">Focus goal</h3>
-          <p className="text-[11px] text-muted-foreground">One goal to nudge forward · {RHYTHM_LABEL[phase]} phase</p>
+          <p className="text-xs text-muted-foreground">One goal to nudge forward · {RHYTHM_LABEL[phase]} phase</p>
         </div>
         {goal && <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Clear focus goal" onClick={() => setGoal(null)}><X className="h-4 w-4" /></Button>}
       </header>

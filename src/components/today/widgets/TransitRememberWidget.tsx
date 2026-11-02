@@ -143,7 +143,7 @@ export function TransitRememberWidget() {
   if (loading) {
     return (
       <section className="cozy-card p-4">
-        <header className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <header className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <Sparkles className="h-3 w-3" /> Transits to remember
         </header>
         <div className="space-y-2">
@@ -158,7 +158,7 @@ export function TransitRememberWidget() {
   if (items.length === 0) {
     return (
       <section className="cozy-card p-4">
-        <header className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <header className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <Sparkles className="h-3 w-3" /> Transits to remember
         </header>
         <p className="rounded-lg border border-dashed border-border/50 px-2 py-3 text-center text-xs text-muted-foreground">
@@ -172,12 +172,12 @@ export function TransitRememberWidget() {
     <>
       <section className="cozy-card p-4">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <header className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+          <header className="flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-muted-foreground">
             <Sparkles className="h-3 w-3" /> Transits to remember
           </header>
           <Link
             to="/cosmic-flow"
-            className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
           >
             Cosmic flow <ArrowRight className="h-2.5 w-2.5" />
           </Link>
@@ -214,10 +214,10 @@ export function TransitRememberWidget() {
                   ) : null}
                 </div>
                 {it.bodyPreview && (
-                  <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{it.bodyPreview}</p>
+                  <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{it.bodyPreview}</p>
                 )}
                 {it.date && (
-                  <p className="mt-0.5 text-[10px] text-muted-foreground/70">
+                  <p className="mt-0.5 text-xs text-muted-foreground/70">
                     {format(parseISO(it.date), "MMM d")}
                   </p>
                 )}
@@ -250,7 +250,7 @@ export function TransitRememberWidget() {
                   </DialogTitle>
                 </div>
                 {selected.date && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {format(parseISO(selected.date), "EEEE, MMM d, yyyy · h:mm a")}
                   </p>
                 )}
@@ -285,7 +285,7 @@ export function TransitRememberWidget() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+                  className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                   onClick={() => setSelected(null)}
                 >
                   <X className="h-3 w-3" /> Close
@@ -293,7 +293,7 @@ export function TransitRememberWidget() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="h-8 gap-1.5 text-[11px]"
+                  className="h-8 gap-1.5 text-xs"
                   onClick={() => handleOpen(selected)}
                 >
                   <ExternalLink className="h-3 w-3" /> Open

@@ -152,7 +152,7 @@ function Hero({
 
   return (
     <section className="relative text-center">
-      <p className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
+      <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">
         <Sparkles className="mr-1.5 inline h-3 w-3 text-primary" />
         {personalGreeting(state.settings.name)}
       </p>
@@ -229,19 +229,19 @@ function MoonPanel({ date }: { date: Date }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-7 text-center">
       <MoonGlyph date={date} size={56} />
-      <p className="font-display text-[11px] italic uppercase tracking-[0.24em] text-muted-foreground">Moon</p>
+      <p className="font-display text-xs italic uppercase tracking-[0.24em] text-muted-foreground">Moon</p>
       <p className="font-display text-xl font-semibold text-foreground">{info.label}</p>
-      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
         {illum}% lit
       </p>
-      <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/50 px-2.5 py-1 text-[11px] text-foreground/85">
+      <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/50 px-2.5 py-1 text-xs text-foreground/85">
         <span aria-hidden>{SIGN_EMOJI[sign.name]}</span>
         <span className="font-medium">{sign.name}</span>
         <span className="text-muted-foreground/60">·</span>
         <span aria-hidden>{ELEMENT_EMOJI[sign.element]}</span>
         <span className="text-muted-foreground">{sign.element}</span>
       </div>
-      <p className="mt-1 max-w-[16rem] text-balance text-[11px] leading-snug text-foreground/70">
+      <p className="mt-1 max-w-[16rem] text-balance text-xs leading-snug text-foreground/70">
         {ELEMENT_ARCHETYPE[sign.element]}
       </p>
       <p className="mt-1 max-w-[16rem] text-balance font-display text-[12px] italic leading-snug text-foreground/75">
@@ -249,7 +249,7 @@ function MoonPanel({ date }: { date: Date }) {
       </p>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
         {keywords.map((k) => (
-          <span key={k} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-primary/90">
+          <span key={k} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs uppercase tracking-[0.14em] text-primary/90">
             {k}
           </span>
         ))}
@@ -258,7 +258,7 @@ function MoonPanel({ date }: { date: Date }) {
         {SIGN_KEYWORDS[sign.name].map((k) => (
           <span
             key={k}
-            className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-foreground/70"
+            className="rounded-full bg-accent/15 px-2 py-0.5 text-xs uppercase tracking-[0.14em] text-foreground/70"
           >
             {k}
           </span>
@@ -314,7 +314,7 @@ function EnergyPanel({ date }: { date: Date }) {
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-7 text-center">
       <div className="inline-flex items-center gap-1.5 text-primary">
         <Moon className="h-3 w-3" />
-        <p className="text-[10px] uppercase tracking-[0.28em]">Daily Energy</p>
+        <p className="text-xs uppercase tracking-[0.28em]">Daily Energy</p>
       </div>
       <blockquote className="text-balance font-display text-lg italic leading-snug text-foreground/90 sm:text-xl">
         “{g.headline}”
@@ -322,7 +322,7 @@ function EnergyPanel({ date }: { date: Date }) {
       <p className="font-display text-[13px] italic leading-snug text-foreground/70">
         “{g.reflection}”
       </p>
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
         {g.focus.map((w, i) => (
           <span key={w} className="inline-flex items-center gap-2">
             {i > 0 && <span className="text-muted-foreground/40">·</span>}
@@ -345,9 +345,9 @@ function EnergyPanel({ date }: { date: Date }) {
           />
           <div className="mt-1.5 flex items-center justify-end gap-1.5">
             <button type="button" onClick={() => { setJournalOpen(false); setJournalText(""); }}
-              className="rounded-full px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground">Cancel</button>
+              className="rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
             <button type="button" onClick={saveJournal} disabled={!journalText.trim() || busy === "save"}
-              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-soft transition disabled:opacity-40">
+              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-soft transition disabled:opacity-40">
               {busy === "save" && <Loader2 className="h-3 w-3 animate-spin" />} Save
             </button>
           </div>
@@ -369,7 +369,7 @@ function ChipBtn({ icon, label, onClick }: { icon: React.ReactNode; label: strin
       onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60",
-        "px-3 py-1.5 text-[11px] font-medium text-foreground/80 transition",
+        "px-3 py-1.5 text-xs font-medium text-foreground/80 transition",
         "hover:border-primary/40 hover:bg-background hover:text-foreground hover:shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]",
       )}
     >
@@ -387,11 +387,11 @@ function CyclePanel({ date }: { date: Date }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-7 text-center">
       <span aria-hidden className="text-4xl leading-none">{meta?.glyph ?? "🌷"}</span>
-      <p className="font-display text-[11px] italic uppercase tracking-[0.24em] text-muted-foreground">Cycle</p>
+      <p className="font-display text-xs italic uppercase tracking-[0.24em] text-muted-foreground">Cycle</p>
       {cycle && meta ? (
         <>
           <p className="font-display text-xl font-semibold text-foreground">Day {cycle.cycleDay}</p>
-          <p className="text-[10px] uppercase tracking-[0.2em]"
+          <p className="text-xs uppercase tracking-[0.2em]"
              style={{ color: `hsl(var(${meta.tokenVar}))` }}>
             {meta.label}
           </p>
@@ -402,7 +402,7 @@ function CyclePanel({ date }: { date: Date }) {
             {meta.planningHints.slice(0, 3).map((k) => (
               <span
                 key={k}
-                className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.14em]"
+                className="rounded-full px-2 py-0.5 text-xs uppercase tracking-[0.14em]"
                 style={{
                   background: `hsl(var(${meta.tokenVar}) / 0.14)`,
                   color: `hsl(var(${meta.tokenVar}))`,
@@ -416,7 +416,7 @@ function CyclePanel({ date }: { date: Date }) {
       ) : (
         <>
           <p className="font-display text-base text-muted-foreground">Not tracking</p>
-          <Link to="/health" className="text-[10px] uppercase tracking-[0.2em] text-primary hover:underline">
+          <Link to="/health" className="text-xs uppercase tracking-[0.2em] text-primary hover:underline">
             Log to track
           </Link>
         </>
@@ -491,7 +491,7 @@ function ScheduleColumn({
       <CardHeader
         icon={<CalendarClock className="h-4 w-4" />}
         title="Today's Schedule"
-        action={<Link to="/calendar" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View calendar</Link>}
+        action={<Link to="/calendar" className="text-xs uppercase tracking-wider text-primary/80 hover:text-primary">View calendar</Link>}
       />
       <div className="space-y-5">
         {SLOTS.map(({ label, icon }, si) => {
@@ -499,11 +499,11 @@ function ScheduleColumn({
           const weatherSlot = label.toLowerCase() as "morning" | "afternoon" | "evening";
           return (
             <div key={label}>
-              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70">
+              <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/70">
                 <span aria-hidden>{icon}</span>{label}
               </div>
               {rows.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-border/50 px-3 py-3 text-center text-[11px] text-muted-foreground">
+                <div className="rounded-2xl border border-dashed border-border/50 px-3 py-3 text-center text-xs text-muted-foreground">
                   No events scheduled.
                 </div>
               ) : (
@@ -582,7 +582,7 @@ function ScheduleRow({
             className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-primary/60"
           />
         )}
-        <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+        <span className="mt-0.5 shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
           {row.time ? format12(row.time) : "—"}
         </span>
         <button
@@ -595,7 +595,7 @@ function ScheduleRow({
           {row.label}
         </button>
         {row.durationMin ? (
-          <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+          <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-xs font-medium text-muted-foreground">
             {fmtDur(row.durationMin)}
           </span>
         ) : null}
@@ -670,7 +670,7 @@ function ProgressTasksColumn({
         icon={<ListTodo className="h-4 w-4" />}
         title="Today's Progress"
         action={
-          <span className="text-[11px] font-semibold tabular-nums text-primary">{pct}%</span>
+          <span className="text-xs font-semibold tabular-nums text-primary">{pct}%</span>
         }
       />
       <div className="space-y-1.5">
@@ -680,7 +680,7 @@ function ProgressTasksColumn({
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {done} of {total || 0} completed
         </p>
       </div>
@@ -689,7 +689,7 @@ function ProgressTasksColumn({
         <h4 className="font-display text-sm font-semibold text-foreground">
           Today's Tasks <span className="ml-1 text-xs text-muted-foreground">{total}</span>
         </h4>
-        <Link to="/tasks" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View all</Link>
+        <Link to="/tasks" className="text-xs uppercase tracking-wider text-primary/80 hover:text-primary">View all</Link>
       </div>
 
       {tasks.length === 0 ? (
@@ -740,18 +740,18 @@ function TaskRow({
         {t.title}
       </button>
       <span className={cn(
-        "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ring-1",
+        "shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium uppercase tracking-wider ring-1",
         priorityTone[t.priority] ?? priorityTone.med,
       )}>
         {t.priority}
       </span>
       {project && (
-        <span className="hidden shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground sm:inline">
+        <span className="hidden shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-xs text-muted-foreground sm:inline">
           {project}
         </span>
       )}
       {t.estMinutes ? (
-        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">{t.estMinutes}m</span>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{t.estMinutes}m</span>
       ) : null}
       <button
         type="button"
@@ -840,7 +840,7 @@ function MealCard({
         </div>
         <p className="break-words text-xs text-muted-foreground line-clamp-2">{meal?.name ?? preview}</p>
         {meal?.name && meal.ingredients?.length ? (
-          <p className="break-words text-[10px] text-muted-foreground/80 line-clamp-2">{meal.ingredients.slice(0, 3).join(" · ")}</p>
+          <p className="break-words text-xs text-muted-foreground/80 line-clamp-2">{meal.ingredients.slice(0, 3).join(" · ")}</p>
         ) : null}
       </button>
       <Popover open={open} onOpenChange={setOpen}>
@@ -869,7 +869,7 @@ function MealCard({
           />
           <div className="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1">
             {filtered.length === 0 && (
-              <p className="rounded-lg bg-muted/40 px-2 py-1.5 text-[11px] text-muted-foreground">
+              <p className="rounded-lg bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground">
                 {query ? "Press Enter to add." : "Type to add a meal."}
               </p>
             )}
@@ -887,7 +887,7 @@ function MealCard({
           {meal && (
             <button
               type="button" onClick={() => { void deleteMeal(meal.id); setOpen(false); }}
-              className="mt-2 w-full rounded-full px-2 py-1 text-[11px] text-muted-foreground hover:text-destructive"
+              className="mt-2 w-full rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-destructive"
             >Clear {slot.toLowerCase()}</button>
           )}
         </PopoverContent>
@@ -916,7 +916,7 @@ function UpcomingColumn({ date }: { date: Date }) {
       <CardHeader
         icon={<CalendarDays className="h-4 w-4" />}
         title="Upcoming"
-        action={<Link to="/calendar" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View calendar</Link>}
+        action={<Link to="/calendar" className="text-xs uppercase tracking-wider text-primary/80 hover:text-primary">View calendar</Link>}
       />
       {events.length === 0 ? (
         <EmptyState text="Nothing on the horizon." />
@@ -934,7 +934,7 @@ function UpcomingColumn({ date }: { date: Date }) {
                   aria-hidden
                   className="mt-0.5 inline-block h-2 w-2 shrink-0 rounded-full bg-primary/60"
                 />
-                <div className="w-20 shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <div className="w-20 shrink-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   {dayLabel}
                 </div>
                 <button
@@ -946,10 +946,10 @@ function UpcomingColumn({ date }: { date: Date }) {
                     {e.title}
                   </div>
                   {e.location && (
-                    <div className="truncate text-[11px] text-muted-foreground">{e.location}</div>
+                    <div className="truncate text-xs text-muted-foreground">{e.location}</div>
                   )}
                 </button>
-                <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+                <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
                   {e.allDay ? "All day" : e.time ? format12(e.time) : ""}
                 </span>
               </li>
@@ -1063,7 +1063,7 @@ function IntentionCard({ date }: { date: Date }) {
           />
           <div className="mt-2 flex justify-end">
             <button type="button" onClick={commit}
-              className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-soft">
+              className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-soft">
               Save
             </button>
           </div>
@@ -1079,7 +1079,7 @@ function IntentionCard({ date }: { date: Date }) {
           )}>
             {text || "Choose focus. Set the tone. Let today flow with purpose."}
           </p>
-          <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-primary/80 group-hover:text-primary">
+          <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary/80 group-hover:text-primary">
             <PenLine className="h-3 w-3" /> Edit
           </div>
         </button>
@@ -1128,7 +1128,7 @@ function DailyCheckInCard({ date }: { date: Date }) {
           )}
         >
           <Pill className={cn("h-4 w-4", ci.medicineDone ? "text-primary" : "text-muted-foreground")} />
-          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">Medicine</span>
+          <span className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">Medicine</span>
           <span className={cn("mt-0.5 font-display text-base font-semibold", ci.medicineDone ? "text-primary" : "text-foreground/80")}>
             {ci.medicineDone ? "Logged" : "Log"}
           </span>
@@ -1171,7 +1171,7 @@ function MetricStepper({
   return (
     <div className="group flex flex-col items-center justify-center rounded-2xl border border-border/40 bg-background/40 px-2 py-3 text-center transition hover:border-primary/40">
       <span className="text-primary">{icon}</span>
-      <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
       <div className="mt-0.5 inline-flex items-center gap-1">
         <button
           type="button" aria-label={`Decrease ${label}`}
@@ -1207,7 +1207,7 @@ function MetricStepper({
           className="h-5 w-5 rounded-full text-muted-foreground opacity-0 transition hover:bg-muted group-hover:opacity-100"
         >+</button>
       </div>
-      <span className="text-[10px] text-muted-foreground">{unit}</span>
+      <span className="text-xs text-muted-foreground">{unit}</span>
     </div>
   );
 }
@@ -1246,7 +1246,7 @@ function GoalCheckInCard() {
               <Ring pct={g.pct} color={g.color} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-foreground">{g.label}</div>
-                <div className="text-[10px] text-muted-foreground">{g.count} active goal{g.count === 1 ? "" : "s"}</div>
+                <div className="text-xs text-muted-foreground">{g.count} active goal{g.count === 1 ? "" : "s"}</div>
               </div>
               <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{g.pct}%</span>
               <Link to="/goals" aria-label="Open goals">
@@ -1293,19 +1293,19 @@ function GoalCheckInSettings({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground" title="Customize goal groups">
+        <button className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/70 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground" title="Customize goal groups">
           <Settings2 className="h-3 w-3" /> Customize
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-3 space-y-3">
-        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Goal groups</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Goal groups</div>
         <ul className="space-y-1.5">
           {groups.map(g => (
             <li key={g.id} className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/60 px-2 py-1.5">
               <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: g.color }} />
               <div className="min-w-0 flex-1">
                 <div className={cn("truncate text-xs font-medium", g.hidden && "text-muted-foreground line-through")}>{g.label}</div>
-                <div className="truncate text-[10px] text-muted-foreground">{g.categories.join(", ")}</div>
+                <div className="truncate text-xs text-muted-foreground">{g.categories.join(", ")}</div>
               </div>
               <button type="button" onClick={() => move(g.id, -1)} className="h-5 w-5 rounded hover:bg-muted" aria-label="Move up">↑</button>
               <button type="button" onClick={() => move(g.id, 1)} className="h-5 w-5 rounded hover:bg-muted" aria-label="Move down">↓</button>
@@ -1315,12 +1315,12 @@ function GoalCheckInSettings({
           ))}
         </ul>
         <div className="space-y-1 border-t border-border/40 pt-2">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Add group</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Add group</div>
           <Input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label (e.g. Learning)" className="h-7 text-xs" />
           <Input value={newCats} onChange={(e) => setNewCats(e.target.value)} placeholder="Categories (comma-separated)" className="h-7 text-xs" />
           <div className="flex justify-end gap-1">
-            <button type="button" onClick={reset} className="rounded px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground">Reset</button>
-            <button type="button" onClick={add} className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-primary-foreground">Add</button>
+            <button type="button" onClick={reset} className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground">Reset</button>
+            <button type="button" onClick={add} className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">Add</button>
           </div>
         </div>
       </PopoverContent>
@@ -1371,7 +1371,7 @@ function GroceryCard() {
           adding ? null : (
             <button
               type="button" onClick={() => setAdding(true)}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary/80 hover:text-primary"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 hover:text-primary"
             ><Plus className="h-3 w-3" /> Add Item</button>
           )
         }
@@ -1457,12 +1457,12 @@ function InProgressProjectsCard() {
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="min-w-0 break-words text-sm font-medium text-foreground group-hover:text-primary line-clamp-2">{p.name}</span>
-                      <span className="shrink-0 tabular-nums text-[11px] font-semibold text-muted-foreground">{pct}%</span>
+                      <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{pct}%</span>
                     </div>
                     <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
                       <div className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-700" style={{ width: `${pct}%` }} />
                     </div>
-                    <div className="mt-0.5 text-[10px] text-muted-foreground">{done} of {total} · tap to open</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">{done} of {total} · tap to open</div>
                   </button>
                   <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
                     <button
@@ -1567,7 +1567,7 @@ function CurrentProjectFocusCard({ onTaskClick }: { onTaskClick?: (id: string) =
         action={
           rows.length > 0 && focus ? (
             <Select value={focus.p.id} onValueChange={setFocus}>
-              <SelectTrigger className="h-7 w-[160px] rounded-full border-border/50 bg-background/70 text-[11px]">
+              <SelectTrigger className="h-7 w-[160px] rounded-full border-border/50 bg-background/70 text-xs">
                 <SelectValue asChild>
                   <span className="inline-flex min-w-0 items-center gap-1.5">
                     <ProjectIconGlyph project={focus.p} className="h-3.5 w-3.5 shrink-0" />
@@ -1619,15 +1619,15 @@ function CurrentProjectFocusCard({ onTaskClick }: { onTaskClick?: (id: string) =
             />
           </div>
           {whyHint && (
-            <p className="mt-2 rounded-xl bg-primary/8 px-2.5 py-1.5 text-[11px] italic leading-snug text-foreground/80">
+            <p className="mt-2 rounded-xl bg-primary/8 px-2.5 py-1.5 text-xs italic leading-snug text-foreground/80">
               <Sparkles className="mr-1 inline h-3 w-3 text-primary" />
               Why this matters today — {whyHint}
             </p>
           )}
           <div className="mt-4">
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Next steps</div>
+            <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">Next steps</div>
             {openTasks.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-border/50 px-3 py-2 text-center text-[11px] text-muted-foreground">
+              <p className="rounded-xl border border-dashed border-border/50 px-3 py-2 text-center text-xs text-muted-foreground">
                 All caught up here.
               </p>
             ) : (
@@ -1713,7 +1713,7 @@ function HabitsRoutinesCard({ date }: { date: Date }) {
           <button
             type="button"
             onClick={() => setOpen(v => !v)}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-primary/80 transition hover:bg-primary/10 hover:text-primary"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold text-primary/80 transition hover:bg-primary/10 hover:text-primary"
           >
             {open ? "Hide" : "Show"}
             <ChevronRightIcon
@@ -1728,7 +1728,7 @@ function HabitsRoutinesCard({ date }: { date: Date }) {
           <div className="text-sm font-medium text-foreground">
             {done} of {total} habits tended
           </div>
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             {routineTotal
               ? `${routineTotal} routine${routineTotal === 1 ? "" : "s"} available · tap Show to run timer`
               : "Add a routine to run a guided timer"}
@@ -1736,7 +1736,7 @@ function HabitsRoutinesCard({ date }: { date: Date }) {
         </div>
         <Link
           to="/routines"
-          className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary hover:bg-primary/15"
+          className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary hover:bg-primary/15"
           title="Open routines with focus timer"
         >
           Timer
