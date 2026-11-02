@@ -53,7 +53,10 @@ import { Bell, ChevronDown } from "lucide-react";
 import { PHASE_ICONS } from "@/lib/phase-icons";
 import { LunarCheckInCard } from "@/components/today/LunarCheckInCard";
 import { PhaseInlinePanel } from "@/components/today/PhaseInlinePanel";
-import { PHASE_ORDER, currentPhase } from "@/lib/today-phase-items";
+import { PHASE_ORDER, PHASE_WINDOW, currentPhase, phaseSummary, readPhasePins } from "@/lib/today-phase-items";
+import { RhythmsCard, TodayNotebookCard, ReminderRow, flowCard } from "@/components/today/flow/TodayFlowCards";
+import { TopThreeStrip } from "@/components/today/TopThreeStrip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type MobileTab = "plan" | "grow" | "care" | "letgo";
 const MOBILE_TABS = [
@@ -66,7 +69,7 @@ const MOBILE_TABS = [
 const BAND_PHASE: Record<string, RhythmPhase> = { Plan: "plan", Grow: "grow", Care: "care", "Let go": "letgo" };
 const BAND_ID = (t: string) => `today-${BAND_PHASE[t]}`;
 
-function PhaseBand({ title, children, autoFold }: { title: string; children: React.ReactNode; autoFold?: boolean }) {
+function PhaseBand({ title, children, autoFold, isNow, summary }: { title: string; children: React.ReactNode; autoFold?: boolean; isNow?: boolean; summary?: string }) {
   const phase = BAND_PHASE[title];
   const key = `today.band.${phase}.folded`;
   const [folded, setFolded] = useState(() => autoFold ? sessionStorage.getItem(`${key}.open`) !== "1" : localStorage.getItem(key) === "1");
@@ -75,20 +78,25 @@ function PhaseBand({ title, children, autoFold }: { title: string; children: Rea
     return !f;
   });
   return (
-    <section id={BAND_ID(title)} aria-labelledby={`${BAND_ID(title)}-h`} className="scroll-mt-24 space-y-3">
+    <section id={BAND_ID(title)} aria-labelledby={`${BAND_ID(title)}-h`} aria-current={isNow ? "time" : undefined}
+      className={cn("scroll-mt-24 space-y-3 rounded-[20px] bg-card p-2 shadow-soft", isNow && "ring-2")}
+      style={isNow ? { ["--tw-ring-color" as string]: `hsl(var(--rhythm-${phase}))` } : undefined}>
       <button
         type="button" onClick={toggle} aria-expanded={!folded}
-        className="flex min-h-11 w-full items-center gap-3 rounded-2xl border-l-4 bg-card/60 px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        style={{ borderLeftColor: `hsl(var(--rhythm-${phase}-deep))` }}
+        className="flex min-h-12 w-full items-center gap-3 rounded-2xl px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <PhaseIcon phase={phase} />
         <span className="min-w-0 flex-1">
-          <h2 id={`${BAND_ID(title)}-h`} className="font-display text-lg leading-tight text-foreground">{title}</h2>
-          <span className="block text-xs text-muted-foreground">{PHASE_CAPTION[phase]}</span>
+          <span className="flex flex-wrap items-center gap-2">
+            <h2 id={`${BAND_ID(title)}-h`} className="font-display text-lg leading-tight" style={{ color: `hsl(var(--rhythm-${phase}-deep))` }}>{title}</h2>
+            {isNow && <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: `hsl(var(--rhythm-${phase}-tint))`, color: `hsl(var(--rhythm-${phase}-deep))` }}>NOW · {PHASE_WINDOW[phase]}</span>}
+            {!isNow && <span className="text-xs text-muted-foreground">{PHASE_WINDOW[phase]}</span>}
+          </span>
+          <span className="block truncate text-sm text-muted-foreground">{folded && summary ? summary : PHASE_CAPTION[phase]}</span>
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", !folded && "rotate-180")} aria-hidden />
       </button>
-      {!folded && children}
+      {!folded && <div className="space-y-3 px-1 pb-1">{children}</div>}
     </section>
   );
 }
@@ -228,11 +236,11 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
   const P = (phase: RhythmPhase) => <PhaseInlinePanel phase={phase} date={day} onTaskClick={setEditTaskId} />;
   const phaseContent: Record<RhythmPhase, React.ReactNode> = {
     plan: (<>
+      {isReallyToday && <DailyRituals date={day} only="morning" onEveningReflection={() => setExhaleOpen(true)} />}
       {P("plan")}
-      {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+      {view !== "flow" && isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
       <TodayNudgeStrip date={day} />
-      <TwinRingsWidget date={day} />
-      <RhythmTodayCard date={day} />
+      {view !== "flow" && <TwinRingsWidget date={day} />}
     </>),
     grow: (<>
       <FocusGoalCard date={day} />
@@ -254,6 +262,7 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
       <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
     </>),
     letgo: (<>
+      {isReallyToday && <DailyRituals date={day} only="evening" onEveningReflection={() => setExhaleOpen(true)} />}
       <LunarCheckInCard date={day} />
       {P("letgo")}
       <JournalCard date={day} />
@@ -263,17 +272,31 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
     </>),
   };
   const PHASE_TITLE: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
-  const nowIdx = PHASE_ORDER.indexOf(currentPhase());
+  const nowPhase = currentPhase();
+  const iso = format(day, "yyyy-MM-dd");
+  const pins = readPhasePins();
   const bands = (autoFold: boolean) => (
-    <div className="animate-fade-in space-y-6">
-      {PHASE_ORDER.map((ph, i) => (
-        <PhaseBand key={`${ph}-${autoFold && isReallyToday && i < nowIdx}`} title={PHASE_TITLE[ph]} autoFold={autoFold && isReallyToday && i < nowIdx}>
+    <div className="animate-fade-in space-y-4 lg:space-y-6">
+      {PHASE_ORDER.map((ph) => (
+        <PhaseBand key={`${ph}-${autoFold && isReallyToday && ph !== nowPhase}`} title={PHASE_TITLE[ph]}
+          autoFold={autoFold && isReallyToday && ph !== nowPhase} isNow={isReallyToday && ph === nowPhase}
+          summary={phaseSummary(ph, state.tasks, state.appointments, iso, pins)}>
           {phaseContent[ph]}
         </PhaseBand>
       ))}
     </div>
   );
   const circle = bands(false);
+  const reminders = (
+    <ReminderRow>
+      {isReallyToday && <NewMoonGoalCard />}
+      <MoonJournalReminderBanner date={day} />
+      {isReallyToday && <MailReminderCard />}
+      {isReallyToday && <CabinetExpiryCard />}
+      {isReallyToday && <WorkspaceQuizInvite />}
+      {isReallyToday && <RhythmReviewReminders date={day} />}
+    </ReminderRow>
+  );
   const secondary = circle;
 
 
@@ -282,13 +305,16 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
     <CapacityProvider value={capacity}>
       <div className={cn("today-mobile-feed mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip", embedded ? "pb-2" : "px-2 pb-12 sm:px-4")}>
         {embedded ? (
-          <div role="tablist" aria-label="Day layout" className="flex max-w-full items-center gap-0.5 self-start overflow-x-auto rounded-full border border-border/60 bg-card/70 p-0.5 text-xs">
-            {(Object.keys(TODAY_VIEW_LABELS) as Array<keyof typeof TODAY_VIEW_LABELS>).map(k => (
-              <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)}
-                className={cn("min-h-9 shrink-0 rounded-full px-3 transition-colors", view === k ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:text-foreground")}>
-                {TODAY_VIEW_LABELS[k]}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <label htmlFor="today-layout" className="text-sm text-muted-foreground">Layout</label>
+            <Select value={view} onValueChange={(v) => setView(v as typeof view)}>
+              <SelectTrigger id="today-layout" className="h-11 w-44 rounded-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(TODAY_VIEW_LABELS) as Array<keyof typeof TODAY_VIEW_LABELS>).map(k => (
+                  <SelectItem key={k} value={k}>{TODAY_VIEW_LABELS[k]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         ) : <TodayHeader
           date={day}
@@ -305,28 +331,11 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
         />}
         <TodayMoonHeader date={day} />
         <DemoTasksBanner />
-        {prefs.showQuickAdd && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
-        {/* Gentle notices: grouped so reminders never push the day below the fold. Hidden when empty. */}
-        <details
-          open={!isMobile}
-          className="group rounded-2xl border border-border/60 bg-card/60 [&:not(:has(.today-notices>*))]:hidden"
-        >
-          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-2xl px-3 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <Bell className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="flex-1">Gentle reminders</span>
-            <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
-          </summary>
-          <div className="today-notices space-y-2 px-2 pb-2">
-            {isReallyToday && <NewMoonGoalCard />}
-            <MoonJournalReminderBanner date={day} />
-            {isReallyToday && <MailReminderCard />}
-            {isReallyToday && <CabinetExpiryCard />}
-            {isReallyToday && <WorkspaceQuizInvite />}
-            {isReallyToday && <RhythmReviewReminders date={day} />}
-          </div>
-        </details>
-        {isReallyToday && <DailyRituals date={day} onEveningReflection={() => setExhaleOpen(true)} />}
-        {view !== "board" && <ArriveBand date={day} />}
+        {prefs.showQuickAdd && !isMobile && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
+        {view !== "board" && <RhythmTodayCard date={day} />}
+        {view === "board" && isReallyToday && <DailyRituals date={day} onEveningReflection={() => setExhaleOpen(true)} />}
+        {view !== "board" && view !== "flow" && <ArriveBand date={day} />}
+        {view !== "flow" && reminders}
 
         {view === "board" ? (
           <>
@@ -338,9 +347,24 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
             />
           </>
         ) : view === "flow" ? (
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="min-w-0">{bands(true)}</div>
-            {!isMobile && <div className="sticky top-20"><TodayFocusRail date={day} onTaskClick={setEditTaskId} showSources /></div>}
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-[280px_minmax(0,1fr)_300px] lg:gap-6">
+            <div className="min-w-0 space-y-4 lg:space-y-6">
+              <ArriveBand date={day} />
+              <section aria-label="Focus" className={cn(flowCard, "space-y-3")}>
+                {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
+              </section>
+              {reminders}
+              {!isMobile && <TodayFocusRail date={day} onTaskClick={setEditTaskId} showSources />}
+            </div>
+            <div className="min-w-0 space-y-3">
+              <h2 className="px-1 font-display text-xl text-foreground">Your day</h2>
+              {bands(true)}
+            </div>
+            <div className="min-w-0 space-y-4 lg:space-y-6">
+              <RhythmsCard date={day} />
+              {isReallyToday && <TodayNotebookCard />}
+            </div>
           </div>
         ) : view === "quadrant" ? (
           <div className="animate-fade-in grid grid-cols-1 gap-4 md:grid-cols-2">
