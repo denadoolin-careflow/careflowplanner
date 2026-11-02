@@ -22,7 +22,7 @@ export function MobileWeekAgendaStrip({ day, onSelect, rich = false }: { day: Da
   const { state, toggleTask } = useStore();
   const [peek, setPeek] = useState<string | null>(null);
   const press = useRef<{ t: number; long: boolean; x: number }>({ t: 0, long: false, x: 0 });
-  const swipeX = useRef<number | null>(null);
+  const swipe = useRef<{ x: number; y: number; t: number; cancel: boolean } | null>(null);
   const start = startOfWeek(day, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const today = new Date();
@@ -44,12 +44,26 @@ export function MobileWeekAgendaStrip({ day, onSelect, rich = false }: { day: Da
   return (
     <div
       className="flex items-center gap-1"
-      onTouchStart={(e) => { swipeX.current = e.touches[0].clientX; }}
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        swipe.current = { x: t.clientX, y: t.clientY, t: Date.now(), cancel: false };
+      }}
+      onTouchMove={(e) => {
+        const s = swipe.current; if (!s) return;
+        const t = e.touches[0];
+        const dx = t.clientX - s.x, dy = t.clientY - s.y;
+        // A drag that drifts vertically first is scrolling or a typo, not a week change.
+        if (Math.abs(dy) > 18 && Math.abs(dy) > Math.abs(dx)) s.cancel = true;
+      }}
       onTouchEnd={(e) => {
-        if (swipeX.current == null) return;
-        const dx = e.changedTouches[0].clientX - swipeX.current;
-        swipeX.current = null;
-        if (Math.abs(dx) > 60) shiftWeek(dx < 0 ? 1 : -1);
+        const s = swipe.current; swipe.current = null;
+        if (!s || s.cancel) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - s.x, dy = t.clientY - s.y;
+        // Deliberate only: a long, flat, horizontal flick.
+        if (Date.now() - s.t > 700) return;
+        if (Math.abs(dx) < 100 || Math.abs(dx) < Math.abs(dy) * 3) return;
+        shiftWeek(dx < 0 ? 1 : -1);
       }}
     >
       <button type="button" aria-label="Previous week" onClick={() => shiftWeek(-1)} className="grid h-11 w-6 shrink-0 place-items-center text-muted-foreground">

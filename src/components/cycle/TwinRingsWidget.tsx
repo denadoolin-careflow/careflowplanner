@@ -99,7 +99,7 @@ export function TwinRingsWidget({ date }: { date: Date }) {
 
       <div className="mt-3 flex items-center gap-1">
         <button type="button" aria-label="Previous day" onClick={() => setSel(addDays(sel, -1))} className="grid h-11 w-9 shrink-0 place-items-center rounded-lg hover:bg-muted"><ChevronLeft className="h-4 w-4" /></button>
-        <div ref={stripRef} className="flex flex-1 snap-x gap-1 overflow-x-auto pb-1 [scrollbar-width:none]">
+        <div ref={stripRef} className="flex flex-1 snap-x gap-1 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none]">
           {days.map((day) => {
             const m = lunarRhythmAt(day);
             const ci = getPhaseInfo(day, periods, settings);

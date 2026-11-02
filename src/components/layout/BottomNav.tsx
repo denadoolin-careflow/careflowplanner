@@ -102,6 +102,9 @@ export function BottomNav() {
   const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
+    const el = e.target as HTMLElement | null;
+    // Never treat a gesture that starts in a typing field as a page swipe.
+    if (el?.closest('input, textarea, [contenteditable="true"], .ProseMirror')) { swipeStart.current = null; return; }
     swipeStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
   };
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -111,7 +114,8 @@ export function BottomNav() {
     const dx = end.clientX - s.x;
     const dy = end.clientY - s.y;
     if (Date.now() - s.t > 600) return;
-    if (Math.abs(dx) < 60 || Math.abs(dy) > 50) return;
+    // Deliberate only: a long, flat, horizontal flick.
+    if (Math.abs(dx) < 110 || Math.abs(dy) > 25 || Math.abs(dx) < Math.abs(dy) * 4) return;
     const order = navIds;
     const idx = order.indexOf(pathname);
     if (idx < 0) return;

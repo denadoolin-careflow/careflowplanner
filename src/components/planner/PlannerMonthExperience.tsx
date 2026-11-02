@@ -53,7 +53,7 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture, onChangeMon
        <div className="min-w-0" onTouchStart={isMobile ? (e) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; } : undefined} onTouchEnd={isMobile ? (e) => {
          const s = swipe.current; swipe.current = null; if (!s || !onChangeMonth) return;
          const dx = e.changedTouches[0].clientX - s.x; const dy = e.changedTouches[0].clientY - s.y;
-         if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) onChangeMonth(addMonths(date, dx < 0 ? 1 : -1));
+         if (Math.abs(dx) > 110 && Math.abs(dy) < 60 && Math.abs(dx) > Math.abs(dy) * 2.5) onChangeMonth(addMonths(date, dx < 0 ? 1 : -1));
        } : undefined}><PlannerMonthView date={date} selectedDate={selectedDate} onSelectDay={selectDay} onChangeSelectedDate={selectAgendaDay} onCapture={() => isMobile ? setQuickAddOpen(true) : onCapture()} onOpenItem={openItem} onOpenDay={onOpenDay} /></div>
       {panelOpen && !isMobile && panel}
     </div>;
