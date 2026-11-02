@@ -53,7 +53,7 @@ export function PlannerMonthExperience({ date, onOpenDay, onCapture, onChangeMon
       {attentionOpen && <div className="grid gap-2 border-t border-border/50 p-3 sm:grid-cols-2"><div className="rounded-md bg-background/60 p-3"><p className="text-sm font-semibold">{overdue.length} overdue</p><p className="text-xs text-muted-foreground">Review when you have space—nothing is failing.</p></div><div className="rounded-md bg-background/60 p-3"><p className="text-sm font-semibold">{unscheduled} without a time</p><p className="text-xs text-muted-foreground">They can remain flexible or become an anchor.</p></div></div>}
     </section>;
   const calendar = <div className={cn("planner-month-layout", !panelOpen && "planner-month-layout--panel-closed")}>
-       <div className="min-w-0" onTouchStart={isMobile ? (e) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; } : undefined} onTouchEnd={isMobile ? (e) => {
+       <div className="min-w-0" onTouchStart={isMobile ? (e) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() }; } : undefined} onTouchEnd={isMobile ? (e) => {
          const s = swipe.current; swipe.current = null; if (!s || !onChangeMonth) return;
          const dx = e.changedTouches[0].clientX - s.x; const dy = e.changedTouches[0].clientY - s.y;
          if (isDeliberateSwipe(dx, dy, Date.now() - s.t, MONTH_SWIPE)) onChangeMonth(addMonths(date, dx < 0 ? 1 : -1));
