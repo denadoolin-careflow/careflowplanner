@@ -85,7 +85,7 @@ function PhaseBand({ title, children, autoFold, isNow, summary }: { title: strin
         type="button" onClick={toggle} aria-expanded={!folded}
         className="flex min-h-12 w-full items-center gap-3 rounded-2xl px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <PhaseIcon phase={phase} active={isNow} />
+        <PhaseIcon phase={phase} />
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
             <h2 id={`${BAND_ID(title)}-h`} className="font-display text-lg leading-tight" style={{ color: `hsl(var(--rhythm-${phase}-deep))` }}>{title}</h2>
