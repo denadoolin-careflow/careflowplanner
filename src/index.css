@@ -4294,12 +4294,12 @@ body.planner-dragging [data-radix-dialog-overlay] {
 .today-notebook-phase-headings [data-phase="care"] { color: hsl(var(--rhythm-care-deep)); }
 .today-notebook-phase-headings [data-phase="letgo"] { color: hsl(var(--rhythm-letgo-deep)); }
 
-.today-notebook-phase-headings h1[data-phase]::before,
-.today-notebook-phase-headings h2[data-phase]::before,
-.today-notebook-phase-headings h3[data-phase]::before,
-.today-notebook-phase-headings h4[data-phase]::before,
-.today-notebook-phase-headings h5[data-phase]::before,
-.today-notebook-phase-headings h6[data-phase]::before {
+.today-notebook-phase-headings .ProseMirror h1[data-phase]::before,
+.today-notebook-phase-headings .ProseMirror h2[data-phase]::before,
+.today-notebook-phase-headings .ProseMirror h3[data-phase]::before,
+.today-notebook-phase-headings .ProseMirror h4[data-phase]::before,
+.today-notebook-phase-headings .ProseMirror h5[data-phase]::before,
+.today-notebook-phase-headings .ProseMirror h6[data-phase]::before {
   content: "";
   display: inline-block;
   width: 0.95em;
