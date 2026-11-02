@@ -77,3 +77,23 @@ export function toggleApptDone(id: string, date: string): Set<string> {
   try { localStorage.setItem(APPT_DONE_KEY, JSON.stringify([...s])); } catch { /* */ }
   return s;
 }
+
+/** Human time window for each phase (matches phaseForTime). */
+export const PHASE_WINDOW: Record<RhythmPhase, string> = {
+  plan: "until noon", grow: "noon – 3pm", care: "3pm – 6pm", letgo: "after 6pm",
+};
+
+/** One-line summary for a collapsed phase band, e.g. "2 tasks · 1 event · 1 done". */
+export function phaseSummary(
+  phase: RhythmPhase, tasks: Task[], appts: Appointment[], date: string, pins: Record<string, RhythmPhase> = {},
+): string {
+  const ts = tasks.filter(t => t.dueDate === date && !t.parentTaskId && phaseOfTodayTask(t, pins) === phase);
+  const as = appts.filter(a => a.date === date && phaseOfAppointment(a, pins) === phase);
+  const open = ts.filter(t => !t.done).length;
+  const done = ts.length - open;
+  const parts: string[] = [];
+  if (open) parts.push(`${open} ${open === 1 ? "task" : "tasks"}`);
+  if (as.length) parts.push(`${as.length} ${as.length === 1 ? "event" : "events"}`);
+  if (done) parts.push(`${done} done`);
+  return parts.length ? parts.join(" · ") : "Nothing planned yet";
+}
