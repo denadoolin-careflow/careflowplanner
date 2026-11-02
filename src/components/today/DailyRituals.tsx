@@ -15,9 +15,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { RitualWeather } from "./RitualWeather";
 
-export function DailyRituals({ date, onEveningReflection }: {
+export function DailyRituals({ date, onEveningReflection, only }: {
   date: Date;
   onEveningReflection: () => void;
+  /** Show just one ritual (used inside the Plan / Let go phase bands). */
+  only?: "morning" | "evening";
 }) {
   const iso = format(date, "yyyy-MM-dd");
   const { state, addJournal } = useStore();
@@ -57,14 +59,14 @@ export function DailyRituals({ date, onEveningReflection }: {
     const rituals = [
       { kind: "morning" as const, title: "Morning Reset", detail: morningDone ? "Complete" : morningStarted ? "Continue" : "Start gently", done: morningDone, Icon: Sunrise },
       { kind: "evening" as const, title: "Evening Reflection", detail: eveningDone ? "Complete" : unfinished ? `${unfinished} to review` : "Close the day", done: eveningDone, Icon: Moon },
-    ];
+    ].filter(r => !only || r.kind === only);
     return (
-      <section aria-label="Daily rituals" className="mobile-rituals space-y-2">
+      <section aria-label={only === "morning" ? "Morning Reset" : only === "evening" ? "Evening Reflection" : "Daily rituals"} className="mobile-rituals space-y-2">
         <div className="flex items-center justify-between gap-2 px-1">
           <p className="mobile-feed-kicker">Daily rituals</p>
           <RitualWeeklyHistory date={date} />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={cn("grid gap-2", only ? "grid-cols-1" : "grid-cols-2")}>
           {rituals.map(({ kind, title, detail, done, Icon }) => (
             <div key={kind} className={cn("mobile-ritual-card", expanded === kind && "mobile-ritual-card--open")}>
               <button type="button" className="flex min-h-14 w-full items-center gap-2.5 text-left" aria-expanded={expanded === kind} onClick={() => setExpanded(current => current === kind ? null : kind)}>
@@ -72,8 +74,8 @@ export function DailyRituals({ date, onEveningReflection }: {
                   {done ? <Check className="h-4 w-4" aria-hidden /> : <Icon className="h-4 w-4" aria-hidden />}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-semibold leading-tight">{title}</span>
-                  <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{detail}</span>
+                  <span className="block text-[15px] font-semibold leading-tight">{title}</span>
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">{detail}</span>
                   <RitualWeather slot={kind} />
                   <RitualGoalChips kind={kind} />
                 </span>
@@ -100,14 +102,14 @@ export function DailyRituals({ date, onEveningReflection }: {
   return (
     <section aria-label="Daily rituals" className="space-y-2">
     <div className="flex justify-end"><RitualWeeklyHistory date={date} /></div>
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div className="rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl"><div className="flex min-h-[80px] items-center gap-3">
+    <div className={cn("grid gap-3", !only && "sm:grid-cols-2")}>
+      {only !== "evening" && <div className="rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl"><div className="flex min-h-[80px] items-center gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-care-anchor-soft text-care-anchor">
           {morningDone ? <Check className="h-5 w-5" aria-hidden /> : <Sunrise className="h-5 w-5" aria-hidden />}
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-display text-base font-semibold">Morning Reset</p>
-          <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {morningDone ? "Completed today · revisit anytime" : morningStarted ? "Your reset is waiting where you left it." : "Arrive, choose your focus, and shape the day."}
           </p>
           <RitualWeather slot="morning" />
@@ -121,15 +123,15 @@ export function DailyRituals({ date, onEveningReflection }: {
       </div>
        <RitualStepsEditor kind="morning" iso={iso} onComplete={completeMorning} />
        <RitualSkyPrompt kind="morning" iso={iso} />
-      </div>
+      </div>}
 
-      <div className="rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl"><div className="flex min-h-[80px] items-center gap-3">
+      {only !== "morning" && <div className="rounded-2xl border border-border/50 bg-card/60 p-4 shadow-soft backdrop-blur-xl"><div className="flex min-h-[80px] items-center gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-care-exhale-soft text-care-exhale">
           {eveningDone ? <Check className="h-5 w-5" aria-hidden /> : <Moon className="h-5 w-5" aria-hidden />}
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-display text-base font-semibold">Evening Reflection</p>
-          <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {eveningDone ? "Completed today · your reflection is saved" : unfinished ? `${unfinished} unfinished ${unfinished === 1 ? "task" : "tasks"} to review gently.` : "Reflect, release, and give tomorrow a soft start."}
           </p>
           <RitualWeather slot="evening" />
@@ -141,7 +143,7 @@ export function DailyRituals({ date, onEveningReflection }: {
       </div>
        <RitualStepsEditor kind="evening" iso={iso} onComplete={completeEvening} />
        <RitualSkyPrompt kind="evening" iso={iso} />
-      </div>
+      </div>}
     </div>
     </section>
   );
