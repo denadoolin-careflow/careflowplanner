@@ -337,7 +337,7 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
             />
           </>
         ) : view === "flow" ? (
-          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-[280px_minmax(0,1fr)_300px] lg:gap-6">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)_minmax(240px,300px)] lg:gap-6">
             <div className="min-w-0 space-y-4 lg:space-y-6">
               <ArriveBand date={day} />
               <section aria-label="Focus" className={cn(flowCard, "space-y-3")}>

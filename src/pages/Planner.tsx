@@ -1,3 +1,4 @@
+import { useTodayView } from "@/lib/today-view";
 import { TodayDayEmbed } from "@/pages/Today";
 import { RhythmHub } from "@/components/planner/rhythm/RhythmHub";
 import { FocusGoalCard } from "@/components/goals/FocusGoalCard";
@@ -260,14 +261,17 @@ export default function Planner() {
   }, [day, view, setView, setPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the main grid readable: drop side columns when the shell gets narrow.
-  const roomForContext = shellWidth >= 1180;
+  const [todayLayout] = useTodayView();
+  // Day Flow brings its own three columns, so the Planner side panels step aside.
+  const dayFlow = view === "day" && todayLayout === "flow";
+  const roomForContext = shellWidth >= 1180 && !dayFlow;
   const roomForFocus = shellWidth >= 1400;
   const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
-  const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
-  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
-  const showTaskRail = !isMobile && !panel.task && shellWidth >= 900 && view !== "year";
+  const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus && !dayFlow;
+  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900 && !dayFlow;
+  const showTaskRail = !isMobile && (!panel.task || dayFlow) && shellWidth >= 900 && view !== "year";
   const [arrangeOpen, setArrangeOpen] = useState(false);
-  const showNotesPanel = !isMobile && panel.notes && (view === "day" || view === "3day") && shellWidth >= 900;
+  const showNotesPanel = !isMobile && panel.notes && (view === "day" || view === "3day") && shellWidth >= 900 && !dayFlow;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const activeWeekMode = isMobile ? mobileWeekMode : weekMode;
   // List / Table can stand in for the native day, 3-day, month, or year view.
