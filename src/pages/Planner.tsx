@@ -269,7 +269,7 @@ export default function Planner() {
   const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
   const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus && !dayFlow;
   const showTaskPanel = !isMobile && panel.task && shellWidth >= 900 && !dayFlow;
-  const showTaskRail = !isMobile && (!panel.task || dayFlow) && shellWidth >= 900 && view !== "year";
+  const showTaskRail = !isMobile && !panel.task && shellWidth >= 900 && view !== "year" && !dayFlow;
   const [arrangeOpen, setArrangeOpen] = useState(false);
   const showNotesPanel = !isMobile && panel.notes && (view === "day" || view === "3day") && shellWidth >= 900 && !dayFlow;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
