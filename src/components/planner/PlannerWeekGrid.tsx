@@ -28,6 +28,9 @@ import { UtensilsCrossed, HeartHandshake } from "lucide-react";
 import { useWeatherSnapshot, cToF } from "@/lib/weather-store";
 import { byHour } from "@/lib/planner/hour-weather";
 import { ConditionIcon } from "@/components/weather/ConditionIcon";
+import { PHASE_HOURS } from "./schedule/schedule-time";
+import { PHASE_ICONS } from "@/lib/phase-icons";
+import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 
 const MEALS_ROW_KEY = "careflow:planner:week-meals-visible";
 
@@ -354,6 +357,18 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
               </span>
             )}
           </div>
+          {/* Plan / Grow / Care / Let go bands behind the hour grid */}
+          {(Object.entries(PHASE_HOURS) as [RhythmPhase, [number, number]][]).map(([p, [sh, eh]]) => {
+            const s0 = Math.max(sh, PLANNER_START_H), e0 = Math.min(eh, PLANNER_END_H);
+            if (e0 <= s0) return null;
+            const Icon = PHASE_ICONS[p];
+            return (
+              <div key={p} aria-hidden className="pointer-events-none absolute right-0 z-0"
+                style={{ left: GUTTER_W, top: (s0 - PLANNER_START_H) * HOUR_PX, height: (e0 - s0) * HOUR_PX, background: `hsl(var(--rhythm-${p}-tint) / 0.35)` }}>
+                <Icon className="absolute left-1 top-1 h-3.5 w-3.5 opacity-70" style={{ color: `hsl(var(--rhythm-${p}-deep))` }} />
+              </div>
+            );
+          })}
           {cols.map((d, i) => (
             <GridDayColumn
               key={format(d, "yyyy-MM-dd")}
