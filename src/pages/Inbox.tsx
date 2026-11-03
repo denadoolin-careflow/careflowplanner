@@ -237,6 +237,8 @@ function InboxInner() {
   const [plannerDate, setPlannerDate] = useState<Date>(() => startOfDay(new Date()));
   const [planDayOpen, setPlanDayOpen] = useState(false);
   const scheduleOpen = viewMode === "schedule";
+  const [heldView, setHeldViewState] = useState<"age" | "status">(() => (localStorage.getItem("careflow:inbox:held-view") as any) === "status" ? "status" : "age");
+  const setHeldView = (v: "age" | "status") => { setHeldViewState(v); localStorage.setItem("careflow:inbox:held-view", v); };
   const [captureOptionsOpen, setCaptureOptionsOpen] = useState(false);
   const [focusFilter, setFocusFilter] = useState<"all" | "quick" | "date" | "category" | "recent">("all");
 
@@ -1504,7 +1506,7 @@ function InboxInner() {
               Today &amp; upcoming
               <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
             </summary>
-            <div className="mt-3"><InboxOverview /></div>
+            <div className="mt-3"><TodayUpcomingColumns /></div>
           </details>
         )}
 
