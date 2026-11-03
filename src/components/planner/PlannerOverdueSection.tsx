@@ -193,7 +193,7 @@ function OverdueRow({ task, children }: { task: Task; children: React.ReactNode 
       }}
       onPointerDown={pointer.onPointerDown}
       title="Drag onto the grid to reschedule"
-      className="group touch-none rounded-xl border border-border/50 bg-card/70 px-2.5 py-2 cursor-grab active:cursor-grabbing"
+      className="group touch-none rounded-xl border border-border/40 bg-card px-2.5 py-2 shadow-sm cursor-grab active:cursor-grabbing"
     >
       {children}
     </div>

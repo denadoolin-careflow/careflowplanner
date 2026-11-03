@@ -66,7 +66,7 @@ export function PlannerDaySummaryStrip({ date, items, className }: {
   }, [date, periods, settings]);
 
   return (
-    <div className={cn("space-y-1 rounded-lg border border-border/40 bg-background/40 px-2 py-1.5", className)}>
+    <div className={cn("space-y-1 rounded-xl border border-border/40 bg-card px-2 py-1.5 shadow-sm", className)}>
       <div className="flex items-baseline justify-between gap-1.5">
         <span className="text-[10.5px] text-muted-foreground">
           <span className="font-medium text-foreground tabular-nums">{done}</span>/<span className="tabular-nums">{total}</span> done
