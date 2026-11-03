@@ -155,7 +155,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(${minCol}px, 1fr))`;
   return (
     <div className={cn(
-      "flex min-h-0 flex-col rounded-lg border border-border/60 bg-card/40",
+      "planner-card flex min-h-0 flex-col border border-border/40",
       expandHeight ? "h-auto overflow-visible" : "h-full overflow-hidden",
       fullScreen && "fixed inset-0 z-50 h-[100dvh] rounded-none bg-background",
     )}>

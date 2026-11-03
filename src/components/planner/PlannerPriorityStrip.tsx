@@ -124,7 +124,7 @@ export function PlannerPriorityStrip({
       {...zone.nativeProps}
       {...zone.dataProps}
       className={cn(
-        "rounded-lg border border-primary/20 bg-primary/5 p-2.5",
+        "planner-card border border-primary/20 p-2.5",
         zone.className,
         zone.isOver && "ring-2 ring-primary/40",
         className,
@@ -152,7 +152,7 @@ export function PlannerPriorityStrip({
             <li
               key={r.row.id}
               className={cn(
-                 "group flex min-w-0 items-start gap-2 rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition hover:border-primary/30 hover:bg-card",
+                 "group flex min-w-0 items-start gap-2 rounded-xl border border-border/40 bg-card px-2 py-1.5 shadow-sm transition hover:border-primary/30 hover:shadow",
                 r.done && "opacity-60",
               )}
             >

@@ -1089,7 +1089,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
     <div
       onKeyDown={onRootKeyDown}
       className={cn("flex h-full min-h-0 flex-col overflow-hidden",
-      !bare && "rounded-2xl border border-border/60 bg-card/40")}>
+      !bare && "planner-card border border-border/40")}>
       <span aria-live="polite" className="sr-only">{announcement}</span>
       {!compact && (
         <div className={cn(
@@ -1444,7 +1444,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                     else openTaskEditor(it.id);
                   }}
                   className={cn(
-                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11.5px] shadow-sm outline-none transition-shadow hover:z-40 hover:overflow-visible hover:shadow-md focus-visible:z-40 focus-visible:overflow-visible focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "group absolute select-none overflow-hidden rounded-xl border px-1.5 py-1 text-[11.5px] shadow-sm outline-none transition-shadow hover:z-40 hover:overflow-visible hover:shadow-md focus-visible:z-40 focus-visible:overflow-visible focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-55 saturate-50 shadow-none",

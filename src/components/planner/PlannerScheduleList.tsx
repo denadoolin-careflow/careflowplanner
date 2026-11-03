@@ -105,7 +105,7 @@ export function PlannerScheduleList({ date }: { date: Date }) {
   );
 
   return (
-    <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+    <div className="planner-card flex h-full min-h-[320px] flex-col overflow-hidden border border-border/40">
       <div className="sticky top-0 z-10 space-y-2 border-b border-border/60 bg-card/95 px-4 py-2.5 backdrop-blur">
         <div className="flex items-baseline gap-2">
           <span className={cn("font-display text-lg leading-none", isToday && "text-primary")}>{dayLabel(date)}</span>

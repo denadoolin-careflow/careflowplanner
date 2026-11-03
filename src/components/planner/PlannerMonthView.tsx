@@ -143,7 +143,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
   if (isMobile && mobileView === "calendar") return (
     <div className="space-y-3">
       {mobileToolbar}
-      <section aria-label={`${format(date, "MMMM")} at a glance`} className="rounded-2xl border border-border/60 bg-card p-2">
+      <section aria-label={`${format(date, "MMMM")} at a glance`} className="planner-card border border-border/40 p-2">
         <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-muted-foreground">{["M", "T", "W", "T", "F", "S", "S"].map((l, i) => <span key={i}>{l}</span>)}</div>
         <div className="mt-1 grid grid-cols-7 gap-0.5 text-center text-xs">
           {days.map(day => {
@@ -199,7 +199,7 @@ export function PlannerMonthView({ date, selectedDate, onSelectDay, onChangeSele
         {mobileToolbar}
         <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
           {weeks.map(week => (
-            <section key={week[0].toISOString()} className="w-[78vw] max-w-[300px] shrink-0 snap-start rounded-2xl border border-border/60 bg-card/70 p-2 sm:w-64">
+            <section key={week[0].toISOString()} className="planner-card w-[78vw] max-w-[300px] shrink-0 snap-start border border-border/40 p-2 sm:w-64">
               <h4 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{format(week[0], "MMM d")} – {format(week[6], "MMM d")}</h4>
               <div className="space-y-1.5">
                 {week.map(day => { const key = format(day, "yyyy-MM-dd"); const rows = dayRows(day);

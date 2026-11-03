@@ -13,6 +13,7 @@ import { format, parseISO } from "date-fns";
 import { CosmicTaskChip } from "./CosmicTaskChip";
 import { ActivityChip } from "./ActivityChip";
 import { usePlannerCompletedStrikethrough } from "@/lib/planner-prefs";
+import { phaseOfTodayTask } from "@/lib/today-phase-items";
 import { SwipeableTaskCard } from "./mobile/SwipeableTaskCard";
 import { LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
 
@@ -34,6 +35,7 @@ export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; 
   const [completedStrikethrough] = usePlannerCompletedStrikethrough();
   const ic = useMemo(() => resolveTaskIcon(task), [task]);
   const tint = AREA_TINTS[task.area] ?? "bg-muted-foreground/40";
+  const phase = phaseOfTodayTask(task);
 
   const onDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData(TASK_DRAG_MIME, task.id);
@@ -68,12 +70,13 @@ export function PlannerTaskRow({ task, compact, allDay = false }: { task: Task; 
       aria-expanded={compact || allDay ? expanded : undefined}
       style={{ minHeight: ROW_PX }}
       className={cn(
-        "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[length:var(--task-font,13px)] transition-colors hover:border-primary/40 hover:bg-card",
+        "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-xl border border-border/40 bg-card px-2 py-1.5 text-[length:var(--task-font,13px)] shadow-sm transition-shadow hover:border-primary/40 hover:shadow",
         !allDay && "max-sm:flex-col max-sm:gap-1",
         allDay && "min-h-0 items-center px-1.5 py-1 text-[10px] shadow-sm",
         task.done && "opacity-60",
       )}
     >
+      <span aria-hidden className="w-1 shrink-0 self-stretch rounded-full" style={{ background: `hsl(var(--rhythm-${phase}) / 0.55)` }} />
       <div className="flex min-w-0 flex-1 items-start gap-2">
         <GripVertical className={cn("mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/50 opacity-0 group-hover:opacity-100", allDay && "hidden")} aria-hidden />
         <button

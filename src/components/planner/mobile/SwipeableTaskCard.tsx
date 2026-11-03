@@ -71,9 +71,9 @@ export function SwipeableTaskCard({ task, children }: { task: Task; children: Re
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg">
+    <div className="relative overflow-hidden rounded-xl">
       <div aria-hidden={!open && dx >= 0} className="absolute inset-0 flex items-stretch justify-between">
-        <div className={cn("flex items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity", dx > 8 ? "opacity-100" : "opacity-0")} style={{ width: Math.max(dx, 0) }}>
+        <div className={cn("flex items-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity", dx > 8 ? "opacity-100" : "opacity-0")} style={{ width: Math.max(dx, 0) }}>
           <Check className="h-4 w-4 shrink-0" />{dx > 70 && (task.done ? "Reopen" : "Done")}
         </div>
         <div className={cn("ml-auto flex transition-opacity", dx < -8 ? "opacity-100" : "opacity-0 pointer-events-none")} style={{ width: ACTIONS_W }}>
@@ -91,7 +91,7 @@ export function SwipeableTaskCard({ task, children }: { task: Task; children: Re
               <Calendar mode="single" onSelect={(d) => d && void reschedule(d)} className="p-2 pointer-events-auto" />
             </PopoverContent>
           </Popover>
-          <button type="button" onClick={() => void remove()} className="flex flex-1 flex-col items-center justify-center gap-0.5 rounded-r-lg bg-destructive text-[10.5px] text-destructive-foreground">
+          <button type="button" onClick={() => void remove()} className="flex flex-1 flex-col items-center justify-center gap-0.5 rounded-r-xl bg-destructive text-[10.5px] text-destructive-foreground">
             <Trash2 className="h-4 w-4" />Delete
           </button>
         </div>

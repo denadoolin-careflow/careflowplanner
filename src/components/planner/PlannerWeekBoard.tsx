@@ -52,7 +52,7 @@ function BoardCard({ item, onOpen, onToggle }: {
       onClick={() => onOpen(item)}
       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onOpen(item); } }}
       className={cn(
-        "group flex min-h-11 cursor-pointer items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2.5 py-2 text-left text-[11px] leading-snug shadow-sm transition-all hover:bg-muted/50 hover:shadow-md",
+        "group flex min-h-11 cursor-pointer items-start gap-2 rounded-xl border border-border/40 bg-card px-2.5 py-2 text-left text-[11px] leading-snug shadow-sm transition-all hover:shadow-md",
         item.done && "opacity-50",
         drag.className,
       )}
@@ -138,7 +138,7 @@ function PartColumn({ day, iso, part, label, hours, slot, items, onOpen, onToggl
       {...zone.nativeProps}
       {...zone.dataProps}
       aria-label={`${label} on ${format(day, "EEEE")}`}
-      className={cn("flex min-h-[112px] flex-col rounded-lg border border-border/50 bg-card/40 p-2", zone.className)}
+      className={cn("flex min-h-[112px] flex-col rounded-2xl border border-border/40 bg-card p-2 shadow-sm", zone.className)}
     >
       <div className="flex items-baseline justify-between gap-1">
         <div className="min-w-0">
@@ -255,7 +255,7 @@ function DayRow({ day, iso, isToday, rows, groups, labels, onSelectDay, onOpen, 
 }) {
   const dayZone = useDropZone({ dateISO: iso }, { id: `weekboard-day:${iso}` });
   return (
-     <article className={cn("rounded-lg border border-border/60 bg-card/30 p-2", isToday && "border-primary/50 bg-primary/[0.03]")}>
+     <article className={cn("rounded-2xl border border-border/40 bg-card p-2 shadow-sm", isToday && "border-primary/50 bg-primary/[0.03]")}>
       <div
         ref={dayZone.ref}
         {...dayZone.nativeProps}
