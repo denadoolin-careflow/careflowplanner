@@ -681,7 +681,7 @@ function BlockPill({ it, p }: { it: Item; p: RhythmPhase }) {
 }
 
 function BlockPillsDay() {
-  const { items, toggle, nowPhase } = useSched();
+  const { day: items, toggle, nowPhase } = useSched();
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {PHASE_ORDER.map(p => {
