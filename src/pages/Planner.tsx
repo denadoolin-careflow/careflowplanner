@@ -433,6 +433,7 @@ export default function Planner() {
              <AutoScheduleSettings size="md" />
            </div>
         </div>
+        <PlannerScopeBar view={view} onView={setView} face={face} onFace={onFace} />
         {view !== "rhythm" && view !== "day" && <MobileWeekAgendaStrip day={day} onSelect={go} rich={view === "month" || view === "week"} />}
         </div>
       ) : (
@@ -454,36 +455,52 @@ export default function Planner() {
             </div>
           </div>
 
+          <PlannerScopeBar
+            className="shrink-0"
+            view={view}
+            onView={setView}
+            face={face}
+            onFace={onFace}
+            more={
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-10 rounded-full px-3 text-[13px]">More layouts</Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-auto max-w-[min(92vw,640px)] space-y-2 p-3">
+                  {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={(p) => { setPeriod(p); setDayFace("schedule"); }} />}
+                  {view === "week" && (
+                    <PlannerRangeModeTabs
+                      value={weekMode} onChange={setWeekMode}
+                      options={[
+                        { id: "grid", label: "Schedule" },
+                        { id: "board", label: "Board" },
+                        { id: "overview", label: "Overview" },
+                        { id: "list", label: "List" },
+                        { id: "table", label: "Table" },
+                      ]}
+                    />
+                  )}
+                  {view === "month" && rangeLayout === "default" && (
+                    <PlannerRangeModeTabs
+                      value={monthMode} onChange={setMonthMode}
+                      options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
+                    />
+                  )}
+                  {view !== "week" && (
+                    <PlannerRangeModeTabs
+                      value={rangeLayout} onChange={(l) => { setRangeLayout(l); if (view === "day") setDayFace("schedule"); }}
+                      options={[
+                        { id: "default", label: view === "month" ? "Month" : view === "year" ? "Year" : view === "3day" ? "3 Day" : "Day" },
+                        { id: "list", label: "List" },
+                        { id: "table", label: "Table" },
+                      ]}
+                    />
+                  )}
+                </PopoverContent>
+              </Popover>
+            }
+          />
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} />}
-            {view === "week" && (
-              <PlannerRangeModeTabs
-                value={weekMode} onChange={setWeekMode}
-                options={[
-                  { id: "grid", label: "Schedule" },
-                  { id: "board", label: "Board" },
-                  { id: "overview", label: "Overview" },
-                  { id: "list", label: "List" },
-                  { id: "table", label: "Table" },
-                ]}
-              />
-            )}
-            {view === "month" && rangeLayout === "default" && (
-              <PlannerRangeModeTabs
-                value={monthMode} onChange={setMonthMode}
-                options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
-              />
-            )}
-            {view !== "week" && (
-              <PlannerRangeModeTabs
-                value={rangeLayout} onChange={setRangeLayout}
-                options={[
-                  { id: "default", label: view === "month" ? "Month" : view === "year" ? "Year" : view === "3day" ? "3 Day" : "Day" },
-                  { id: "list", label: "List" },
-                  { id: "table", label: "Table" },
-                ]}
-              />
-            )}
             {view !== "month" && <PlannerKindFilter className="ml-auto" />}
             {view !== "day" && <ScheduleSheetButton initialDate={day} />}
             <DropdownMenu>
