@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import { Check, Clock } from "lucide-react";
-import { PhaseIcon } from "@/lib/phase-icons";
+import { PHASE_ICONS } from "@/lib/phase-icons";
 import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 import { PHASE_ORDER, PHASE_WINDOW, phaseForTime } from "@/lib/today-phase-items";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,11 @@ const IconStyleCtx = createContext<IconStyle>("filled");
 const ARC: Record<RhythmPhase, number> = { plan: 0.25, grow: 0.5, care: 0.75, letgo: 1 };
 
 /** Same four icons; only the badge around them changes with the chosen style. */
+function Glyph({ phase, className }: { phase: RhythmPhase; className?: string }) {
+  const I = PHASE_ICONS[phase];
+  return <I aria-hidden className={className} strokeWidth={1.75} />;
+}
+
 function PB({ phase: p, big, now }: { phase: RhythmPhase; big?: boolean; now?: boolean }) {
   const v = useContext(IconStyleCtx);
   const box = big ? "h-9 w-9" : "h-6 w-6";
@@ -42,7 +47,7 @@ function PB({ phase: p, big, now }: { phase: RhythmPhase; big?: boolean; now?: b
     return (
       <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full font-semibold", big ? "h-8 px-2.5 text-sm" : "h-6 px-1.5 text-xs")}
         style={{ background: now ? main(p) : tint(p, 0.9), color: now ? on : deep(p) }}>
-        <PhaseIcon phase={p} className={ic} />{big && PHASE_LABEL[p]}
+        <Glyph phase={p} className={ic} />{big && PHASE_LABEL[p]}
       </span>
     );
   }
@@ -54,7 +59,7 @@ function PB({ phase: p, big, now }: { phase: RhythmPhase; big?: boolean; now?: b
           <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={main(p)} strokeOpacity={0.25} strokeWidth={2} />
           <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={deep(p)} strokeWidth={2} strokeLinecap="round" strokeDasharray={`${c * ARC[p]} ${c}`} />
         </svg>
-        <PhaseIcon phase={p} className={ic} />
+        <Glyph phase={p} className={ic} />
       </span>
     );
   }
@@ -66,7 +71,7 @@ function PB({ phase: p, big, now }: { phase: RhythmPhase; big?: boolean; now?: b
   return (
     <span className={cn("grid shrink-0 place-items-center", box, v === "tile" ? (big ? "rounded-xl" : "rounded-lg") : "rounded-full")}
       style={{ ...style, ...(v !== "ring" ? nowRing : {}) }}>
-      <PhaseIcon phase={p} className={ic} />
+      <Glyph phase={p} className={ic} />
     </span>
   );
 }
