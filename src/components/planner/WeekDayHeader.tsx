@@ -72,7 +72,7 @@ export function WeekDayHeader({ date, mode, onSelect }: {
 
       {compact ? (
         <span className="mt-0.5 flex max-w-full flex-nowrap items-center justify-center gap-1 whitespace-nowrap text-xs leading-none text-muted-foreground">
-          <ScheduleDayMoon date={date} compact />
+          <ScheduleDayMoon date={date} compact stacked />
           <span aria-hidden>{theme.signSymbol}</span>
           <span className="truncate">{theme.sign.slice(0, 3)}</span>
           {cycle && <span aria-hidden title={cycle.label}>{cycle.glyph}</span>}
@@ -80,7 +80,7 @@ export function WeekDayHeader({ date, mode, onSelect }: {
       ) : (
         <>
           <span className="mt-0.5 flex flex-col items-center gap-0.5">
-            <ScheduleDayMoon date={date} compact />
+            <ScheduleDayMoon date={date} compact stacked />
             <span className="text-xs leading-tight text-muted-foreground">{theme.illumination}% lit</span>
           </span>
           <span className="text-xs leading-none text-muted-foreground">
