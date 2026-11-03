@@ -604,12 +604,26 @@ function HourRailsDay() {
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {PHASE_ORDER.map(p => {
         const [s, e] = PHASE_HOURS[p];
-        const list = items.filter(it => phaseOf(it) === p);
+        const all = items.filter(it => phaseOf(it) === p);
+        const list = all.filter(it => it.time);
+        const anytime = all.filter(it => !it.time);
+        const H = (e - s) * 60 * PX_PER_MIN;
         const hours = Array.from({ length: e - s + 1 }, (_, i) => s + i);
         return (
           <section key={p} aria-current={p === nowPhase ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
             style={{ background: tint(p, 0.45), outline: p === nowPhase ? `2px solid ${main(p)}` : undefined }}>
-            <PhaseHead p={p} list={list} isNow={p === nowPhase} />
+            <PhaseHead p={p} list={all} isNow={p === nowPhase} />
+            {anytime.length > 0 && (
+              <ul aria-label={`Anytime in ${PHASE_LABEL[p]}`} className="flex flex-col gap-2">
+                {anytime.map(it => (
+                  <li key={it.id} className={cn("flex min-h-11 items-center gap-2.5 rounded-xl bg-card px-3 py-2 shadow-sm", it.done && "opacity-60")}>
+                    <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />
+                    <span className={cn("min-w-0 flex-1 break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-xs" style={{ background: tint(p, 1), color: deep(p) }}>Anytime</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="relative mt-2" style={{ height: (e - s) * 60 * PX_PER_MIN }}>
               {hours.map(h => (
                 <div key={h} className="absolute inset-x-0 flex items-center gap-2" style={{ top: (h - s) * 60 * PX_PER_MIN - 8 }}>
@@ -618,12 +632,12 @@ function HourRailsDay() {
                 </div>
               ))}
               {list.map(it => {
-                const top = (toMin(timeOf(it)) - s * 60) * PX_PER_MIN;
-                const h = Math.max(durOf(it) * PX_PER_MIN, 32);
+                const h = Math.min(Math.max(durOf(it) * PX_PER_MIN, 32), H);
+                const top = Math.min(Math.max((toMin(timeOf(it)) - s * 60) * PX_PER_MIN, 0), H - h);
                 return (
                   <div key={it.id} className={cn("absolute left-14 right-0 flex items-start gap-2 overflow-hidden rounded-xl px-2.5 py-1.5 shadow-sm", it.done && "opacity-60")}
                     style={{ top, height: h - 3, background: isBlock(it) ? main(p) : "hsl(var(--card))", borderLeft: `4px solid ${deep(p)}` }}>
-                    {!isBlock(it) && <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />}
+                    <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />
                     <div className="min-w-0 flex-1" style={isBlock(it) ? { color: "hsl(var(--rhythm-on))" } : undefined}>
                       <p className={cn("break-words text-sm font-medium leading-snug", it.done && "line-through")}>{it.title}</p>
                       {h > 44 && <p className="text-xs opacity-80">{fmt(it.time)} – {fmt(endOf(it))}</p>}
