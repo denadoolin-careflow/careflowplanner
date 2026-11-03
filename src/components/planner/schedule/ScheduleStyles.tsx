@@ -165,6 +165,7 @@ const fmt = (t?: string) => {
 
 /** Shared item card: rounded, soft shadow, phase edge, big tap target. */
 function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: boolean }) {
+  const { toggle } = useSched();
   return (
     <li
       className={cn(
@@ -175,7 +176,8 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
     >
       <span aria-hidden className="w-1 shrink-0 self-stretch rounded-full" style={{ background: main(phase) }} />
       <button
-        aria-label={it.done ? "Mark not done" : "Mark done"}
+        onClick={() => toggle(it.id)}
+        aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
         className={cn(
           "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
           it.done ? "border-transparent" : "border-muted-foreground/40",
@@ -185,7 +187,7 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
         {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
       </button>
       <span className="min-w-0 flex-1">
-        <span className={cn("block truncate text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+        <span className={cn("block break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
         {!dense && it.end && <span className="block text-xs text-muted-foreground">until {fmt(it.end)}</span>}
       </span>
       <span className="shrink-0 font-mono text-xs text-muted-foreground">{fmt(it.time)}</span>
@@ -196,11 +198,12 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
 /* ============ Concept 1 — Phase Timeline ============ */
 
 function PhaseTimelineDay() {
+  const S = useSched();
   const { nowPhase } = useSched();
   return (
     <div className="planner-card overflow-hidden border border-border/40">
       {PHASE_ORDER.map((p, i) => {
-        const items = useSched().day.filter(it => phaseOf(it) === p);
+        const items = S.day.filter(it => phaseOf(it) === p);
         const isNow = p === nowPhase;
         return (
           <section
@@ -232,10 +235,11 @@ function PhaseTimelineDay() {
 }
 
 function PhaseTimelineWeek() {
+  const S = useSched();
   return (
     <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-1 lg:grid lg:grid-cols-7 lg:overflow-visible">
-      {useSched().week.map((d, di) => (
-        <div key={d.day} className={cn("planner-card w-40 shrink-0 border border-border/40 p-2 lg:w-auto", di === useSched().todayIdx && "ring-2 ring-primary")}>
+      {S.week.map((d, di) => (
+        <div key={d.day} className={cn("planner-card w-40 shrink-0 border border-border/40 p-2 lg:w-auto", di === S.todayIdx && "ring-2 ring-primary")}>
           <header className="flex items-baseline justify-between px-1">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{d.day}</span>
             <span className="font-serif text-lg">{d.date}</span>
@@ -267,18 +271,19 @@ function PhaseTimelineWeek() {
 /* ============ Concept 2 — Day Cards ============ */
 
 function DayCardsDay() {
+  const S = useSched();
   return (
     <div className="planner-card border border-border/40 p-4">
       <header className="flex items-baseline justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{format(useSched().date, "EEEE")}</p>
-          <h3 className="font-serif text-2xl">{format(useSched().date, "MMMM d")}</h3>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{format(S.date, "EEEE")}</p>
+          <h3 className="font-serif text-2xl">{format(S.date, "MMMM d")}</h3>
         </div>
-        <span aria-hidden className="text-xl">{moonFor(useSched().date)}</span>
+        <span aria-hidden className="text-xl">{moonFor(S.date)}</span>
       </header>
       <div className="mt-3 space-y-3">
         {PHASE_ORDER.map(p => {
-          const items = useSched().day.filter(it => phaseOf(it) === p);
+          const items = S.day.filter(it => phaseOf(it) === p);
           if (!items.length) return null;
           return (
             <section key={p}>
@@ -299,14 +304,15 @@ function DayCardsDay() {
 }
 
 function DayCardsWeek() {
+  const S = useSched();
   return (
     <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 lg:grid lg:grid-cols-7 lg:overflow-visible">
-      {useSched().week.map((d, di) => (
+      {S.week.map((d, di) => (
         <div
           key={d.day}
           className={cn(
             "planner-card w-[70vw] max-w-64 shrink-0 snap-start border border-border/40 p-3 sm:w-56 lg:w-auto lg:max-w-none",
-            di === useSched().todayIdx && "ring-2 ring-primary",
+            di === S.todayIdx && "ring-2 ring-primary",
           )}
         >
           <header className="flex items-baseline gap-2">
@@ -327,12 +333,13 @@ function DayCardsWeek() {
 /* ============ Concept 3 — Agenda Ribbon ============ */
 
 function RibbonRow({ it, last }: { it: Item; last?: boolean }) {
+  const { toggle } = useSched();
   const p = phaseOf(it);
   return (
     <li className="flex gap-3">
-      <div className="flex w-14 shrink-0 flex-col items-end pt-2.5">
-        <span className="font-mono text-sm font-medium">{fmt(it.time)}</span>
-        {it.end && <span className="font-mono text-xs text-muted-foreground">{fmt(it.end)}</span>}
+      <div className="flex w-[4.75rem] shrink-0 flex-col items-end pt-2.5">
+        <span className="whitespace-nowrap rounded-full px-2 py-0.5 font-serif text-xs" style={{ background: tint(p, 1), color: deep(p) }}>{it.time ? fmt(it.time) : "Anytime"}</span>
+        {it.end && <span className="mt-1 whitespace-nowrap font-serif text-xs" style={{ color: deep(p) }}>{fmt(it.end)}</span>}
       </div>
       <div className="relative flex w-4 shrink-0 flex-col items-center" aria-hidden>
         <span className="z-10 mt-3 h-3 w-3 rounded-full border-2 border-card" style={{ background: main(p) }} />
@@ -346,13 +353,14 @@ function RibbonRow({ it, last }: { it: Item; last?: boolean }) {
           )}
         >
           <button
-            aria-label={it.done ? "Mark not done" : "Mark done"}
+            onClick={() => toggle(it.id)}
+            aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
             className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", it.done ? "border-transparent" : "border-muted-foreground/40")}
             style={it.done ? { background: main(p) } : undefined}
           >
             {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
           </button>
-          <span className={cn("min-w-0 flex-1 truncate text-sm", it.done && "line-through")}>{it.title}</span>
+          <span className={cn("min-w-0 flex-1 break-words text-sm", it.done && "line-through")}>{it.title}</span>
           <span className="shrink-0 rounded-full px-1.5 py-0.5 text-xs" style={{ background: tint(p, 0.5), color: deep(p) }}>
             {KIND_LABEL[it.kind]}
           </span>
@@ -363,7 +371,8 @@ function RibbonRow({ it, last }: { it: Item; last?: boolean }) {
 }
 
 function AgendaRibbonDay() {
-  const sorted = [...useSched().day].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+  const S = useSched();
+  const sorted = [...S.day].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
   let prevPhase: RhythmPhase | null = null;
   return (
     <div className="planner-card border border-border/40 p-4">
@@ -375,7 +384,7 @@ function AgendaRibbonDay() {
           return (
             <div key={it.id}>
               {showDivider && (
-                <div className="flex items-center gap-2 py-1.5 pl-14">
+                <div className="flex items-center gap-2 py-1.5 pl-[5.75rem]">
                   <PB phase={p} />
                   <span className="text-xs font-semibold" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</span>
                   <span className="h-px flex-1" style={{ background: tint(p, 0.8) }} />
@@ -391,11 +400,12 @@ function AgendaRibbonDay() {
 }
 
 function AgendaRibbonWeek() {
+  const S = useSched();
   return (
     <div className="planner-card border border-border/40 p-4">
-      {useSched().week.map((d, di) => (
+      {S.week.map((d, di) => (
         <section key={d.day} className={cn(di > 0 && "mt-4 border-t border-border/30 pt-3")}>
-          <header className="flex items-baseline gap-2 pl-14">
+          <header className="flex items-baseline gap-2 pl-[5.75rem]">
             <h3 className="font-serif text-lg">{d.day} {d.date}</h3>
             <span aria-hidden className="text-sm">{d.moon}</span>
             <span className="ml-auto text-xs text-muted-foreground">{d.items.length} things</span>
@@ -432,8 +442,7 @@ function GridCheckRow({ it, phase, onToggle }: { it: Item; phase: RhythmPhase; o
 }
 
 function PhaseGridDay() {
-  const { nowPhase } = useSched();
-  const { day: items, toggle } = useSched();
+  const { nowPhase, day: items, toggle } = useSched();
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {PHASE_ORDER.map(p => {
@@ -461,9 +470,7 @@ function PhaseGridDay() {
             <ul className="flex flex-col gap-2">
               {list.map(it => <GridCheckRow key={it.id} it={it} phase={p} onToggle={() => toggle(it.id)} />)}
             </ul>
-            <button className="mt-auto min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
-              + Add to {PHASE_LABEL[p]}
-            </button>
+            <AddToPhase p={p} />
           </section>
         );
       })}
@@ -472,6 +479,7 @@ function PhaseGridDay() {
 }
 
 function PhaseGridWeek() {
+  const S = useSched();
   const { todayIdx, openDay } = useSched();
   return (
     <>
@@ -479,7 +487,7 @@ function PhaseGridWeek() {
       <div className="planner-card hidden overflow-hidden p-3 md:block">
         <div className="grid gap-1.5" style={{ gridTemplateColumns: "88px repeat(7, minmax(0,1fr))" }}>
           <div />
-          {useSched().week.map((d, i) => (
+          {S.week.map((d, i) => (
             <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
               <div className="text-xs uppercase tracking-wide">{d.day}</div>
               <div className="font-serif text-lg leading-none">{d.date}</div>
@@ -490,7 +498,7 @@ function PhaseGridWeek() {
               <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: deep(p) }}>
                 <PB phase={p} />{PHASE_LABEL[p]}
               </div>
-              {useSched().week.map((d, i) => {
+              {S.week.map((d, i) => {
                 const list = d.items.filter(it => phaseOf(it) === p);
                 return (
                   <div
@@ -513,7 +521,7 @@ function PhaseGridWeek() {
       </div>
       {/* Phone: one card per day, swipe sideways */}
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
-        {useSched().week.map((d, i) => (
+        {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
             <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
             <div className="grid grid-cols-2 gap-2">
@@ -542,11 +550,12 @@ function PhaseGridWeek() {
 /* ============ Concepts 5 & 6 — time blocks ============ */
 
 const PHASE_HOURS: Record<RhythmPhase, [number, number]> = { plan: [6, 12], grow: [12, 15], care: [15, 18], letgo: [18, 23] };
+const timeOf = (it: Item) => it.time ?? PHASE_DEFAULT_TIME[it.phase];
 const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
-const durOf = (it: Item) => (it.time && it.end ? toMin(it.end) - toMin(it.time) : it.kind === "appt" ? 60 : 30);
-const endOf = (it: Item) => { const e = toMin(it.time!) + durOf(it); return `${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`; };
+const durOf = (it: Item) => (it.time && it.end && toMin(it.end) > toMin(it.time) ? toMin(it.end) - toMin(it.time) : it.kind === "appt" ? 60 : 30);
+const endOf = (it: Item) => { const e = toMin(timeOf(it)) + durOf(it); return `${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`; };
 const fmtDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`);
-const isBlock = (it: Item) => it.kind === "appt" || !!it.end;
+const isBlock = (it: Item) => !!it.time && (it.kind === "appt" || !!it.end);
 
 function PhaseHead({ p, list, isNow }: { p: RhythmPhase; list: Item[]; isNow: boolean }) {
   const [s, e] = PHASE_HOURS[p];
@@ -589,6 +598,8 @@ function CheckDot({ it, p, onToggle }: { it: Item; p: RhythmPhase; onToggle: () 
 const PX_PER_MIN = 1.5;
 function HourRailsDay() {
   const { items, toggle } = useDayItems();
+  const { nowPhase } = useSched();
+  const nd = new Date(); const nowMin = nd.getHours() * 60 + nd.getMinutes();
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {PHASE_ORDER.map(p => {
@@ -596,9 +607,9 @@ function HourRailsDay() {
         const list = items.filter(it => phaseOf(it) === p);
         const hours = Array.from({ length: e - s + 1 }, (_, i) => s + i);
         return (
-          <section key={p} aria-current={p === "care" ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
-            style={{ background: tint(p, 0.45), outline: p === "care" ? `2px solid ${main(p)}` : undefined }}>
-            <PhaseHead p={p} list={list} isNow={p === "care"} />
+          <section key={p} aria-current={p === nowPhase ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
+            style={{ background: tint(p, 0.45), outline: p === nowPhase ? `2px solid ${main(p)}` : undefined }}>
+            <PhaseHead p={p} list={list} isNow={p === nowPhase} />
             <div className="relative mt-2" style={{ height: (e - s) * 60 * PX_PER_MIN }}>
               {hours.map(h => (
                 <div key={h} className="absolute inset-x-0 flex items-center gap-2" style={{ top: (h - s) * 60 * PX_PER_MIN - 8 }}>
@@ -607,7 +618,7 @@ function HourRailsDay() {
                 </div>
               ))}
               {list.map(it => {
-                const top = (toMin(it.time!) - s * 60) * PX_PER_MIN;
+                const top = (toMin(timeOf(it)) - s * 60) * PX_PER_MIN;
                 const h = Math.max(durOf(it) * PX_PER_MIN, 32);
                 return (
                   <div key={it.id} className={cn("absolute left-14 right-0 flex items-start gap-2 overflow-hidden rounded-xl px-2.5 py-1.5 shadow-sm", it.done && "opacity-60")}
@@ -620,16 +631,14 @@ function HourRailsDay() {
                   </div>
                 );
               })}
-              {p === "care" && (
-                <div aria-label="Now 4:20 pm" className="absolute left-12 right-0 z-10 flex items-center" style={{ top: (16 * 60 + 20 - s * 60) * PX_PER_MIN }}>
+              {p === nowPhase && nowMin >= s * 60 && nowMin <= e * 60 && (
+                <div aria-label={`Now ${format(new Date(), "h:mm a")}`} className="pointer-events-none absolute left-12 right-0 z-10 flex items-center" style={{ top: (nowMin - s * 60) * PX_PER_MIN }}>
                   <span className="-ml-1 h-2.5 w-2.5 rounded-full" style={{ background: deep(p) }} />
                   <span className="h-0.5 flex-1" style={{ background: deep(p) }} />
                 </div>
               )}
             </div>
-            <button className="min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
-              + Block time in {PHASE_LABEL[p]}
-            </button>
+            <AddToPhase p={p} label={`+ Block time in ${PHASE_LABEL[p]}`} />
           </section>
         );
       })}
@@ -655,13 +664,13 @@ function BlockPill({ it, p }: { it: Item; p: RhythmPhase }) {
 }
 
 function BlockPillsDay() {
-  const { items, toggle } = useDayItems();
+  const { items, toggle, nowPhase } = useSched();
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {PHASE_ORDER.map(p => {
         const list = items.filter(it => phaseOf(it) === p);
         const blocks = list.filter(isBlock), tasks = list.filter(it => !isBlock(it));
-        const isNow = p === "care";
+        const isNow = p === nowPhase;
         return (
           <section key={p} aria-current={isNow ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
             style={{ background: tint(p, 0.45), outline: isNow ? `2px solid ${main(p)}` : undefined }}>
@@ -683,9 +692,7 @@ function BlockPillsDay() {
                 ))}
               </ul>
             </div>
-            <button className="mt-auto min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
-              + Add to {PHASE_LABEL[p]}
-            </button>
+            <AddToPhase p={p} />
           </section>
         );
       })}
@@ -695,6 +702,7 @@ function BlockPillsDay() {
 
 /** Week variant shared by 5 & 6: days across, phases down; blocks as start–end pills, tasks as checks. */
 function TimeBlocksWeek({ rails }: { rails?: boolean }) {
+  const S = useSched();
   const { todayIdx, openDay } = useSched();
   const cell = (d: WeekDay, p: RhythmPhase) => {
     const list = d.items.filter(it => phaseOf(it) === p);
@@ -705,7 +713,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
           <div aria-hidden className="relative mb-1.5 h-2 rounded-full bg-card/70">
             {list.filter(isBlock).map(it => (
               <span key={it.id} className="absolute inset-y-0 rounded-full" style={{
-                left: `${((toMin(it.time!) - s * 60) / ((e - s) * 60)) * 100}%`,
+                left: `${((toMin(timeOf(it)) - s * 60) / ((e - s) * 60)) * 100}%`,
                 width: `${Math.max((durOf(it) / ((e - s) * 60)) * 100, 6)}%`, background: deep(p) }} />
             ))}
           </div>
@@ -729,7 +737,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
       <div className="planner-card hidden overflow-hidden p-3 md:block">
         <div className="grid gap-1.5" style={{ gridTemplateColumns: "88px repeat(7, minmax(0,1fr))" }}>
           <div />
-          {useSched().week.map((d, i) => (
+          {S.week.map((d, i) => (
             <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
               <div className="text-xs uppercase tracking-wide">{d.day}</div>
               <div className="font-serif text-lg leading-none">{d.date}</div>
@@ -741,7 +749,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
                 <span className="flex items-center gap-1.5"><PB phase={p} />{PHASE_LABEL[p]}</span>
                 <span className="text-xs font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
               </div>
-              {useSched().week.map((d, i) => (
+              {S.week.map((d, i) => (
                 <div key={`${p}-${d.day}`} className="min-h-20 rounded-xl p-1.5"
                   style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}>
                   {cell(d, p)}
@@ -752,7 +760,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
         </div>
       </div>
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
-        {useSched().week.map((d, i) => (
+        {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
             <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
             <div className="flex flex-col gap-2">
