@@ -35,7 +35,7 @@ const PLACE = ["Drag", "Schedule button"] as const;
 const DONE = ["Strike through", "Fade", "Hide"] as const;
 const RAIL = ["Always open", "Collapse to icons", "Slide in"] as const;
 
-function Seg<T extends string>({ label, opts, v, set }: { label: string; opts: readonly T[]; v: T; set: (x: T) => void }) {
+function Seg<T extends string>({ label, opts, v, set }: { label: string; opts: readonly T[]; v: T; set: (x: any) => void }) {
   return (
     <div>
       <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
