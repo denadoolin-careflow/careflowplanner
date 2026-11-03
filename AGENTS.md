@@ -3,7 +3,7 @@
 - Shared brand marks and welcome artwork use CDN asset pointers; browser and install icons are locally resized derivatives of the same mark so all entry points stay consistent.
 - The brand baseline stays active until an atmosphere is saved explicitly; saved and automatic atmosphere selections retain their existing styling.
 
-- Planner density is local; habit/routine done-state syncs.
+- Planner density is local; habit/routine done syncs.
 - Past-day routine step completions read/write routine_completions; today's live done flags stay on routines.items. Habit weeklyTarget and skip dates live in habits.meta; routine skips in routines.meta — no schema change.
 - Daily rituals reuse daily_checkins for Morning Reset and dated journal entries tagged with the evening-reflection template for Evening Reflection completion, avoiding a duplicate ritual store.
 - Ritual step lists (Morning Reset / Evening Reflection) and their per-date check-offs are device-local (localStorage) presentation data; ritual completion itself stays in daily_checkins / journal.
@@ -24,7 +24,8 @@
 - Sidebar Space children use the same explicit links, tag matches, project links, and hidden-item exclusions as the Space hub, so linked navigation stays consistent.
 - Tag appearance editing reuses the shared tag store; unused filtering counts existing sources without deleting content.
 - NAV_SUBPAGES (nav.ts) drives sidebar branches and page tabs.
-- Sidebar hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portal to escape sidebar clipping.
+- Sidebar hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portal (escapes clipping).
+- Day rhythm combines moon, season, cycle and capacity.
 - Project Linked notes merge note_links and notes.project_id matches, labelling each source.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
 - Inbox and Planner share a selected-note schedule pane; the chosen ordinary note is device-local while daily-note following uses the active schedule date.
