@@ -319,7 +319,8 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
           onDefaultRoute={(route) => updateProfile({ default_route: route })}
           onTemplates={() => setGalleryOpen(true)}
         />}
-        <TodayMoonHeader date={day} />
+        {/* Embedded in Planner Day, the month photo + week strip already date the page. */}
+        {!embedded && <TodayMoonHeader date={day} />}
         <DemoTasksBanner />
         {prefs.showQuickAdd && !isMobile && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
         {view !== "board" && <RhythmTodayCard date={day} />}
@@ -340,10 +341,13 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
           <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,280px)_minmax(0,1fr)_minmax(0,320px)] lg:gap-6">
             <div className="min-w-0 space-y-4 lg:space-y-6">
               <ArriveBand date={day} />
-              <section aria-label="Focus" className={cn(flowCard, "space-y-3")}>
-                {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
-                <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
-              </section>
+              {/* Planner Day shows Top 3 once at the top, so the embed only keeps Now/Next. */}
+              {(!embedded || isReallyToday) && (
+                <section aria-label="Focus" className={cn(flowCard, "space-y-3")}>
+                  {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                  {!embedded && <TopThreeStrip date={day} onTaskClick={setEditTaskId} />}
+                </section>
+              )}
               {reminders}
               {!isMobile && <TodayFocusRail date={day} onTaskClick={setEditTaskId} showSources />}
             </div>

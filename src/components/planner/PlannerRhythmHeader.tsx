@@ -5,7 +5,6 @@ import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { timeOfDayGreeting } from "@/lib/greeting";
 import { DayProgressRing } from "./DayProgressRing";
 import { MoonInsightCard } from "./MoonInsightCard";
-import { PlannerViewToggle } from "./PlannerViewToggle";
 import { CaptureMenu } from "./CaptureMenu";
 import { PlannerFocusButton } from "./PlannerFocusButton";
 import type { PlannerView } from "@/lib/planner-prefs";
@@ -56,7 +55,7 @@ export function PlannerRhythmHeader(props: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <PlannerViewToggle value={view} onChange={onView} />
+        {/* Range switching lives in the shared PlannerScopeBar below. */}
         <div className="ml-auto flex items-center gap-1.5">
           <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={onPrev} aria-label="Previous day">
             <ChevronLeft className="h-4 w-4" />
