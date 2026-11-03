@@ -314,7 +314,172 @@ function Combined() {
   );
 }
 
+const FILTERS = ["All", "Quick wins", "Needs a date", "Needs a category"] as const;
+const FILTER_OF: Record<number, string[]> = { 1: ["Needs a date"], 2: ["Needs a category"], 3: ["Quick wins"], 4: ["Needs a date"], 5: ["Quick wins"] };
+
+function FullPage() {
+  const [items, setItems] = useState(SAMPLE);
+  const [sorted, setSorted] = useState<Record<string, Item[]>>({});
+  const [sorting, setSorting] = useState<number | null>(null);
+  const [filter, setFilter] = useState<string>("All");
+  const [menu, setMenu] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
+  const [focus, setFocus] = useState(false);
+  const [done, setDone] = useState(0);
+  const [pane, setPane] = useState<"schedule" | "note">("schedule");
+  const [v, setV] = useState("");
+  const [saveTo, setSaveTo] = useState("Inbox");
+  const put = (it: Item, l: string | null) => {
+    setItems((x) => x.filter((i) => i.id !== it.id));
+    if (l) setSorted((s) => ({ ...s, [l]: [...(s[l] ?? []), it] }));
+    setSorting(null);
+  };
+  const shown = filter === "All" ? items : items.filter((i) => FILTER_OF[i.id]?.includes(filter));
+  const oldest = [...items].reverse()[0];
+  const total = items.length + done;
+  const tiles = (
+    <div className="grid grid-cols-2 gap-2">
+      {BUCKETS.map(({ l, I, p }) => (
+        <div key={l} className={cn(open === l && "col-span-2")}>
+          <button onClick={() => setOpen(open === l ? null : l)} aria-expanded={open === l} className="flex h-14 w-full items-center gap-2 rounded-2xl px-3 text-left text-sm font-semibold shadow-sm" style={{ background: `hsl(var(--rhythm-${p}-tint))`, color: `hsl(var(--rhythm-${p}-deep))` }}>
+            <I className="h-5 w-5" /><span className="flex-1">{l}</span>
+            <span className="rounded-full bg-card px-2 text-xs">{sorted[l]?.length ?? 0}</span>
+          </button>
+          {open === l && (
+            <ul className="mt-1 space-y-1 px-2 text-xs text-muted-foreground">
+              {(sorted[l] ?? []).length ? sorted[l].map((s) => <li key={s.id} className="break-words">• {s.title}</li>) : <li>Nothing here yet</li>}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+  return (
+    <div className="space-y-4">
+      {/* 1 · Slim header */}
+      <div className="relative flex items-end justify-between">
+        <div>
+          <h2 className="font-display text-2xl text-foreground">Inbox</h2>
+          <p className="text-xs text-muted-foreground">{items.length ? `${items.length} ${items.length === 1 ? "thing" : "things"} held gently` : "All clear"}</p>
+        </div>
+        <button aria-label="More tools" aria-expanded={menu} onClick={() => setMenu(!menu)} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted">
+          <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+        </button>
+        {menu && (
+          <div className="planner-card absolute right-0 top-12 z-10 w-56 bg-card p-2">
+            {["Process with AI", "Row style", "Show schedule pane", "Show today's note"].map((t) => (
+              <button key={t} onClick={() => setMenu(false)} className="flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm hover:bg-muted/60">{t}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 2 · One capture box */}
+      <div className="planner-card bg-card p-3">
+        <label htmlFor="fp-cap" className="sr-only">Capture a thought</label>
+        <div className="flex items-center gap-2">
+          <input id="fp-cap" value={v} onChange={(e) => setV(e.target.value)} placeholder="What's on your mind?" className="h-11 min-w-0 flex-1 rounded-xl bg-muted/50 px-3 text-[15px] text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/40" />
+          <button aria-label="Record voice" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground"><Mic className="h-5 w-5" /></button>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2 px-1">
+          <button onClick={() => setSaveTo(saveTo === "Inbox" ? "Today's note" : "Inbox")} className="min-h-9 rounded-full bg-muted px-3 text-xs font-semibold text-foreground">Save to: {saveTo}</button>
+          {v && <span className="text-xs text-muted-foreground">Will save as: <span className="font-semibold text-foreground">Tomorrow 3pm · Home</span></span>}
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-4">
+          {/* 3 · Sort boxes (phone) */}
+          <div className="lg:hidden">{tiles}</div>
+
+          {/* 4 · One filter row */}
+          <div role="radiogroup" aria-label="Filter" className="flex flex-wrap gap-2">
+            {FILTERS.map((f) => (
+              <button key={f} role="radio" aria-checked={filter === f} onClick={() => setFilter(f)} className={cn("min-h-11 rounded-full px-3 text-xs font-semibold", filter === f ? "bg-primary text-primary-foreground" : "bg-card text-foreground shadow-sm")}>{f}</button>
+            ))}
+          </div>
+
+          {/* 6 · Focus card */}
+          {focus && oldest && (
+            <div className="planner-card bg-card p-5">
+              <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground"><span>{done + 1} of {total}</span><Tint phase={oldest.phase} /></div>
+              <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${(done / total) * 100}%` }} /></div>
+              <p className="font-display text-xl leading-snug text-foreground">{oldest.title}</p>
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                {BUCKETS.map(({ l, I, p }) => (
+                  <button key={l} onClick={() => { put(oldest, l); setDone((d) => d + 1); }} className="flex h-14 items-center justify-center gap-2 rounded-2xl text-sm font-semibold" style={{ background: `hsl(var(--rhythm-${p}-tint))`, color: `hsl(var(--rhythm-${p}-deep))` }}><I className="h-4 w-4" />{l}</button>
+                ))}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => setItems((x) => [oldest, ...x.filter((i) => i.id !== oldest.id)])} className="h-11 flex-1 rounded-xl text-sm text-muted-foreground">Skip</button>
+                <button onClick={() => setFocus(false)} className="h-11 flex-1 rounded-xl text-sm text-muted-foreground">Back to list</button>
+              </div>
+            </div>
+          )}
+
+          {/* 5 · The list */}
+          {items.length === 0 ? <Empty /> : !focus && (
+            <>
+              {shown.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">Nothing matches this filter.</p>}
+              {(["today", "earlier"] as const).map((g) => {
+                const list = shown.filter((i) => i.group === g);
+                if (!list.length) return null;
+                return (
+                  <section key={g}>
+                    <h3 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{g === "today" ? "New today" : "Earlier"}</h3>
+                    <ul className="space-y-2">
+                      {list.map((it) => (
+                        <div key={it.id}>
+                          <Row it={it} onDone={() => put(it, null)} onSort={() => setSorting(sorting === it.id ? null : it.id)} />
+                          {sorting === it.id && (
+                            <div className="planner-card mt-2 grid grid-cols-2 gap-2 bg-card p-3">
+                              {BUCKETS.map(({ l, I }) => (
+                                <button key={l} onClick={() => put(it, l)} className="flex h-12 items-center gap-2 rounded-xl bg-muted/60 px-3 text-sm font-semibold text-foreground"><I className="h-4 w-4" />{l}</button>
+                              ))}
+                              <button onClick={() => setSorting(null)} className="col-span-2 flex h-12 items-center gap-2 rounded-xl bg-muted/60 px-3 text-sm font-semibold text-foreground"><FileText className="h-4 w-4" />Add to today's note</button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+              <button onClick={() => setFocus(true)} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground"><Sparkles className="h-4 w-4" />Sort one at a time</button>
+            </>
+          )}
+        </div>
+
+        {/* 7 · Desktop side column */}
+        <aside className="hidden space-y-4 lg:block">
+          {tiles}
+          <div className="planner-card bg-card p-3">
+            <div role="radiogroup" aria-label="Side pane" className="mb-3 grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
+              {(["schedule", "note"] as const).map((k) => (
+                <button key={k} role="radio" aria-checked={pane === k} onClick={() => setPane(k)} className={cn("min-h-11 rounded-full text-xs font-semibold", pane === k ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>{k === "schedule" ? "Schedule" : "Today's note"}</button>
+              ))}
+            </div>
+            {pane === "schedule" ? (
+              <ul className="space-y-2">
+                {[["9:00", "School drop-off", "plan"], ["13:00", "Pharmacy pickup", "grow"], ["17:30", "Dinner prep", "care"]].map(([t, l, p]) => (
+                  <li key={t} className="flex items-center gap-2 text-sm">
+                    <span className="rounded-full px-2 font-serif text-xs" style={{ background: `hsl(var(--rhythm-${p}-tint))`, color: `hsl(var(--rhythm-${p}-deep))` }}>{t}</span>
+                    <span className="break-words">{l}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">Plan · Morning Set — slow coffee, check the kids' bags…</p>
+            )}
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 const CONCEPTS = [
+  { l: "5 · Full page", C: FullPage },
   { l: "4 · Combined", C: Combined },
   { l: "1 · Calm List", C: CalmList },
   { l: "2 · One at a time", C: OneAtATime },
