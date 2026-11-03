@@ -222,7 +222,100 @@ function Buckets() {
   );
 }
 
+function Combined() {
+  const [items, setItems] = useState(SAMPLE);
+  const [sorted, setSorted] = useState<Record<string, Item[]>>({});
+  const [sorting, setSorting] = useState<number | null>(null);
+  const [focus, setFocus] = useState(false);
+  const [done, setDone] = useState(0);
+  const [open, setOpen] = useState<string | null>(null);
+  const put = (it: Item, l: string | null) => {
+    setItems((x) => x.filter((i) => i.id !== it.id));
+    if (l) setSorted((s) => ({ ...s, [l]: [...(s[l] ?? []), it] }));
+    setSorting(null);
+  };
+  const oldest = [...items].reverse()[0];
+  const total = items.length + done;
+  const focusPick = (l: string | null) => { if (!oldest) return; put(oldest, l); setDone((d) => d + 1); };
+  const skip = () => { if (!oldest) return; setItems((x) => [oldest, ...x.filter((i) => i.id !== oldest.id)]); };
+  const tiles = (
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:content-start">
+      {BUCKETS.map(({ l, I, p }) => (
+        <div key={l}>
+          <button onClick={() => setOpen(open === l ? null : l)} aria-expanded={open === l} className="flex h-14 w-full items-center gap-2 rounded-2xl px-3 text-left text-sm font-semibold shadow-sm" style={{ background: `hsl(var(--rhythm-${p}-tint))`, color: `hsl(var(--rhythm-${p}-deep))` }}>
+            <I className="h-5 w-5" /><span className="flex-1">{l}</span>
+            <span className="rounded-full bg-card px-2 text-xs">{sorted[l]?.length ?? 0}</span>
+          </button>
+          {open === l && (
+            <ul className="mt-1 space-y-1 px-1 text-xs text-muted-foreground">
+              {(sorted[l] ?? []).length ? sorted[l].map((s) => <li key={s.id} className="break-words">• {s.title}</li>) : <li>Nothing here yet</li>}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+  return (
+    <div className="space-y-4">
+      <Header count={items.length} />
+      <div className="lg:hidden">{tiles}</div>
+      <Capture />
+      <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
+        <div className="space-y-4">
+          {items.length > 0 && !focus && (
+            <button onClick={() => setFocus(true)} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground"><Sparkles className="h-4 w-4" />Sort one at a time</button>
+          )}
+          {focus && oldest && (
+            <div className="planner-card p-5">
+              <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                <span>{done + 1} of {total}</span><Tint phase={oldest.phase} />
+              </div>
+              <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${(done / total) * 100}%` }} /></div>
+              <p className="font-display text-xl leading-snug text-foreground">{oldest.title}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{oldest.hint}</p>
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                {BUCKETS.map(({ l, I }) => (
+                  <button key={l} onClick={() => focusPick(l)} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-muted/70 text-sm font-semibold text-foreground"><I className="h-4 w-4" />{l}</button>
+                ))}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <button onClick={skip} className="h-11 flex-1 rounded-xl text-sm text-muted-foreground">Skip</button>
+                <button onClick={() => setFocus(false)} className="h-11 flex-1 rounded-xl text-sm text-muted-foreground">Back to list</button>
+              </div>
+            </div>
+          )}
+          {items.length === 0 ? <Empty /> : !focus && (["today", "earlier"] as const).map((g) => {
+            const list = items.filter((i) => i.group === g);
+            if (!list.length) return null;
+            return (
+              <section key={g}>
+                <h3 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{g === "today" ? "New today" : "Earlier"}</h3>
+                <ul className="space-y-2">
+                  {list.map((it) => (
+                    <div key={it.id}>
+                      <Row it={it} onDone={() => put(it, null)} onSort={() => setSorting(sorting === it.id ? null : it.id)} />
+                      {sorting === it.id && (
+                        <div className="planner-card mt-2 grid grid-cols-2 gap-2 p-3">
+                          {BUCKETS.map(({ l, I }) => (
+                            <button key={l} onClick={() => put(it, l)} className="flex h-12 items-center gap-2 rounded-xl bg-muted/60 px-3 text-sm font-semibold text-foreground"><I className="h-4 w-4" />{l}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
+        <div className="hidden lg:block">{tiles}</div>
+      </div>
+    </div>
+  );
+}
+
 const CONCEPTS = [
+  { l: "4 · Combined", C: Combined },
   { l: "1 · Calm List", C: CalmList },
   { l: "2 · One at a time", C: OneAtATime },
   { l: "3 · Sort Buckets", C: Buckets },
