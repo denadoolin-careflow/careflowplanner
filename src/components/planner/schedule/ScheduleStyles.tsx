@@ -1,0 +1,775 @@
+import { Fragment, useMemo, useRef, useState } from "react";
+import { addDays, format, isSameDay, startOfWeek } from "date-fns";
+import { toast } from "sonner";
+import { useStore } from "@/lib/store";
+import { Check, Clock } from "lucide-react";
+import { PHASE_ICONS } from "@/lib/phase-icons";
+import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
+import { PHASE_ORDER, PHASE_WINDOW, currentPhase, parseInline, phaseOfAppointment, phaseOfTodayTask, pinPhase, readApptDone, readPhasePins, toggleApptDone } from "@/lib/today-phase-items";
+import { cn } from "@/lib/utils";
+import { createContext, useContext } from "react";
+
+/** Planner schedule styles (Day + Week) over real tasks and appointments, in the soft-tint phase language. */
+
+type Kind = "task" | "appt" | "meal" | "care";
+interface Item { id: string; title: string; time?: string; end?: string; kind: Kind; done?: boolean; phase: RhythmPhase }
+interface WeekDay { day: string; date: string; iso: string; d: Date; moon: string; items: Item[] }
+
+const PHASE_LABEL: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
+const KIND_LABEL: Record<Kind, string> = { task: "Task", appt: "Event", meal: "Meal", care: "Care" };
+
+/* ============ Phase icon styles ============ */
+
+const ICON_STYLES = [
+  { id: "filled", name: "Filled circle" },
+  { id: "tint", name: "Soft tint" },
+  { id: "ring", name: "Outline ring" },
+  { id: "tile", name: "Rounded tile" },
+  { id: "pill", name: "Pill chip" },
+  { id: "arc", name: "Moon arc" },
+] as const;
+type IconStyle = (typeof ICON_STYLES)[number]["id"];
+const IconStyleCtx = createContext<IconStyle>("tint");
+const ARC: Record<RhythmPhase, number> = { plan: 0.25, grow: 0.5, care: 0.75, letgo: 1 };
+
+/** Same four icons; only the badge around them changes with the chosen style. */
+function Glyph({ phase, className }: { phase: RhythmPhase; className?: string }) {
+  const I = PHASE_ICONS[phase];
+  return <I aria-hidden className={className} strokeWidth={1.75} />;
+}
+
+function PB({ phase: p, big, now }: { phase: RhythmPhase; big?: boolean; now?: boolean }) {
+  const v = useContext(IconStyleCtx);
+  const box = big ? "h-9 w-9" : "h-6 w-6";
+  const ic = big ? "h-4 w-4" : "h-3.5 w-3.5";
+  const on = "hsl(var(--rhythm-on))";
+  const nowRing = now ? { boxShadow: `0 0 0 2px hsl(var(--card)), 0 0 0 4px ${main(p)}` } : {};
+  if (v === "pill") {
+    return (
+      <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full font-semibold", big ? "h-8 px-2.5 text-sm" : "h-6 px-1.5 text-xs")}
+        style={{ background: now ? main(p) : tint(p, 0.9), color: now ? on : deep(p) }}>
+        <Glyph phase={p} className={ic} />{big && PHASE_LABEL[p]}
+      </span>
+    );
+  }
+  if (v === "arc") {
+    const r = big ? 16 : 10.5, c = 2 * Math.PI * r, sz = big ? 36 : 24;
+    return (
+      <span className={cn("relative grid shrink-0 place-items-center rounded-full", box)} style={{ background: tint(p, now ? 1 : 0.8), color: deep(p) }}>
+        <svg aria-hidden className="absolute inset-0 -rotate-90" width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`}>
+          <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={main(p)} strokeOpacity={0.25} strokeWidth={2} />
+          <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={deep(p)} strokeWidth={2} strokeLinecap="round" strokeDasharray={`${c * ARC[p]} ${c}`} />
+        </svg>
+        <Glyph phase={p} className={ic} />
+      </span>
+    );
+  }
+  const style =
+    v === "filled" ? { background: main(p), color: on }
+    : v === "tint" ? { background: now ? main(p) : tint(p, 1), color: now ? on : deep(p) }
+    : v === "ring" ? { border: `2px solid ${main(p)}`, background: now ? tint(p, 1) : "transparent", color: deep(p) }
+    : { background: now ? main(p) : tint(p, 1), color: now ? on : deep(p) };
+  return (
+    <span className={cn("grid shrink-0 place-items-center", box, v === "tile" ? (big ? "rounded-xl" : "rounded-lg") : "rounded-full")}
+      style={{ ...style, ...(v !== "ring" ? nowRing : {}) }}>
+      <Glyph phase={p} className={ic} />
+    </span>
+  );
+}
+
+/* ============ Real data ============ */
+
+interface Sched {
+  date: Date; day: Item[]; week: WeekDay[]; todayIdx: number; nowPhase: RhythmPhase | null;
+  toggle: (id: string) => void; openDay: (d: Date) => void; add: (phase: RhythmPhase, text: string, iso: string) => Promise<void>;
+}
+const SchedCtx = createContext<Sched | null>(null);
+const useSched = () => useContext(SchedCtx)!;
+const MOONS = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
+const moonFor = (d: Date) => { const days = (d.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5; const ph = ((days % 29.530588) + 29.530588) % 29.530588; return MOONS[Math.round(ph / 29.530588 * 8) % 8]; };
+const PHASE_DAYPART = { plan: "Morning", grow: "Afternoon", care: "Afternoon", letgo: "Evening" } as const;
+const PHASE_DEFAULT_TIME: Record<RhythmPhase, string> = { plan: "09:00", grow: "13:00", care: "16:00", letgo: "19:00" };
+
+function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
+  const { state, toggleTask, addTask, addAppointment } = useStore();
+  const [pins, setPins] = useState(readPhasePins);
+  const [apptDone, setApptDone] = useState(readApptDone);
+  const itemsFor = (iso: string): Item[] => {
+    const ts: Item[] = state.tasks.filter(t => t.dueDate === iso).map(t => {
+      const p = phaseOfTodayTask(t, pins);
+      return { id: `t:${t.id}`, title: t.title, time: t.startTime ?? undefined, end: t.endTime ?? undefined, kind: "task" as Kind, done: t.done, phase: p };
+    });
+    const as: Item[] = state.appointments.filter(a => a.date === iso).map(a => ({
+      id: `a:${a.id}`, title: a.title, time: a.time ?? undefined, end: a.endTime ?? undefined, kind: "appt" as Kind, done: apptDone.has(`${a.id}@${iso}`) || apptDone.has(a.id), phase: phaseOfAppointment(a, pins),
+    }));
+    return [...ts, ...as].sort((x, y) => (x.time ?? PHASE_DEFAULT_TIME[x.phase]).localeCompare(y.time ?? PHASE_DEFAULT_TIME[y.phase]));
+  };
+  const iso = format(date, "yyyy-MM-dd");
+  const day = useMemo(() => itemsFor(iso), [state.tasks, state.appointments, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
+  const week = useMemo(() => {
+    const ws = startOfWeek(date, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => { const d = addDays(ws, i); const di = format(d, "yyyy-MM-dd");
+      return { day: format(d, "EEE"), date: format(d, "d"), iso: di, d, moon: moonFor(d), items: itemsFor(di) }; });
+  }, [state.tasks, state.appointments, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
+  const now = new Date();
+  const todayIdx = week.findIndex(w => isSameDay(w.d, now));
+  const toggle = (id: string) => {
+    const [k, raw] = [id.slice(0, 1), id.slice(2)];
+    if (k === "t") void toggleTask(raw);
+    else { const a = state.appointments.find(x => x.id === raw); setApptDone(toggleApptDone(raw, a?.date ?? iso)); }
+  };
+  const add = async (phase: RhythmPhase, text: string, dIso: string) => {
+    const parsed = parseInline(text, dIso);
+    let id: string | undefined;
+    if (parsed.kind === "appointment") id = (await addAppointment({ title: parsed.title, date: parsed.date, time: parsed.time }))?.id;
+    else id = await addTask({ title: parsed.title, dueDate: parsed.date, startTime: parsed.time, dayPart: parsed.time ? undefined : PHASE_DAYPART[phase] });
+    if (!id) return;
+    if (!parsed.time) { pinPhase(id, phase); setPins(readPhasePins()); }
+    if (parsed.date !== dIso) toast.success(`Added for ${parsed.date}`);
+  };
+  return { date, day, week, todayIdx, nowPhase: isSameDay(date, now) ? currentPhase(now) : null, toggle, openDay, add };
+}
+
+/** Inline NLP add at the bottom of a phase ("call mom 3pm"). */
+function AddToPhase({ p, label, iso }: { p: RhythmPhase; label?: string; iso?: string }) {
+  const { add, date } = useSched();
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const ref = useRef<HTMLInputElement>(null);
+  const dIso = iso ?? format(date, "yyyy-MM-dd");
+  if (!open) return (
+    <button onClick={() => { setOpen(true); setTimeout(() => ref.current?.focus(), 0); }} className="mt-auto min-h-11 w-full rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
+      {label ?? `+ Add to ${PHASE_LABEL[p]}`}
+    </button>
+  );
+  return (
+    <form className="mt-auto flex gap-2" onSubmit={async e => { e.preventDefault(); if (!text.trim()) return; await add(p, text.trim(), dIso); setText(""); ref.current?.focus(); }}>
+      <label className="sr-only" htmlFor={`add-${p}-${dIso}`}>Add to {PHASE_LABEL[p]}</label>
+      <input id={`add-${p}-${dIso}`} ref={ref} value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Escape" && setOpen(false)}
+        placeholder="Task or event, e.g. call mom 3pm" className="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-card px-3 text-[15px]" />
+      <button type="submit" className="min-h-11 rounded-xl px-3 text-sm font-semibold" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>Add</button>
+    </form>
+  );
+}
+
+const tint = (p: RhythmPhase, a = 0.4) => `hsl(var(--rhythm-${p}-tint) / ${a})`;
+const deep = (p: RhythmPhase) => `hsl(var(--rhythm-${p}-deep))`;
+const main = (p: RhythmPhase) => `hsl(var(--rhythm-${p}))`;
+const phaseOf = (it: Item): RhythmPhase => it.phase;
+const fmt = (t?: string) => {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  const ap = h >= 12 ? "pm" : "am";
+  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, "0")}` : ""} ${ap}`;
+};
+
+/** Shared item card: rounded, soft shadow, phase edge, big tap target. */
+function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: boolean }) {
+  return (
+    <li
+      className={cn(
+        "flex items-center gap-2.5 rounded-xl border border-border/40 bg-card shadow-sm",
+        dense ? "px-2 py-1.5" : "min-h-11 px-3 py-2",
+        it.done && "opacity-60",
+      )}
+    >
+      <span aria-hidden className="w-1 shrink-0 self-stretch rounded-full" style={{ background: main(phase) }} />
+      <button
+        aria-label={it.done ? "Mark not done" : "Mark done"}
+        className={cn(
+          "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+          it.done ? "border-transparent" : "border-muted-foreground/40",
+        )}
+        style={it.done ? { background: main(phase), borderColor: main(phase) } : undefined}
+      >
+        {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
+      </button>
+      <span className="min-w-0 flex-1">
+        <span className={cn("block truncate text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+        {!dense && it.end && <span className="block text-xs text-muted-foreground">until {fmt(it.end)}</span>}
+      </span>
+      <span className="shrink-0 font-mono text-xs text-muted-foreground">{fmt(it.time)}</span>
+    </li>
+  );
+}
+
+/* ============ Concept 1 — Phase Timeline ============ */
+
+function PhaseTimelineDay() {
+  const { nowPhase } = useSched();
+  return (
+    <div className="planner-card overflow-hidden border border-border/40">
+      {PHASE_ORDER.map((p, i) => {
+        const items = useSched().day.filter(it => phaseOf(it) === p);
+        const isNow = p === nowPhase;
+        return (
+          <section
+            key={p}
+            aria-current={isNow ? "true" : undefined}
+            className={cn("px-4 py-3", i > 0 && "border-t border-border/30")}
+            style={{ background: tint(p, isNow ? 0.55 : 0.3) }}
+          >
+            <header className="flex items-center gap-2">
+              <PB phase={p} />
+              <h3 className="font-serif text-base" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</h3>
+              <span className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</span>
+              {isNow && (
+                <span className="ml-auto rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
+                  NOW
+                </span>
+              )}
+            </header>
+            {items.length ? (
+              <ul className="mt-2 space-y-1.5">{items.map(it => <ItemCard key={it.id} it={it} phase={p} />)}</ul>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">Open space — breathe.</p>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function PhaseTimelineWeek() {
+  return (
+    <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-1 lg:grid lg:grid-cols-7 lg:overflow-visible">
+      {useSched().week.map((d, di) => (
+        <div key={d.day} className={cn("planner-card w-40 shrink-0 border border-border/40 p-2 lg:w-auto", di === useSched().todayIdx && "ring-2 ring-primary")}>
+          <header className="flex items-baseline justify-between px-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{d.day}</span>
+            <span className="font-serif text-lg">{d.date}</span>
+            <span aria-hidden className="text-xs">{d.moon}</span>
+          </header>
+          <div className="mt-2 space-y-1">
+            {PHASE_ORDER.map(p => {
+              const items = d.items.filter(it => phaseOf(it) === p);
+              if (!items.length) return null;
+              return (
+                <div key={p} className="rounded-lg px-1.5 py-1" style={{ background: tint(p, 0.35) }}>
+                  <div className="flex items-center gap-1" style={{ color: deep(p) }}>
+                    <PB phase={p} />
+                    <span className="text-xs font-medium">{PHASE_LABEL[p]}</span>
+                  </div>
+                  <ul className="mt-1 space-y-1">
+                    {items.map(it => <ItemCard key={it.id} it={it} phase={p} dense />)}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ============ Concept 2 — Day Cards ============ */
+
+function DayCardsDay() {
+  return (
+    <div className="planner-card border border-border/40 p-4">
+      <header className="flex items-baseline justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{format(useSched().date, "EEEE")}</p>
+          <h3 className="font-serif text-2xl">{format(useSched().date, "MMMM d")}</h3>
+        </div>
+        <span aria-hidden className="text-xl">{moonFor(useSched().date)}</span>
+      </header>
+      <div className="mt-3 space-y-3">
+        {PHASE_ORDER.map(p => {
+          const items = useSched().day.filter(it => phaseOf(it) === p);
+          if (!items.length) return null;
+          return (
+            <section key={p}>
+              <div
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+                style={{ background: tint(p, 0.6), color: deep(p) }}
+              >
+                <PB phase={p} />
+                {PHASE_LABEL[p]} · {PHASE_WINDOW[p]}
+              </div>
+              <ul className="mt-1.5 space-y-1.5">{items.map(it => <ItemCard key={it.id} it={it} phase={p} />)}</ul>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DayCardsWeek() {
+  return (
+    <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 lg:grid lg:grid-cols-7 lg:overflow-visible">
+      {useSched().week.map((d, di) => (
+        <div
+          key={d.day}
+          className={cn(
+            "planner-card w-[70vw] max-w-64 shrink-0 snap-start border border-border/40 p-3 sm:w-56 lg:w-auto lg:max-w-none",
+            di === useSched().todayIdx && "ring-2 ring-primary",
+          )}
+        >
+          <header className="flex items-baseline gap-2">
+            <span className="font-serif text-xl">{d.day}</span>
+            <span className="text-sm text-muted-foreground">{d.date}</span>
+            <span aria-hidden className="ml-auto text-sm">{d.moon}</span>
+          </header>
+          <ul className="mt-2 space-y-1.5">
+            {d.items.map(it => <ItemCard key={it.id} it={it} phase={phaseOf(it)} dense />)}
+          </ul>
+          {d.items.length < 3 && <p className="mt-2 text-xs text-muted-foreground">Room to breathe</p>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ============ Concept 3 — Agenda Ribbon ============ */
+
+function RibbonRow({ it, last }: { it: Item; last?: boolean }) {
+  const p = phaseOf(it);
+  return (
+    <li className="flex gap-3">
+      <div className="flex w-14 shrink-0 flex-col items-end pt-2.5">
+        <span className="font-mono text-sm font-medium">{fmt(it.time)}</span>
+        {it.end && <span className="font-mono text-xs text-muted-foreground">{fmt(it.end)}</span>}
+      </div>
+      <div className="relative flex w-4 shrink-0 flex-col items-center" aria-hidden>
+        <span className="z-10 mt-3 h-3 w-3 rounded-full border-2 border-card" style={{ background: main(p) }} />
+        {!last && <span className="absolute top-3 bottom-0 w-0.5 -translate-x-px" style={{ background: tint(p, 0.9) }} />}
+      </div>
+      <div className={cn("min-w-0 flex-1 pb-2", !last && "border-b border-border/20")}>
+        <div
+          className={cn(
+            "flex items-center gap-2.5 rounded-xl border border-border/40 bg-card px-3 py-2 shadow-sm",
+            it.done && "opacity-60",
+          )}
+        >
+          <button
+            aria-label={it.done ? "Mark not done" : "Mark done"}
+            className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", it.done ? "border-transparent" : "border-muted-foreground/40")}
+            style={it.done ? { background: main(p) } : undefined}
+          >
+            {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
+          </button>
+          <span className={cn("min-w-0 flex-1 truncate text-sm", it.done && "line-through")}>{it.title}</span>
+          <span className="shrink-0 rounded-full px-1.5 py-0.5 text-xs" style={{ background: tint(p, 0.5), color: deep(p) }}>
+            {KIND_LABEL[it.kind]}
+          </span>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function AgendaRibbonDay() {
+  const sorted = [...useSched().day].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+  let prevPhase: RhythmPhase | null = null;
+  return (
+    <div className="planner-card border border-border/40 p-4">
+      <ul>
+        {sorted.map((it, i) => {
+          const p = phaseOf(it);
+          const showDivider = p !== prevPhase;
+          prevPhase = p;
+          return (
+            <div key={it.id}>
+              {showDivider && (
+                <div className="flex items-center gap-2 py-1.5 pl-14">
+                  <PB phase={p} />
+                  <span className="text-xs font-semibold" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</span>
+                  <span className="h-px flex-1" style={{ background: tint(p, 0.8) }} />
+                </div>
+              )}
+              <RibbonRow it={it} last={i === sorted.length - 1} />
+            </div>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function AgendaRibbonWeek() {
+  return (
+    <div className="planner-card border border-border/40 p-4">
+      {useSched().week.map((d, di) => (
+        <section key={d.day} className={cn(di > 0 && "mt-4 border-t border-border/30 pt-3")}>
+          <header className="flex items-baseline gap-2 pl-14">
+            <h3 className="font-serif text-lg">{d.day} {d.date}</h3>
+            <span aria-hidden className="text-sm">{d.moon}</span>
+            <span className="ml-auto text-xs text-muted-foreground">{d.items.length} things</span>
+          </header>
+          <ul className="mt-1">
+            {[...d.items]
+              .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""))
+              .map((it, i) => <RibbonRow key={it.id} it={it} last={i === d.items.length - 1} />)}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/* ============ Concept 4 — Phase Grid ============ */
+
+function GridCheckRow({ it, phase, onToggle }: { it: Item; phase: RhythmPhase; onToggle: () => void }) {
+  return (
+    <li className={cn("flex min-h-11 items-center gap-2.5 rounded-xl bg-card px-3 py-2 shadow-sm", it.done && "opacity-60")}>
+      <span aria-hidden className="w-1 shrink-0 self-stretch rounded-full" style={{ background: main(phase) }} />
+      <button
+        onClick={onToggle}
+        aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
+        className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", !it.done && "border-muted-foreground/40")}
+        style={it.done ? { background: main(phase), borderColor: main(phase) } : undefined}
+      >
+        {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
+      </button>
+      <span className={cn("min-w-0 flex-1 break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+      <span className="shrink-0 font-mono text-xs text-muted-foreground">{fmt(it.time)}</span>
+    </li>
+  );
+}
+
+function PhaseGridDay() {
+  const { nowPhase } = useSched();
+  const { day: items, toggle } = useSched();
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {PHASE_ORDER.map(p => {
+        const list = items.filter(it => phaseOf(it) === p);
+        const done = list.filter(i => i.done).length;
+        const isNow = p === nowPhase;
+        return (
+          <section
+            key={p}
+            aria-current={isNow ? "true" : undefined}
+            className="planner-card flex flex-col gap-3 p-4"
+            style={{ background: tint(p, 0.45), outline: isNow ? `2px solid ${main(p)}` : undefined }}
+          >
+            <header className="flex items-center gap-2.5">
+              <PB phase={p} big now={isNow} />
+              <div className="min-w-0 flex-1">
+                <h3 className="font-serif text-lg leading-tight" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</h3>
+                <p className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</p>
+              </div>
+              {isNow && (
+                <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>NOW</span>
+              )}
+              <span className="text-xs font-medium" style={{ color: deep(p) }}>{done}/{list.length}</span>
+            </header>
+            <ul className="flex flex-col gap-2">
+              {list.map(it => <GridCheckRow key={it.id} it={it} phase={p} onToggle={() => toggle(it.id)} />)}
+            </ul>
+            <button className="mt-auto min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
+              + Add to {PHASE_LABEL[p]}
+            </button>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function PhaseGridWeek() {
+  const { todayIdx, openDay } = useSched();
+  return (
+    <>
+      {/* Desktop/tablet: days across, phases down */}
+      <div className="planner-card hidden overflow-hidden p-3 md:block">
+        <div className="grid gap-1.5" style={{ gridTemplateColumns: "88px repeat(7, minmax(0,1fr))" }}>
+          <div />
+          {useSched().week.map((d, i) => (
+            <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
+              <div className="text-xs uppercase tracking-wide">{d.day}</div>
+              <div className="font-serif text-lg leading-none">{d.date}</div>
+            </div>
+          ))}
+          {PHASE_ORDER.map(p => (
+            <Fragment key={p}>
+              <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: deep(p) }}>
+                <PB phase={p} />{PHASE_LABEL[p]}
+              </div>
+              {useSched().week.map((d, i) => {
+                const list = d.items.filter(it => phaseOf(it) === p);
+                return (
+                  <div
+                    key={`${p}-${d.day}`}
+                    className="min-h-20 rounded-xl p-1.5"
+                    style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}
+                  >
+                    {list.slice(0, 2).map(it => (
+                      <div key={it.id} className={cn("mb-1 rounded-lg bg-card px-1.5 py-1 text-xs leading-snug shadow-sm break-words", it.done && "line-through opacity-60")}>
+                        {it.title}
+                      </div>
+                    ))}
+                    {list.length > 2 && <div className="text-xs font-medium" style={{ color: deep(p) }}>+{list.length - 2} more</div>}
+                  </div>
+                );
+              })}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+      {/* Phone: one card per day, swipe sideways */}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
+        {useSched().week.map((d, i) => (
+          <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
+            <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
+            <div className="grid grid-cols-2 gap-2">
+              {PHASE_ORDER.map(p => {
+                const list = d.items.filter(it => phaseOf(it) === p);
+                return (
+                  <div key={p} className="min-h-24 rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
+                    <div className="mb-1 flex items-center gap-1 text-xs font-semibold" style={{ color: deep(p) }}>
+                      <PB phase={p} />{PHASE_LABEL[p]}
+                    </div>
+                    {list.slice(0, 2).map(it => (
+                      <div key={it.id} className={cn("mb-1 rounded-lg bg-card px-1.5 py-1 text-xs leading-snug shadow-sm break-words", it.done && "line-through opacity-60")}>{it.title}</div>
+                    ))}
+                    {list.length > 2 && <div className="text-xs font-medium" style={{ color: deep(p) }}>+{list.length - 2} more</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ============ Concepts 5 & 6 — time blocks ============ */
+
+const PHASE_HOURS: Record<RhythmPhase, [number, number]> = { plan: [6, 12], grow: [12, 15], care: [15, 18], letgo: [18, 23] };
+const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+const durOf = (it: Item) => (it.time && it.end ? toMin(it.end) - toMin(it.time) : it.kind === "appt" ? 60 : 30);
+const endOf = (it: Item) => { const e = toMin(it.time!) + durOf(it); return `${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`; };
+const fmtDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`);
+const isBlock = (it: Item) => it.kind === "appt" || !!it.end;
+
+function PhaseHead({ p, list, isNow }: { p: RhythmPhase; list: Item[]; isNow: boolean }) {
+  const [s, e] = PHASE_HOURS[p];
+  const booked = list.filter(isBlock).reduce((a, it) => a + durOf(it), 0);
+  const open = (e - s) * 60 - booked;
+  return (
+    <header className="flex flex-wrap items-center gap-2.5">
+      <PB phase={p} big now={isNow} />
+      <div className="min-w-0 flex-1">
+        <h3 className="font-serif text-lg leading-tight" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</h3>
+        <p className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</p>
+      </div>
+      {isNow && <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>NOW</span>}
+      <span className="w-full text-xs font-medium sm:w-auto" style={{ color: deep(p) }}>{fmtDur(booked)} booked · {fmtDur(open)} open</span>
+    </header>
+  );
+}
+
+function useDayItems() {
+  const { day: items, toggle } = useSched();
+  return { items, toggle };
+}
+
+function CheckDot({ it, p, onToggle }: { it: Item; p: RhythmPhase; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
+      className="-m-3 grid shrink-0 place-items-center p-3"
+    >
+      <span className={cn("grid h-5 w-5 place-items-center rounded-full border-2", !it.done && "border-muted-foreground/40")}
+        style={it.done ? { background: main(p), borderColor: main(p) } : undefined}>
+        {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
+      </span>
+    </button>
+  );
+}
+
+/** 5 · Hour Rails — each phase card has an hour rail; items sit at their real time and height. */
+const PX_PER_MIN = 1.5;
+function HourRailsDay() {
+  const { items, toggle } = useDayItems();
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {PHASE_ORDER.map(p => {
+        const [s, e] = PHASE_HOURS[p];
+        const list = items.filter(it => phaseOf(it) === p);
+        const hours = Array.from({ length: e - s + 1 }, (_, i) => s + i);
+        return (
+          <section key={p} aria-current={p === "care" ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
+            style={{ background: tint(p, 0.45), outline: p === "care" ? `2px solid ${main(p)}` : undefined }}>
+            <PhaseHead p={p} list={list} isNow={p === "care"} />
+            <div className="relative mt-2" style={{ height: (e - s) * 60 * PX_PER_MIN }}>
+              {hours.map(h => (
+                <div key={h} className="absolute inset-x-0 flex items-center gap-2" style={{ top: (h - s) * 60 * PX_PER_MIN - 8 }}>
+                  <span className="w-11 shrink-0 text-right font-mono text-xs text-muted-foreground">{fmt(`${String(h).padStart(2, "0")}:00`)}</span>
+                  <span className="h-px flex-1 bg-border/60" />
+                </div>
+              ))}
+              {list.map(it => {
+                const top = (toMin(it.time!) - s * 60) * PX_PER_MIN;
+                const h = Math.max(durOf(it) * PX_PER_MIN, 32);
+                return (
+                  <div key={it.id} className={cn("absolute left-14 right-0 flex items-start gap-2 overflow-hidden rounded-xl px-2.5 py-1.5 shadow-sm", it.done && "opacity-60")}
+                    style={{ top, height: h - 3, background: isBlock(it) ? main(p) : "hsl(var(--card))", borderLeft: `4px solid ${deep(p)}` }}>
+                    {!isBlock(it) && <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />}
+                    <div className="min-w-0 flex-1" style={isBlock(it) ? { color: "hsl(var(--rhythm-on))" } : undefined}>
+                      <p className={cn("break-words text-sm font-medium leading-snug", it.done && "line-through")}>{it.title}</p>
+                      {h > 44 && <p className="text-xs opacity-80">{fmt(it.time)} – {fmt(endOf(it))}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+              {p === "care" && (
+                <div aria-label="Now 4:20 pm" className="absolute left-12 right-0 z-10 flex items-center" style={{ top: (16 * 60 + 20 - s * 60) * PX_PER_MIN }}>
+                  <span className="-ml-1 h-2.5 w-2.5 rounded-full" style={{ background: deep(p) }} />
+                  <span className="h-0.5 flex-1" style={{ background: deep(p) }} />
+                </div>
+              )}
+            </div>
+            <button className="min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
+              + Block time in {PHASE_LABEL[p]}
+            </button>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+/** 6 · Block Pills — fixed time blocks with start/end badges on top, flexible tasks below. */
+function BlockPill({ it, p }: { it: Item; p: RhythmPhase }) {
+  return (
+    <li className="flex items-stretch overflow-hidden rounded-2xl bg-card shadow-sm">
+      <div className="flex w-[4.5rem] shrink-0 flex-col items-center justify-center gap-0.5 py-2" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
+        <span className="text-xs font-semibold">{fmt(it.time)}</span>
+        <span aria-hidden className="h-3 w-px bg-current opacity-60" />
+        <span className="text-xs font-semibold">{fmt(endOf(it))}</span>
+      </div>
+      <div className="min-w-0 flex-1 px-3 py-2">
+        <p className="break-words text-sm font-medium leading-snug">{it.title}</p>
+        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{fmtDur(durOf(it))} · {KIND_LABEL[it.kind]}</p>
+      </div>
+    </li>
+  );
+}
+
+function BlockPillsDay() {
+  const { items, toggle } = useDayItems();
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {PHASE_ORDER.map(p => {
+        const list = items.filter(it => phaseOf(it) === p);
+        const blocks = list.filter(isBlock), tasks = list.filter(it => !isBlock(it));
+        const isNow = p === "care";
+        return (
+          <section key={p} aria-current={isNow ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
+            style={{ background: tint(p, 0.45), outline: isNow ? `2px solid ${main(p)}` : undefined }}>
+            <PhaseHead p={p} list={list} isNow={isNow} />
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: deep(p) }}>Time blocks</p>
+              {blocks.length ? <ul className="flex flex-col gap-2">{blocks.map(it => <BlockPill key={it.id} it={it} p={p} />)}</ul>
+                : <p className="rounded-xl border border-dashed px-3 py-2.5 text-sm" style={{ borderColor: main(p), color: deep(p) }}>Open time — keep it for rest or block something</p>}
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: deep(p) }}>Flexible tasks</p>
+              <ul className="flex flex-col gap-2">
+                {tasks.map(it => (
+                  <li key={it.id} className={cn("flex min-h-11 items-center gap-2.5 rounded-xl bg-card px-3 py-2 shadow-sm", it.done && "opacity-60")}>
+                    <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />
+                    <span className={cn("min-w-0 flex-1 break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-xs" style={{ background: tint(p, 0.9), color: deep(p) }}>~{fmtDur(durOf(it))}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button className="mt-auto min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
+              + Add to {PHASE_LABEL[p]}
+            </button>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Week variant shared by 5 & 6: days across, phases down; blocks as start–end pills, tasks as checks. */
+function TimeBlocksWeek({ rails }: { rails?: boolean }) {
+  const { todayIdx, openDay } = useSched();
+  const cell = (d: WeekDay, p: RhythmPhase) => {
+    const list = d.items.filter(it => phaseOf(it) === p);
+    const [s, e] = PHASE_HOURS[p];
+    return (
+      <>
+        {rails && (
+          <div aria-hidden className="relative mb-1.5 h-2 rounded-full bg-card/70">
+            {list.filter(isBlock).map(it => (
+              <span key={it.id} className="absolute inset-y-0 rounded-full" style={{
+                left: `${((toMin(it.time!) - s * 60) / ((e - s) * 60)) * 100}%`,
+                width: `${Math.max((durOf(it) / ((e - s) * 60)) * 100, 6)}%`, background: deep(p) }} />
+            ))}
+          </div>
+        )}
+        {list.map(it => isBlock(it) ? (
+          <div key={it.id} className="mb-1 rounded-lg px-1.5 py-1 text-xs leading-snug shadow-sm" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
+            <span className="block font-semibold">{fmt(it.time)}–{fmt(endOf(it))}</span>
+            <span className="break-words">{it.title}</span>
+          </div>
+        ) : (
+          <div key={it.id} className={cn("mb-1 flex items-start gap-1 rounded-lg bg-card px-1.5 py-1 text-xs leading-snug shadow-sm", it.done && "line-through opacity-60")}>
+            <span className="mt-0.5 h-3 w-3 shrink-0 rounded-full border" style={{ borderColor: deep(p), background: it.done ? main(p) : undefined }} />
+            <span className="break-words">{it.title}</span>
+          </div>
+        ))}
+      </>
+    );
+  };
+  return (
+    <>
+      <div className="planner-card hidden overflow-hidden p-3 md:block">
+        <div className="grid gap-1.5" style={{ gridTemplateColumns: "88px repeat(7, minmax(0,1fr))" }}>
+          <div />
+          {useSched().week.map((d, i) => (
+            <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
+              <div className="text-xs uppercase tracking-wide">{d.day}</div>
+              <div className="font-serif text-lg leading-none">{d.date}</div>
+            </div>
+          ))}
+          {PHASE_ORDER.map(p => (
+            <Fragment key={p}>
+              <div className="flex flex-col justify-center text-sm font-medium" style={{ color: deep(p) }}>
+                <span className="flex items-center gap-1.5"><PB phase={p} />{PHASE_LABEL[p]}</span>
+                <span className="text-xs font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
+              </div>
+              {useSched().week.map((d, i) => (
+                <div key={`${p}-${d.day}`} className="min-h-20 rounded-xl p-1.5"
+                  style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}>
+                  {cell(d, p)}
+                </div>
+              ))}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
+        {useSched().week.map((d, i) => (
+          <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
+            <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
+            <div className="flex flex-col gap-2">
+              {PHASE_ORDER.map(p => (
+                <div key={p} className="rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
+                  <div className="mb-1 flex items-center gap-1 text-xs font-semibold" style={{ color: deep(p) }}>
+                    <PB phase={p} />{PHASE_LABEL[p]}
+                    <span className="ml-auto font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
+                  </div>
+                  {cell(d, p)}
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+
