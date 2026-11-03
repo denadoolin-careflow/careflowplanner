@@ -71,3 +71,4 @@
 - Planner range/layout switching goes through PlannerScopeBar (Day·Week·Month·Season·Year + Schedule/Cards); legacy layouts live under More layouts so device-local prefs stay valid.
 - Today dashboard card groups use PhaseCardGrid (container-query columns) so cards size to the space they actually have; window breakpoints squeeze them past overlap in the narrow desktop "Your day" column.
 - Planner schedule styles reuse existing items/pins (style device-local); all day moons use ScheduleDayMoon so phases match.
+- Task side rail places tasks via drag (TASK_DRAG_MIME) or a clock popover writing dueDate+startTime; area folds, held-view and collapse state are device-local.
