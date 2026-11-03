@@ -22,7 +22,7 @@ export function PlannerScopeBar({
   const active = view === "3day" ? "day" : view;
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <nav aria-label="Planner range" className="flex min-w-0 flex-1 rounded-full bg-muted/60 p-1">
+      <nav aria-label="Planner range" className="flex min-w-0 basis-full rounded-full bg-muted/60 p-1 sm:basis-auto sm:flex-1">
         {SCOPES.map(([id, label]) => (
           <button
             key={id}
