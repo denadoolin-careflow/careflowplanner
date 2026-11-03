@@ -11,7 +11,7 @@ const PHASES: Phase[] = ["plan", "grow", "care", "letgo"];
 const addDays = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
 const dayName = (d: Date) => d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 
-function Pills<T extends string>({ opts, v, set, label }: { opts: readonly T[]; v: T; set: (x: T) => void; label: string }) {
+function Pills<T extends string>({ opts, v, set, label }: { opts: readonly T[]; v: T; set: (x: any) => void; label: string }) {
   return (
     <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1.5">
       {opts.map((o) => (
