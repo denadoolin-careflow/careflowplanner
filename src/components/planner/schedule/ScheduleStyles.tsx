@@ -377,6 +377,12 @@ function AgendaRibbonDay() {
   let prevPhase: RhythmPhase | null = null;
   return (
     <div className="planner-card border border-border/40 p-4">
+      {!sorted.length && (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Nothing scheduled yet — open space for the day.</p>
+          <AddToPhase p={S.nowPhase ?? "plan"} label="+ Add a task or event" />
+        </div>
+      )}
       <ul>
         {sorted.map((it, i) => {
           const p = phaseOf(it);
