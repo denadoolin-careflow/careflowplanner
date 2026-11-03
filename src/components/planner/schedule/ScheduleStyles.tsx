@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { addDays, format, isSameDay, startOfWeek } from "date-fns";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
@@ -501,9 +501,10 @@ function PhaseGridWeek() {
               {S.week.map((d, i) => {
                 const list = d.items.filter(it => phaseOf(it) === p);
                 return (
-                  <div
+                  <button
+                    type="button" onClick={() => openDay(d.d)} aria-label={`Open ${d.day} ${d.date}, ${PHASE_LABEL[p]}`}
                     key={`${p}-${d.day}`}
-                    className="min-h-20 rounded-xl p-1.5"
+                    className="block min-h-20 rounded-xl p-1.5 text-left"
                     style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}
                   >
                     {list.slice(0, 2).map(it => (
@@ -512,7 +513,7 @@ function PhaseGridWeek() {
                       </div>
                     ))}
                     {list.length > 2 && <div className="text-xs font-medium" style={{ color: deep(p) }}>+{list.length - 2} more</div>}
-                  </div>
+                  </button>
                 );
               })}
             </Fragment>
@@ -523,7 +524,7 @@ function PhaseGridWeek() {
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
         {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
-            <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
+            <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></button>
             <div className="grid grid-cols-2 gap-2">
               {PHASE_ORDER.map(p => {
                 const list = d.items.filter(it => phaseOf(it) === p);
@@ -662,6 +663,7 @@ function HourRailsDay() {
 
 /** 6 · Block Pills — fixed time blocks with start/end badges on top, flexible tasks below. */
 function BlockPill({ it, p }: { it: Item; p: RhythmPhase }) {
+  const { toggle } = useSched();
   return (
     <li className="flex items-stretch overflow-hidden rounded-2xl bg-card shadow-sm">
       <div className="flex w-[4.5rem] shrink-0 flex-col items-center justify-center gap-0.5 py-2" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
@@ -670,9 +672,10 @@ function BlockPill({ it, p }: { it: Item; p: RhythmPhase }) {
         <span className="text-xs font-semibold">{fmt(endOf(it))}</span>
       </div>
       <div className="min-w-0 flex-1 px-3 py-2">
-        <p className="break-words text-sm font-medium leading-snug">{it.title}</p>
+        <p className={cn("break-words text-sm font-medium leading-snug", it.done && "line-through opacity-60")}>{it.title}</p>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{fmtDur(durOf(it))} · {KIND_LABEL[it.kind]}</p>
       </div>
+      <div className="flex items-center pr-3"><CheckDot it={it} p={p} onToggle={() => toggle(it.id)} /></div>
     </li>
   );
 }
@@ -732,7 +735,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
             ))}
           </div>
         )}
-        {list.map(it => isBlock(it) ? (
+        {list.slice(0, 3).map(it => isBlock(it) ? (
           <div key={it.id} className="mb-1 rounded-lg px-1.5 py-1 text-xs leading-snug shadow-sm" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
             <span className="block font-semibold">{fmt(it.time)}–{fmt(endOf(it))}</span>
             <span className="break-words">{it.title}</span>
@@ -743,6 +746,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
             <span className="break-words">{it.title}</span>
           </div>
         ))}
+        {list.length > 3 && <span className="text-xs font-medium" style={{ color: deep(p) }}>+{list.length - 3} more</span>}
       </>
     );
   };
@@ -764,10 +768,11 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
                 <span className="text-xs font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
               </div>
               {S.week.map((d, i) => (
-                <div key={`${p}-${d.day}`} className="min-h-20 rounded-xl p-1.5"
+                <button key={`${p}-${d.day}`} type="button" onClick={() => openDay(d.d)} aria-label={`Open ${d.day} ${d.date}, ${PHASE_LABEL[p]}`}
+                  className="block min-h-20 rounded-xl p-1.5 text-left"
                   style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}>
                   {cell(d, p)}
-                </div>
+                </button>
               ))}
             </Fragment>
           ))}
@@ -776,7 +781,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
         {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
-            <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
+            <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></button>
             <div className="flex flex-col gap-2">
               {PHASE_ORDER.map(p => (
                 <div key={p} className="rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
@@ -795,3 +800,49 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
   );
 }
 
+
+/* ============ Public API ============ */
+
+export const SCHEDULE_STYLES = [
+  { id: "classic", name: "Classic" },
+  { id: "timeline", name: "Phase Timeline" },
+  { id: "cards", name: "Day Cards" },
+  { id: "ribbon", name: "Agenda Ribbon" },
+  { id: "grid", name: "Phase Grid" },
+  { id: "rails", name: "Hour Rails" },
+  { id: "pills", name: "Block Pills" },
+] as const;
+export type ScheduleStyle = (typeof SCHEDULE_STYLES)[number]["id"];
+const STYLE_KEY = "careflow.planner.scheduleStyle";
+export function readScheduleStyle(): ScheduleStyle {
+  try { const v = window.localStorage.getItem(STYLE_KEY); return (SCHEDULE_STYLES.some(x => x.id === v) ? v : "classic") as ScheduleStyle; } catch { return "classic"; }
+}
+export function useScheduleStyle(): [ScheduleStyle, (s: ScheduleStyle) => void] {
+  const [v, setV] = useState<ScheduleStyle>(readScheduleStyle);
+  useEffect(() => {
+    const on = () => setV(readScheduleStyle());
+    window.addEventListener("careflow:schedule-style", on);
+    return () => window.removeEventListener("careflow:schedule-style", on);
+  }, []);
+  return [v, (s) => { try { window.localStorage.setItem(STYLE_KEY, s); } catch { /* ignore */ } setV(s); window.dispatchEvent(new Event("careflow:schedule-style")); }];
+}
+
+/** Renders the chosen schedule style for a day or the week containing `date`. */
+export function PlannerScheduleStyleView({ style, scope, date, onOpenDay }: {
+  style: Exclude<ScheduleStyle, "classic">; scope: "day" | "week"; date: Date; onOpenDay: (d: Date) => void;
+}) {
+  const data = useSchedData(date, onOpenDay);
+  const day = scope === "day";
+  return (
+    <SchedCtx.Provider value={data}>
+      <IconStyleCtx.Provider value="tint">
+        {style === "timeline" && (day ? <PhaseTimelineDay /> : <PhaseTimelineWeek />)}
+        {style === "cards" && (day ? <DayCardsDay /> : <DayCardsWeek />)}
+        {style === "ribbon" && (day ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
+        {style === "grid" && (day ? <PhaseGridDay /> : <PhaseGridWeek />)}
+        {style === "rails" && (day ? <HourRailsDay /> : <TimeBlocksWeek rails />)}
+        {style === "pills" && (day ? <BlockPillsDay /> : <TimeBlocksWeek />)}
+      </IconStyleCtx.Provider>
+    </SchedCtx.Provider>
+  );
+}
