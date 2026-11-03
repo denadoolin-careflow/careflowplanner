@@ -1,3 +1,4 @@
+import { phaseForTime } from "@/lib/today-phase-items";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { cToF, useWeatherSnapshot } from "@/lib/weather-store";
@@ -1444,7 +1445,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                     else openTaskEditor(it.id);
                   }}
                   className={cn(
-                    "group absolute select-none overflow-hidden rounded-xl border px-1.5 py-1 text-[11.5px] shadow-sm outline-none transition-shadow hover:z-40 hover:overflow-visible hover:shadow-md focus-visible:z-40 focus-visible:overflow-visible focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "group absolute select-none overflow-hidden rounded-xl border px-1.5 py-1 text-xs shadow-sm outline-none transition-shadow hover:z-40 hover:overflow-visible hover:shadow-md focus-visible:z-40 focus-visible:overflow-visible focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-55 saturate-50 shadow-none",
@@ -1457,6 +1458,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                     height: heightPx,
                     left: `calc(${leftPct}% + 4px)`,
                     width: `calc(${widthPct}% - 8px)`,
+                    borderLeft: `4px solid hsl(var(--rhythm-${phaseForTime(`${String(Math.floor((it.startMin + START_H * 60) / 60) % 24).padStart(2, "0")}:00`) ?? "plan"}) / 0.75)`,
                   }}
                 >
                   {tiny ? (
@@ -1469,17 +1471,17 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                         />
                       )}
                       {it.task && <PriorityFlag task={it.task} className="h-3 w-3" />}
-                      {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
+                      {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
                       {it.kind === "write" && (it.write?.kind === "journal"
                         ? <NotebookPen className="h-3 w-3 shrink-0" />
                         : <StickyNote className="h-3 w-3 shrink-0" />)}
                       <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && completedStrikethrough && "line-through")}>{it.title}</span>
-                      <span className="shrink-0 font-mono text-[9px] font-semibold opacity-80">{minTo12(it.startMin + START_H * 60)}</span>
+                      <span className="shrink-0 font-mono text-xs font-semibold opacity-80">{minTo12(it.startMin + START_H * 60)}</span>
                       {conflictNode}
                     </div>
                   ) : (
                     <div className={cn("flex h-full min-w-0 flex-col gap-0.5", short && "gap-0")}>
-                       <div className="order-1 flex min-w-0 items-center gap-1 font-mono text-[9px] font-semibold leading-none opacity-80">
+                       <div className="order-1 flex min-w-0 items-center gap-1 font-mono text-xs font-semibold leading-none opacity-80">
                         {it.kind === "task" ? (
                           <DurationEditor
                             durMin={it.durMin}

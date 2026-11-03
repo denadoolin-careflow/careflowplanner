@@ -7,6 +7,7 @@ import { PHASE_ICONS } from "@/lib/phase-icons";
 import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 import { PHASE_ORDER, PHASE_WINDOW, currentPhase, parseInline, phaseOfAppointment, phaseOfTodayTask, pinPhase, readApptDone, readPhasePins, toggleApptDone } from "@/lib/today-phase-items";
 import { cn } from "@/lib/utils";
+import { ScheduleDayMoon } from "./ScheduleDayMoon";
 import { supabase } from "@/integrations/supabase/client";
 import { mealsOnCareDate } from "@/lib/bedside-plan";
 import { doseSlots, useMedications } from "@/lib/medications";
@@ -18,7 +19,7 @@ import { createContext, useContext } from "react";
 
 type Kind = "task" | "appt" | "meal" | "care";
 interface Item { id: string; title: string; time?: string; end?: string; kind: Kind; done?: boolean; phase: RhythmPhase }
-interface WeekDay { day: string; date: string; iso: string; d: Date; moon: string; items: Item[] }
+interface WeekDay { day: string; date: string; iso: string; d: Date; items: Item[] }
 
 const PHASE_LABEL: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
 const KIND_LABEL: Record<Kind, string> = { task: "Task", appt: "Event", meal: "Meal", care: "Dose" };
@@ -90,8 +91,6 @@ interface Sched {
 }
 const SchedCtx = createContext<Sched | null>(null);
 const useSched = () => useContext(SchedCtx)!;
-const MOONS = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
-const moonFor = (d: Date) => { const days = (d.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5; const ph = ((days % 29.530588) + 29.530588) % 29.530588; return MOONS[Math.round(ph / 29.530588 * 8) % 8]; };
 const PHASE_DAYPART = { plan: "Morning", grow: "Afternoon", care: "Afternoon", letgo: "Evening" } as const;
 const MEAL_TIME: Record<string, string> = { Breakfast: "07:30", Lunch: "12:00", Dinner: "18:00", Snack: "15:00", Drink: "10:00" };
 const PHASE_DEFAULT_TIME: Record<RhythmPhase, string> = { plan: "09:00", grow: "13:00", care: "16:00", letgo: "19:00" };
@@ -145,7 +144,7 @@ function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
   const week = useMemo(() => {
     const ws = startOfWeek(date, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => { const d = addDays(ws, i); const di = format(d, "yyyy-MM-dd");
-      return { day: format(d, "EEE"), date: format(d, "d"), iso: di, d, moon: moonFor(d), items: itemsFor(di) }; });
+      return { day: format(d, "EEE"), date: format(d, "d"), iso: di, d, items: itemsFor(di) }; });
   }, [state.tasks, state.appointments, state.meals, medications, mealDone, doseTaken, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
   const now = new Date();
   const todayIdx = week.findIndex(w => isSameDay(w.d, now));
@@ -303,7 +302,7 @@ function PhaseTimelineWeek() {
               <span className="font-serif text-xl">{d.day}</span>
               <span className="text-sm text-muted-foreground">{d.date}</span>
             </button>
-            <span aria-hidden className="ml-auto text-sm">{d.moon}</span>
+            <ScheduleDayMoon date={d.d} compact className="ml-auto" />
           </header>
           {!d.items.length && <p className="px-1 text-sm text-muted-foreground">Open day — breathe.</p>}
           <div className="mt-1 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -341,7 +340,7 @@ function DayCardsDay() {
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{format(S.date, "EEEE")}</p>
           <h3 className="font-serif text-2xl">{format(S.date, "MMMM d")}</h3>
         </div>
-        <span aria-hidden className="text-xl">{moonFor(S.date)}</span>
+        <ScheduleDayMoon date={S.date} />
       </header>
       <div className="mt-3 space-y-3">
         {PHASE_ORDER.map(p => {
@@ -382,7 +381,7 @@ function DayCardsWeek() {
               <span className="font-serif text-xl">{d.day}</span>
               <span className="text-sm text-muted-foreground">{d.date}</span>
             </button>
-            <span aria-hidden className="ml-auto text-sm">{d.moon}</span>
+            <ScheduleDayMoon date={d.d} compact className="ml-auto" />
           </header>
           <ul className="mt-1 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
             {d.items.map(it => <ItemCard key={it.id} it={it} phase={phaseOf(it)} dense />)}
@@ -477,7 +476,7 @@ function AgendaRibbonWeek() {
         <section key={d.day} className={cn(di > 0 && "mt-4 border-t border-border/30 pt-3")}>
           <header className="flex items-baseline gap-2 pl-[5.75rem]">
             <h3 className="font-serif text-lg">{d.day} {d.date}</h3>
-            <span aria-hidden className="text-sm">{d.moon}</span>
+            <ScheduleDayMoon date={d.d} compact />
             <span className="ml-auto text-xs text-muted-foreground">{d.items.length} things</span>
           </header>
           <ul className="mt-1">
@@ -561,6 +560,7 @@ function PhaseGridWeek() {
             <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
               <div className="text-xs uppercase tracking-wide">{d.day}</div>
               <div className="font-serif text-lg leading-none">{d.date}</div>
+              <div className="mt-1 flex justify-center"><ScheduleDayMoon date={d.d} compact /></div>
             </div>
           ))}
           {PHASE_ORDER.map(p => (
@@ -594,7 +594,7 @@ function PhaseGridWeek() {
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
         {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
-            <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></button>
+            <div className="mb-3 flex items-center gap-2"><button type="button" onClick={() => openDay(d.d)} className="block min-h-11 text-left font-serif text-xl">{d.day} {d.date}</button><ScheduleDayMoon date={d.d} compact className="ml-auto" /></div>
             <div className="grid grid-cols-2 gap-2">
               {PHASE_ORDER.map(p => {
                 const list = d.items.filter(it => phaseOf(it) === p);
@@ -824,6 +824,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
             <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
               <div className="text-xs uppercase tracking-wide">{d.day}</div>
               <div className="font-serif text-lg leading-none">{d.date}</div>
+              <div className="mt-1 flex justify-center"><ScheduleDayMoon date={d.d} compact /></div>
             </div>
           ))}
           {PHASE_ORDER.map(p => (
@@ -846,7 +847,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
         {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
-            <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></button>
+            <div className="mb-3 flex items-center gap-2"><button type="button" onClick={() => openDay(d.d)} className="block min-h-11 text-left font-serif text-xl">{d.day} {d.date}</button><ScheduleDayMoon date={d.d} compact className="ml-auto" /></div>
             <div className="flex flex-col gap-2">
               {PHASE_ORDER.map(p => (
                 <div key={p} className="rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
@@ -901,6 +902,12 @@ export function PlannerScheduleStyleView({ style, scope, date, onOpenDay }: {
   return (
     <SchedCtx.Provider value={data}>
       <IconStyleCtx.Provider value="tint">
+        {day && style !== "cards" && (
+          <div className="mb-2 flex items-center gap-2 px-1">
+            <span className="font-serif text-lg">{format(date, "EEEE, MMMM d")}</span>
+            <ScheduleDayMoon date={date} className="ml-auto" />
+          </div>
+        )}
         {style === "timeline" && (day ? <PhaseTimelineDay /> : <PhaseTimelineWeek />)}
         {style === "cards" && (day ? <DayCardsDay /> : <DayCardsWeek />)}
         {style === "ribbon" && (day ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}

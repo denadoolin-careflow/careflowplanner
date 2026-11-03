@@ -1,6 +1,6 @@
 import { format, isSameDay } from "date-fns";
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Sun, Zap } from "lucide-react";
-import { MoonSVG } from "./MoonInsightCard";
+import { ScheduleDayMoon } from "./schedule/ScheduleDayMoon";
 import { getDayTheme } from "@/lib/planner/day-theme";
 import { useCycleDot } from "@/lib/planner/day-rhythm";
 import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
@@ -48,14 +48,14 @@ export function WeekDayHeader({ date, mode, onSelect }: {
       title={[format(date, "EEEE, MMMM d"), theme.moonLabel, `Moon in ${theme.sign}`, cycle?.text].filter(Boolean).join(" · ")}
       className={cn(
         "flex h-full w-full min-w-0 flex-col items-center gap-1 px-1.5 py-2 text-center transition-colors hover:bg-muted/40",
-        isToday && "bg-primary/5",
+        isToday && "rounded-xl ring-2 ring-inset ring-primary/60",
       )}
     >
-      <span className={cn("text-[10px] uppercase tracking-[0.18em]", isToday ? "text-primary" : "text-muted-foreground")}>
+      <span className={cn("text-xs uppercase tracking-[0.18em]", isToday ? "text-primary" : "text-muted-foreground")}>
         {format(date, "EEE")}
       </span>
       <span className={cn(
-        "font-display text-lg font-semibold leading-none",
+        "font-serif text-xl leading-none",
         isToday && "grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground",
       )}>
         {format(date, "d")}
@@ -64,15 +64,15 @@ export function WeekDayHeader({ date, mode, onSelect }: {
       <DailyNoteDot date={date} mark={marks.get(iso)} size={13} />
 
       {Icon && (
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <Icon className="h-3 w-3" aria-hidden />
           {day && <span>{formatTemp(day.highC, unit)}</span>}
         </span>
       )}
 
       {compact ? (
-        <span className="mt-0.5 flex max-w-full flex-nowrap items-center justify-center gap-1 whitespace-nowrap text-[9.5px] leading-none text-muted-foreground">
-          <MoonSVG fraction={theme.fraction} size={14} />
+        <span className="mt-0.5 flex max-w-full flex-nowrap items-center justify-center gap-1 whitespace-nowrap text-xs leading-none text-muted-foreground">
+          <ScheduleDayMoon date={date} compact stacked />
           <span aria-hidden>{theme.signSymbol}</span>
           <span className="truncate">{theme.sign.slice(0, 3)}</span>
           {cycle && <span aria-hidden title={cycle.label}>{cycle.glyph}</span>}
@@ -80,17 +80,15 @@ export function WeekDayHeader({ date, mode, onSelect }: {
       ) : (
         <>
           <span className="mt-0.5 flex flex-col items-center gap-0.5">
-            <MoonSVG fraction={theme.fraction} size={26} />
-            <span className="text-[9px] leading-tight text-muted-foreground">
-              {theme.moonLabel} · {theme.illumination}%
-            </span>
+            <ScheduleDayMoon date={date} compact stacked />
+            <span className="text-xs leading-tight text-muted-foreground">{theme.illumination}% lit</span>
           </span>
-          <span className="text-[10px] leading-none text-muted-foreground">
+          <span className="text-xs leading-none text-muted-foreground">
             <span aria-hidden>{theme.signSymbol}</span> {theme.sign}
           </span>
           {cycle && (
             <span
-              className="mt-0.5 inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] leading-tight"
+              className="mt-0.5 inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-xs leading-tight"
               style={{ background: cycle.soft, color: cycle.color }}
             >
               <span aria-hidden>{cycle.glyph}</span>
@@ -99,13 +97,13 @@ export function WeekDayHeader({ date, mode, onSelect }: {
           )}
           <span className="mt-1 flex min-w-0 flex-col items-center gap-0.5">
             <span
-              className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-tight"
+              className="rounded-full px-1.5 py-0.5 text-xs font-semibold leading-tight"
               style={{ background: `${theme.color}22`, color: theme.color }}
             >
               <span aria-hidden className="mr-0.5">{theme.icon}</span>{theme.themeName}
             </span>
-            <span className="text-[9px] leading-tight text-muted-foreground [overflow-wrap:break-word]">{theme.blurb}</span>
-            <span className="text-[9px] leading-tight text-muted-foreground/80">
+            <span className="text-xs leading-tight text-muted-foreground [overflow-wrap:break-word]">{theme.blurb}</span>
+            <span className="text-xs leading-tight text-muted-foreground/80">
               Good for: {theme.goodFor.join(" · ")}
             </span>
           </span>

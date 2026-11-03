@@ -28,6 +28,9 @@ import { UtensilsCrossed, HeartHandshake } from "lucide-react";
 import { useWeatherSnapshot, cToF } from "@/lib/weather-store";
 import { byHour } from "@/lib/planner/hour-weather";
 import { ConditionIcon } from "@/components/weather/ConditionIcon";
+import { PHASE_HOURS } from "./schedule/schedule-time";
+import { PHASE_ICONS } from "@/lib/phase-icons";
+import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 
 const MEALS_ROW_KEY = "careflow:planner:week-meals-visible";
 
@@ -162,7 +165,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5">
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className="truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="truncate text-xs uppercase tracking-[0.18em] text-muted-foreground">
             {format(start, "MMM d")} – {format(addDays(start, days - 1), "MMM d")}
           </span>
           {days >= 7 && <WeekNoteDot start={start} />}
@@ -170,7 +173,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         {!isMobile && <Button
           variant="ghost"
           size="sm"
-          className="h-7 gap-1.5 rounded-full px-2.5 text-[11.5px]"
+          className="h-11 gap-1.5 rounded-full px-3 md:h-9 text-xs"
           onClick={() => setHeaderMode(headerMode === "insight" ? "compact" : "insight")}
           aria-label={headerMode === "insight" ? "Switch to compact week headers" : "Switch to full insight week headers"}
         >
@@ -181,7 +184,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           <Button
             variant="ghost"
             size="icon"
-            className={cn("h-7 w-7 rounded-full", !mealsVisible && "opacity-40")}
+            className={cn("h-11 w-11 rounded-full md:h-9 md:w-9", !mealsVisible && "opacity-40")}
             onClick={toggleMeals}
             aria-pressed={mealsVisible}
             aria-label={mealsVisible ? "Hide meals row" : "Show meals row"}
@@ -192,7 +195,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           <Button
             variant="ghost"
             size="icon"
-            className={cn("h-7 w-7 rounded-full", !careVisible && "opacity-40")}
+            className={cn("h-11 w-11 rounded-full md:h-9 md:w-9", !careVisible && "opacity-40")}
             onClick={toggleCare}
             aria-pressed={careVisible}
             aria-label={careVisible ? "Hide caregiving, home and cleaning row" : "Show caregiving, home and cleaning row"}
@@ -203,7 +206,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           <Button
             variant="ghost"
             size="icon"
-            className={cn("h-7 w-7 rounded-full", !rhythmVisible && "opacity-40")}
+            className={cn("h-11 w-11 rounded-full md:h-9 md:w-9", !rhythmVisible && "opacity-40")}
             onClick={toggleRhythm}
             aria-pressed={rhythmVisible}
             aria-label={rhythmVisible ? "Hide habits and routines row" : "Show habits and routines row"}
@@ -212,12 +215,12 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
             <Sprout className="h-3.5 w-3.5" />
           </Button>
           <span className="ml-1 inline-flex items-center rounded-full border border-border/60">
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" disabled={zoom <= MIN_ZOOM + 0.001}
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full md:h-9 md:w-9" disabled={zoom <= MIN_ZOOM + 0.001}
               onClick={() => zoomBy(1 / 1.25)} aria-label="Smaller grid">
               <Minus className="h-3.5 w-3.5" />
             </Button>
-            <span className="px-1 text-[10px] tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" disabled={zoom >= MAX_ZOOM - 0.001}
+            <span className="px-1 text-xs tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full md:h-9 md:w-9" disabled={zoom >= MAX_ZOOM - 0.001}
               onClick={() => zoomBy(1.25)} aria-label="Bigger grid">
               <Plus className="h-3.5 w-3.5" />
             </Button>
@@ -225,7 +228,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full"
+            className="h-11 w-11 rounded-full md:h-9 md:w-9"
             onClick={() => setFullScreen(v => !v)}
             aria-pressed={fullScreen}
             aria-label={fullScreen ? "Exit full screen grid" : "Full screen grid"}
@@ -258,7 +261,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
 
       {/* Meals + tracked food */}
       <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>
-        <div className="sticky left-0 z-30 flex items-center justify-end border-r border-border/50 bg-card/95 pr-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 backdrop-blur">Care</div>
+        <div className="sticky left-0 z-30 flex items-center justify-end border-r border-border/50 bg-card/95 pr-1 text-xs uppercase tracking-wider text-muted-foreground/70 backdrop-blur">Care</div>
         {cols.map((d, i) => <PlannerDailyCareChecklist key={format(d, "yyyy-MM-dd")} iso={format(d, "yyyy-MM-dd")} compact className={cn(i > 0 && "border-l border-border/40")} />)}
       </div>
 
@@ -299,7 +302,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
 
       {/* All-day row */}
       <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>
-        <div className="sticky left-0 z-30 flex items-center justify-end border-r border-border/50 bg-card/95 pr-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 backdrop-blur">
+        <div className="sticky left-0 z-30 flex items-center justify-end border-r border-border/50 bg-card/95 pr-1 text-xs uppercase tracking-wider text-muted-foreground/70 backdrop-blur">
           All day
         </div>
         {cols.map((d, i) => (
@@ -327,7 +330,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         <div className="relative grid" style={{ gridTemplateColumns: colTemplate }}>
           {/* Time gutter */}
           <div
-            className="sticky left-0 z-20 relative shrink-0 border-r border-border/50 bg-card/95 text-[10px] text-muted-foreground backdrop-blur"
+            className="sticky left-0 z-20 relative shrink-0 border-r border-border/50 bg-card/95 text-xs text-muted-foreground backdrop-blur"
             style={{ height: totalMin * (HOUR_PX / 60) }}
           >
             {Array.from({ length: PLANNER_END_H - PLANNER_START_H }, (_, i) => {
@@ -337,7 +340,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
                 <div key={h} style={{ height: HOUR_PX }} className="relative pr-1 text-right">
                   <span className="absolute -top-2 right-1 font-medium">{format(new Date(2000, 0, 1, h), "h a")}</span>
                   {wx && (
-                    <span className="absolute left-1 top-1 flex flex-col items-center gap-0.5 font-mono text-[9px] leading-none" title={`${wx.conditionLabel}, ${cToF(wx.tempC)}°F`}>
+                    <span className="absolute left-1 top-1 flex flex-col items-center gap-0.5 font-mono text-xs leading-none" title={`${wx.conditionLabel}, ${cToF(wx.tempC)}°F`}>
                       <ConditionIcon condition={wx.condition} isNight={wx.isNight} className="h-3 w-3" />
                       <span>{cToF(wx.tempC)}°F</span>
                     </span>
@@ -347,13 +350,25 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
             })}
             {nowMin !== null && (
               <span
-                className="absolute right-1 -translate-y-1/2 rounded bg-primary px-1 font-mono text-[9px] text-primary-foreground"
+                className="absolute right-1 -translate-y-1/2 rounded bg-primary px-1 font-mono text-xs text-primary-foreground"
                 style={{ top: nowMin * (HOUR_PX / 60) }}
               >
                 {format(new Date(), "h:mm a")}
               </span>
             )}
           </div>
+          {/* Plan / Grow / Care / Let go bands behind the hour grid */}
+          {(Object.entries(PHASE_HOURS) as [RhythmPhase, [number, number]][]).map(([p, [sh, eh]]) => {
+            const s0 = Math.max(sh, PLANNER_START_H), e0 = Math.min(eh, PLANNER_END_H);
+            if (e0 <= s0) return null;
+            const Icon = PHASE_ICONS[p];
+            return (
+              <div key={p} aria-hidden className="pointer-events-none absolute right-0 z-0"
+                style={{ left: GUTTER_W, top: (s0 - PLANNER_START_H) * HOUR_PX, height: (e0 - s0) * HOUR_PX, background: `hsl(var(--rhythm-${p}-tint) / 0.35)` }}>
+                <Icon className="absolute left-1 top-1 h-3.5 w-3.5 opacity-70" style={{ color: `hsl(var(--rhythm-${p}-deep))` }} />
+              </div>
+            );
+          })}
           {cols.map((d, i) => (
             <GridDayColumn
               key={format(d, "yyyy-MM-dd")}
@@ -385,7 +400,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Legend — single line that scrolls sideways so it never crowds the grid's scroll area */}
-      <div className="flex shrink-0 flex-nowrap items-center gap-x-3 overflow-x-auto overscroll-x-contain whitespace-nowrap border-t border-border/60 px-3 py-1.5 text-[10px] text-muted-foreground">
+      <div className="flex shrink-0 flex-nowrap items-center gap-x-3 overflow-x-auto overscroll-x-contain whitespace-nowrap border-t border-border/60 px-3 py-1.5 text-xs text-muted-foreground">
         {LEGEND_KINDS.map(k => (
           <span key={k} className="inline-flex shrink-0 items-center gap-1">
             <span className="h-2 w-2 rounded-full" style={{ background: colorOf(k) }} aria-hidden />
