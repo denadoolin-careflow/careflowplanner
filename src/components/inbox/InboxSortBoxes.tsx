@@ -8,6 +8,9 @@ import { createNote } from "@/lib/notes";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { PlannerTaskRow } from "@/components/planner/PlannerTaskRow";
+import { parseTaskInput } from "@/lib/nlp-task";
+import { Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type SortBox = "today" | "week" | "someday" | "notes";
@@ -85,8 +88,10 @@ export function InboxSortButton({ task }: { task: any }) {
 
 /** Four box tiles plus the "Sort one at a time" focused card. */
 export function InboxSortBoxes({ items }: { items: any[] }) {
-  const { state } = useStore() as any;
+  const { state, addTask } = useStore() as any;
   const sort = useSortToBox();
+  const [lingering, setLingering] = useState<string[]>([]);
+  const [draft, setDraft] = useState("");
   const [openBox, setOpenBox] = useState<SortBox | null>(null);
   const [focus, setFocus] = useState(false);
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -102,14 +107,45 @@ export function InboxSortBoxes({ items }: { items: any[] }) {
 
   const today = format(new Date(), "yyyy-MM-dd");
   const boxes = useMemo(() => {
-    const open = (state.tasks ?? []).filter((t: any) => !t.done && !t.inbox && !t.parentTaskId);
+    const all = (state.tasks ?? []).filter((t: any) => !t.inbox && !t.parentTaskId);
+    const pick = (fn: (t: any) => boolean) => ({
+      open: all.filter((t: any) => !t.done && fn(t)),
+      shown: all.filter((t: any) => (!t.done || lingering.includes(t.id)) && fn(t)),
+    });
     return {
-      today: open.filter((t: any) => t.dueDate === today).map((t: any) => ({ id: t.id, title: t.title })),
-      week: open.filter((t: any) => t.status === "this_week").map((t: any) => ({ id: t.id, title: t.title })),
-      someday: open.filter((t: any) => t.status === "someday").map((t: any) => ({ id: t.id, title: t.title })),
-      notes: notes.map((n) => ({ id: n.id, title: n.title })),
-    } as Record<SortBox, { id: string; title: string }[]>;
-  }, [state.tasks, notes, today]);
+      today: pick((t) => t.dueDate === today),
+      week: pick((t) => t.status === "this_week" && t.dueDate !== today),
+      someday: pick((t) => t.status === "someday"),
+      notes: { open: notes, shown: notes },
+    } as Record<SortBox, { open: any[]; shown: any[] }>;
+  }, [state.tasks, notes, today, lingering]);
+
+  // Keep just-checked tasks visible briefly (with strikethrough) before they drop off.
+  const prevDone = useMemo(() => new Map<string, boolean>(), []);
+  useEffect(() => {
+    const newly: string[] = [];
+    for (const t of state.tasks ?? []) {
+      const was = prevDone.get(t.id);
+      if (was === false && t.done) newly.push(t.id);
+      prevDone.set(t.id, !!t.done);
+    }
+    if (!newly.length) return;
+    setLingering((l) => [...l, ...newly]);
+    const h = setTimeout(() => setLingering((l) => l.filter((x) => !newly.includes(x))), 1800);
+    return () => clearTimeout(h);
+  }, [state.tasks, prevDone]);
+
+  const addToBox = async () => {
+    const raw = draft.trim();
+    if (!raw || !openBox || openBox === "notes") return;
+    const p = parseTaskInput(raw);
+    const base: any = { title: p.title || raw, inbox: false, priority: p.priority, area: p.area, tags: p.tags, estMinutes: p.estMinutes, time: p.time };
+    if (openBox === "today") Object.assign(base, { dueDate: p.dueDate ?? today, status: "active" });
+    else if (openBox === "week") Object.assign(base, { dueDate: p.dueDate, status: "this_week" });
+    else Object.assign(base, { dueDate: p.dueDate, status: "someday" });
+    Object.keys(base).forEach((k) => base[k] === undefined && delete base[k]);
+    try { await addTask(base); setDraft(""); haptics.snap?.(); } catch { toast.error("Couldn't add that"); }
+  };
 
   const queue = useMemo(
     () => [...items].sort((a, b) => String(a.createdAt ?? "").localeCompare(String(b.createdAt ?? ""))).filter((t) => !skipped.includes(t.id)),
@@ -133,7 +169,7 @@ export function InboxSortBoxes({ items }: { items: any[] }) {
           >
             <b.icon className="h-5 w-5 shrink-0" />
             <span className="flex-1 text-sm font-medium">{b.label}</span>
-            <span className="rounded-full bg-background/70 px-2 text-xs font-semibold tabular-nums">{boxes[b.id].length}</span>
+            <span className="rounded-full bg-background/70 px-2 text-xs font-semibold tabular-nums">{boxes[b.id].open.length}</span>
           </button>
         ))}
       </div>
@@ -144,16 +180,32 @@ export function InboxSortBoxes({ items }: { items: any[] }) {
             <p className="text-sm font-medium">{SORT_BOXES.find((b) => b.id === openBox)!.label}</p>
             <button type="button" aria-label="Close" onClick={() => setOpenBox(null)} className="grid h-9 w-9 place-items-center rounded-full hover:bg-muted/60"><X className="h-4 w-4" /></button>
           </div>
-          {boxes[openBox].length === 0 ? (
+          {openBox !== "notes" && (
+            <form onSubmit={(e) => { e.preventDefault(); void addToBox(); }} className="mb-2 flex items-center gap-2 rounded-xl bg-muted/50 px-3">
+              <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <label htmlFor="box-add" className="sr-only">Add to {SORT_BOXES.find((b) => b.id === openBox)!.label}</label>
+              <input id="box-add" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder='Add… e.g. "call mom 3pm"' className="h-11 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+            </form>
+          )}
+          {boxes[openBox].shown.length === 0 ? (
             <p className="text-xs text-muted-foreground">Nothing here yet.</p>
-          ) : (
-            <ul className="space-y-1">
-              {boxes[openBox].slice(0, 12).map((x) => (
-                <li key={x.id} className="break-words text-sm">
-                  {openBox === "notes" ? <Link className="hover:underline" to={`/notes/${x.id}`}>{x.title}</Link> : x.title}
+          ) : openBox === "notes" ? (
+            <ul className="space-y-1.5">
+              {boxes.notes.shown.slice(0, 20).map((x: any) => (
+                <li key={x.id}>
+                  <Link to={`/notes/${x.id}`} className="flex min-h-11 items-center gap-2 rounded-xl border border-border/40 bg-card px-3 py-2 text-sm shadow-sm hover:bg-muted/40">
+                    <NotebookPen className="h-4 w-4 shrink-0" style={{ color: "hsl(var(--rhythm-letgo-deep))" }} />
+                    <span className="min-w-0 flex-1 break-words">{x.title}</span>
+                  </Link>
                 </li>
               ))}
-              {boxes[openBox].length > 12 && <li className="text-xs text-muted-foreground">+{boxes[openBox].length - 12} more</li>}
+            </ul>
+          ) : (
+            <ul className="space-y-1.5">
+              {boxes[openBox].shown.slice(0, 30).map((t: any) => (
+                <li key={t.id}><PlannerTaskRow task={t} /></li>
+              ))}
+              {boxes[openBox].shown.length > 30 && <li className="text-xs text-muted-foreground">+{boxes[openBox].shown.length - 30} more</li>}
             </ul>
           )}
         </div>
