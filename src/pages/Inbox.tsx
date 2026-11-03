@@ -26,7 +26,6 @@ import { parseTaskInput } from "@/lib/nlp-task";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { parseISO, format, startOfDay, addDays } from "date-fns";
-import { InboxOverview } from "@/components/inbox/InboxOverview";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
 import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReviewSheet";
 import { TagPicker } from "@/components/tags/TagPicker";
