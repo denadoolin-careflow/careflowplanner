@@ -191,7 +191,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+    <div className="planner-card overflow-hidden border border-border/40">
       <OutlineBreadcrumb tasks={state.tasks ?? []} />
       <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
         <span className="text-sm font-semibold">Table</span>

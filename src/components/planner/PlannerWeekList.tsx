@@ -174,7 +174,7 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
   const today = new Date();
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+    <div className="planner-card overflow-hidden border border-border/40">
       <OutlineBreadcrumb tasks={state.tasks ?? []} />
       <div className="divide-y divide-border/50">
         {cols.map(d => (
