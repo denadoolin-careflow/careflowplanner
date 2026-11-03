@@ -245,14 +245,14 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
     grow: (<>
       <FocusGoalCard date={day} />
       {P("grow")}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <PhaseCardGrid>
         <GrowColumn date={day} />
         <RoutinesHabitsRow date={day} />
-      </div>
+      </PhaseCardGrid>
     </>),
     care: (<>
       {P("care")}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <PhaseCardGrid>
         <CareColumn date={day} onTaskClick={setEditTaskId} />
         <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
         <DinnerTonightCard date={day} />

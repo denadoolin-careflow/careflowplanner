@@ -73,10 +73,10 @@ export function TodayDashboard({
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           <PlanColumn date={date} onTaskClick={onTaskClick} />
           <CareColumn date={date} onTaskClick={onTaskClick} />
-          <GrowColumn date={date} />
+          <div className="space-y-3"><GrowColumn date={date} /></div>
         </div>
         <ConnectionsCard date={date} onTaskClick={onTaskClick} />
-        <RoutinesHabitsRow date={date} />
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2"><RoutinesHabitsRow date={date} /></div>
 
       </div>
     </CapacityProvider>

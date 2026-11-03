@@ -76,7 +76,7 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
 
 
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <>
       <DashCard
         eyebrow="Rhythm" title="Routines"
         action={

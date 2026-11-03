@@ -24,7 +24,7 @@ export function GrowColumn({ date }: { date: Date }) {
     .slice(0, capacityLimit(2, capacity));
 
   return (
-    <div className="space-y-3">
+    <>
       <DashCard eyebrow="Grow" title="Intention">
         <Input
           value={intention}
