@@ -797,13 +797,31 @@ export default function ScheduleMockups() {
       </div>
       <p className="mt-2 text-sm text-muted-foreground">{active.blurb}</p>
 
+      <div className="mt-4 rounded-2xl bg-card p-3 shadow-sm">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Icon style</p>
+        <div role="radiogroup" aria-label="Phase icon style" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {ICON_STYLES.map(st => (
+            <button key={st.id} role="radio" aria-checked={iconStyle === st.id} onClick={() => setIconStyle(st.id)}
+              className={cn("flex min-h-11 flex-col items-center gap-1.5 rounded-xl border p-2 text-xs font-medium",
+                iconStyle === st.id ? "border-primary bg-primary/5" : "border-border/60")}>
+              <IconStyleCtx.Provider value={st.id}>
+                <span className="flex items-center gap-1">{PHASE_ORDER.map(p => <PB key={p} phase={p} now={p === "care"} />)}</span>
+              </IconStyleCtx.Provider>
+              {st.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-4">
+        <IconStyleCtx.Provider value={iconStyle}>
         {concept === "timeline" && (scope === "day" ? <PhaseTimelineDay /> : <PhaseTimelineWeek />)}
         {concept === "cards" && (scope === "day" ? <DayCardsDay /> : <DayCardsWeek />)}
         {concept === "ribbon" && (scope === "day" ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
         {concept === "grid" && (scope === "day" ? <PhaseGridDay /> : <PhaseGridWeek />)}
         {concept === "rails" && (scope === "day" ? <HourRailsDay /> : <TimeBlocksWeek rails />)}
         {concept === "pills" && (scope === "day" ? <BlockPillsDay /> : <TimeBlocksWeek />)}
+        </IconStyleCtx.Provider>
       </div>
 
       <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">
