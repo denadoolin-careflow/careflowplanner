@@ -451,6 +451,243 @@ function PhaseGridWeek() {
   );
 }
 
+/* ============ Concepts 5 & 6 — time blocks ============ */
+
+const PHASE_HOURS: Record<RhythmPhase, [number, number]> = { plan: [6, 12], grow: [12, 15], care: [15, 18], letgo: [18, 23] };
+const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+const durOf = (it: Item) => (it.time && it.end ? toMin(it.end) - toMin(it.time) : it.kind === "appt" ? 60 : 30);
+const endOf = (it: Item) => { const e = toMin(it.time!) + durOf(it); return `${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`; };
+const fmtDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`);
+const isBlock = (it: Item) => it.kind === "appt" || !!it.end;
+
+function PhaseHead({ p, list, isNow }: { p: RhythmPhase; list: Item[]; isNow: boolean }) {
+  const [s, e] = PHASE_HOURS[p];
+  const booked = list.filter(isBlock).reduce((a, it) => a + durOf(it), 0);
+  const open = (e - s) * 60 - booked;
+  return (
+    <header className="flex flex-wrap items-center gap-2.5">
+      <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
+        <PhaseIcon phase={p} className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h3 className="font-serif text-lg leading-tight" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</h3>
+        <p className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</p>
+      </div>
+      {isNow && <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>NOW</span>}
+      <span className="w-full text-xs font-medium sm:w-auto" style={{ color: deep(p) }}>{fmtDur(booked)} booked · {fmtDur(open)} open</span>
+    </header>
+  );
+}
+
+function useDayItems() {
+  const [items, setItems] = useState(DAY_ITEMS);
+  const toggle = (id: string) => setItems(xs => xs.map(x => (x.id === id ? { ...x, done: !x.done } : x)));
+  return { items, toggle };
+}
+
+function CheckDot({ it, p, onToggle }: { it: Item; p: RhythmPhase; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
+      className="-m-3 grid shrink-0 place-items-center p-3"
+    >
+      <span className={cn("grid h-5 w-5 place-items-center rounded-full border-2", !it.done && "border-muted-foreground/40")}
+        style={it.done ? { background: main(p), borderColor: main(p) } : undefined}>
+        {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
+      </span>
+    </button>
+  );
+}
+
+/** 5 · Hour Rails — each phase card has an hour rail; items sit at their real time and height. */
+const PX_PER_MIN = 1.5;
+function HourRailsDay() {
+  const { items, toggle } = useDayItems();
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {PHASE_ORDER.map(p => {
+        const [s, e] = PHASE_HOURS[p];
+        const list = items.filter(it => phaseOf(it) === p);
+        const hours = Array.from({ length: e - s + 1 }, (_, i) => s + i);
+        return (
+          <section key={p} aria-current={p === "care" ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
+            style={{ background: tint(p, 0.45), outline: p === "care" ? `2px solid ${main(p)}` : undefined }}>
+            <PhaseHead p={p} list={list} isNow={p === "care"} />
+            <div className="relative mt-2" style={{ height: (e - s) * 60 * PX_PER_MIN }}>
+              {hours.map(h => (
+                <div key={h} className="absolute inset-x-0 flex items-center gap-2" style={{ top: (h - s) * 60 * PX_PER_MIN - 8 }}>
+                  <span className="w-11 shrink-0 text-right font-mono text-xs text-muted-foreground">{fmt(`${String(h).padStart(2, "0")}:00`)}</span>
+                  <span className="h-px flex-1 bg-border/60" />
+                </div>
+              ))}
+              {list.map(it => {
+                const top = (toMin(it.time!) - s * 60) * PX_PER_MIN;
+                const h = Math.max(durOf(it) * PX_PER_MIN, 32);
+                return (
+                  <div key={it.id} className={cn("absolute left-14 right-0 flex items-start gap-2 overflow-hidden rounded-xl px-2.5 py-1.5 shadow-sm", it.done && "opacity-60")}
+                    style={{ top, height: h - 3, background: isBlock(it) ? main(p) : "hsl(var(--card))", borderLeft: `4px solid ${deep(p)}` }}>
+                    {!isBlock(it) && <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />}
+                    <div className="min-w-0 flex-1" style={isBlock(it) ? { color: "hsl(var(--rhythm-on))" } : undefined}>
+                      <p className={cn("break-words text-sm font-medium leading-snug", it.done && "line-through")}>{it.title}</p>
+                      {h > 44 && <p className="text-xs opacity-80">{fmt(it.time)} – {fmt(endOf(it))}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+              {p === "care" && (
+                <div aria-label="Now 4:20 pm" className="absolute left-12 right-0 z-10 flex items-center" style={{ top: (16 * 60 + 20 - s * 60) * PX_PER_MIN }}>
+                  <span className="-ml-1 h-2.5 w-2.5 rounded-full" style={{ background: deep(p) }} />
+                  <span className="h-0.5 flex-1" style={{ background: deep(p) }} />
+                </div>
+              )}
+            </div>
+            <button className="min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
+              + Block time in {PHASE_LABEL[p]}
+            </button>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+/** 6 · Block Pills — fixed time blocks with start/end badges on top, flexible tasks below. */
+function BlockPill({ it, p }: { it: Item; p: RhythmPhase }) {
+  return (
+    <li className="flex items-stretch overflow-hidden rounded-2xl bg-card shadow-sm">
+      <div className="flex w-[4.5rem] shrink-0 flex-col items-center justify-center gap-0.5 py-2" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
+        <span className="text-xs font-semibold">{fmt(it.time)}</span>
+        <span aria-hidden className="h-3 w-px bg-current opacity-60" />
+        <span className="text-xs font-semibold">{fmt(endOf(it))}</span>
+      </div>
+      <div className="min-w-0 flex-1 px-3 py-2">
+        <p className="break-words text-sm font-medium leading-snug">{it.title}</p>
+        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{fmtDur(durOf(it))} · {KIND_LABEL[it.kind]}</p>
+      </div>
+    </li>
+  );
+}
+
+function BlockPillsDay() {
+  const { items, toggle } = useDayItems();
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {PHASE_ORDER.map(p => {
+        const list = items.filter(it => phaseOf(it) === p);
+        const blocks = list.filter(isBlock), tasks = list.filter(it => !isBlock(it));
+        const isNow = p === "care";
+        return (
+          <section key={p} aria-current={isNow ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
+            style={{ background: tint(p, 0.45), outline: isNow ? `2px solid ${main(p)}` : undefined }}>
+            <PhaseHead p={p} list={list} isNow={isNow} />
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: deep(p) }}>Time blocks</p>
+              {blocks.length ? <ul className="flex flex-col gap-2">{blocks.map(it => <BlockPill key={it.id} it={it} p={p} />)}</ul>
+                : <p className="rounded-xl border border-dashed px-3 py-2.5 text-sm" style={{ borderColor: main(p), color: deep(p) }}>Open time — keep it for rest or block something</p>}
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: deep(p) }}>Flexible tasks</p>
+              <ul className="flex flex-col gap-2">
+                {tasks.map(it => (
+                  <li key={it.id} className={cn("flex min-h-11 items-center gap-2.5 rounded-xl bg-card px-3 py-2 shadow-sm", it.done && "opacity-60")}>
+                    <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />
+                    <span className={cn("min-w-0 flex-1 break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-xs" style={{ background: tint(p, 0.9), color: deep(p) }}>~{fmtDur(durOf(it))}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button className="mt-auto min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
+              + Add to {PHASE_LABEL[p]}
+            </button>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Week variant shared by 5 & 6: days across, phases down; blocks as start–end pills, tasks as checks. */
+function TimeBlocksWeek({ rails }: { rails?: boolean }) {
+  const todayIdx = 1;
+  const cell = (d: (typeof WEEK)[number], p: RhythmPhase) => {
+    const list = d.items.filter(it => phaseOf(it) === p);
+    const [s, e] = PHASE_HOURS[p];
+    return (
+      <>
+        {rails && (
+          <div aria-hidden className="relative mb-1.5 h-2 rounded-full bg-card/70">
+            {list.filter(isBlock).map(it => (
+              <span key={it.id} className="absolute inset-y-0 rounded-full" style={{
+                left: `${((toMin(it.time!) - s * 60) / ((e - s) * 60)) * 100}%`,
+                width: `${Math.max((durOf(it) / ((e - s) * 60)) * 100, 6)}%`, background: deep(p) }} />
+            ))}
+          </div>
+        )}
+        {list.map(it => isBlock(it) ? (
+          <div key={it.id} className="mb-1 rounded-lg px-1.5 py-1 text-xs leading-snug shadow-sm" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
+            <span className="block font-semibold">{fmt(it.time)}–{fmt(endOf(it))}</span>
+            <span className="break-words">{it.title}</span>
+          </div>
+        ) : (
+          <div key={it.id} className={cn("mb-1 flex items-start gap-1 rounded-lg bg-card px-1.5 py-1 text-xs leading-snug shadow-sm", it.done && "line-through opacity-60")}>
+            <span className="mt-0.5 h-3 w-3 shrink-0 rounded-full border" style={{ borderColor: deep(p), background: it.done ? main(p) : undefined }} />
+            <span className="break-words">{it.title}</span>
+          </div>
+        ))}
+      </>
+    );
+  };
+  return (
+    <>
+      <div className="planner-card hidden overflow-hidden p-3 md:block">
+        <div className="grid gap-1.5" style={{ gridTemplateColumns: "88px repeat(7, minmax(0,1fr))" }}>
+          <div />
+          {WEEK.map((d, i) => (
+            <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
+              <div className="text-xs uppercase tracking-wide">{d.day}</div>
+              <div className="font-serif text-lg leading-none">{d.date}</div>
+            </div>
+          ))}
+          {PHASE_ORDER.map(p => (
+            <Fragment key={p}>
+              <div className="flex flex-col justify-center text-sm font-medium" style={{ color: deep(p) }}>
+                <span className="flex items-center gap-1.5"><PhaseIcon phase={p} className="h-4 w-4" />{PHASE_LABEL[p]}</span>
+                <span className="text-xs font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
+              </div>
+              {WEEK.map((d, i) => (
+                <div key={`${p}-${d.day}`} className="min-h-20 rounded-xl p-1.5"
+                  style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}>
+                  {cell(d, p)}
+                </div>
+              ))}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
+        {WEEK.map((d, i) => (
+          <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
+            <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
+            <div className="flex flex-col gap-2">
+              {PHASE_ORDER.map(p => (
+                <div key={p} className="rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
+                  <div className="mb-1 flex items-center gap-1 text-xs font-semibold" style={{ color: deep(p) }}>
+                    <PhaseIcon phase={p} className="h-3.5 w-3.5" />{PHASE_LABEL[p]}
+                    <span className="ml-auto font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
+                  </div>
+                  {cell(d, p)}
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /* ============ Page ============ */
 
 const CONCEPTS = [
@@ -458,6 +695,8 @@ const CONCEPTS = [
   { id: "cards", name: "2 · Day Cards", blurb: "Each day is its own card with phase pill groupings; swipe sideways through the week." },
   { id: "ribbon", name: "3 · Agenda Ribbon", blurb: "A calm vertical agenda — times on a rail, a colored thread connecting the day." },
   { id: "grid", name: "4 · Phase Grid", blurb: "The day as a 2×2 grid of phase cards; the week as days across and phases down." },
+  { id: "rails", name: "5 · Hour Rails", blurb: "Each phase card has an hour rail — items sit at their real time and length, with a live now-line." },
+  { id: "pills", name: "6 · Block Pills", blurb: "Time blocks with start–end badges on top; flexible tasks with time estimates below." },
 ] as const;
 
 type ConceptId = (typeof CONCEPTS)[number]["id"];
@@ -511,6 +750,8 @@ export default function ScheduleMockups() {
         {concept === "cards" && (scope === "day" ? <DayCardsDay /> : <DayCardsWeek />)}
         {concept === "ribbon" && (scope === "day" ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
         {concept === "grid" && (scope === "day" ? <PhaseGridDay /> : <PhaseGridWeek />)}
+        {concept === "rails" && (scope === "day" ? <HourRailsDay /> : <TimeBlocksWeek rails />)}
+        {concept === "pills" && (scope === "day" ? <BlockPillsDay /> : <TimeBlocksWeek />)}
       </div>
 
       <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">
