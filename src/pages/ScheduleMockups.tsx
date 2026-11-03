@@ -320,12 +320,144 @@ function AgendaRibbonWeek() {
   );
 }
 
+/* ============ Concept 4 — Phase Grid ============ */
+
+function GridCheckRow({ it, phase, onToggle }: { it: Item; phase: RhythmPhase; onToggle: () => void }) {
+  return (
+    <li className={cn("flex min-h-11 items-center gap-2.5 rounded-xl bg-card px-3 py-2 shadow-sm", it.done && "opacity-60")}>
+      <span aria-hidden className="w-1 shrink-0 self-stretch rounded-full" style={{ background: main(phase) }} />
+      <button
+        onClick={onToggle}
+        aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
+        className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", !it.done && "border-muted-foreground/40")}
+        style={it.done ? { background: main(phase), borderColor: main(phase) } : undefined}
+      >
+        {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
+      </button>
+      <span className={cn("min-w-0 flex-1 break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+      <span className="shrink-0 font-mono text-xs text-muted-foreground">{fmt(it.time)}</span>
+    </li>
+  );
+}
+
+function PhaseGridDay() {
+  const nowPhase: RhythmPhase = "care";
+  const [items, setItems] = useState(DAY_ITEMS);
+  const toggle = (id: string) => setItems(xs => xs.map(x => (x.id === id ? { ...x, done: !x.done } : x)));
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {PHASE_ORDER.map(p => {
+        const list = items.filter(it => phaseOf(it) === p);
+        const done = list.filter(i => i.done).length;
+        const isNow = p === nowPhase;
+        return (
+          <section
+            key={p}
+            aria-current={isNow ? "true" : undefined}
+            className="planner-card flex flex-col gap-3 p-4"
+            style={{ background: tint(p, 0.45), outline: isNow ? `2px solid ${main(p)}` : undefined }}
+          >
+            <header className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
+                <PhaseIcon phase={p} className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-serif text-lg leading-tight" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</h3>
+                <p className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</p>
+              </div>
+              {isNow && (
+                <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>NOW</span>
+              )}
+              <span className="text-xs font-medium" style={{ color: deep(p) }}>{done}/{list.length}</span>
+            </header>
+            <ul className="flex flex-col gap-2">
+              {list.map(it => <GridCheckRow key={it.id} it={it} phase={p} onToggle={() => toggle(it.id)} />)}
+            </ul>
+            <button className="mt-auto min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
+              + Add to {PHASE_LABEL[p]}
+            </button>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function PhaseGridWeek() {
+  const todayIdx = 1;
+  return (
+    <>
+      {/* Desktop/tablet: days across, phases down */}
+      <div className="planner-card hidden overflow-hidden p-3 md:block">
+        <div className="grid gap-1.5" style={{ gridTemplateColumns: "88px repeat(7, minmax(0,1fr))" }}>
+          <div />
+          {WEEK.map((d, i) => (
+            <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
+              <div className="text-xs uppercase tracking-wide">{d.day}</div>
+              <div className="font-serif text-lg leading-none">{d.date}</div>
+            </div>
+          ))}
+          {PHASE_ORDER.map(p => (
+            <>
+              <div key={`${p}-l`} className="flex items-center gap-1.5 text-sm font-medium" style={{ color: deep(p) }}>
+                <PhaseIcon phase={p} className="h-4 w-4" />{PHASE_LABEL[p]}
+              </div>
+              {WEEK.map((d, i) => {
+                const list = d.items.filter(it => phaseOf(it) === p);
+                return (
+                  <div
+                    key={`${p}-${d.day}`}
+                    className="min-h-20 rounded-xl p-1.5"
+                    style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}
+                  >
+                    {list.slice(0, 2).map(it => (
+                      <div key={it.id} className={cn("mb-1 rounded-lg bg-card px-1.5 py-1 text-xs leading-snug shadow-sm break-words", it.done && "line-through opacity-60")}>
+                        {it.title}
+                      </div>
+                    ))}
+                    {list.length > 2 && <div className="text-xs font-medium" style={{ color: deep(p) }}>+{list.length - 2} more</div>}
+                  </div>
+                );
+              })}
+            </>
+          ))}
+        </div>
+      </div>
+      {/* Phone: one card per day, swipe sideways */}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
+        {WEEK.map((d, i) => (
+          <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
+            <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
+            <div className="grid grid-cols-2 gap-2">
+              {PHASE_ORDER.map(p => {
+                const list = d.items.filter(it => phaseOf(it) === p);
+                return (
+                  <div key={p} className="min-h-24 rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
+                    <div className="mb-1 flex items-center gap-1 text-xs font-semibold" style={{ color: deep(p) }}>
+                      <PhaseIcon phase={p} className="h-3.5 w-3.5" />{PHASE_LABEL[p]}
+                    </div>
+                    {list.slice(0, 2).map(it => (
+                      <div key={it.id} className={cn("mb-1 rounded-lg bg-card px-1.5 py-1 text-xs leading-snug shadow-sm break-words", it.done && "line-through opacity-60")}>{it.title}</div>
+                    ))}
+                    {list.length > 2 && <div className="text-xs font-medium" style={{ color: deep(p) }}>+{list.length - 2} more</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /* ============ Page ============ */
 
 const CONCEPTS = [
   { id: "timeline", name: "1 · Phase Timeline", blurb: "The day as four tinted phase sections; the week as mini phase bands per day." },
   { id: "cards", name: "2 · Day Cards", blurb: "Each day is its own card with phase pill groupings; swipe sideways through the week." },
   { id: "ribbon", name: "3 · Agenda Ribbon", blurb: "A calm vertical agenda — times on a rail, a colored thread connecting the day." },
+  { id: "grid", name: "4 · Phase Grid", blurb: "The day as a 2×2 grid of phase cards; the week as days across and phases down." },
 ] as const;
 
 type ConceptId = (typeof CONCEPTS)[number]["id"];
@@ -378,6 +510,7 @@ export default function ScheduleMockups() {
         {concept === "timeline" && (scope === "day" ? <PhaseTimelineDay /> : <PhaseTimelineWeek />)}
         {concept === "cards" && (scope === "day" ? <DayCardsDay /> : <DayCardsWeek />)}
         {concept === "ribbon" && (scope === "day" ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
+        {concept === "grid" && (scope === "day" ? <PhaseGridDay /> : <PhaseGridWeek />)}
       </div>
 
       <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">
