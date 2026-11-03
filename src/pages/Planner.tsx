@@ -21,6 +21,8 @@ import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
 import { PlannerQuickCapture, PLANNER_QUICK_ADD_EVENT } from "@/components/planner/PlannerQuickCapture";
 import { PlannerMonthExperience } from "@/components/planner/PlannerMonthExperience";
 import { PlannerPriorityStrip } from "@/components/planner/PlannerPriorityStrip";
+import { MonthSeasonHeader } from "@/components/planner/MonthSeasonHeader";
+import { MonthlyMoonscape } from "@/components/planner/MonthlyMoonscape";
 import { PlannerDailyCareChecklist } from "@/components/planner/PlannerDailyCareChecklist";
 
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
@@ -412,7 +414,7 @@ export default function Planner() {
              <AutoScheduleSettings size="md" />
            </div>
         </div>
-        {view !== "rhythm" && <MobileWeekAgendaStrip day={day} onSelect={go} rich={view === "month" || view === "week"} />}
+        {view !== "rhythm" && view !== "day" && <MobileWeekAgendaStrip day={day} onSelect={go} rich={view === "month" || view === "week"} />}
         </div>
       ) : (
         <>
@@ -635,14 +637,21 @@ export default function Planner() {
            {!showTaskPanel && !isMobile && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
             <div className="mb-3 shrink-0">
+              <MonthSeasonHeader month={startOfMonth(day)} className="mb-3" />
+              <MobileWeekAgendaStrip day={day} onSelect={go} />
+              <PlannerPriorityStrip date={day} scope="day" className="mt-3" />
+              <details open className="planner-month-fold mt-3">
+                <summary>Monthly moonscape · Plan · Grow · Care · Let go</summary>
+                <div className="pt-2"><MonthlyMoonscape month={startOfMonth(day)} selectedDate={day} onSelectDate={go} /></div>
+              </details>
               <TodayDayEmbed date={day} onDate={go} />
               <h2 className="mt-4 font-display text-lg text-foreground">Schedule</h2>
             </div>
           )}
-          {(view === "day" || view === "week" || view === "month") && (
+          {(view === "week" || view === "month") && (
             <PlannerPriorityStrip
               date={day}
-              scope={view === "day" ? "day" : view === "week" ? "week" : "month"}
+              scope={view === "week" ? "week" : "month"}
               className="mb-3 shrink-0"
             />
           )}
