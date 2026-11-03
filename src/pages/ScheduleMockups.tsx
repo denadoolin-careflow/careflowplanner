@@ -501,7 +501,7 @@ function CheckDot({ it, p, onToggle }: { it: Item; p: RhythmPhase; onToggle: () 
 }
 
 /** 5 · Hour Rails — each phase card has an hour rail; items sit at their real time and height. */
-const PX_PER_MIN = 1.1;
+const PX_PER_MIN = 1.5;
 function HourRailsDay() {
   const { items, toggle } = useDayItems();
   return (
@@ -523,7 +523,7 @@ function HourRailsDay() {
               ))}
               {list.map(it => {
                 const top = (toMin(it.time!) - s * 60) * PX_PER_MIN;
-                const h = Math.max(durOf(it) * PX_PER_MIN, 40);
+                const h = Math.max(durOf(it) * PX_PER_MIN, 32);
                 return (
                   <div key={it.id} className={cn("absolute left-14 right-0 flex items-start gap-2 overflow-hidden rounded-xl px-2.5 py-1.5 shadow-sm", it.done && "opacity-60")}
                     style={{ top, height: h - 3, background: isBlock(it) ? main(p) : "hsl(var(--card))", borderLeft: `4px solid ${deep(p)}` }}>
