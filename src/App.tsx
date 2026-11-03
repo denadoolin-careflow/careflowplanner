@@ -69,7 +69,6 @@ import Routines from "./pages/Routines";
 import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
 import Planner from "./pages/Planner";
-import PlannerSimplifyMockups from "./pages/PlannerSimplifyMockups";
 import DailyCheckIn from "./pages/DailyCheckIn";
 import TaskEditorStyles from "./pages/TaskEditorStyles";
 import Whiteboards from "./pages/Whiteboards";
@@ -221,7 +220,6 @@ const App = () => (
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/plan" element={<PlanTimeline />} />
                 <Route path="/plan/:date" element={<PlanDay />} />
-                <Route path="/planner-mockups" element={<PlannerSimplifyMockups />} />
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/planner/:date" element={<Planner />} />
                 <Route path="/check-in" element={<DailyCheckIn />} />

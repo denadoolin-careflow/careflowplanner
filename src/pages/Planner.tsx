@@ -673,15 +673,17 @@ export default function Planner() {
            {!showTaskPanel && !isMobile && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
             <div className="mb-3 shrink-0">
-              <MonthSeasonHeader month={startOfMonth(day)} className="mb-3" />
-              <MobileWeekAgendaStrip day={day} onSelect={go} />
+              {/* One header block: month photo with the week strip directly on it, then a single Top 3. */}
+              <div className="planner-card overflow-hidden">
+                <MonthSeasonHeader month={startOfMonth(day)} className="rounded-none" />
+                <div className="p-2"><MobileWeekAgendaStrip day={day} onSelect={go} /></div>
+              </div>
               <PlannerPriorityStrip date={day} scope="day" className="mt-3" />
-              <details open className="planner-month-fold mt-3">
-                <summary>Monthly moonscape · Plan · Grow · Care · Let go</summary>
+              {showDayCards && <TodayDayEmbed date={day} onDate={go} />}
+              <details className="planner-month-fold mt-3">
+                <summary>More for today · Monthly moonscape</summary>
                 <div className="pt-2"><MonthlyMoonscape month={startOfMonth(day)} selectedDate={day} onSelectDate={go} /></div>
               </details>
-              <TodayDayEmbed date={day} onDate={go} />
-              <h2 className="mt-4 font-display text-lg text-foreground">Schedule</h2>
             </div>
           )}
           {(view === "week" || view === "month") && (
@@ -691,7 +693,7 @@ export default function Planner() {
               className="mb-3 shrink-0"
             />
           )}
-          <div className="flex min-w-0 flex-col gap-3">
+          <div className={showDaySchedule ? "flex min-w-0 flex-col gap-3" : "hidden"}>
             {((view === "week" && activeWeekMode !== "overview") || altLayout) && (
               <PlannerWeekFilterBar
                 className="shrink-0"
