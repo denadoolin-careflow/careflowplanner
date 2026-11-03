@@ -57,6 +57,8 @@ import { PlannerRhythmCard } from "@/components/planner/PlannerRhythmRow";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { PlannerCareRibbon } from "@/components/planner/PlannerCareRibbon";
 import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMobileWeekMode, usePlannerMonthMode, usePlannerRangeLayout, usePlannerCompletedStrikethrough, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
+import { PlannerScopeBar, type PlannerFace } from "@/components/planner/PlannerScopeBar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PlannerWeekFilterBar } from "@/components/planner/PlannerWeekFilterBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -276,6 +278,23 @@ export default function Planner() {
   const showNotesPanel = !isMobile && panel.notes && (view === "day" || view === "3day") && shellWidth >= 900 && !dayFlow;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const activeWeekMode = isMobile ? mobileWeekMode : weekMode;
+  // Unified Schedule / Cards face per scope; legacy layouts stay under "More layouts".
+  const [dayFace, setDayFaceState] = useState<PlannerFace>(() => {
+    try { return window.localStorage.getItem("careflow.planner.dayFace") === "schedule" ? "schedule" : "cards"; } catch { return "cards"; }
+  });
+  const setDayFace = (f: PlannerFace) => { setDayFaceState(f); try { window.localStorage.setItem("careflow.planner.dayFace", f); } catch {} };
+  const face: PlannerFace | null =
+    view === "day" ? dayFace
+    : view === "week" ? (activeWeekMode === "grid" ? "schedule" : activeWeekMode === "board" ? "cards" : null)
+    : view === "month" ? (monthMode === "calendar" ? "schedule" : "cards")
+    : null;
+  const onFace = (f: PlannerFace) => {
+    if (view === "day") { setDayFace(f); if (f === "schedule") setRangeLayout("default"); }
+    else if (view === "week") { const m = f === "schedule" ? "grid" : "board"; setMobileWeekMode(m); setWeekMode(m); }
+    else if (view === "month") { setMonthMode(f === "schedule" ? "calendar" : "overview"); setRangeLayout("default"); }
+  };
+  const showDayCards = view === "day" && dayFace === "cards";
+  const showDaySchedule = view !== "day" || dayFace === "schedule";
   // List / Table can stand in for the native day, 3-day, month, or year view.
   const rangeStart = view === "month" ? startOfMonth(day) : view === "year" ? startOfYear(day) : day;
   const rangeDays =
