@@ -458,6 +458,8 @@ const CONCEPTS = [
   { id: "cards", name: "2 · Day Cards", blurb: "Each day is its own card with phase pill groupings; swipe sideways through the week." },
   { id: "ribbon", name: "3 · Agenda Ribbon", blurb: "A calm vertical agenda — times on a rail, a colored thread connecting the day." },
   { id: "grid", name: "4 · Phase Grid", blurb: "The day as a 2×2 grid of phase cards; the week as days across and phases down." },
+  { id: "rails", name: "5 · Hour Rails", blurb: "Each phase card has an hour rail — items sit at their real time and length, with a live now-line." },
+  { id: "pills", name: "6 · Block Pills", blurb: "Time blocks with start–end badges on top; flexible tasks with time estimates below." },
 ] as const;
 
 type ConceptId = (typeof CONCEPTS)[number]["id"];
@@ -511,6 +513,8 @@ export default function ScheduleMockups() {
         {concept === "cards" && (scope === "day" ? <DayCardsDay /> : <DayCardsWeek />)}
         {concept === "ribbon" && (scope === "day" ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
         {concept === "grid" && (scope === "day" ? <PhaseGridDay /> : <PhaseGridWeek />)}
+        {concept === "rails" && (scope === "day" ? <HourRailsDay /> : <TimeBlocksWeek rails />)}
+        {concept === "pills" && (scope === "day" ? <BlockPillsDay /> : <TimeBlocksWeek />)}
       </div>
 
       <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">
