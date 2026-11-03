@@ -1471,17 +1471,17 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
                         />
                       )}
                       {it.task && <PriorityFlag task={it.task} className="h-3 w-3" />}
-                      {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
+                      {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
                       {it.kind === "write" && (it.write?.kind === "journal"
                         ? <NotebookPen className="h-3 w-3 shrink-0" />
                         : <StickyNote className="h-3 w-3 shrink-0" />)}
                       <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && completedStrikethrough && "line-through")}>{it.title}</span>
-                      <span className="shrink-0 font-mono text-[9px] font-semibold opacity-80">{minTo12(it.startMin + START_H * 60)}</span>
+                      <span className="shrink-0 font-mono text-xs font-semibold opacity-80">{minTo12(it.startMin + START_H * 60)}</span>
                       {conflictNode}
                     </div>
                   ) : (
                     <div className={cn("flex h-full min-w-0 flex-col gap-0.5", short && "gap-0")}>
-                       <div className="order-1 flex min-w-0 items-center gap-1 font-mono text-[9px] font-semibold leading-none opacity-80">
+                       <div className="order-1 flex min-w-0 items-center gap-1 font-mono text-xs font-semibold leading-none opacity-80">
                         {it.kind === "task" ? (
                           <DurationEditor
                             durMin={it.durMin}
