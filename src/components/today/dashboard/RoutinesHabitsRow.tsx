@@ -175,6 +175,6 @@ export function RoutinesHabitsRow({ date }: { date: Date }) {
           </ul>
         )}
       </DashCard>
-    </div>
+    </>
   );
 }

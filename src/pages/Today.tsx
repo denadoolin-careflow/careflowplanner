@@ -22,6 +22,7 @@ import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { useTodayView, useTodayPrefs, useTodayDefaultView, TODAY_VIEW_LABELS } from "@/lib/today-view";
 import { TodayDashboard } from "@/components/today/dashboard/TodayDashboard";
+import { PhaseCardGrid } from "@/components/today/dashboard/PhaseCardGrid";
 import { CabinetExpiryCard } from "@/components/today/CabinetExpiryCard";
 import { MailReminderCard } from "@/components/today/MailReminderCard";
 import { TodayHeader } from "@/components/today/TodayHeader";
@@ -257,7 +258,7 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
         <SelfCareCard date={day} onExhale={() => setExhaleOpen(true)} />
         <DinnerTonightCard date={day} />
         <CleaningTodayCard />
-      </div>
+      </PhaseCardGrid>
       <LaundryBoard compact />
       <ConnectionsCard date={day} onTaskClick={setEditTaskId} />
     </>),

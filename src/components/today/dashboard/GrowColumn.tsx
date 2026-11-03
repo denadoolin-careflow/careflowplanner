@@ -85,6 +85,6 @@ export function GrowColumn({ date }: { date: Date }) {
           </ul>
         )}
       </DashCard>
-    </div>
+    </>
   );
 }
