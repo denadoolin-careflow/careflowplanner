@@ -1,9 +1,10 @@
 import { Fragment, useState } from "react";
 import { Check, Clock } from "lucide-react";
-import { PhaseIcon } from "@/lib/phase-icons";
+import { PHASE_ICONS } from "@/lib/phase-icons";
 import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 import { PHASE_ORDER, PHASE_WINDOW, phaseForTime } from "@/lib/today-phase-items";
 import { cn } from "@/lib/utils";
+import { createContext, useContext } from "react";
 
 /**
  * Schedule view mockups — sample data only, nothing here touches the real planner.
@@ -15,6 +16,65 @@ interface Item { id: string; title: string; time?: string; end?: string; kind: K
 
 const PHASE_LABEL: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
 const KIND_LABEL: Record<Kind, string> = { task: "Task", appt: "Event", meal: "Meal", care: "Care" };
+
+/* ============ Phase icon styles ============ */
+
+const ICON_STYLES = [
+  { id: "filled", name: "Filled circle" },
+  { id: "tint", name: "Soft tint" },
+  { id: "ring", name: "Outline ring" },
+  { id: "tile", name: "Rounded tile" },
+  { id: "pill", name: "Pill chip" },
+  { id: "arc", name: "Moon arc" },
+] as const;
+type IconStyle = (typeof ICON_STYLES)[number]["id"];
+const IconStyleCtx = createContext<IconStyle>("filled");
+const ARC: Record<RhythmPhase, number> = { plan: 0.25, grow: 0.5, care: 0.75, letgo: 1 };
+
+/** Same four icons; only the badge around them changes with the chosen style. */
+function Glyph({ phase, className }: { phase: RhythmPhase; className?: string }) {
+  const I = PHASE_ICONS[phase];
+  return <I aria-hidden className={className} strokeWidth={1.75} />;
+}
+
+function PB({ phase: p, big, now }: { phase: RhythmPhase; big?: boolean; now?: boolean }) {
+  const v = useContext(IconStyleCtx);
+  const box = big ? "h-9 w-9" : "h-6 w-6";
+  const ic = big ? "h-4 w-4" : "h-3.5 w-3.5";
+  const on = "hsl(var(--rhythm-on))";
+  const nowRing = now ? { boxShadow: `0 0 0 2px hsl(var(--card)), 0 0 0 4px ${main(p)}` } : {};
+  if (v === "pill") {
+    return (
+      <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full font-semibold", big ? "h-8 px-2.5 text-sm" : "h-6 px-1.5 text-xs")}
+        style={{ background: now ? main(p) : tint(p, 0.9), color: now ? on : deep(p) }}>
+        <Glyph phase={p} className={ic} />{big && PHASE_LABEL[p]}
+      </span>
+    );
+  }
+  if (v === "arc") {
+    const r = big ? 16 : 10.5, c = 2 * Math.PI * r, sz = big ? 36 : 24;
+    return (
+      <span className={cn("relative grid shrink-0 place-items-center rounded-full", box)} style={{ background: tint(p, now ? 1 : 0.8), color: deep(p) }}>
+        <svg aria-hidden className="absolute inset-0 -rotate-90" width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`}>
+          <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={main(p)} strokeOpacity={0.25} strokeWidth={2} />
+          <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={deep(p)} strokeWidth={2} strokeLinecap="round" strokeDasharray={`${c * ARC[p]} ${c}`} />
+        </svg>
+        <Glyph phase={p} className={ic} />
+      </span>
+    );
+  }
+  const style =
+    v === "filled" ? { background: main(p), color: on }
+    : v === "tint" ? { background: now ? main(p) : tint(p, 1), color: now ? on : deep(p) }
+    : v === "ring" ? { border: `2px solid ${main(p)}`, background: now ? tint(p, 1) : "transparent", color: deep(p) }
+    : { background: now ? main(p) : tint(p, 1), color: now ? on : deep(p) };
+  return (
+    <span className={cn("grid shrink-0 place-items-center", box, v === "tile" ? (big ? "rounded-xl" : "rounded-lg") : "rounded-full")}
+      style={{ ...style, ...(v !== "ring" ? nowRing : {}) }}>
+      <Glyph phase={p} className={ic} />
+    </span>
+  );
+}
 
 const DAY_ITEMS: Item[] = [
   { id: "d1", title: "Morning Reset", time: "07:30", kind: "care", done: true },
@@ -119,7 +179,7 @@ function PhaseTimelineDay() {
             style={{ background: tint(p, isNow ? 0.55 : 0.3) }}
           >
             <header className="flex items-center gap-2">
-              <PhaseIcon phase={p} size="sm" />
+              <PB phase={p} />
               <h3 className="font-serif text-base" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</h3>
               <span className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</span>
               {isNow && (
@@ -157,7 +217,7 @@ function PhaseTimelineWeek() {
               return (
                 <div key={p} className="rounded-lg px-1.5 py-1" style={{ background: tint(p, 0.35) }}>
                   <div className="flex items-center gap-1" style={{ color: deep(p) }}>
-                    <PhaseIcon phase={p} size="sm" className="h-4 w-4" />
+                    <PB phase={p} />
                     <span className="text-xs font-medium">{PHASE_LABEL[p]}</span>
                   </div>
                   <ul className="mt-1 space-y-1">
@@ -195,7 +255,7 @@ function DayCardsDay() {
                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
                 style={{ background: tint(p, 0.6), color: deep(p) }}
               >
-                <PhaseIcon phase={p} size="sm" className="h-4 w-4" />
+                <PB phase={p} />
                 {PHASE_LABEL[p]} · {PHASE_WINDOW[p]}
               </div>
               <ul className="mt-1.5 space-y-1.5">{items.map(it => <ItemCard key={it.id} it={it} phase={p} />)}</ul>
@@ -285,7 +345,7 @@ function AgendaRibbonDay() {
             <div key={it.id}>
               {showDivider && (
                 <div className="flex items-center gap-2 py-1.5 pl-14">
-                  <PhaseIcon phase={p} size="sm" className="h-4 w-4" />
+                  <PB phase={p} />
                   <span className="text-xs font-semibold" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</span>
                   <span className="h-px flex-1" style={{ background: tint(p, 0.8) }} />
                 </div>
@@ -358,9 +418,7 @@ function PhaseGridDay() {
             style={{ background: tint(p, 0.45), outline: isNow ? `2px solid ${main(p)}` : undefined }}
           >
             <header className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
-                <PhaseIcon phase={p} className="h-4 w-4" />
-              </span>
+              <PB phase={p} big now={isNow} />
               <div className="min-w-0 flex-1">
                 <h3 className="font-serif text-lg leading-tight" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</h3>
                 <p className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</p>
@@ -400,7 +458,7 @@ function PhaseGridWeek() {
           {PHASE_ORDER.map(p => (
             <Fragment key={p}>
               <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: deep(p) }}>
-                <PhaseIcon phase={p} className="h-4 w-4" />{PHASE_LABEL[p]}
+                <PB phase={p} />{PHASE_LABEL[p]}
               </div>
               {WEEK.map((d, i) => {
                 const list = d.items.filter(it => phaseOf(it) === p);
@@ -434,7 +492,7 @@ function PhaseGridWeek() {
                 return (
                   <div key={p} className="min-h-24 rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
                     <div className="mb-1 flex items-center gap-1 text-xs font-semibold" style={{ color: deep(p) }}>
-                      <PhaseIcon phase={p} className="h-3.5 w-3.5" />{PHASE_LABEL[p]}
+                      <PB phase={p} />{PHASE_LABEL[p]}
                     </div>
                     {list.slice(0, 2).map(it => (
                       <div key={it.id} className={cn("mb-1 rounded-lg bg-card px-1.5 py-1 text-xs leading-snug shadow-sm break-words", it.done && "line-through opacity-60")}>{it.title}</div>
@@ -466,9 +524,7 @@ function PhaseHead({ p, list, isNow }: { p: RhythmPhase; list: Item[]; isNow: bo
   const open = (e - s) * 60 - booked;
   return (
     <header className="flex flex-wrap items-center gap-2.5">
-      <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
-        <PhaseIcon phase={p} className="h-4 w-4" />
-      </span>
+      <PB phase={p} big now={isNow} />
       <div className="min-w-0 flex-1">
         <h3 className="font-serif text-lg leading-tight" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</h3>
         <p className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</p>
@@ -653,7 +709,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
           {PHASE_ORDER.map(p => (
             <Fragment key={p}>
               <div className="flex flex-col justify-center text-sm font-medium" style={{ color: deep(p) }}>
-                <span className="flex items-center gap-1.5"><PhaseIcon phase={p} className="h-4 w-4" />{PHASE_LABEL[p]}</span>
+                <span className="flex items-center gap-1.5"><PB phase={p} />{PHASE_LABEL[p]}</span>
                 <span className="text-xs font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
               </div>
               {WEEK.map((d, i) => (
@@ -674,7 +730,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
               {PHASE_ORDER.map(p => (
                 <div key={p} className="rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
                   <div className="mb-1 flex items-center gap-1 text-xs font-semibold" style={{ color: deep(p) }}>
-                    <PhaseIcon phase={p} className="h-3.5 w-3.5" />{PHASE_LABEL[p]}
+                    <PB phase={p} />{PHASE_LABEL[p]}
                     <span className="ml-auto font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
                   </div>
                   {cell(d, p)}
@@ -704,6 +760,7 @@ type ConceptId = (typeof CONCEPTS)[number]["id"];
 export default function ScheduleMockups() {
   const [concept, setConcept] = useState<ConceptId>("timeline");
   const [scope, setScope] = useState<"day" | "week">("day");
+  const [iconStyle, setIconStyle] = useState<IconStyle>("filled");
   const active = CONCEPTS.find(c => c.id === concept)!;
 
   return (
@@ -745,13 +802,31 @@ export default function ScheduleMockups() {
       </div>
       <p className="mt-2 text-sm text-muted-foreground">{active.blurb}</p>
 
+      <div className="mt-4 rounded-2xl bg-card p-3 shadow-sm">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Icon style</p>
+        <div role="radiogroup" aria-label="Phase icon style" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {ICON_STYLES.map(st => (
+            <button key={st.id} role="radio" aria-checked={iconStyle === st.id} onClick={() => setIconStyle(st.id)}
+              className={cn("flex min-h-11 flex-col items-center gap-1.5 rounded-xl border p-2 text-xs font-medium",
+                iconStyle === st.id ? "border-primary bg-primary/5" : "border-border/60")}>
+              <IconStyleCtx.Provider value={st.id}>
+                <span className="flex items-center gap-1">{PHASE_ORDER.map(p => <PB key={p} phase={p} now={p === "care"} />)}</span>
+              </IconStyleCtx.Provider>
+              {st.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-4">
+        <IconStyleCtx.Provider value={iconStyle}>
         {concept === "timeline" && (scope === "day" ? <PhaseTimelineDay /> : <PhaseTimelineWeek />)}
         {concept === "cards" && (scope === "day" ? <DayCardsDay /> : <DayCardsWeek />)}
         {concept === "ribbon" && (scope === "day" ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
         {concept === "grid" && (scope === "day" ? <PhaseGridDay /> : <PhaseGridWeek />)}
         {concept === "rails" && (scope === "day" ? <HourRailsDay /> : <TimeBlocksWeek rails />)}
         {concept === "pills" && (scope === "day" ? <BlockPillsDay /> : <TimeBlocksWeek />)}
+        </IconStyleCtx.Provider>
       </div>
 
       <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">
