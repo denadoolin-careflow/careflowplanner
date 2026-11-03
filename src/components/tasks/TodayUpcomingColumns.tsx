@@ -4,7 +4,7 @@ import { AlertCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { PHASE_ORDER, phaseOfTodayTask } from "@/lib/today-phase-items";
-import { PHASE_ICONS } from "@/lib/rhythm-phase-icons";
+import { PHASE_ICONS } from "@/lib/phase-icons";
 import { PlannerTaskRow } from "@/components/planner/PlannerTaskRow";
 import type { Task } from "@/lib/types";
 
