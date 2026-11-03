@@ -1,18 +1,20 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { addDays, format, isSameDay, startOfWeek } from "date-fns";
+import { toast } from "sonner";
+import { useStore } from "@/lib/store";
 import { Check, Clock } from "lucide-react";
 import { PHASE_ICONS } from "@/lib/phase-icons";
 import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
-import { PHASE_ORDER, PHASE_WINDOW, phaseForTime } from "@/lib/today-phase-items";
+import { PHASE_ORDER, PHASE_WINDOW, currentPhase, parseInline, phaseOfAppointment, phaseOfTodayTask, pinPhase, readApptDone, readPhasePins, toggleApptDone } from "@/lib/today-phase-items";
 import { cn } from "@/lib/utils";
+import { PHASE_HOURS, durOf, isBlock, phaseBookedOpen, toMin } from "./schedule-time";
 import { createContext, useContext } from "react";
 
-/**
- * Schedule view mockups — sample data only, nothing here touches the real planner.
- * Three concepts × Day/Week variants, all in the unified card + phase-color language.
- */
+/** Planner schedule styles (Day + Week) over real tasks and appointments, in the soft-tint phase language. */
 
 type Kind = "task" | "appt" | "meal" | "care";
-interface Item { id: string; title: string; time?: string; end?: string; kind: Kind; done?: boolean }
+interface Item { id: string; title: string; time?: string; end?: string; kind: Kind; done?: boolean; phase: RhythmPhase }
+interface WeekDay { day: string; date: string; iso: string; d: Date; moon: string; items: Item[] }
 
 const PHASE_LABEL: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
 const KIND_LABEL: Record<Kind, string> = { task: "Task", appt: "Event", meal: "Meal", care: "Care" };
@@ -28,7 +30,7 @@ const ICON_STYLES = [
   { id: "arc", name: "Moon arc" },
 ] as const;
 type IconStyle = (typeof ICON_STYLES)[number]["id"];
-const IconStyleCtx = createContext<IconStyle>("filled");
+const IconStyleCtx = createContext<IconStyle>("tint");
 const ARC: Record<RhythmPhase, number> = { plan: 0.25, grow: 0.5, care: 0.75, letgo: 1 };
 
 /** Same four icons; only the badge around them changes with the chosen style. */
@@ -76,55 +78,85 @@ function PB({ phase: p, big, now }: { phase: RhythmPhase; big?: boolean; now?: b
   );
 }
 
-const DAY_ITEMS: Item[] = [
-  { id: "d1", title: "Morning Reset", time: "07:30", kind: "care", done: true },
-  { id: "d2", title: "Breakfast", time: "08:00", kind: "meal", done: true },
-  { id: "d3", title: "Cancel Craft Docs", time: "09:00", kind: "task", done: true },
-  { id: "d4", title: "Team standup", time: "09:30", end: "10:00", kind: "appt" },
-  { id: "d5", title: "Water the plants", time: "10:30", kind: "task" },
-  { id: "d6", title: "Lunch with Mom", time: "12:30", end: "14:00", kind: "appt" },
-  { id: "d7", title: "Work on photo book", time: "14:00", kind: "task" },
-  { id: "d8", title: "Pick up prescription", time: "15:30", kind: "task" },
-  { id: "d9", title: "Dinner prep", time: "17:00", kind: "meal" },
-  { id: "d10", title: "Evening Reflection", time: "19:30", kind: "care" },
-  { id: "d11", title: "Read · The Covenant of Water", time: "21:00", kind: "task" },
-];
+/* ============ Real data ============ */
 
-const WEEK: { day: string; date: string; moon: string; items: Item[] }[] = [
-  { day: "Mon", date: "2", moon: "🌗", items: [
-    { id: "w1", title: "Vote", time: "08:00", kind: "task", done: true },
-    { id: "w2", title: "Tidy up living room", time: "10:00", kind: "task", done: true },
-    { id: "w3", title: "Dinner with Dan", time: "18:30", kind: "appt" },
-  ]},
-  { day: "Tue", date: "3", moon: "🌘", items: [
-    { id: "w4", title: "Wellbutrin", time: "09:00", kind: "care", done: true },
-    { id: "w5", title: "Journal", time: "21:00", kind: "task" },
-  ]},
-  { day: "Wed", date: "4", moon: "🌑", items: [
-    { id: "w6", title: "New moon intention", time: "07:30", kind: "care" },
-    { id: "w7", title: "Dentist", time: "14:00", end: "15:00", kind: "appt" },
-  ]},
-  { day: "Thu", date: "5", moon: "🌒", items: [
-    { id: "w8", title: "Grocery run", time: "16:00", kind: "task" },
-  ]},
-  { day: "Fri", date: "6", moon: "🌓", items: [
-    { id: "w9", title: "Pay Aspire bill", time: "09:00", kind: "task" },
-    { id: "w10", title: "Movie night", time: "20:00", kind: "appt" },
-  ]},
-  { day: "Sat", date: "7", moon: "🌔", items: [
-    { id: "w11", title: "Farmers market", time: "09:30", kind: "appt" },
-    { id: "w12", title: "Meal prep", time: "15:00", kind: "task" },
-  ]},
-  { day: "Sun", date: "8", moon: "🌕", items: [
-    { id: "w13", title: "Cancel Open AI", time: "09:00", kind: "task" },
-    { id: "w14", title: "Family call", time: "17:00", kind: "appt" },
-  ]},
-];
+interface Sched {
+  date: Date; day: Item[]; week: WeekDay[]; todayIdx: number; nowPhase: RhythmPhase | null;
+  toggle: (id: string) => void; openDay: (d: Date) => void; add: (phase: RhythmPhase, text: string, iso: string) => Promise<void>;
+}
+const SchedCtx = createContext<Sched | null>(null);
+const useSched = () => useContext(SchedCtx)!;
+const MOONS = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
+const moonFor = (d: Date) => { const days = (d.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5; const ph = ((days % 29.530588) + 29.530588) % 29.530588; return MOONS[Math.round(ph / 29.530588 * 8) % 8]; };
+const PHASE_DAYPART = { plan: "Morning", grow: "Afternoon", care: "Afternoon", letgo: "Evening" } as const;
+const PHASE_DEFAULT_TIME: Record<RhythmPhase, string> = { plan: "09:00", grow: "13:00", care: "16:00", letgo: "19:00" };
+
+function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
+  const { state, toggleTask, addTask, addAppointment } = useStore();
+  const [pins, setPins] = useState(readPhasePins);
+  const [apptDone, setApptDone] = useState(readApptDone);
+  const itemsFor = (iso: string): Item[] => {
+    const ts: Item[] = state.tasks.filter(t => t.dueDate === iso).map(t => {
+      const p = phaseOfTodayTask(t, pins);
+      return { id: `t:${t.id}`, title: t.title, time: t.startTime ?? undefined, end: t.endTime ?? undefined, kind: "task" as Kind, done: t.done, phase: p };
+    });
+    const as: Item[] = state.appointments.filter(a => a.date === iso).map(a => ({
+      id: `a:${a.id}`, title: a.title, time: a.time ?? undefined, end: a.endTime ?? undefined, kind: "appt" as Kind, done: apptDone.has(`${a.id}@${iso}`) || apptDone.has(a.id), phase: phaseOfAppointment(a, pins),
+    }));
+    return [...ts, ...as].sort((x, y) => (x.time ?? PHASE_DEFAULT_TIME[x.phase]).localeCompare(y.time ?? PHASE_DEFAULT_TIME[y.phase]));
+  };
+  const iso = format(date, "yyyy-MM-dd");
+  const day = useMemo(() => itemsFor(iso), [state.tasks, state.appointments, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
+  const week = useMemo(() => {
+    const ws = startOfWeek(date, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => { const d = addDays(ws, i); const di = format(d, "yyyy-MM-dd");
+      return { day: format(d, "EEE"), date: format(d, "d"), iso: di, d, moon: moonFor(d), items: itemsFor(di) }; });
+  }, [state.tasks, state.appointments, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
+  const now = new Date();
+  const todayIdx = week.findIndex(w => isSameDay(w.d, now));
+  const toggle = (id: string) => {
+    const [k, raw] = [id.slice(0, 1), id.slice(2)];
+    if (k === "t") void toggleTask(raw);
+    else { const a = state.appointments.find(x => x.id === raw); setApptDone(toggleApptDone(raw, a?.date ?? iso)); }
+  };
+  const add = async (phase: RhythmPhase, text: string, dIso: string) => {
+    const parsed = parseInline(text, dIso);
+    let id: string | undefined;
+    if (parsed.kind === "appointment") id = (await addAppointment({ title: parsed.title, date: parsed.date, time: parsed.time }))?.id;
+    else id = await addTask({ title: parsed.title, dueDate: parsed.date, startTime: parsed.time, dayPart: parsed.time ? undefined : PHASE_DAYPART[phase] });
+    if (!id) return;
+    if (!parsed.time) { pinPhase(id, phase); setPins(readPhasePins()); }
+    if (parsed.date !== dIso) toast.success(`Added for ${parsed.date}`);
+  };
+  return { date, day, week, todayIdx, nowPhase: isSameDay(date, now) ? currentPhase(now) : null, toggle, openDay, add };
+}
+
+/** Inline NLP add at the bottom of a phase ("call mom 3pm"). */
+function AddToPhase({ p, label, iso }: { p: RhythmPhase; label?: string; iso?: string }) {
+  const { add, date } = useSched();
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const ref = useRef<HTMLInputElement>(null);
+  const dIso = iso ?? format(date, "yyyy-MM-dd");
+  if (!open) return (
+    <button onClick={() => { setOpen(true); setTimeout(() => ref.current?.focus(), 0); }} className="mt-auto min-h-11 w-full rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
+      {label ?? `+ Add to ${PHASE_LABEL[p]}`}
+    </button>
+  );
+  return (
+    <form className="mt-auto flex gap-2" onSubmit={async e => { e.preventDefault(); if (!text.trim()) return; await add(p, text.trim(), dIso); setText(""); ref.current?.focus(); }}>
+      <label className="sr-only" htmlFor={`add-${p}-${dIso}`}>Add to {PHASE_LABEL[p]}</label>
+      <input id={`add-${p}-${dIso}`} ref={ref} value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Escape" && setOpen(false)}
+        placeholder="Task or event, e.g. call mom 3pm" className="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-card px-3 text-[15px]" />
+      <button type="submit" className="min-h-11 rounded-xl px-3 text-sm font-semibold" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>Add</button>
+    </form>
+  );
+}
 
 const tint = (p: RhythmPhase, a = 0.4) => `hsl(var(--rhythm-${p}-tint) / ${a})`;
 const deep = (p: RhythmPhase) => `hsl(var(--rhythm-${p}-deep))`;
 const main = (p: RhythmPhase) => `hsl(var(--rhythm-${p}))`;
-const phaseOf = (it: Item): RhythmPhase => phaseForTime(it.time) ?? "plan";
+const phaseOf = (it: Item): RhythmPhase => it.phase;
 const fmt = (t?: string) => {
   if (!t) return "";
   const [h, m] = t.split(":").map(Number);
@@ -134,6 +166,7 @@ const fmt = (t?: string) => {
 
 /** Shared item card: rounded, soft shadow, phase edge, big tap target. */
 function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: boolean }) {
+  const { toggle } = useSched();
   return (
     <li
       className={cn(
@@ -144,7 +177,8 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
     >
       <span aria-hidden className="w-1 shrink-0 self-stretch rounded-full" style={{ background: main(phase) }} />
       <button
-        aria-label={it.done ? "Mark not done" : "Mark done"}
+        onClick={() => toggle(it.id)}
+        aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
         className={cn(
           "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
           it.done ? "border-transparent" : "border-muted-foreground/40",
@@ -154,7 +188,7 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
         {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
       </button>
       <span className="min-w-0 flex-1">
-        <span className={cn("block truncate text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+        <span className={cn("block break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
         {!dense && it.end && <span className="block text-xs text-muted-foreground">until {fmt(it.end)}</span>}
       </span>
       <span className="shrink-0 font-mono text-xs text-muted-foreground">{fmt(it.time)}</span>
@@ -165,11 +199,12 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
 /* ============ Concept 1 — Phase Timeline ============ */
 
 function PhaseTimelineDay() {
-  const nowPhase: RhythmPhase = "care";
+  const S = useSched();
+  const { nowPhase } = useSched();
   return (
     <div className="planner-card overflow-hidden border border-border/40">
       {PHASE_ORDER.map((p, i) => {
-        const items = DAY_ITEMS.filter(it => phaseOf(it) === p);
+        const items = S.day.filter(it => phaseOf(it) === p);
         const isNow = p === nowPhase;
         return (
           <section
@@ -201,10 +236,11 @@ function PhaseTimelineDay() {
 }
 
 function PhaseTimelineWeek() {
+  const S = useSched();
   return (
     <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-1 lg:grid lg:grid-cols-7 lg:overflow-visible">
-      {WEEK.map((d, di) => (
-        <div key={d.day} className={cn("planner-card w-40 shrink-0 border border-border/40 p-2 lg:w-auto", di === 6 && "ring-2 ring-primary")}>
+      {S.week.map((d, di) => (
+        <div key={d.day} className={cn("planner-card w-40 shrink-0 border border-border/40 p-2 lg:w-auto", di === S.todayIdx && "ring-2 ring-primary")}>
           <header className="flex items-baseline justify-between px-1">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{d.day}</span>
             <span className="font-serif text-lg">{d.date}</span>
@@ -236,18 +272,19 @@ function PhaseTimelineWeek() {
 /* ============ Concept 2 — Day Cards ============ */
 
 function DayCardsDay() {
+  const S = useSched();
   return (
     <div className="planner-card border border-border/40 p-4">
       <header className="flex items-baseline justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Sunday</p>
-          <h3 className="font-serif text-2xl">November 8</h3>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{format(S.date, "EEEE")}</p>
+          <h3 className="font-serif text-2xl">{format(S.date, "MMMM d")}</h3>
         </div>
-        <span aria-hidden className="text-xl">🌕</span>
+        <span aria-hidden className="text-xl">{moonFor(S.date)}</span>
       </header>
       <div className="mt-3 space-y-3">
         {PHASE_ORDER.map(p => {
-          const items = DAY_ITEMS.filter(it => phaseOf(it) === p);
+          const items = S.day.filter(it => phaseOf(it) === p);
           if (!items.length) return null;
           return (
             <section key={p}>
@@ -268,14 +305,15 @@ function DayCardsDay() {
 }
 
 function DayCardsWeek() {
+  const S = useSched();
   return (
     <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 lg:grid lg:grid-cols-7 lg:overflow-visible">
-      {WEEK.map((d, di) => (
+      {S.week.map((d, di) => (
         <div
           key={d.day}
           className={cn(
             "planner-card w-[70vw] max-w-64 shrink-0 snap-start border border-border/40 p-3 sm:w-56 lg:w-auto lg:max-w-none",
-            di === 6 && "ring-2 ring-primary",
+            di === S.todayIdx && "ring-2 ring-primary",
           )}
         >
           <header className="flex items-baseline gap-2">
@@ -296,12 +334,13 @@ function DayCardsWeek() {
 /* ============ Concept 3 — Agenda Ribbon ============ */
 
 function RibbonRow({ it, last }: { it: Item; last?: boolean }) {
+  const { toggle } = useSched();
   const p = phaseOf(it);
   return (
     <li className="flex gap-3">
-      <div className="flex w-14 shrink-0 flex-col items-end pt-2.5">
-        <span className="font-mono text-sm font-medium">{fmt(it.time)}</span>
-        {it.end && <span className="font-mono text-xs text-muted-foreground">{fmt(it.end)}</span>}
+      <div className="flex w-[4.75rem] shrink-0 flex-col items-end pt-2.5">
+        <span className="whitespace-nowrap rounded-full px-2 py-0.5 font-serif text-xs" style={{ background: tint(p, 1), color: deep(p) }}>{it.time ? fmt(it.time) : "Anytime"}</span>
+        {it.end && <span className="mt-1 whitespace-nowrap font-serif text-xs" style={{ color: deep(p) }}>{fmt(it.end)}</span>}
       </div>
       <div className="relative flex w-4 shrink-0 flex-col items-center" aria-hidden>
         <span className="z-10 mt-3 h-3 w-3 rounded-full border-2 border-card" style={{ background: main(p) }} />
@@ -315,13 +354,14 @@ function RibbonRow({ it, last }: { it: Item; last?: boolean }) {
           )}
         >
           <button
-            aria-label={it.done ? "Mark not done" : "Mark done"}
+            onClick={() => toggle(it.id)}
+            aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
             className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full border-2", it.done ? "border-transparent" : "border-muted-foreground/40")}
             style={it.done ? { background: main(p) } : undefined}
           >
             {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
           </button>
-          <span className={cn("min-w-0 flex-1 truncate text-sm", it.done && "line-through")}>{it.title}</span>
+          <span className={cn("min-w-0 flex-1 break-words text-sm", it.done && "line-through")}>{it.title}</span>
           <span className="shrink-0 rounded-full px-1.5 py-0.5 text-xs" style={{ background: tint(p, 0.5), color: deep(p) }}>
             {KIND_LABEL[it.kind]}
           </span>
@@ -332,10 +372,17 @@ function RibbonRow({ it, last }: { it: Item; last?: boolean }) {
 }
 
 function AgendaRibbonDay() {
-  const sorted = [...DAY_ITEMS].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+  const S = useSched();
+  const sorted = [...S.day].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
   let prevPhase: RhythmPhase | null = null;
   return (
     <div className="planner-card border border-border/40 p-4">
+      {!sorted.length && (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Nothing scheduled yet — open space for the day.</p>
+          <AddToPhase p={S.nowPhase ?? "plan"} label="+ Add a task or event" />
+        </div>
+      )}
       <ul>
         {sorted.map((it, i) => {
           const p = phaseOf(it);
@@ -344,7 +391,7 @@ function AgendaRibbonDay() {
           return (
             <div key={it.id}>
               {showDivider && (
-                <div className="flex items-center gap-2 py-1.5 pl-14">
+                <div className="flex items-center gap-2 py-1.5 pl-[5.75rem]">
                   <PB phase={p} />
                   <span className="text-xs font-semibold" style={{ color: deep(p) }}>{PHASE_LABEL[p]}</span>
                   <span className="h-px flex-1" style={{ background: tint(p, 0.8) }} />
@@ -360,11 +407,12 @@ function AgendaRibbonDay() {
 }
 
 function AgendaRibbonWeek() {
+  const S = useSched();
   return (
     <div className="planner-card border border-border/40 p-4">
-      {WEEK.map((d, di) => (
+      {S.week.map((d, di) => (
         <section key={d.day} className={cn(di > 0 && "mt-4 border-t border-border/30 pt-3")}>
-          <header className="flex items-baseline gap-2 pl-14">
+          <header className="flex items-baseline gap-2 pl-[5.75rem]">
             <h3 className="font-serif text-lg">{d.day} {d.date}</h3>
             <span aria-hidden className="text-sm">{d.moon}</span>
             <span className="ml-auto text-xs text-muted-foreground">{d.items.length} things</span>
@@ -401,9 +449,7 @@ function GridCheckRow({ it, phase, onToggle }: { it: Item; phase: RhythmPhase; o
 }
 
 function PhaseGridDay() {
-  const nowPhase: RhythmPhase = "care";
-  const [items, setItems] = useState(DAY_ITEMS);
-  const toggle = (id: string) => setItems(xs => xs.map(x => (x.id === id ? { ...x, done: !x.done } : x)));
+  const { nowPhase, day: items, toggle } = useSched();
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {PHASE_ORDER.map(p => {
@@ -431,9 +477,7 @@ function PhaseGridDay() {
             <ul className="flex flex-col gap-2">
               {list.map(it => <GridCheckRow key={it.id} it={it} phase={p} onToggle={() => toggle(it.id)} />)}
             </ul>
-            <button className="mt-auto min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
-              + Add to {PHASE_LABEL[p]}
-            </button>
+            <AddToPhase p={p} />
           </section>
         );
       })}
@@ -442,14 +486,15 @@ function PhaseGridDay() {
 }
 
 function PhaseGridWeek() {
-  const todayIdx = 1;
+  const S = useSched();
+  const { todayIdx, openDay } = useSched();
   return (
     <>
       {/* Desktop/tablet: days across, phases down */}
       <div className="planner-card hidden overflow-hidden p-3 md:block">
         <div className="grid gap-1.5" style={{ gridTemplateColumns: "88px repeat(7, minmax(0,1fr))" }}>
           <div />
-          {WEEK.map((d, i) => (
+          {S.week.map((d, i) => (
             <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
               <div className="text-xs uppercase tracking-wide">{d.day}</div>
               <div className="font-serif text-lg leading-none">{d.date}</div>
@@ -460,12 +505,13 @@ function PhaseGridWeek() {
               <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: deep(p) }}>
                 <PB phase={p} />{PHASE_LABEL[p]}
               </div>
-              {WEEK.map((d, i) => {
+              {S.week.map((d, i) => {
                 const list = d.items.filter(it => phaseOf(it) === p);
                 return (
-                  <div
+                  <button
+                    type="button" onClick={() => openDay(d.d)} aria-label={`Open ${d.day} ${d.date}, ${PHASE_LABEL[p]}`}
                     key={`${p}-${d.day}`}
-                    className="min-h-20 rounded-xl p-1.5"
+                    className="block min-h-20 rounded-xl p-1.5 text-left"
                     style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}
                   >
                     {list.slice(0, 2).map(it => (
@@ -474,7 +520,7 @@ function PhaseGridWeek() {
                       </div>
                     ))}
                     {list.length > 2 && <div className="text-xs font-medium" style={{ color: deep(p) }}>+{list.length - 2} more</div>}
-                  </div>
+                  </button>
                 );
               })}
             </Fragment>
@@ -482,10 +528,10 @@ function PhaseGridWeek() {
         </div>
       </div>
       {/* Phone: one card per day, swipe sideways */}
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
-        {WEEK.map((d, i) => (
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
+        {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
-            <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
+            <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></button>
             <div className="grid grid-cols-2 gap-2">
               {PHASE_ORDER.map(p => {
                 const list = d.items.filter(it => phaseOf(it) === p);
@@ -511,17 +557,13 @@ function PhaseGridWeek() {
 
 /* ============ Concepts 5 & 6 — time blocks ============ */
 
-const PHASE_HOURS: Record<RhythmPhase, [number, number]> = { plan: [6, 12], grow: [12, 15], care: [15, 18], letgo: [18, 23] };
-const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
-const durOf = (it: Item) => (it.time && it.end ? toMin(it.end) - toMin(it.time) : it.kind === "appt" ? 60 : 30);
-const endOf = (it: Item) => { const e = toMin(it.time!) + durOf(it); return `${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`; };
+const timeOf = (it: Item) => it.time ?? PHASE_DEFAULT_TIME[it.phase];
+const endOf = (it: Item) => { const e = toMin(timeOf(it)) + durOf(it); return `${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`; };
 const fmtDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`);
-const isBlock = (it: Item) => it.kind === "appt" || !!it.end;
 
 function PhaseHead({ p, list, isNow }: { p: RhythmPhase; list: Item[]; isNow: boolean }) {
   const [s, e] = PHASE_HOURS[p];
-  const booked = list.filter(isBlock).reduce((a, it) => a + durOf(it), 0);
-  const open = (e - s) * 60 - booked;
+  const { booked, open } = phaseBookedOpen(p, list);
   return (
     <header className="flex flex-wrap items-center gap-2.5">
       <PB phase={p} big now={isNow} />
@@ -536,8 +578,7 @@ function PhaseHead({ p, list, isNow }: { p: RhythmPhase; list: Item[]; isNow: bo
 }
 
 function useDayItems() {
-  const [items, setItems] = useState(DAY_ITEMS);
-  const toggle = (id: string) => setItems(xs => xs.map(x => (x.id === id ? { ...x, done: !x.done } : x)));
+  const { day: items, toggle } = useSched();
   return { items, toggle };
 }
 
@@ -560,16 +601,32 @@ function CheckDot({ it, p, onToggle }: { it: Item; p: RhythmPhase; onToggle: () 
 const PX_PER_MIN = 1.5;
 function HourRailsDay() {
   const { items, toggle } = useDayItems();
+  const { nowPhase } = useSched();
+  const nd = new Date(); const nowMin = nd.getHours() * 60 + nd.getMinutes();
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {PHASE_ORDER.map(p => {
         const [s, e] = PHASE_HOURS[p];
-        const list = items.filter(it => phaseOf(it) === p);
+        const all = items.filter(it => phaseOf(it) === p);
+        const list = all.filter(it => it.time);
+        const anytime = all.filter(it => !it.time);
+        const H = (e - s) * 60 * PX_PER_MIN;
         const hours = Array.from({ length: e - s + 1 }, (_, i) => s + i);
         return (
-          <section key={p} aria-current={p === "care" ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
-            style={{ background: tint(p, 0.45), outline: p === "care" ? `2px solid ${main(p)}` : undefined }}>
-            <PhaseHead p={p} list={list} isNow={p === "care"} />
+          <section key={p} aria-current={p === nowPhase ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
+            style={{ background: tint(p, 0.45), outline: p === nowPhase ? `2px solid ${main(p)}` : undefined }}>
+            <PhaseHead p={p} list={all} isNow={p === nowPhase} />
+            {anytime.length > 0 && (
+              <ul aria-label={`Anytime in ${PHASE_LABEL[p]}`} className="flex flex-col gap-2">
+                {anytime.map(it => (
+                  <li key={it.id} className={cn("flex min-h-11 items-center gap-2.5 rounded-xl bg-card px-3 py-2 shadow-sm", it.done && "opacity-60")}>
+                    <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />
+                    <span className={cn("min-w-0 flex-1 break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-xs" style={{ background: tint(p, 1), color: deep(p) }}>Anytime</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="relative mt-2" style={{ height: (e - s) * 60 * PX_PER_MIN }}>
               {hours.map(h => (
                 <div key={h} className="absolute inset-x-0 flex items-center gap-2" style={{ top: (h - s) * 60 * PX_PER_MIN - 8 }}>
@@ -578,12 +635,12 @@ function HourRailsDay() {
                 </div>
               ))}
               {list.map(it => {
-                const top = (toMin(it.time!) - s * 60) * PX_PER_MIN;
-                const h = Math.max(durOf(it) * PX_PER_MIN, 32);
+                const h = Math.min(Math.max(durOf(it) * PX_PER_MIN, 32), H);
+                const top = Math.min(Math.max((toMin(timeOf(it)) - s * 60) * PX_PER_MIN, 0), H - h);
                 return (
                   <div key={it.id} className={cn("absolute left-14 right-0 flex items-start gap-2 overflow-hidden rounded-xl px-2.5 py-1.5 shadow-sm", it.done && "opacity-60")}
                     style={{ top, height: h - 3, background: isBlock(it) ? main(p) : "hsl(var(--card))", borderLeft: `4px solid ${deep(p)}` }}>
-                    {!isBlock(it) && <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />}
+                    <CheckDot it={it} p={p} onToggle={() => toggle(it.id)} />
                     <div className="min-w-0 flex-1" style={isBlock(it) ? { color: "hsl(var(--rhythm-on))" } : undefined}>
                       <p className={cn("break-words text-sm font-medium leading-snug", it.done && "line-through")}>{it.title}</p>
                       {h > 44 && <p className="text-xs opacity-80">{fmt(it.time)} – {fmt(endOf(it))}</p>}
@@ -591,16 +648,14 @@ function HourRailsDay() {
                   </div>
                 );
               })}
-              {p === "care" && (
-                <div aria-label="Now 4:20 pm" className="absolute left-12 right-0 z-10 flex items-center" style={{ top: (16 * 60 + 20 - s * 60) * PX_PER_MIN }}>
+              {p === nowPhase && nowMin >= s * 60 && nowMin <= e * 60 && (
+                <div aria-label={`Now ${format(new Date(), "h:mm a")}`} className="pointer-events-none absolute left-12 right-0 z-10 flex items-center" style={{ top: (nowMin - s * 60) * PX_PER_MIN }}>
                   <span className="-ml-1 h-2.5 w-2.5 rounded-full" style={{ background: deep(p) }} />
                   <span className="h-0.5 flex-1" style={{ background: deep(p) }} />
                 </div>
               )}
             </div>
-            <button className="min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
-              + Block time in {PHASE_LABEL[p]}
-            </button>
+            <AddToPhase p={p} label={`+ Block time in ${PHASE_LABEL[p]}`} />
           </section>
         );
       })}
@@ -610,6 +665,7 @@ function HourRailsDay() {
 
 /** 6 · Block Pills — fixed time blocks with start/end badges on top, flexible tasks below. */
 function BlockPill({ it, p }: { it: Item; p: RhythmPhase }) {
+  const { toggle } = useSched();
   return (
     <li className="flex items-stretch overflow-hidden rounded-2xl bg-card shadow-sm">
       <div className="flex w-[4.5rem] shrink-0 flex-col items-center justify-center gap-0.5 py-2" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
@@ -618,21 +674,22 @@ function BlockPill({ it, p }: { it: Item; p: RhythmPhase }) {
         <span className="text-xs font-semibold">{fmt(endOf(it))}</span>
       </div>
       <div className="min-w-0 flex-1 px-3 py-2">
-        <p className="break-words text-sm font-medium leading-snug">{it.title}</p>
+        <p className={cn("break-words text-sm font-medium leading-snug", it.done && "line-through opacity-60")}>{it.title}</p>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{fmtDur(durOf(it))} · {KIND_LABEL[it.kind]}</p>
       </div>
+      <div className="flex items-center pr-3"><CheckDot it={it} p={p} onToggle={() => toggle(it.id)} /></div>
     </li>
   );
 }
 
 function BlockPillsDay() {
-  const { items, toggle } = useDayItems();
+  const { day: items, toggle, nowPhase } = useSched();
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {PHASE_ORDER.map(p => {
         const list = items.filter(it => phaseOf(it) === p);
         const blocks = list.filter(isBlock), tasks = list.filter(it => !isBlock(it));
-        const isNow = p === "care";
+        const isNow = p === nowPhase;
         return (
           <section key={p} aria-current={isNow ? "true" : undefined} className="planner-card flex flex-col gap-3 p-4"
             style={{ background: tint(p, 0.45), outline: isNow ? `2px solid ${main(p)}` : undefined }}>
@@ -654,9 +711,7 @@ function BlockPillsDay() {
                 ))}
               </ul>
             </div>
-            <button className="mt-auto min-h-11 rounded-xl border border-dashed px-3 text-left text-sm" style={{ borderColor: main(p), color: deep(p) }}>
-              + Add to {PHASE_LABEL[p]}
-            </button>
+            <AddToPhase p={p} />
           </section>
         );
       })}
@@ -666,8 +721,9 @@ function BlockPillsDay() {
 
 /** Week variant shared by 5 & 6: days across, phases down; blocks as start–end pills, tasks as checks. */
 function TimeBlocksWeek({ rails }: { rails?: boolean }) {
-  const todayIdx = 1;
-  const cell = (d: (typeof WEEK)[number], p: RhythmPhase) => {
+  const S = useSched();
+  const { todayIdx, openDay } = useSched();
+  const cell = (d: WeekDay, p: RhythmPhase) => {
     const list = d.items.filter(it => phaseOf(it) === p);
     const [s, e] = PHASE_HOURS[p];
     return (
@@ -676,12 +732,12 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
           <div aria-hidden className="relative mb-1.5 h-2 rounded-full bg-card/70">
             {list.filter(isBlock).map(it => (
               <span key={it.id} className="absolute inset-y-0 rounded-full" style={{
-                left: `${((toMin(it.time!) - s * 60) / ((e - s) * 60)) * 100}%`,
+                left: `${((toMin(timeOf(it)) - s * 60) / ((e - s) * 60)) * 100}%`,
                 width: `${Math.max((durOf(it) / ((e - s) * 60)) * 100, 6)}%`, background: deep(p) }} />
             ))}
           </div>
         )}
-        {list.map(it => isBlock(it) ? (
+        {list.slice(0, 3).map(it => isBlock(it) ? (
           <div key={it.id} className="mb-1 rounded-lg px-1.5 py-1 text-xs leading-snug shadow-sm" style={{ background: main(p), color: "hsl(var(--rhythm-on))" }}>
             <span className="block font-semibold">{fmt(it.time)}–{fmt(endOf(it))}</span>
             <span className="break-words">{it.title}</span>
@@ -692,6 +748,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
             <span className="break-words">{it.title}</span>
           </div>
         ))}
+        {list.length > 3 && <span className="text-xs font-medium" style={{ color: deep(p) }}>+{list.length - 3} more</span>}
       </>
     );
   };
@@ -700,7 +757,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
       <div className="planner-card hidden overflow-hidden p-3 md:block">
         <div className="grid gap-1.5" style={{ gridTemplateColumns: "88px repeat(7, minmax(0,1fr))" }}>
           <div />
-          {WEEK.map((d, i) => (
+          {S.week.map((d, i) => (
             <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
               <div className="text-xs uppercase tracking-wide">{d.day}</div>
               <div className="font-serif text-lg leading-none">{d.date}</div>
@@ -712,20 +769,21 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
                 <span className="flex items-center gap-1.5"><PB phase={p} />{PHASE_LABEL[p]}</span>
                 <span className="text-xs font-normal text-muted-foreground">{PHASE_WINDOW[p]}</span>
               </div>
-              {WEEK.map((d, i) => (
-                <div key={`${p}-${d.day}`} className="min-h-20 rounded-xl p-1.5"
+              {S.week.map((d, i) => (
+                <button key={`${p}-${d.day}`} type="button" onClick={() => openDay(d.d)} aria-label={`Open ${d.day} ${d.date}, ${PHASE_LABEL[p]}`}
+                  className="block min-h-20 rounded-xl p-1.5 text-left"
                   style={{ background: tint(p, i === todayIdx ? 0.7 : 0.35), outline: i === todayIdx ? `1px solid ${main(p)}` : undefined }}>
                   {cell(d, p)}
-                </div>
+                </button>
               ))}
             </Fragment>
           ))}
         </div>
       </div>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
-        {WEEK.map((d, i) => (
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
+        {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
-            <h3 className="mb-3 font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></h3>
+            <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></button>
             <div className="flex flex-col gap-2">
               {PHASE_ORDER.map(p => (
                 <div key={p} className="rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
@@ -744,95 +802,64 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
   );
 }
 
-/* ============ Page ============ */
 
-const CONCEPTS = [
-  { id: "timeline", name: "1 · Phase Timeline", blurb: "The day as four tinted phase sections; the week as mini phase bands per day." },
-  { id: "cards", name: "2 · Day Cards", blurb: "Each day is its own card with phase pill groupings; swipe sideways through the week." },
-  { id: "ribbon", name: "3 · Agenda Ribbon", blurb: "A calm vertical agenda — times on a rail, a colored thread connecting the day." },
-  { id: "grid", name: "4 · Phase Grid", blurb: "The day as a 2×2 grid of phase cards; the week as days across and phases down." },
-  { id: "rails", name: "5 · Hour Rails", blurb: "Each phase card has an hour rail — items sit at their real time and length, with a live now-line." },
-  { id: "pills", name: "6 · Block Pills", blurb: "Time blocks with start–end badges on top; flexible tasks with time estimates below." },
+/* ============ Public API ============ */
+
+export const SCHEDULE_STYLES = [
+  { id: "classic", name: "Classic" },
+  { id: "timeline", name: "Phase Timeline" },
+  { id: "cards", name: "Day Cards" },
+  { id: "ribbon", name: "Agenda Ribbon" },
+  { id: "grid", name: "Phase Grid" },
+  { id: "rails", name: "Hour Rails" },
+  { id: "pills", name: "Block Pills" },
 ] as const;
+export type ScheduleStyle = (typeof SCHEDULE_STYLES)[number]["id"];
+const STYLE_KEY = "careflow.planner.scheduleStyle";
+export function readScheduleStyle(): ScheduleStyle {
+  try { const v = window.localStorage.getItem(STYLE_KEY); return (SCHEDULE_STYLES.some(x => x.id === v) ? v : "classic") as ScheduleStyle; } catch { return "classic"; }
+}
+export function useScheduleStyle(): [ScheduleStyle, (s: ScheduleStyle) => void] {
+  const [v, setV] = useState<ScheduleStyle>(readScheduleStyle);
+  useEffect(() => {
+    const on = () => setV(readScheduleStyle());
+    window.addEventListener("careflow:schedule-style", on);
+    return () => window.removeEventListener("careflow:schedule-style", on);
+  }, []);
+  return [v, (s) => { try { window.localStorage.setItem(STYLE_KEY, s); } catch { /* ignore */ } setV(s); window.dispatchEvent(new Event("careflow:schedule-style")); }];
+}
 
-type ConceptId = (typeof CONCEPTS)[number]["id"];
-
-export default function ScheduleMockups() {
-  const [concept, setConcept] = useState<ConceptId>("timeline");
-  const [scope, setScope] = useState<"day" | "week">("day");
-  const [iconStyle, setIconStyle] = useState<IconStyle>("filled");
-  const active = CONCEPTS.find(c => c.id === concept)!;
-
+/** Renders the chosen schedule style for a day or the week containing `date`. */
+export function PlannerScheduleStyleView({ style, scope, date, onOpenDay }: {
+  style: Exclude<ScheduleStyle, "classic">; scope: "day" | "week"; date: Date; onOpenDay: (d: Date) => void;
+}) {
+  const data = useSchedData(date, onOpenDay);
+  const day = scope === "day";
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 pb-28">
-      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Preview only · sample data · your planner is unchanged</p>
-      <h1 className="mt-1 font-serif text-3xl">Schedule view mockups</h1>
+    <SchedCtx.Provider value={data}>
+      <IconStyleCtx.Provider value="tint">
+        {style === "timeline" && (day ? <PhaseTimelineDay /> : <PhaseTimelineWeek />)}
+        {style === "cards" && (day ? <DayCardsDay /> : <DayCardsWeek />)}
+        {style === "ribbon" && (day ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
+        {style === "grid" && (day ? <PhaseGridDay /> : <PhaseGridWeek />)}
+        {style === "rails" && (day ? <HourRailsDay /> : <TimeBlocksWeek rails />)}
+        {style === "pills" && (day ? <BlockPillsDay /> : <TimeBlocksWeek />)}
+      </IconStyleCtx.Provider>
+    </SchedCtx.Provider>
+  );
+}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {CONCEPTS.map(c => (
-          <button
-            key={c.id}
-            onClick={() => setConcept(c.id)}
-            aria-pressed={concept === c.id}
-            className={cn(
-              "min-h-11 rounded-full border px-4 text-sm font-medium transition-colors",
-              concept === c.id
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border/60 bg-card text-foreground hover:border-primary/40",
-            )}
-          >
-            {c.name}
-          </button>
-        ))}
-        <span className="ml-auto inline-flex rounded-full border border-border/60 bg-card p-0.5">
-          {(["day", "week"] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setScope(s)}
-              aria-pressed={scope === s}
-              className={cn(
-                "min-h-10 rounded-full px-4 text-sm font-medium capitalize transition-colors",
-                scope === s ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-              )}
-            >
-              {s}
-            </button>
-          ))}
-        </span>
-      </div>
-      <p className="mt-2 text-sm text-muted-foreground">{active.blurb}</p>
-
-      <div className="mt-4 rounded-2xl bg-card p-3 shadow-sm">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Icon style</p>
-        <div role="radiogroup" aria-label="Phase icon style" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          {ICON_STYLES.map(st => (
-            <button key={st.id} role="radio" aria-checked={iconStyle === st.id} onClick={() => setIconStyle(st.id)}
-              className={cn("flex min-h-11 flex-col items-center gap-1.5 rounded-xl border p-2 text-xs font-medium",
-                iconStyle === st.id ? "border-primary bg-primary/5" : "border-border/60")}>
-              <IconStyleCtx.Provider value={st.id}>
-                <span className="flex items-center gap-1">{PHASE_ORDER.map(p => <PB key={p} phase={p} now={p === "care"} />)}</span>
-              </IconStyleCtx.Provider>
-              {st.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <IconStyleCtx.Provider value={iconStyle}>
-        {concept === "timeline" && (scope === "day" ? <PhaseTimelineDay /> : <PhaseTimelineWeek />)}
-        {concept === "cards" && (scope === "day" ? <DayCardsDay /> : <DayCardsWeek />)}
-        {concept === "ribbon" && (scope === "day" ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
-        {concept === "grid" && (scope === "day" ? <PhaseGridDay /> : <PhaseGridWeek />)}
-        {concept === "rails" && (scope === "day" ? <HourRailsDay /> : <TimeBlocksWeek rails />)}
-        {concept === "pills" && (scope === "day" ? <BlockPillsDay /> : <TimeBlocksWeek />)}
-        </IconStyleCtx.Provider>
-      </div>
-
-      <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Clock className="h-3.5 w-3.5" aria-hidden />
-        Tell me which concept you like and what to change — then I'll build it into the real planner.
-      </p>
+/** Compact, scrollable style chooser shown above the Planner schedule (also used in Settings). */
+export function ScheduleStylePicker({ value, onChange, className }: { value: ScheduleStyle; onChange: (s: ScheduleStyle) => void; className?: string }) {
+  return (
+    <div role="radiogroup" aria-label="Schedule style" className={cn("-mx-1 flex gap-1.5 overflow-x-auto overscroll-x-contain px-1 pb-1", className)}>
+      {SCHEDULE_STYLES.map(st => (
+        <button key={st.id} type="button" role="radio" aria-checked={value === st.id} onClick={() => onChange(st.id)}
+          className={cn("min-h-11 shrink-0 rounded-full border px-3.5 text-sm font-medium transition-colors",
+            value === st.id ? "border-primary bg-primary text-primary-foreground" : "border-border/60 bg-card text-foreground hover:border-primary/40")}>
+          {st.name}
+        </button>
+      ))}
     </div>
   );
 }
