@@ -5,7 +5,7 @@ import { SortableContext } from "@dnd-kit/sortable";
 import { ageGroupOf, type AgeGroup } from "@/lib/task-schedule";
 import { InboxSortableRow } from "./InboxSortableRow";
 import { InboxSortButton } from "./InboxSortBoxes";
-import type { DayPart } from "@/lib/types";
+import type { DayPart } from "./WhenPopover";
 
 const GROUPS: { id: AgeGroup; label: string }[] = [
   { id: "today", label: "New today" },
