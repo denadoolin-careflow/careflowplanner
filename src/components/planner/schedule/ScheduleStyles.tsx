@@ -528,7 +528,7 @@ function PhaseGridWeek() {
         </div>
       </div>
       {/* Phone: one card per day, swipe sideways */}
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
         {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
             <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></button>
@@ -780,7 +780,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
           ))}
         </div>
       </div>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 md:hidden">
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
         {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
             <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date} <span aria-hidden>{d.moon}</span></button>
