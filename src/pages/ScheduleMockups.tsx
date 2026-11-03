@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Check, Clock } from "lucide-react";
 import { PhaseIcon } from "@/lib/phase-icons";
 import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
@@ -398,8 +398,8 @@ function PhaseGridWeek() {
             </div>
           ))}
           {PHASE_ORDER.map(p => (
-            <>
-              <div key={`${p}-l`} className="flex items-center gap-1.5 text-sm font-medium" style={{ color: deep(p) }}>
+            <Fragment key={p}>
+              <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: deep(p) }}>
                 <PhaseIcon phase={p} className="h-4 w-4" />{PHASE_LABEL[p]}
               </div>
               {WEEK.map((d, i) => {
@@ -419,7 +419,7 @@ function PhaseGridWeek() {
                   </div>
                 );
               })}
-            </>
+            </Fragment>
           ))}
         </div>
       </div>
