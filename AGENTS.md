@@ -25,7 +25,6 @@
 - Tag appearance editing reuses the shared tag store; unused filtering counts existing sources without deleting content.
 - NAV_SUBPAGES (nav.ts) drives sidebar branches and page tabs.
 - Sidebar hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portal.
-- Day rhythm combines moon, season, cycle and capacity.
 - Project Linked notes merge note_links and notes.project_id matches, labelling each source.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
 - Inbox and Planner share a selected-note schedule pane; the chosen ordinary note is device-local while daily-note following uses the active schedule date.
