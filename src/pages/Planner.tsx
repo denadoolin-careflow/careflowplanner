@@ -26,6 +26,7 @@ import { MonthlyMoonscape } from "@/components/planner/MonthlyMoonscape";
 import { PlannerDailyCareChecklist } from "@/components/planner/PlannerDailyCareChecklist";
 
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
+import { PlannerScheduleStyleView, ScheduleStylePicker, useScheduleStyle } from "@/components/planner/schedule/ScheduleStyles";
 import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
 import { PlannerWeekList } from "@/components/planner/PlannerWeekList";
 import { PlannerWeekTable } from "@/components/planner/PlannerWeekTable";
@@ -293,6 +294,7 @@ export default function Planner() {
     else if (view === "week") { const m = f === "schedule" ? "grid" : "board"; setMobileWeekMode(m); setWeekMode(m); }
     else if (view === "month") { setMonthMode(f === "schedule" ? "calendar" : "overview"); setRangeLayout("default"); }
   };
+  const [schedStyle, setSchedStyle] = useScheduleStyle();
   const showDayCards = view === "day" && dayFace === "cards";
   const showDaySchedule = view !== "day" || dayFace === "schedule";
   // List / Table can stand in for the native day, 3-day, month, or year view.
@@ -718,6 +720,12 @@ export default function Planner() {
               <PlannerWeekTable weekStart={rangeStart} days={rangeDays} scope={tableScope} />
             )}
             {nativeRange && view === "day" && period === "grid" && (
+              <ScheduleStylePicker value={schedStyle} onChange={setSchedStyle} className="mb-3" />
+            )}
+            {nativeRange && view === "day" && period === "grid" && schedStyle !== "classic" && (
+              <PlannerScheduleStyleView style={schedStyle} scope="day" date={day} onOpenDay={openDay} />
+            )}
+            {nativeRange && view === "day" && period === "grid" && schedStyle === "classic" && (
               <div className={gridBox}>
                 <PlannerCareRibbon date={day} className="mb-2" />
                 <PlannerDailyCareChecklist iso={format(day, "yyyy-MM-dd")} />
@@ -761,6 +769,12 @@ export default function Planner() {
             )}
             {view === "week" && <PeriodNoteCard kind="weekly" keyISO={weekKeyFor(weekStart)} className="mb-2" />}
             {view === "week" && activeWeekMode === "grid" && (
+              <ScheduleStylePicker value={schedStyle} onChange={setSchedStyle} className="mb-3" />
+            )}
+            {view === "week" && activeWeekMode === "grid" && schedStyle !== "classic" && (
+              <PlannerScheduleStyleView style={schedStyle} scope="week" date={day} onOpenDay={openDay} />
+            )}
+            {view === "week" && activeWeekMode === "grid" && schedStyle === "classic" && (
               <div className={expandedScheduleBox}>
                 <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} expandHeight />
               </div>

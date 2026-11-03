@@ -846,3 +846,18 @@ export function PlannerScheduleStyleView({ style, scope, date, onOpenDay }: {
     </SchedCtx.Provider>
   );
 }
+
+/** Compact, scrollable style chooser shown above the Planner schedule (also used in Settings). */
+export function ScheduleStylePicker({ value, onChange, className }: { value: ScheduleStyle; onChange: (s: ScheduleStyle) => void; className?: string }) {
+  return (
+    <div role="radiogroup" aria-label="Schedule style" className={cn("-mx-1 flex gap-1.5 overflow-x-auto overscroll-x-contain px-1 pb-1", className)}>
+      {SCHEDULE_STYLES.map(st => (
+        <button key={st.id} type="button" role="radio" aria-checked={value === st.id} onClick={() => onChange(st.id)}
+          className={cn("min-h-11 shrink-0 rounded-full border px-3.5 text-sm font-medium transition-colors",
+            value === st.id ? "border-primary bg-primary text-primary-foreground" : "border-border/60 bg-card text-foreground hover:border-primary/40")}>
+          {st.name}
+        </button>
+      ))}
+    </div>
+  );
+}
