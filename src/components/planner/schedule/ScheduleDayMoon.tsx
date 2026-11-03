@@ -18,7 +18,7 @@ export function ScheduleDayMoon({ date, compact, stacked, className }: { date: D
         <MoonGlyph date={date} size={compact ? 18 : 22} />
       </span>
       <span
-        className=cn("inline-flex min-w-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium leading-tight", stacked && "max-w-full rounded-xl text-center")
+        className={cn("inline-flex min-w-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium leading-tight", stacked && "max-w-full rounded-xl text-center")}
         style={{ background: `hsl(var(--rhythm-${m.rhythm}-tint))`, color: `hsl(var(--rhythm-${m.rhythm}-deep))` }}
       >
         <Icon className="h-3 w-3 shrink-0" aria-hidden />
