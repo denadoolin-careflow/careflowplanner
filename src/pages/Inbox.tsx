@@ -40,6 +40,8 @@ import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { CaptureSaveTo, appendCaptureToNote, type SaveTo } from "@/components/inbox/CaptureSaveTo";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
+import { HeldByAge } from "@/components/inbox/HeldByAge";
+import { TodayUpcomingColumns } from "@/components/tasks/TodayUpcomingColumns";
 import { InboxSortBoxes, InboxSortButton } from "@/components/inbox/InboxSortBoxes";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { INBOX_ROW_STYLES, useInboxRowStyle, type InboxRowStyle } from "@/lib/inbox-row-style";
@@ -1408,7 +1410,7 @@ function InboxInner() {
         <div className="min-w-0 space-y-6">
         {items.length > 0 ? (
           <section id="inbox-held" className="scroll-mt-24 rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
-            <InboxHeldHeader />
+            <InboxHeldHeader heldView={heldView} setHeldView={setHeldView} />
             {inlineAdd !== null && (
               <div className="mb-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-background/80 px-3 py-2 shadow-[0_0_0_4px_hsl(var(--primary)/0.08)]">
                 <Plus className="h-4 w-4 text-primary/70" />
@@ -1430,6 +1432,9 @@ function InboxInner() {
             {filteredItems.length === 0 && (
               <p className="py-6 text-center text-[13px] text-muted-foreground">Nothing matches this filter.</p>
             )}
+            {heldView === "age" ? (
+              <HeldByAge items={filteredItems} autoDayPart={autoDayPart} compact={notebookVisible || scheduleOpen} />
+            ) : (
             <SectionedInboxList
               items={filteredItems}
               allTasks={state.tasks ?? []}
@@ -1453,6 +1458,7 @@ function InboxInner() {
               }}
               onProcess={() => setProcessOpen(true)}
             />
+            )}
           </section>
         ) : (
           <section className="rounded-[24px] border border-dashed border-border/60 bg-card/40 p-6 text-center backdrop-blur-md">
@@ -1663,13 +1669,21 @@ function bucketFor(t: any): Bucket {
   return "ready";
 }
 
-function InboxHeldHeader() {
+function InboxHeldHeader({ heldView, setHeldView }: { heldView: "age" | "status"; setHeldView: (v: "age" | "status") => void }) {
   const { selectionMode, toggleSelectionMode, count, clear, selectAll } = useTaskSelection();
   const [rowStyle, setRowStyle] = useInboxRowStyle();
   return (
     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
       <h3 className="font-display text-lg tracking-tight">Held in your inbox</h3>
       <div className="flex items-center gap-1.5">
+        <div role="radiogroup" aria-label="Group held items" className="flex rounded-full bg-muted/60 p-0.5">
+          {(["age", "status"] as const).map(v => (
+            <button key={v} type="button" role="radio" aria-checked={heldView === v} onClick={() => setHeldView(v)}
+              className={cn("h-8 rounded-full px-3 text-xs", heldView === v ? "bg-card font-medium shadow-sm" : "text-muted-foreground")}>
+              {v === "age" ? "By age" : "By status"}
+            </button>
+          ))}
+        </div>
         <Popover>
           <PopoverTrigger asChild>
             <Button

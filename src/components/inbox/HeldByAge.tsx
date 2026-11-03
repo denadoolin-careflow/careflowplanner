@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { DndContext } from "@dnd-kit/core";
+import { SortableContext } from "@dnd-kit/sortable";
 import { ageGroupOf, type AgeGroup } from "@/lib/task-schedule";
 import { InboxSortableRow } from "./InboxSortableRow";
 import { InboxSortButton } from "./InboxSortBoxes";
@@ -19,6 +21,7 @@ export function HeldByAge({ items, autoDayPart, compact }: { items: any[]; autoD
     return m;
   }, [items]);
   return (
+    <DndContext><SortableContext items={items.map(t => `inbox:${t.id}`)}>
     <div className="space-y-5">
       {GROUPS.map(g => groups[g.id].length > 0 && (
         <section key={g.id} className={cn(g.id === "older" && "rounded-2xl bg-muted/50 p-3")}>
@@ -36,5 +39,6 @@ export function HeldByAge({ items, autoDayPart, compact }: { items: any[]; autoD
         </section>
       ))}
     </div>
+    </SortableContext></DndContext>
   );
 }
