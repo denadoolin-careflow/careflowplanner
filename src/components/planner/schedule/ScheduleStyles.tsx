@@ -560,6 +560,7 @@ function PhaseGridWeek() {
             <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
               <div className="text-xs uppercase tracking-wide">{d.day}</div>
               <div className="font-serif text-lg leading-none">{d.date}</div>
+              <div className="mt-1 flex justify-center"><ScheduleDayMoon date={d.d} compact /></div>
             </div>
           ))}
           {PHASE_ORDER.map(p => (
@@ -593,7 +594,7 @@ function PhaseGridWeek() {
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
         {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
-            <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date}</button>
+            <div className="mb-3 flex items-center gap-2"><button type="button" onClick={() => openDay(d.d)} className="block min-h-11 text-left font-serif text-xl">{d.day} {d.date}</button><ScheduleDayMoon date={d.d} compact className="ml-auto" /></div>
             <div className="grid grid-cols-2 gap-2">
               {PHASE_ORDER.map(p => {
                 const list = d.items.filter(it => phaseOf(it) === p);
@@ -823,6 +824,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
             <div key={d.day} className={cn("rounded-xl py-1.5 text-center", i === todayIdx && "bg-primary text-primary-foreground")}>
               <div className="text-xs uppercase tracking-wide">{d.day}</div>
               <div className="font-serif text-lg leading-none">{d.date}</div>
+              <div className="mt-1 flex justify-center"><ScheduleDayMoon date={d.d} compact /></div>
             </div>
           ))}
           {PHASE_ORDER.map(p => (
@@ -845,7 +847,7 @@ function TimeBlocksWeek({ rails }: { rails?: boolean }) {
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
         {S.week.map((d, i) => (
           <section key={d.day} className={cn("planner-card w-[82%] shrink-0 snap-start p-4", i === todayIdx && "ring-2 ring-primary")}>
-            <button type="button" onClick={() => openDay(d.d)} className="mb-3 block min-h-11 text-left font-serif text-xl">{d.day} {d.date}</button>
+            <div className="mb-3 flex items-center gap-2"><button type="button" onClick={() => openDay(d.d)} className="block min-h-11 text-left font-serif text-xl">{d.day} {d.date}</button><ScheduleDayMoon date={d.d} compact className="ml-auto" /></div>
             <div className="flex flex-col gap-2">
               {PHASE_ORDER.map(p => (
                 <div key={p} className="rounded-xl p-2" style={{ background: tint(p, 0.5) }}>
@@ -900,6 +902,12 @@ export function PlannerScheduleStyleView({ style, scope, date, onOpenDay }: {
   return (
     <SchedCtx.Provider value={data}>
       <IconStyleCtx.Provider value="tint">
+        {day && style !== "cards" && (
+          <div className="mb-2 flex items-center gap-2 px-1">
+            <span className="font-serif text-lg">{format(date, "EEEE, MMMM d")}</span>
+            <ScheduleDayMoon date={date} className="ml-auto" />
+          </div>
+        )}
         {style === "timeline" && (day ? <PhaseTimelineDay /> : <PhaseTimelineWeek />)}
         {style === "cards" && (day ? <DayCardsDay /> : <DayCardsWeek />)}
         {style === "ribbon" && (day ? <AgendaRibbonDay /> : <AgendaRibbonWeek />)}
