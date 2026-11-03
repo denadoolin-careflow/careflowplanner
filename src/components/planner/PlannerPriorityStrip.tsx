@@ -147,12 +147,12 @@ export function PlannerPriorityStrip({
           Nothing pinned yet — name up to three things that matter {scope === "day" ? "today" : `this ${scope}`}.
         </p>
       ) : (
-         <ol className="space-y-1 max-sm:flex max-sm:snap-x max-sm:gap-1.5 max-sm:space-y-0 max-sm:overflow-x-auto max-sm:pb-0.5">
+         <ol className="space-y-1">
           {rows.map((r, i) => (
             <li
               key={r.row.id}
               className={cn(
-                 "group flex min-w-0 items-center gap-2 rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition hover:border-primary/30 hover:bg-card max-sm:min-w-[82%] max-sm:snap-start",
+                 "group flex min-w-0 items-start gap-2 rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition hover:border-primary/30 hover:bg-card",
                 r.done && "opacity-60",
               )}
             >
@@ -171,7 +171,7 @@ export function PlannerPriorityStrip({
                 type="button"
                 onClick={() => openRow(r)}
                 title={r.title}
-                className={cn("min-w-0 flex-1 truncate text-left text-xs", r.done && "line-through")}
+                className={cn("min-w-0 flex-1 whitespace-normal break-words text-left text-xs leading-snug", r.done && "line-through")}
               >
                 {r.title}
               </button>
