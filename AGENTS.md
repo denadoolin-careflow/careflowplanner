@@ -8,11 +8,10 @@
 - Daily rituals reuse daily_checkins for Morning Reset and dated journal entries tagged with the evening-reflection template for Evening Reflection completion, avoiding a duplicate ritual store.
 - Ritual step lists (Morning Reset / Evening Reflection) and their per-date check-offs are device-local (localStorage) presentation data; ritual completion itself stays in daily_checkins / journal.
 - Ritual steps reuse shared completion visuals/chimes; stable default step IDs keep checks.
-- Completed-task strikethrough is a device-local pref shared by all task surfaces.
+- Completed-task strikethrough is one device-local pref for all task views.
 - Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
 - Today/Planner use page-scoped Soft Botanical tokens, preserving the app-wide theme.
 - Today/Planner share ViewPills. Goal pickers/labels share LifeAreaGoalPicker; links use tasks.goal_id, projects.linked_goal_ids, habits.meta.linkedGoalIds, and device-local ritual goal ids in ritual-steps. Explicit task goal clears persist null.
-- Day rhythm combines moon, season, cycle and capacity.
 - Note properties use notes.properties (jsonb); supertag fields use item_field_values, entity_type 'note'.
 - Note block IDs persist as trailing ` ^b-xxxxxx` markers in the markdown body (added only when first linked); block embeds/ref chips persist as data-* HTML so no schema change is needed.
 - Notes uses a page-scoped presentation layer derived from the active atmosphere; capture review, pinned density, and per-month notebook appearance are device-local while note/task content preserves existing synced models.
