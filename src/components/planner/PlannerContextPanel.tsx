@@ -16,9 +16,11 @@ import { usePlannerFeed } from "@/lib/planner/feed";
 interface Props {
   date: Date;
   onChangeDate: (d: Date) => void;
+  /** Below-the-day layout: drop cards the Today flow already shows. */
+  inline?: boolean;
 }
 
-export function PlannerContextPanel({ date, onChangeDate }: Props) {
+export function PlannerContextPanel({ date, onChangeDate, inline = false }: Props) {
   const [moreOpen, setMoreOpen] = useState<boolean>(() => {
     try { return localStorage.getItem("careflow:planner:context-more") === "1"; } catch { return false; }
   });
@@ -26,18 +28,18 @@ export function PlannerContextPanel({ date, onChangeDate }: Props) {
     try { localStorage.setItem("careflow:planner:context-more", moreOpen ? "1" : "0"); } catch { /* noop */ }
   }, [moreOpen]);
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col gap-3 overflow-y-auto pr-1">
-      <DayPulseCard date={date} />
-      <TodayIntentionCard date={date} />
-      <TopPrioritiesCard date={date} />
-      <FocusPinboard />
-      <ActiveFocusMini />
+    <aside className={cn("flex w-full flex-col gap-3", inline ? "planner-card border border-border/40 p-4" : "h-full min-h-0 overflow-y-auto pr-1")}>
+      {!inline && <DayPulseCard date={date} />}
+      {!inline && <TodayIntentionCard date={date} />}
+      {!inline && <TopPrioritiesCard date={date} />}
+      {!inline && <FocusPinboard />}
+      {!inline && <ActiveFocusMini />}
       <AgendaAhead date={date} onChangeDate={onChangeDate} />
       <button
         type="button"
         onClick={() => setMoreOpen(o => !o)}
         aria-expanded={moreOpen}
-        className="flex items-center gap-1.5 self-start rounded-full px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+        className="flex items-center gap-1.5 self-start rounded-full px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
       >
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", !moreOpen && "-rotate-90")} />
         More context
@@ -65,21 +67,21 @@ function AgendaAhead({ date, onChangeDate }: { date: Date; onChangeDate: (d: Dat
     .slice(0, 4);
   if (!upcoming.length) return null;
   return (
-    <section className="rounded-2xl border border-border/60 bg-card/50 p-3">
-      <header className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ahead</header>
+    <section className="rounded-2xl bg-muted/30 p-3">
+      <header className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ahead</header>
       <div className="space-y-2">
         {upcoming.map(d => (
           <div key={d.key}>
             <button
               type="button"
               onClick={() => onChangeDate(new Date(`${d.key}T12:00:00`))}
-              className="text-[11px] font-medium text-muted-foreground hover:text-foreground"
+              className="text-xs font-medium text-muted-foreground hover:text-foreground"
             >
               {format(new Date(`${d.key}T12:00:00`), "EEE, MMM d")}
             </button>
             <ul className="mt-0.5 space-y-0.5">
               {d.items.map(it => (
-                <li key={it.id} className="flex items-start gap-1.5 text-[11px] [overflow-wrap:anywhere]">
+                <li key={it.id} className="flex items-start gap-1.5 text-sm leading-snug [overflow-wrap:anywhere]">
                   <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: it.color }} />
                   <span className={cn(it.done && "line-through opacity-60")}>{it.time ? `${it.time} · ` : ""}{it.title}</span>
                 </li>
