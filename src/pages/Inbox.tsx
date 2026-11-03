@@ -40,6 +40,7 @@ import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { CaptureSaveTo, appendCaptureToNote, type SaveTo } from "@/components/inbox/CaptureSaveTo";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
+import { InboxSortBoxes, InboxSortButton } from "@/components/inbox/InboxSortBoxes";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { INBOX_ROW_STYLES, useInboxRowStyle, type InboxRowStyle } from "@/lib/inbox-row-style";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -653,6 +654,8 @@ function InboxInner() {
             </p>
           )}
         </header>
+
+        <InboxSortBoxes items={items} />
 
         {/* ────────── Quick Capture ────────── */}
         <section ref={captureSectionRef} className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
@@ -1954,7 +1957,7 @@ function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPa
                   {list.map((t: any) => (
                     <div key={t.id} className="min-w-0">
                       <InboxSortableRow task={t} autoDayPart={autoDayPart} compact={compact} />
-                      {onReflect && <div className="flex justify-end"><Button variant="ghost" size="sm" disabled={reflectionBusy} aria-label={`Add ${t.title} to today's notebook note`} title="Adds a timestamped entry; the item stays in your inbox" onClick={() => onReflect(t)} className="h-10 gap-1.5 text-xs text-muted-foreground"><BookOpen className="h-3.5 w-3.5" />Add to today's note</Button></div>}
+                      <div className="flex justify-end gap-1"><InboxSortButton task={t} />{onReflect && <><Button variant="ghost" size="sm" disabled={reflectionBusy} aria-label={`Add ${t.title} to today's notebook note`} title="Adds a timestamped entry; the item stays in your inbox" onClick={() => onReflect(t)} className="h-10 gap-1.5 text-xs text-muted-foreground"><BookOpen className="h-3.5 w-3.5" />Add to today's note</Button></>}</div>
                     </div>
                   ))}
                   {list.length === 0 && (
