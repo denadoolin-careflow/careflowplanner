@@ -39,9 +39,9 @@ function Task({ title, done, p }: { title: string; done?: boolean; p?: Phase }) 
 
 function Phone({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <figure className="mx-auto w-full max-w-[390px]">
+    <figure className="mx-auto w-full max-w-[420px]">
       <figcaption className="mb-2 text-center text-sm text-muted-foreground">{label}</figcaption>
-      <div className="h-[720px] overflow-y-auto rounded-[36px] border-[6px] border-foreground/80 bg-background p-3">{children}</div>
+      <div className="bg-background sm:rounded-[36px] sm:border-[6px] sm:border-foreground/80 sm:p-3">{children}</div>
     </figure>
   );
 }
@@ -196,20 +196,30 @@ const OPTIONS = [
 ];
 
 export default function PlannerSimplifyMockups() {
+  const [active, setActive] = useState(2);
+  const opt = OPTIONS.find((o) => o.n === active)!;
+  const C = opt.C;
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
+    <div className="mx-auto max-w-3xl px-4 py-6">
       <Link to="/planner" className="text-sm text-muted-foreground hover:text-foreground">← Back to Planner</Link>
       <h1 className="mt-2 font-display text-3xl text-foreground">Simplifying the Planner</h1>
-      <p className="mt-1 max-w-2xl text-[15px] text-muted-foreground">Three preview concepts with sample data — tap around. Nothing here changes your real planner.</p>
-      <div className="mt-6 grid gap-10 lg:grid-cols-3">
-        {OPTIONS.map(({ n, title, desc, C }) => (
-          <section key={n}>
-            <h2 className="font-display text-xl text-foreground">Option {n} · {title}</h2>
-            <p className="mb-4 mt-1 text-sm text-muted-foreground">{desc}</p>
-            <C />
-          </section>
-        ))}
+      <p className="mt-1 text-[15px] text-muted-foreground">Preview concepts with sample data — tap around. Nothing here changes your real planner.</p>
+      <div role="tablist" className="mt-5 grid grid-cols-3 gap-1 rounded-full bg-muted p-1">
+        {[2, 1, 3].map((n) => {
+          const o = OPTIONS.find((x) => x.n === n)!;
+          return (
+            <button key={n} role="tab" aria-selected={active === n} onClick={() => setActive(n)}
+              className={`min-h-11 rounded-full px-2 text-sm ${active === n ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground"}`}>
+              {o.title}
+            </button>
+          );
+        })}
       </div>
+      <section className="mt-5">
+        <h2 className="font-display text-xl text-foreground">Option {opt.n} · {opt.title}</h2>
+        <p className="mb-4 mt-1 text-sm text-muted-foreground">{opt.desc}</p>
+        <C />
+      </section>
     </div>
   );
 }
