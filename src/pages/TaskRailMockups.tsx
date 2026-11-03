@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Sun, CalendarRange, Cloud, NotebookPen, Check, GripVertical, CalendarPlus, ChevronLeft, ChevronRight, Plus, Inbox as InboxIcon, FolderKanban, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PHASE_ICONS } from "@/lib/today-phase-items";
+import { PHASE_ICONS } from "@/lib/phase-icons";
 
 type Phase = "plan" | "grow" | "care" | "letgo";
 type Item = { id: string; title: string; phase: Phase; box: "inbox" | "today" | "week" | "someday" | "notes"; when: "today" | "upcoming" | "someday"; area: string; est?: number; time?: string; note?: boolean };
