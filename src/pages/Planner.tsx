@@ -829,9 +829,9 @@ export default function Planner() {
             )
           )}
           {!isMobile && ((panel.focus && view === "day" && !roomForFocus) || (panel.context && !roomForContext)) && (
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {panel.focus && view === "day" && !roomForFocus && <PlannerFocusPanel date={day} />}
-              {panel.context && !roomForContext && <PlannerContextPanel date={day} onChangeDate={go} />}
+            <div className="mx-auto mt-6 grid w-full max-w-[1280px] items-start gap-6 md:grid-cols-2">
+              {panel.focus && view === "day" && !roomForFocus && <PlannerFocusPanel date={day} className="planner-card border-border/40 p-5" />}
+              {panel.context && !roomForContext && <PlannerContextPanel date={day} onChangeDate={go} inline={view === "day"} />}
             </div>
           )}
         </div>
