@@ -22,6 +22,7 @@ Your choice is remembered on this device. The current timeline stays available a
 - **Add** at the bottom of each phase uses the same smart typing as Today ("call mom 3pm" lands in Care).
 - **Open time** says so, and invites you to rest or block something.
 - **Week view:** each day/phase box shows a "+N more" link and opens that day when tapped.
+- Default view as a setting.
 
 ## Agenda Ribbon change
 
