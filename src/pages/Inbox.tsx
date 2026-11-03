@@ -44,7 +44,8 @@ import { InboxSortBoxes, InboxSortButton } from "@/components/inbox/InboxSortBox
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { INBOX_ROW_STYLES, useInboxRowStyle, type InboxRowStyle } from "@/lib/inbox-row-style";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { InboxSchedulePane } from "@/components/inbox/InboxSchedulePane";
 import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
@@ -234,6 +235,7 @@ function InboxInner() {
   const [plannerDate, setPlannerDate] = useState<Date>(() => startOfDay(new Date()));
   const [planDayOpen, setPlanDayOpen] = useState(false);
   const scheduleOpen = viewMode === "schedule";
+  const [captureOptionsOpen, setCaptureOptionsOpen] = useState(false);
   const [focusFilter, setFocusFilter] = useState<"all" | "quick" | "date" | "category" | "recent">("all");
 
   // Hold-to-record state
@@ -631,41 +633,34 @@ function InboxInner() {
   return (
     <div className="relative min-h-screen bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,hsl(var(--primary)/0.06),transparent_70%)]">
       <div className="mx-auto w-full max-w-6xl space-y-5 px-2 py-6 sm:px-4 md:px-8 md:py-10">
-        {/* ────────── Header + triage bar ────────── */}
-        <header className="space-y-2 animate-fade-in">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h1 className="font-display text-2xl tracking-tight text-foreground md:text-3xl">Inbox</h1>
-              <p className="text-sm text-muted-foreground">
-                {items.length === 0
-                  ? "Your mental unloading zone."
-                  : `${items.length} ${items.length === 1 ? "thing" : "things"} held gently.`}
-              </p>
-            </div>
-            <Button onClick={openProcess} className="h-10 gap-2 rounded-full px-4 text-[13px] font-medium shadow-sm">
-              <Sparkles className="h-3.5 w-3.5" /> Process inbox <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          {items.length > 0 && (
-            <p className="text-[12.5px] text-muted-foreground">
-              <span className="font-medium text-foreground">{stats.quickWins}</span> quick {stats.quickWins === 1 ? "win" : "wins"}
-              {" · "}<span className="font-medium text-foreground">{stats.needScheduling}</span> need a date
-              {" · "}<span className="font-medium text-foreground">{stats.needCategory}</span> need a category
+        {/* ────────── Slim header ────────── */}
+        <header className="flex items-end justify-between gap-3 animate-fade-in">
+          <div>
+            <h1 className="font-display text-2xl tracking-tight text-foreground md:text-3xl">Inbox</h1>
+            <p className="text-xs text-muted-foreground">
+              {items.length === 0 ? "All clear" : `${items.length} ${items.length === 1 ? "thing" : "things"} held gently`}
             </p>
-          )}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" aria-label="More tools" className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted">
+                <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem className="min-h-11" onSelect={openProcess}><Sparkles className="mr-2 h-4 w-4" />Process inbox</DropdownMenuItem>
+              <DropdownMenuItem className="min-h-11" onSelect={() => setPlanDayOpen(true)}><Wand2 className="mr-2 h-4 w-4" />Plan my day</DropdownMenuItem>
+              <DropdownMenuItem className="min-h-11" onSelect={() => setViewMode(scheduleOpen ? "list" : "schedule")}><CalendarClock className="mr-2 h-4 w-4" />{scheduleOpen ? "Show list only" : "Show schedule"}</DropdownMenuItem>
+              {!isMobile && <DropdownMenuItem className="min-h-11" onSelect={() => setNoteOpen((v) => !v)}><BookOpen className="mr-2 h-4 w-4" />{notebookVisible ? "Hide today's note" : "Show today's note"}</DropdownMenuItem>}
+              <DropdownMenuItem className="min-h-11" onSelect={openNotebook}><FileText className="mr-2 h-4 w-4" />Open today's notebook note</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
 
-        <InboxSortBoxes items={items} />
+
 
         {/* ────────── Quick Capture ────────── */}
-        <section ref={captureSectionRef} className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h3 className="font-display text-lg tracking-tight">Quick Capture</h3>
-            </div>
-
-          </div>
+        <section ref={captureSectionRef} className="planner-card bg-card p-3 sm:p-4">
 
           {/* Selected tag chips */}
           {!!combinedTags.length && (
@@ -694,6 +689,13 @@ function InboxInner() {
             </div>
           )}
 
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <button type="button" aria-expanded={captureOptionsOpen} onClick={() => setCaptureOptionsOpen((o) => !o)} className="inline-flex min-h-9 items-center gap-1 rounded-full bg-muted px-3 text-xs font-semibold text-foreground">
+              Save to: {captureKind === "task" ? (dest === "inbox" ? "Inbox" : dest === "today" ? "Today" : dest === "upcoming" ? "Upcoming" : "Scheduled") : captureKind.charAt(0).toUpperCase() + captureKind.slice(1)}
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", captureOptionsOpen && "rotate-180")} />
+            </button>
+          </div>
+          {captureOptionsOpen && (<>
           {/* Kind chips + Today's note — combined quick add */}
           <div className="mb-3 flex flex-wrap items-center gap-1.5">
             <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11px]">
@@ -789,6 +791,8 @@ function InboxInner() {
               )}
             </div>
           )}
+
+          </>)}
 
           {transcribing ? (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 shadow-inner">
@@ -1332,9 +1336,11 @@ function InboxInner() {
         )}
         </section>
 
+        <InboxSortBoxes items={items} />
+
         {/* ────────── Planner toolbar ────────── */}
 
-        <div className="sticky top-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-full bg-background/80 py-1 backdrop-blur-md">
+        <div className="hidden sticky top-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-full bg-background/80 py-1 backdrop-blur-md">
           <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-card/70 p-1 backdrop-blur-md">
             <button
               type="button"
@@ -1370,7 +1376,7 @@ function InboxInner() {
 
         {/* ────────── Smart focus filters ────────── */}
         {items.length > 0 && (
-          <div role="group" aria-label="Filter inbox" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar">
+          <div role="group" aria-label="Filter inbox" className="flex flex-wrap gap-2">
             {([
               { id: "all", label: "All", Icon: InboxIcon, n: stats.total },
               { id: "quick", label: "Quick wins", Icon: Zap, n: stats.quickWins },
@@ -1384,7 +1390,7 @@ function InboxInner() {
                 aria-pressed={focusFilter === id}
                 onClick={() => setFocusFilter(id)}
                 className={cn(
-                  "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium transition-colors",
+                  "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors",
                   focusFilter === id
                     ? "border-primary/40 bg-primary/12 text-foreground"
                     : "border-border/60 bg-card/60 text-muted-foreground hover:text-foreground",
