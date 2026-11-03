@@ -10,7 +10,7 @@
 - Ritual steps reuse shared completion visuals/chimes; stable default step IDs keep checks.
 - Completed-task strikethrough is a device-local pref shared by all task surfaces.
 - Event types (appointment/family/reminder) reuse appointments.type; their colors are device-local (localStorage) like calendar kind colors.
-- Today and Planner use page-scoped Soft Botanical mobile presentation tokens and Outfit/Figtree typography, preserving the app-wide theme.
+- Today/Planner use page-scoped Soft Botanical tokens, preserving the app-wide theme.
 - Today/Planner share ViewPills. Goal pickers/labels share LifeAreaGoalPicker; links use tasks.goal_id, projects.linked_goal_ids, habits.meta.linkedGoalIds, and device-local ritual goal ids in ritual-steps. Explicit task goal clears persist null.
 - Day rhythm combines moon, season, cycle and capacity.
 - Note properties use notes.properties (jsonb); supertag fields use item_field_values, entity_type 'note'.
@@ -70,4 +70,4 @@
 - Today layouts (Day Flow/Phase Tabs/Quadrants plus Plan/Board grids) share one phase content map; inline phase adds create ordinary tasks/appointments, with device-local phase pins and appointment check-offs, so the Planner shows the same items.
 - Planner range/layout switching goes through PlannerScopeBar (Day·Week·Month·Season·Year + Schedule/Cards); legacy layouts live under More layouts so device-local prefs stay valid.
 - Today dashboard card groups use PhaseCardGrid (container-query columns) so cards size to the space they actually have; window breakpoints squeeze them past overlap in the narrow desktop "Your day" column.
-- Planner Day/Week Schedule styles (Classic + six phase styles) live in src/components/planner/schedule over existing tasks/appointments and phase pins; the chosen style is a device-local pref shared by the Planner picker and Settings, so no schema change.
+- Planner schedule styles (src/components/planner/schedule) reuse tasks/appointments and phase pins; the chosen style is device-local, avoiding a schema change.
