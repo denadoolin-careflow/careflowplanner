@@ -7,6 +7,7 @@ import { PHASE_ICONS } from "@/lib/phase-icons";
 import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 import { PHASE_ORDER, PHASE_WINDOW, currentPhase, parseInline, phaseOfAppointment, phaseOfTodayTask, pinPhase, readApptDone, readPhasePins, toggleApptDone } from "@/lib/today-phase-items";
 import { cn } from "@/lib/utils";
+import { PHASE_HOURS, durOf, isBlock, phaseBookedOpen, toMin } from "./schedule-time";
 import { createContext, useContext } from "react";
 
 /** Planner schedule styles (Day + Week) over real tasks and appointments, in the soft-tint phase language. */
@@ -550,18 +551,13 @@ function PhaseGridWeek() {
 
 /* ============ Concepts 5 & 6 — time blocks ============ */
 
-const PHASE_HOURS: Record<RhythmPhase, [number, number]> = { plan: [6, 12], grow: [12, 15], care: [15, 18], letgo: [18, 23] };
 const timeOf = (it: Item) => it.time ?? PHASE_DEFAULT_TIME[it.phase];
-const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
-const durOf = (it: Item) => (it.time && it.end && toMin(it.end) > toMin(it.time) ? toMin(it.end) - toMin(it.time) : it.kind === "appt" ? 60 : 30);
 const endOf = (it: Item) => { const e = toMin(timeOf(it)) + durOf(it); return `${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`; };
 const fmtDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}` : `${m}m`);
-const isBlock = (it: Item) => !!it.time && (it.kind === "appt" || !!it.end);
 
 function PhaseHead({ p, list, isNow }: { p: RhythmPhase; list: Item[]; isNow: boolean }) {
   const [s, e] = PHASE_HOURS[p];
-  const booked = list.filter(isBlock).reduce((a, it) => a + durOf(it), 0);
-  const open = (e - s) * 60 - booked;
+  const { booked, open } = phaseBookedOpen(p, list);
   return (
     <header className="flex flex-wrap items-center gap-2.5">
       <PB phase={p} big now={isNow} />
