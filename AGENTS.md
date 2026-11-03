@@ -69,3 +69,4 @@
 - Five-horizon rhythm (day/week/month/season/year) phase rules live in src/lib/rhythm/horizons.ts; answers save as "## Phase · Name" sections in period-style notes (season/year use notes.kind 'quarterly'/'yearly' without widening PeriodKind), so no new table is needed.
 - Today layouts (Day Flow/Phase Tabs/Quadrants plus Plan/Board grids) share one phase content map; inline phase adds create ordinary tasks/appointments, with device-local phase pins and appointment check-offs, so the Planner shows the same items.
 - Planner range/layout switching goes through PlannerScopeBar (Day·Week·Month·Season·Year + Schedule/Cards); legacy layouts live under More layouts so device-local prefs stay valid.
+- Today dashboard card groups use PhaseCardGrid (container-query columns) so cards size to the space they actually have; window breakpoints squeeze them past overlap in the narrow desktop "Your day" column.
