@@ -41,6 +41,10 @@ const ACTIONS: Record<string, { system: string; user: (body: string, title: stri
     system: `You write a one-paragraph, neutral summary of a note (2-4 sentences). No headings, no bullets. ${MD_RULES}`,
     user: (b, t) => `Summarize this note in a single short paragraph.\n\nTitle: ${t}\n\nNote:\n${b}`,
   },
+  rollup: {
+    system: `You write a warm, concise rollup of someone's journal/planner notes for a week or month. Use exactly these sections as "### " headings: Themes & highlights, Wins & progress, What felt hard, Open threads & next steps. 2-5 short bullets each; skip a section only if there is truly nothing. Use only what the notes say — never invent. Mention days (e.g. "Tue") when useful. Next steps as "- [ ] item". ${MD_RULES}`,
+    user: (b, t) => `Write the rollup for: ${t}\n\nNotes from this period:\n${b.slice(0, 60000)}`,
+  },
   key_decisions: {
     system: `You extract decisions made in a note. Return a markdown bullet list of decisions, each as one sentence. If none, return "_No clear decisions yet._". ${MD_RULES}`,
     user: (b, t) => `Extract key decisions.\n\nTitle: ${t}\n\nNote:\n${b}`,

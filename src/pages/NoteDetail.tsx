@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { PeriodConnections } from "@/components/notes/PeriodConnections";
+import { PeriodRollup } from "@/components/notes/PeriodRollup";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { CareyButton } from "@/components/carey/CareyButton";
 import { BlockEditor, type BlockEditorPlannerApi } from "@/components/notes/BlockEditor";
@@ -776,6 +777,7 @@ export default function NoteDetail() {
             if (p.body != null) setBody(p.body);
           }} />
         )}
+        {(note.kind === "weekly" || note.kind === "monthly") && note.date && <PeriodRollup note={note} />}
 
         <div className="mt-6">
           <BlockEditor
