@@ -7,6 +7,10 @@ import { PHASE_ICONS } from "@/lib/phase-icons";
 import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
 import { PHASE_ORDER, PHASE_WINDOW, currentPhase, parseInline, phaseOfAppointment, phaseOfTodayTask, pinPhase, readApptDone, readPhasePins, toggleApptDone } from "@/lib/today-phase-items";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { mealsOnCareDate } from "@/lib/bedside-plan";
+import { doseSlots, useMedications } from "@/lib/medications";
+import { phaseForTime } from "@/lib/today-phase-items";
 import { PHASE_HOURS, durOf, isBlock, phaseBookedOpen, toMin } from "./schedule-time";
 import { createContext, useContext } from "react";
 
@@ -17,7 +21,7 @@ interface Item { id: string; title: string; time?: string; end?: string; kind: K
 interface WeekDay { day: string; date: string; iso: string; d: Date; moon: string; items: Item[] }
 
 const PHASE_LABEL: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
-const KIND_LABEL: Record<Kind, string> = { task: "Task", appt: "Event", meal: "Meal", care: "Care" };
+const KIND_LABEL: Record<Kind, string> = { task: "Task", appt: "Event", meal: "Meal", care: "Dose" };
 
 /* ============ Phase icon styles ============ */
 
@@ -89,12 +93,35 @@ const useSched = () => useContext(SchedCtx)!;
 const MOONS = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
 const moonFor = (d: Date) => { const days = (d.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5; const ph = ((days % 29.530588) + 29.530588) % 29.530588; return MOONS[Math.round(ph / 29.530588 * 8) % 8]; };
 const PHASE_DAYPART = { plan: "Morning", grow: "Afternoon", care: "Afternoon", letgo: "Evening" } as const;
+const MEAL_TIME: Record<string, string> = { Breakfast: "07:30", Lunch: "12:00", Dinner: "18:00", Snack: "15:00", Drink: "10:00" };
 const PHASE_DEFAULT_TIME: Record<RhythmPhase, string> = { plan: "09:00", grow: "13:00", care: "16:00", letgo: "19:00" };
 
 function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
   const { state, toggleTask, addTask, addAppointment } = useStore();
   const [pins, setPins] = useState(readPhasePins);
   const [apptDone, setApptDone] = useState(readApptDone);
+  const { medications } = useMedications();
+  const iso0 = format(date, "yyyy-MM-dd");
+  const wsIso = format(startOfWeek(date, { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const weIso = format(addDays(startOfWeek(date, { weekStartsOn: 1 }), 6), "yyyy-MM-dd");
+  // Meal check-offs and dose logs for the visible week (shared synced tables).
+  const [mealDone, setMealDone] = useState<Set<string>>(new Set());
+  const [doseTaken, setDoseTaken] = useState<Set<string>>(new Set());
+  const [rev, setRev] = useState(0);
+  useEffect(() => {
+    let live = true;
+    void supabase.from("meal_completion_logs").select("meal_id,scheduled_date,done").gte("scheduled_date", wsIso).lte("scheduled_date", weIso)
+      .then(({ data }) => { if (live) setMealDone(new Set((data ?? []).filter(r => r.done).map(r => `${r.meal_id}@${r.scheduled_date}`))); });
+    void supabase.from("medication_logs").select("medication_id,scheduled_date,scheduled_time,status").gte("scheduled_date", wsIso).lte("scheduled_date", weIso)
+      .then(({ data }) => { if (live) setDoseTaken(new Set((data ?? []).filter((r: any) => r.status === "taken").map((r: any) => `${r.medication_id}|${String(r.scheduled_time).slice(0, 5)}@${r.scheduled_date}`))); });
+    return () => { live = false; };
+  }, [wsIso, weIso, rev]);
+  useEffect(() => {
+    const bump = () => setRev(r => r + 1);
+    window.addEventListener("careflow:medication-logs-changed", bump);
+    window.addEventListener("careflow:meals-done-change", bump);
+    return () => { window.removeEventListener("careflow:medication-logs-changed", bump); window.removeEventListener("careflow:meals-done-change", bump); };
+  }, []);
   const itemsFor = (iso: string): Item[] => {
     const ts: Item[] = state.tasks.filter(t => t.dueDate === iso).map(t => {
       const p = phaseOfTodayTask(t, pins);
@@ -103,21 +130,50 @@ function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
     const as: Item[] = state.appointments.filter(a => a.date === iso).map(a => ({
       id: `a:${a.id}`, title: a.title, time: a.time ?? undefined, end: a.endTime ?? undefined, kind: "appt" as Kind, done: apptDone.has(`${a.id}@${iso}`) || apptDone.has(a.id), phase: phaseOfAppointment(a, pins),
     }));
-    return [...ts, ...as].sort((x, y) => (x.time ?? PHASE_DEFAULT_TIME[x.phase]).localeCompare(y.time ?? PHASE_DEFAULT_TIME[y.phase]));
+    const ms: Item[] = mealsOnCareDate(state.meals ?? [], iso).filter(m => m.name).map(m => {
+      const time = MEAL_TIME[m.slot] ?? "15:00";
+      return { id: `m:${m.id}@${iso}`, title: `${m.slot}: ${m.name}`, time, kind: "meal" as Kind, done: mealDone.has(`${m.id}@${iso}`), phase: phaseForTime(time) ?? "grow" };
+    });
+    const ds: Item[] = doseSlots(medications).map(d => {
+      const time = d.time.slice(0, 5).padStart(5, "0");
+      return { id: `d:${d.med.id}|${time}@${iso}`, title: d.med.name, time, kind: "care" as Kind, done: doseTaken.has(`${d.med.id}|${time}@${iso}`), phase: phaseForTime(time) ?? "plan" };
+    });
+    return [...ts, ...as, ...ms, ...ds].sort((x, y) => (x.time ?? PHASE_DEFAULT_TIME[x.phase]).localeCompare(y.time ?? PHASE_DEFAULT_TIME[y.phase]));
   };
-  const iso = format(date, "yyyy-MM-dd");
-  const day = useMemo(() => itemsFor(iso), [state.tasks, state.appointments, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
+  const iso = iso0;
+  const day = useMemo(() => itemsFor(iso), [state.tasks, state.appointments, state.meals, medications, mealDone, doseTaken, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
   const week = useMemo(() => {
     const ws = startOfWeek(date, { weekStartsOn: 1 });
     return Array.from({ length: 7 }, (_, i) => { const d = addDays(ws, i); const di = format(d, "yyyy-MM-dd");
       return { day: format(d, "EEE"), date: format(d, "d"), iso: di, d, moon: moonFor(d), items: itemsFor(di) }; });
-  }, [state.tasks, state.appointments, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.tasks, state.appointments, state.meals, medications, mealDone, doseTaken, pins, apptDone, iso]); // eslint-disable-line react-hooks/exhaustive-deps
   const now = new Date();
   const todayIdx = week.findIndex(w => isSameDay(w.d, now));
   const toggle = (id: string) => {
     const [k, raw] = [id.slice(0, 1), id.slice(2)];
     if (k === "t") void toggleTask(raw);
+    else if (k === "m" || k === "d") void toggleCareItem(k, raw);
     else { const a = state.appointments.find(x => x.id === raw); setApptDone(toggleApptDone(raw, a?.date ?? iso)); }
+  };
+  const toggleCareItem = async (k: string, raw: string) => {
+    const [ref, dIso] = raw.split("@");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    if (k === "m") {
+      const next = !mealDone.has(raw);
+      const { error } = await supabase.from("meal_completion_logs").upsert({ user_id: user.id, meal_id: ref, scheduled_date: dIso, done: next, updated_at: new Date().toISOString() });
+      if (error) { toast.error("Couldn't save meal check-off"); return; }
+      window.dispatchEvent(new Event("careflow:meals-done-change"));
+    } else {
+      const [medId, t] = ref.split("|");
+      const taken = doseTaken.has(raw);
+      const q = taken
+        ? supabase.from("medication_logs").delete().eq("medication_id", medId).eq("scheduled_date", dIso).eq("scheduled_time", `${t}:00`)
+        : supabase.from("medication_logs").upsert({ user_id: user.id, medication_id: medId, scheduled_date: dIso, scheduled_time: `${t}:00`, status: "taken", taken_at: new Date().toISOString() } as any, { onConflict: "medication_id,scheduled_date,scheduled_time" } as any);
+      const { error } = await q;
+      if (error) { toast.error("Couldn't save dose"); return; }
+      window.dispatchEvent(new Event("careflow:medication-logs-changed"));
+    }
   };
   const add = async (phase: RhythmPhase, text: string, dIso: string) => {
     const parsed = parseInline(text, dIso);
