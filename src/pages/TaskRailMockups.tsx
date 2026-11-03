@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sun, CalendarRange, Cloud, NotebookPen, Check, GripVertical, CalendarPlus, ChevronLeft, ChevronRight, Plus, Inbox as InboxIcon, FolderKanban, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PHASE_ICONS } from "@/lib/phase-icons";
+import { HeldMockup, TodayUpcomingMockup, RepeatMockup } from "@/components/mockups/TaskViewMockups";
 
 type Phase = "plan" | "grow" | "care" | "letgo";
 type Item = { id: string; title: string; phase: Phase; box: "inbox" | "today" | "week" | "someday" | "notes"; when: "today" | "upcoming" | "someday"; area: string; est?: number; time?: string; note?: boolean };
@@ -48,7 +49,7 @@ function Seg<T extends string>({ label, opts, v, set }: { label: string; opts: r
   );
 }
 
-export default function TaskRailMockups() {
+function RailMockup() {
   const [style, setStyle] = useState<(typeof STYLES)[number]>("Calm list");
   const [group, setGroup] = useState<(typeof GROUPS)[number]>("By box");
   const [tap, setTap] = useState<(typeof TAPS)[number]>("Check off");
@@ -260,6 +261,19 @@ export default function TaskRailMockups() {
         </div>
       </div>
       {toast && <div role="status" className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-4 py-2 text-sm text-background shadow-lg">{toast}</div>}
+    </div>
+  );
+}
+
+const TOP_TABS = ["Side rail", "Held in your inbox", "Today & Upcoming", "Repeating tasks"] as const;
+export default function TaskRailMockups() {
+  const [t, setT] = useState<(typeof TOP_TABS)[number]>("Held in your inbox");
+  return (
+    <div>
+      <div className="mx-auto max-w-6xl px-4 pt-4">
+        <Seg label="Preview" opts={TOP_TABS} v={t} set={setT} />
+      </div>
+      {t === "Side rail" ? <RailMockup /> : t === "Held in your inbox" ? <HeldMockup /> : t === "Today & Upcoming" ? <TodayUpcomingMockup /> : <RepeatMockup />}
     </div>
   );
 }
