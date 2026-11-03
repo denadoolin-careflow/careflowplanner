@@ -5,7 +5,6 @@ import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { timeOfDayGreeting } from "@/lib/greeting";
 import { DayProgressRing } from "./DayProgressRing";
 import { MoonInsightCard } from "./MoonInsightCard";
-import { PlannerViewToggle } from "./PlannerViewToggle";
 import { CaptureMenu } from "./CaptureMenu";
 import { PlannerFocusButton } from "./PlannerFocusButton";
 import type { PlannerView } from "@/lib/planner-prefs";
