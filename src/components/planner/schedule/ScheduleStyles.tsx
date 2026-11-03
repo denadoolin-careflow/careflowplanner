@@ -226,8 +226,8 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
   return (
     <li
       className={cn(
-        "flex items-center gap-2.5 rounded-xl border border-border/40 bg-card shadow-sm",
-        dense ? "px-2 py-1.5" : "min-h-11 px-3 py-2",
+        "flex items-start gap-2.5 rounded-xl border border-border/40 bg-card shadow-sm",
+        dense ? "min-h-11 px-2.5 py-2" : "min-h-11 px-3 py-2",
         it.done && "opacity-60",
       )}
     >
@@ -236,7 +236,7 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
         onClick={() => toggle(it.id)}
         aria-label={it.done ? `Mark ${it.title} not done` : `Mark ${it.title} done`}
         className={cn(
-          "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
           it.done ? "border-transparent" : "border-muted-foreground/40",
         )}
         style={it.done ? { background: main(phase), borderColor: main(phase) } : undefined}
@@ -244,10 +244,11 @@ function ItemCard({ it, phase, dense }: { it: Item; phase: RhythmPhase; dense?: 
         {it.done && <Check className="h-3 w-3 text-primary-foreground" />}
       </button>
       <span className="min-w-0 flex-1">
-        <span className={cn("block break-words text-sm leading-snug", it.done && "line-through")}>{it.title}</span>
-        {!dense && it.end && <span className="block text-xs text-muted-foreground">until {fmt(it.end)}</span>}
+        <span className="block text-xs text-muted-foreground">
+          {it.time ? fmt(it.time) : "Anytime"}{it.end ? ` – ${fmt(it.end)}` : ""} · {KIND_LABEL[it.kind]}
+        </span>
+        <span className={cn("block whitespace-normal break-words text-[15px] leading-snug [overflow-wrap:anywhere]", it.done && "line-through")}>{it.title}</span>
       </span>
-      <span className="shrink-0 font-mono text-xs text-muted-foreground">{fmt(it.time)}</span>
     </li>
   );
 }
@@ -294,23 +295,27 @@ function PhaseTimelineDay() {
 function PhaseTimelineWeek() {
   const S = useSched();
   return (
-    <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-1 lg:grid lg:grid-cols-7 lg:overflow-visible">
+    <div className="space-y-3">
       {S.week.map((d, di) => (
-        <div key={d.day} className={cn("planner-card w-40 shrink-0 border border-border/40 p-2 lg:w-auto", di === S.todayIdx && "ring-2 ring-primary")}>
-          <header className="flex items-baseline justify-between px-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{d.day}</span>
-            <span className="font-serif text-lg">{d.date}</span>
-            <span aria-hidden className="text-xs">{d.moon}</span>
+        <div key={d.day} className={cn("planner-card border border-border/40 p-3", di === S.todayIdx && "ring-2 ring-primary")}>
+          <header className="flex items-baseline gap-2 px-1">
+            <button type="button" onClick={() => S.openDay(d.d)} className="flex min-h-11 items-baseline gap-2 text-left">
+              <span className="font-serif text-xl">{d.day}</span>
+              <span className="text-sm text-muted-foreground">{d.date}</span>
+            </button>
+            <span aria-hidden className="ml-auto text-sm">{d.moon}</span>
           </header>
-          <div className="mt-2 space-y-1">
+          {!d.items.length && <p className="px-1 text-sm text-muted-foreground">Open day — breathe.</p>}
+          <div className="mt-1 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             {PHASE_ORDER.map(p => {
               const items = d.items.filter(it => phaseOf(it) === p);
               if (!items.length) return null;
               return (
-                <div key={p} className="rounded-lg px-1.5 py-1" style={{ background: tint(p, 0.35) }}>
-                  <div className="flex items-center gap-1" style={{ color: deep(p) }}>
+                <div key={p} className="rounded-xl p-2" style={{ background: tint(p, 0.35) }}>
+                  <div className="flex items-center gap-1.5" style={{ color: deep(p) }}>
                     <PB phase={p} />
-                    <span className="text-xs font-medium">{PHASE_LABEL[p]}</span>
+                    <span className="text-sm font-semibold">{PHASE_LABEL[p]}</span>
+                    <span className="text-xs text-muted-foreground">{PHASE_WINDOW[p]}</span>
                   </div>
                   <ul className="mt-1 space-y-1">
                     {items.map(it => <ItemCard key={it.id} it={it} phase={p} dense />)}
@@ -363,21 +368,23 @@ function DayCardsDay() {
 function DayCardsWeek() {
   const S = useSched();
   return (
-    <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 lg:grid lg:grid-cols-7 lg:overflow-visible">
+    <div className="space-y-3">
       {S.week.map((d, di) => (
         <div
           key={d.day}
           className={cn(
-            "planner-card w-[70vw] max-w-64 shrink-0 snap-start border border-border/40 p-3 sm:w-56 lg:w-auto lg:max-w-none",
+            "planner-card border border-border/40 p-3",
             di === S.todayIdx && "ring-2 ring-primary",
           )}
         >
           <header className="flex items-baseline gap-2">
-            <span className="font-serif text-xl">{d.day}</span>
-            <span className="text-sm text-muted-foreground">{d.date}</span>
+            <button type="button" onClick={() => S.openDay(d.d)} className="flex min-h-11 items-baseline gap-2 text-left">
+              <span className="font-serif text-xl">{d.day}</span>
+              <span className="text-sm text-muted-foreground">{d.date}</span>
+            </button>
             <span aria-hidden className="ml-auto text-sm">{d.moon}</span>
           </header>
-          <ul className="mt-2 space-y-1.5">
+          <ul className="mt-1 grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
             {d.items.map(it => <ItemCard key={it.id} it={it} phase={phaseOf(it)} dense />)}
           </ul>
           {d.items.length < 3 && <p className="mt-2 text-xs text-muted-foreground">Room to breathe</p>}
