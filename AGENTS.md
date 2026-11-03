@@ -24,8 +24,7 @@
 - Sidebar Space children use the same explicit links, tag matches, project links, and hidden-item exclusions as the Space hub, so linked navigation stays consistent.
 - Tag appearance editing reuses the shared tag store; unused filtering counts existing sources without deleting content.
 - NAV_SUBPAGES (nav.ts) drives sidebar branches and page tabs.
-- Sidebar hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portal (escapes clipping).
-- Day rhythm combines moon, season, cycle and capacity.
+- Sidebar hover trees reuse NAV_GROUPS/NAV_SUBPAGES in a portal.
 - Project Linked notes merge note_links and notes.project_id matches, labelling each source.
 - Laundry loads sync per account via one laundry_state row (jsonb loads, realtime), cached in localStorage; dryer stage creates a planner task that auto-completes when the load moves on.
 - Inbox and Planner share a selected-note schedule pane; the chosen ordinary note is device-local while daily-note following uses the active schedule date.
@@ -71,3 +70,4 @@
 - Planner range/layout switching goes through PlannerScopeBar (Day·Week·Month·Season·Year + Schedule/Cards); legacy layouts live under More layouts so device-local prefs stay valid.
 - Today dashboard card groups use PhaseCardGrid (container-query columns) so cards size to the space they actually have; window breakpoints squeeze them past overlap in the narrow desktop "Your day" column.
 - Planner schedule styles reuse existing items/pins (style device-local); all day moons use ScheduleDayMoon so phases match.
+- Task rail schedules via drag or clock popover (dueDate+startTime); its view prefs are device-local.

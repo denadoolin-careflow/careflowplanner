@@ -18,6 +18,9 @@ import { useLongPressDrag } from "@/lib/long-press-drag";
 import { suggestSlotForTask } from "@/lib/schedule-suggest";
 import { toast } from "sonner";
 import { format as fmtDate } from "date-fns";
+import { Clock } from "lucide-react";
+import { phaseOfTodayTask } from "@/lib/today-phase-items";
+import { QUICK_TIMES, fmt12 } from "@/lib/task-schedule";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
 export const EVENT_DRAG_MIME = "application/x-careflow-event";
@@ -92,6 +95,7 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
   };
 
   const [q, setQ] = useState("");
+  const [recentDone, setRecentDone] = useState<Set<string>>(new Set());
   const [scope, setScope] = useState<"unscheduled" | "all">(
     () => (localStorage.getItem("careflow:rail:tasks:scope") as "unscheduled" | "all") || "all",
   );
@@ -103,12 +107,24 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
   }, [tab]);
 
   const tasks = useMemo(() => {
-    const root = state.tasks.filter(t => !t.done && !t.parentTaskId);
+    const root = state.tasks.filter(t => (!t.done || recentDone.has(t.id)) && !t.parentTaskId);
     const filtered = scope === "unscheduled" ? root.filter(t => !t.dueDate) : root;
     const term = q.trim().toLowerCase();
     const list = term ? filtered.filter(t => t.title.toLowerCase().includes(term)) : filtered;
     return list.slice(0, 200);
-  }, [state.tasks, q, scope]);
+  }, [state.tasks, q, scope, recentDone]);
+  const byArea = useMemo(() => {
+    const m = new Map<string, Task[]>();
+    for (const t of tasks) { const k = t.area || "No area"; m.set(k, [...(m.get(k) ?? []), t]); }
+    return Array.from(m.entries());
+  }, [tasks]);
+  const [foldedAreas, setFoldedAreas] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("careflow:rail:folded-areas") || "[]")); } catch { return new Set(); }
+  });
+  const toggleArea = (a: string) => setFoldedAreas(prev => {
+    const n = new Set(prev); n.has(a) ? n.delete(a) : n.add(a);
+    localStorage.setItem("careflow:rail:folded-areas", JSON.stringify([...n])); return n;
+  });
 
   const onDragStart = (e: React.DragEvent, t: Task) => {
     e.dataTransfer.setData(TASK_DRAG_MIME, t.id);
@@ -163,15 +179,22 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
 
   if (railHidden) {
     return (
-      <button
-        type="button"
-        onClick={() => setRailHidden(false)}
-        className="hidden xl:flex sticky top-20 h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-muted-foreground shadow-soft backdrop-blur-sm hover:text-foreground"
-        title="Show side panel"
-        aria-label="Show side panel"
-      >
-        <PanelRightOpen className="h-4 w-4" />
-      </button>
+      <aside aria-label="Side panel (folded)" className="hidden xl:flex sticky top-20 w-12 shrink-0 flex-col items-center gap-1 rounded-2xl bg-card py-2 shadow-soft">
+        <button type="button" onClick={() => setRailHidden(false)} title="Open side panel" aria-label="Open side panel"
+          className="grid h-11 w-11 place-items-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground">
+          <PanelRightOpen className="h-4 w-4" />
+        </button>
+        {visibleTabs.map(id => {
+          const t = TAB_BY_ID[id]; const Icon = t.icon;
+          return (
+            <button key={id} type="button" title={t.label} aria-label={`Open ${t.label}`}
+              onClick={() => { setTab(id); setRailHidden(false); }}
+              className={cn("grid h-11 w-11 place-items-center rounded-full hover:bg-muted/60", tab === id ? "text-primary" : "text-muted-foreground")}>
+              <Icon className="h-4 w-4" />
+            </button>
+          );
+        })}
+      </aside>
     );
   }
 
@@ -230,7 +253,7 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold leading-none">Unscheduled</div>
-          <div className="mt-0.5 text-[10.5px] text-muted-foreground">Drag onto any day or time slot</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">Drag onto a time, or tap the clock</div>
         </div>
       </div>
 
@@ -270,21 +293,39 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
             Nothing waiting. Capture something with Quick Add.
           </div>
         ) : (
-          <ul className="space-y-1">
-            {tasks.map(t => {
-              const project = t.projectId ? state.projects?.find(p => p.id === t.projectId) : undefined;
+          <div className="space-y-3 text-[13px]">
+            {byArea.map(([area, list]) => {
+              const folded = foldedAreas.has(area);
               return (
-                <TaskRailItem
-                  key={t.id}
-                  task={t}
-                  projectName={project?.name}
-                  projectColor={project?.color}
-                  onClick={onTaskClick}
-                  onDragStart={onDragStart}
-                />
+                <section key={area}>
+                  <button type="button" onClick={() => toggleArea(area)} aria-expanded={!folded}
+                    className="flex min-h-[36px] w-full items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
+                    {folded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+                    <span className="flex-1 text-left">{area}</span>
+                    <span className="tabular-nums">{list.filter(t => !t.done).length}</span>
+                  </button>
+                  {!folded && (
+                    <ul className="space-y-2">
+                      {list.map(t => {
+                        const project = t.projectId ? state.projects?.find(p => p.id === t.projectId) : undefined;
+                        return (
+                          <TaskRailItem
+                            key={t.id}
+                            task={t}
+                            projectName={project?.name}
+                            projectColor={project?.color}
+                            onClick={onTaskClick}
+                            onDragStart={onDragStart}
+                            onToggled={(id) => setRecentDone(prev => new Set(prev).add(id))}
+                          />
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
               );
             })}
-          </ul>
+          </div>
         )}
       </div>
       </>
@@ -343,13 +384,24 @@ function TaskRailItem({
   projectColor,
   onClick,
   onDragStart,
+  onToggled,
 }: {
   task: Task;
   projectName?: string;
   projectColor?: string;
   onClick?: (id: string) => void;
   onDragStart: (e: React.DragEvent, t: Task) => void;
+  onToggled?: (id: string) => void;
 }) {
+  const phase = phaseOfTodayTask(task);
+  const [schedOpen, setSchedOpen] = useState(false);
+  const [schedDay, setSchedDay] = useState<0 | 1>(0);
+  const placeAt = (time: string) => {
+    const iso = fmtDate(addDays(new Date(), schedDay), "yyyy-MM-dd");
+    void updateTask(task.id, { dueDate: iso, startTime: time, inbox: false } as any);
+    setSchedOpen(false);
+    toast(`Placed ${schedDay ? "tomorrow" : "today"} at ${fmt12(time)}`, { description: task.title });
+  };
   const { toggleTask, state, updateTask } = useStore();
   const drag = useLongPressDrag(
     () => ({ type: "task", id: task.id, label: task.title }),
@@ -381,49 +433,71 @@ function TaskRailItem({
       draggable
       onDragStart={e => onDragStart(e, task)}
       onPointerDown={drag.onPointerDown}
+      style={{ borderLeftColor: `hsl(var(--rhythm-${phase}))` }}
       className={cn(
-        "group flex cursor-grab touch-none items-start gap-2 rounded-lg border border-transparent px-2 py-1.5 text-xs",
-        "hover:border-border/60 hover:bg-muted/40 active:cursor-grabbing",
-        onClick && "hover:bg-primary/10",
+        "group flex cursor-grab touch-none items-start gap-2.5 rounded-2xl border-l-4 bg-card px-3 py-2.5 text-[13px] shadow-sm transition-opacity",
+        "hover:shadow-md active:cursor-grabbing",
+        task.done && "opacity-50",
       )}
-      title={onClick ? "Click to edit · long-press to drag" : task.title}
+      title={onClick ? "Tap to open · drag onto a time to schedule" : task.title}
     >
       <button
         type="button"
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); void toggleTask(task.id); }}
+        onClick={(e) => { e.stopPropagation(); onToggled?.(task.id); void toggleTask(task.id); }}
         aria-label={task.done ? "Mark task not done" : "Mark task done"}
-        className={cn(
-          "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors",
-          task.done
-            ? "border-primary bg-primary text-primary-foreground"
-            : "border-muted-foreground/40 hover:border-primary/60",
-        )}
+        className="-m-2 grid h-9 w-9 shrink-0 place-items-center"
       >
-        <Check className={cn("h-3 w-3", task.done ? "opacity-100" : "opacity-0")} />
+        <span className={cn(
+          "grid h-5 w-5 place-items-center rounded-full border transition-colors",
+          task.done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50 hover:border-primary/60",
+        )}>
+          <Check className={cn("h-3 w-3", task.done ? "opacity-100" : "opacity-0")} />
+        </span>
       </button>
       <div className="min-w-0 flex-1">
-        <div className={cn("whitespace-normal break-words [overflow-wrap:anywhere] line-clamp-2 font-medium leading-snug", task.done && "text-muted-foreground line-through")}>{task.title}</div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="whitespace-normal break-words [overflow-wrap:anywhere] font-medium leading-snug">{task.title}</div>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           {projectName && (
-            <span className="truncate" style={projectColor ? { color: projectColor } : undefined}>
-              {projectName}
-            </span>
+            <span className="truncate" style={projectColor ? { color: projectColor } : undefined}>{projectName}</span>
           )}
-          {projectName && task.area && <span>·</span>}
-          {task.area && <span className="truncate">{task.area}</span>}
-          {task.dueDate && <span className="ml-auto shrink-0">{task.dueDate.slice(5)}</span>}
+          {task.dueDate && <span>{fmtDate(parseISO(task.dueDate), "MMM d")}{task.startTime ? ` · ${fmt12(task.startTime.slice(0, 5))}` : ""}</span>}
+          {task.recurrenceType && task.recurrenceType !== "none" && <Repeat className="h-3 w-3" aria-label="Repeats" />}
         </div>
       </div>
-      <button
-        type="button"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={handleSuggest}
-        title="Suggest a free time slot"
-        className="ml-1 hidden shrink-0 rounded-full border border-border/60 bg-card/70 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary/40 hover:text-primary group-hover:inline-flex"
-      >
-        <Sparkles className="mr-1 h-3 w-3" /> Suggest
-      </button>
+      <Popover open={schedOpen} onOpenChange={setSchedOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Schedule ${task.title}`}
+            title="Place on the schedule"
+            className="-my-1 grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-primary"
+          >
+            <Clock className="h-4 w-4" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Place on schedule</div>
+          <div className="mb-2 flex gap-1">
+            {(["Today", "Tomorrow"] as const).map((l, i) => (
+              <button key={l} type="button" onClick={() => setSchedDay(i as 0 | 1)}
+                className={cn("min-h-[36px] flex-1 rounded-full text-xs font-medium", schedDay === i ? "bg-primary text-primary-foreground" : "bg-muted/60")}>{l}</button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {QUICK_TIMES.map(t => (
+              <button key={t} type="button" onClick={() => placeAt(t)}
+                className="min-h-[36px] rounded-lg bg-muted/40 text-xs hover:bg-primary/10 hover:text-primary">{fmt12(t)}</button>
+            ))}
+          </div>
+          <button type="button" onClick={(e) => { setSchedOpen(false); handleSuggest(e); }}
+            className="mt-2 flex min-h-[36px] w-full items-center justify-center gap-1 rounded-full border border-border/60 text-xs text-muted-foreground hover:text-primary">
+            <Sparkles className="h-3 w-3" /> Find a free slot
+          </button>
+        </PopoverContent>
+      </Popover>
     </li>
   );
 }
