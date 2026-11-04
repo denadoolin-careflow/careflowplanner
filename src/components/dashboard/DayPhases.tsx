@@ -54,7 +54,7 @@ function InlineItemEditor({ item, onClose }: { item: Item; onClose: () => void }
     return (
       <div className="mt-1 rounded-2xl bg-card p-3 text-sm text-muted-foreground ring-1 ring-border">
         {item.kind === "meal" ? <>Edit meals in <Link className="font-semibold text-primary underline" to="/meals">Meals</Link>.</>
-          : <>Edit doses in <Link className="font-semibold text-primary underline" to="/wellflow/medications">Medications</Link>.</>}
+          : <>Edit doses in <Link className="font-semibold text-primary underline" to="/bedside">Bedside</Link>.</>}
         <button className="ml-2 min-h-[44px] px-2 font-semibold" onClick={onClose}>Close</button>
       </div>
     );
