@@ -39,6 +39,7 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
   };
 
   const selected = isSelected(task.id);
+  const [showMore, setShowMore] = useState(false);
 
   // Source backlink — derive from tags/markers so the row tells you where it came from.
   const tags = (task.tags ?? []).map((t) => t.toLowerCase());
@@ -65,7 +66,7 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
   );
   void rowStyle;
   return (
-    <div ref={setNodeRef} style={style} className={containerClass}>
+    <div ref={setNodeRef} style={{ ...style, borderLeft: `4px solid hsl(var(--rhythm-${phase}-deep))` }} className={containerClass}>
       <div className="flex items-start gap-2 sm:gap-3">
         {/* Selection indicator — only while selecting (via "Select all") */}
         {selected && (
