@@ -158,6 +158,7 @@ function TodayFirst({ size, showCounts }: { size: number; showCounts: boolean })
 
 function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) {
   const [sel, setSel] = useState<string>("today");
+  const [look, setLook] = useState(0);
   const g = GROUPS.find((x) => x.id === sel);
   const [now, setNow] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t); }, []);
@@ -197,7 +198,7 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
         <div className="flex-1" />
         <Settings className="h-5 w-5 text-muted-foreground" />
       </div>
-      <div className="w-64 overflow-y-auto bg-card p-3 shadow-lg">
+      <div className="w-72 overflow-y-auto bg-card p-4 shadow-lg">
         {sel === "today" ? (
           <div className="space-y-3">
             <div className="flex gap-1 rounded-full bg-muted p-1 text-xs">
