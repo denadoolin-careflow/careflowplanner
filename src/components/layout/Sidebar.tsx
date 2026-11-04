@@ -1659,12 +1659,14 @@ export function Sidebar() {
   });
   const [side, setSide] = useState<SidebarSide>(() => readSide());
   const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
+  const [style, setStyle] = useState(() => readSidebarStyle());
   const { atmosphere } = useAtmosphere();
   useEffect(() => {
     const onStorage = () => {
       setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === "1");
       setSide(readSide());
       setThemePref(readTheme());
+      setStyle(readSidebarStyle());
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener(PREFS_EVENT, onStorage);
