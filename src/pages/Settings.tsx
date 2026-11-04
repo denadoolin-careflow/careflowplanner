@@ -49,7 +49,6 @@ import {
 } from "@/lib/astrology-prefs";
 import { MOON_PROVIDERS, useMoonProvider } from "@/lib/moon-providers";
 import { useEffect, useState } from "react";
-import { readSidebarStyle, setSidebarStyle } from "@/components/layout/RailTodaySidebar";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -166,9 +165,6 @@ export default function Settings() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Sidebar style" subtitle="Rail + Today shows an icon strip with your day up top. Classic shows the full list." accent="calm">
-        <SidebarStyleSwitch />
-      </SectionCard>
 
 
       <SectionCard
@@ -508,15 +504,5 @@ function ExhaleReminderSection() {
         )}
       </div>
     </SectionCard>
-  );
-}
-
-function SidebarStyleSwitch() {
-  const [v, setV] = useState(readSidebarStyle());
-  return (
-    <div className="flex items-center gap-3">
-      <Switch checked={v === "rail"} onCheckedChange={(on) => { const n = on ? "rail" : "classic"; setSidebarStyle(n); setV(n); }} />
-      <Label className="text-sm">{v === "rail" ? "Rail + Today" : "Classic"}</Label>
-    </div>
   );
 }

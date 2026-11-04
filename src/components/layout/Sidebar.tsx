@@ -1701,7 +1701,7 @@ export function Sidebar() {
   if (style === "rail") {
     return (
       <aside className={cn(
-        "hidden lg:flex sticky top-0 self-start h-screen max-h-screen shrink-0",
+        "hidden md:flex sticky top-0 self-start h-screen max-h-screen shrink-0",
         side === "right" ? "order-last border-l border-sidebar-border" : "border-r border-sidebar-border",
         themePref === "dark" && "sidebar-force-dark",
         themePref === "light" && "sidebar-force-light",
@@ -1752,7 +1752,7 @@ export function MobileSidebarTrigger() {
         <button
           type="button"
           aria-label="Open menu"
-          className="grid h-9 w-9 place-items-center rounded-lg border border-border/60 bg-card text-foreground/80 hover:bg-muted lg:hidden"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-border/60 bg-card text-foreground/80 hover:bg-muted md:hidden"
         >
           <Menu className="h-4 w-4" />
         </button>
