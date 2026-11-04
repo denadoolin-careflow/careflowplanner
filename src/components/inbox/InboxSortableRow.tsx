@@ -74,29 +74,20 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
   return (
     <div ref={setNodeRef} style={style} className={containerClass}>
       <div className="flex items-start gap-2 sm:gap-3">
-        {/* Selection indicator */}
-        <div className="flex flex-col items-center pt-1">
-          <button
-            aria-label={selected ? "Deselect" : "Select"}
-            title={selected ? "Deselect" : "Select"}
-            onClick={() => {
-              toggle(task.id);
-              haptics.tap?.();
-            }}
-            className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-full transition-all",
-              selected
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-muted/50",
-            )}
-          >
-            {selected ? (
+        {/* Selection indicator — only while selecting (via "Select all") */}
+        {selected && (
+          <div className="flex flex-col items-center pt-1">
+            <button
+              aria-label="Deselect"
+              title="Deselect"
+              onClick={() => { toggle(task.id); haptics.tap?.(); }}
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
+            >
               <CheckSquare className="h-3.5 w-3.5" />
-            ) : (
-              <Circle className="h-3.5 w-3.5" />
-            )}
-          </button>
-        </div>
+            </button>
+          </div>
+        )}
+
 
         <div className="min-w-0 flex-1">
           <TaskRow task={task} variant={compact ? "ticktick" : "card"} showHoverActions={!compact} tapAction="quickEdit" />
