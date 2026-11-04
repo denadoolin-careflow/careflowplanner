@@ -90,30 +90,20 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
         >
           {timeLabel}
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 break-words [&_.truncate]:overflow-visible [&_.truncate]:whitespace-normal [&_.line-clamp-1]:[-webkit-line-clamp:unset] [&_.line-clamp-2]:[-webkit-line-clamp:unset]">
           <TaskRow task={task} variant="ticktick" showHoverActions={false} tapAction="quickEdit" />
         </div>
-        <span
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("application/x-careflow-task", task.id);
-            e.dataTransfer.setData("text/plain", task.title);
-            haptics.tap?.();
-          }}
-          title="Drag to schedule"
-          aria-label="Drag to schedule"
-          className="mt-1 hidden h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-full text-muted-foreground/40 hover:bg-muted/50 active:cursor-grabbing sm:inline-flex"
-        >
-          <CalendarPlus className="h-3.5 w-3.5" />
-        </span>
         <button
           aria-label={showMore ? "Hide options" : "More options"}
           aria-expanded={showMore}
           onClick={() => setShowMore((v) => !v)}
-          className="flex h-11 w-11 -mr-2 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50"
+          className={cn(
+            "mt-1 inline-flex h-9 shrink-0 items-center gap-1 rounded-full border px-3 text-xs font-semibold transition-colors",
+            showMore ? "border-primary bg-primary text-primary-foreground" : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15",
+          )}
         >
           <MoreHorizontal className="h-4 w-4" />
+          <span>{showMore ? "Less" : "More"}</span>
         </button>
       </div>
 
