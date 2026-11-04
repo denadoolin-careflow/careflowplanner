@@ -7012,6 +7012,33 @@ export type Database = {
           },
         ]
       }
+      project_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       project_ideas: {
         Row: {
           created_at: string
@@ -7113,6 +7140,7 @@ export type Database = {
           end_date: string | null
           focus_this_week: string | null
           folder_id: string | null
+          group_id: string | null
           health: string | null
           icon: string | null
           id: string
@@ -7150,6 +7178,7 @@ export type Database = {
           end_date?: string | null
           focus_this_week?: string | null
           folder_id?: string | null
+          group_id?: string | null
           health?: string | null
           icon?: string | null
           id?: string
@@ -7187,6 +7216,7 @@ export type Database = {
           end_date?: string | null
           focus_this_week?: string | null
           folder_id?: string | null
+          group_id?: string | null
           health?: string | null
           icon?: string | null
           id?: string
@@ -7221,6 +7251,13 @@ export type Database = {
             columns: ["folder_id"]
             isOneToOne: false
             referencedRelation: "project_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "project_groups"
             referencedColumns: ["id"]
           },
           {
