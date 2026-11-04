@@ -71,5 +71,5 @@
 - Today dashboard card groups use PhaseCardGrid (container-query columns) so cards size to the space they actually have; window breakpoints squeeze them past overlap in the narrow desktop "Your day" column.
 - Planner schedule styles reuse existing items/pins (style device-local); all day moons use ScheduleDayMoon so phases match.
 - Task rail schedules via drag or clock popover (dueDate+startTime); its view prefs are device-local.
-- Projects hub groups by phase via src/lib/projects/phase.ts (stage/health/status → Plan/Grow/Care/Let go, display-only; drops write stage/health back). User hub sections live in project_groups with projects.group_id (null = No section), separate from per-project task sections in project_sections.
-- Project page Notepad is one ordinary note linked by notes.project_id, its id kept in projects.details.notepadNoteId; project Files are cabinet_documents linked through entity_links (document → project).
+- Hub phase = display mapping in lib/projects/phase.ts; hub sections are project_groups + projects.group_id (not per-project project_sections).
+- Project Notepad = one note (notes.project_id, id in details.notepadNoteId); Files = cabinet_documents via entity_links.
