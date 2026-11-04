@@ -10,7 +10,8 @@ import { getPhaseInfo } from "@/lib/cycle";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { getMoonSign, MOON_IN_SIGN_GUIDE } from "@/lib/zodiac";
 import { lunarRhythmAt, LUNAR_RHYTHM, PHASE_GUIDE } from "@/lib/cosmic/lunar-rhythm";
-import { listPinnedNotes, type Note } from "@/lib/notes";
+import { listPinnedNotes, getOrCreatePeriodNote, type Note } from "@/lib/notes";
+import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { WeatherCondition } from "@/lib/weather";
@@ -18,17 +19,19 @@ import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 import { cn } from "@/lib/utils";
 import {
   ChevronRight, Plus, Settings, Inbox, Sun, Pin, CloudSun, CalendarDays, CalendarRange, CalendarCheck,
-  Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, Zap, Droplet, MoonStar, PanelLeft,
+  Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, Zap, Droplet, MoonStar, PanelLeft, LayoutGrid,
 } from "lucide-react";
 
-export const SIDEBAR_STYLE_KEY = "careflow:sidebar:style"; // "rail" | "classic"
-export function readSidebarStyle(): "rail" | "classic" {
-  try { return window.localStorage.getItem(SIDEBAR_STYLE_KEY) === "classic" ? "classic" : "rail"; } catch { return "rail"; }
-}
-export function setSidebarStyle(v: "rail" | "classic") {
-  try { window.localStorage.setItem(SIDEBAR_STYLE_KEY, v); } catch {}
-  window.dispatchEvent(new Event("careflow:sidebar:prefs"));
-}
+export const SIDEBAR_STYLE_KEY = "careflow:sidebar:style";
+const PANEL_KEY = "careflow:sidebar:rail-panel";
+/** The Rail + Today sidebar is the only sidebar now. */
+export function readSidebarStyle(): "rail" | "classic" { return "rail"; }
+
+/** Cycle phase → CareFlow rhythm phase (follicular plans, ovulation grows, luteal cares, period lets go). */
+const CYCLE_TO_RHYTHM: Record<string, "plan" | "grow" | "care" | "letgo"> = {
+  follicular: "plan", ovulatory: "grow", luteal: "care", menstrual: "letgo",
+};
+const RHYTHM_LABEL = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" } as const;
 
 type Group = (typeof NAV_GROUPS)[number];
 const GROUPS = NAV_GROUPS as unknown as Group[];
@@ -182,7 +185,21 @@ export function RailTodaySidebar({ onNavigate }: { onNavigate?: () => void }) {
             ))}
           </div>
         )}
-      </div>
+      </div>}
+    </div>
+  );
+}
+
+function NoteRow({ icon: Icon, tag, label, onNote, onPlanner }: { icon: any; tag: string; label: string; onNote: () => void; onPlanner: () => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      <button onClick={onNote} title={`Open ${tag.toLowerCase()} note`} className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted">
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate"><span className="mr-2 text-xs text-muted-foreground">{tag}</span>{label}</span>
+      </button>
+      <button onClick={onPlanner} aria-label={`Open ${tag.toLowerCase()} in planner`} title="Open in planner" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted">
+        <LayoutGrid className="h-4 w-4" />
+      </button>
     </div>
   );
 }
