@@ -1,8 +1,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
-import { CheckSquare, Sparkles, Mic, Tag as TagIcon, Clock, CalendarPlus, MoreHorizontal } from "lucide-react";
-import { TaskRow } from "@/components/cards/TaskRow";
+import { CheckSquare, Sparkles, Mic, Tag as TagIcon, Clock, MoreHorizontal, Check, CalendarDays, BarChart3 } from "lucide-react";
+import { QuickTaskSheet } from "@/components/tasks/QuickTaskSheet";
+import { AREA_ICONS } from "@/lib/area-icons";
+import { format, isToday, isTomorrow } from "date-fns";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { useStore } from "@/lib/store";
 import { useTaskSelection } from "@/lib/task-selection";
@@ -60,55 +62,118 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
     ? (() => { const [h, m] = task.startTime!.split(":").map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")}${h < 12 ? "a" : "p"}`; })()
     : task.dayPart ?? "Anytime";
 
+  const { toggleTask } = useStore() as any;
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [doneFlash, setDoneFlash] = useState(false);
+  const AreaIcon = task.area ? (AREA_ICONS as any)[task.area] : null;
+  const dueText = (() => {
+    if (!task.dueDate) return null;
+    const d = new Date(task.dueDate + "T00:00:00");
+    if (isToday(d)) return "Today";
+    if (isTomorrow(d)) return "Tomorrow";
+    return format(d, "EEE, MMM d");
+  })();
+  const prio = task.priority;
+  const prioStyle = prio === "high"
+    ? { background: "hsl(var(--rhythm-letgo-tint))", color: "hsl(var(--rhythm-letgo-deep))" }
+    : prio === "medium"
+    ? { background: "hsl(var(--rhythm-grow-tint))", color: "hsl(var(--rhythm-grow-deep))" }
+    : { background: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" };
+  const done = task.done || doneFlash;
+
   const containerClass = cn(
-    "group/inbox flex flex-col gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all duration-200 hover:shadow-md",
-    selected ? "border-primary ring-2 ring-primary/30" : "border-border/60",
+    "group/inbox flex min-w-0 flex-col rounded-2xl border bg-card px-3 py-2.5 shadow-[0_1px_2px_hsl(var(--foreground)/0.04),0_6px_16px_-12px_hsl(var(--foreground)/0.18)] transition-all duration-200",
+    selected ? "border-primary ring-2 ring-primary/30" : "border-border/50",
+    done && "opacity-60",
   );
   void rowStyle;
   return (
     <div ref={setNodeRef} style={{ ...style, borderLeft: `4px solid hsl(var(--rhythm-${phase}-deep))` }} className={containerClass}>
-      <div className="flex items-start gap-2 sm:gap-3">
-        {/* Selection indicator — only while selecting (via "Select all") */}
-        {selected && (
-          <div className="flex flex-col items-center pt-1">
-            <button
-              aria-label="Deselect"
-              title="Deselect"
-              onClick={() => { toggle(task.id); haptics.tap?.(); }}
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
+      <div className="flex min-w-0 items-start gap-2.5">
+        {selected ? (
+          <button
+            aria-label="Deselect"
+            onClick={() => { toggle(task.id); haptics.tap?.(); }}
+            className="-m-2 flex h-11 w-11 shrink-0 items-center justify-center"
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground"><CheckSquare className="h-3.5 w-3.5" /></span>
+          </button>
+        ) : (
+          <button
+            aria-label={task.done ? "Mark not done" : "Mark done"}
+            onClick={async () => { haptics.snap?.(); if (!task.done) setDoneFlash(true); await toggleTask(task.id); setTimeout(() => setDoneFlash(false), 900); }}
+            className="-m-2 flex h-11 w-11 shrink-0 items-center justify-center"
+          >
+            <span
+              className={cn("flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 transition-colors", done ? "border-transparent text-primary-foreground" : "")}
+              style={done ? { background: `hsl(var(--rhythm-${phase}-deep))` } : { borderColor: `hsl(var(--rhythm-${phase}-deep) / 0.55)` }}
             >
-              <CheckSquare className="h-3.5 w-3.5" />
-            </button>
-          </div>
+              {done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+            </span>
+          </button>
         )}
-
-
-        {/* Time pill tinted by phase (Planner style) */}
-        <span
-          className="mt-2 w-[58px] shrink-0 rounded-full py-1 text-center font-serif text-[11px] leading-tight"
-          style={{ background: `hsl(var(--rhythm-${phase}-tint))`, color: `hsl(var(--rhythm-${phase}-deep))` }}
-        >
-          {timeLabel}
-        </span>
-        <div className="min-w-0 flex-1 break-words [&_.truncate]:overflow-visible [&_.truncate]:whitespace-normal [&_.line-clamp-1]:[-webkit-line-clamp:unset] [&_.line-clamp-2]:[-webkit-line-clamp:unset]">
-          <TaskRow task={task} variant="ticktick" showHoverActions={false} tapAction="quickEdit" />
+        <div className="min-w-0 flex-1">
+          <QuickTaskSheet
+            task={task}
+            open={quickOpen}
+            onOpenChange={setQuickOpen}
+            anchor={
+              <button
+                type="button"
+                onClick={() => setQuickOpen(true)}
+                className={cn(
+                  "block w-full min-w-0 whitespace-normal text-left text-[15px] font-semibold leading-snug text-foreground [overflow-wrap:break-word]",
+                  done && "line-through decoration-muted-foreground/60",
+                )}
+              >
+                {task.title}
+              </button>
+            }
+          />
+          {task.area && (
+            <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[12.5px] text-muted-foreground">
+              {AreaIcon && <AreaIcon className="h-3.5 w-3.5 shrink-0" />}
+              <span className="min-w-0 [overflow-wrap:break-word]">{task.area}</span>
+            </p>
+          )}
         </div>
         <button
           aria-label={showMore ? "Hide options" : "More options"}
           aria-expanded={showMore}
           onClick={() => setShowMore((v) => !v)}
           className={cn(
-            "mt-1 inline-flex h-9 shrink-0 items-center gap-1 rounded-full border px-3 text-xs font-semibold transition-colors",
-            showMore ? "border-primary bg-primary text-primary-foreground" : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15",
+            "-mr-2 -mt-1.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground",
+            showMore && "text-primary",
           )}
         >
-          <MoreHorizontal className="h-4 w-4" />
-          <span>{showMore ? "Less" : "More"}</span>
+          <span className={cn("flex h-7 w-7 items-center justify-center rounded-full", showMore ? "bg-primary/10" : "group-hover/inbox:bg-muted/60")}>
+            <MoreHorizontal className="h-4 w-4" />
+          </span>
         </button>
       </div>
 
+      <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 border-t border-border/40 pl-[34px] pt-2 text-[11.5px] font-medium">
+        {dueText ? (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ background: "hsl(var(--rhythm-plan-tint))", color: "hsl(var(--rhythm-plan-deep))" }}>
+            <CalendarDays className="h-3 w-3" /> {dueText}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ background: "hsl(var(--rhythm-care-tint))", color: "hsl(var(--rhythm-care-deep))" }}>
+            <CalendarDays className="h-3 w-3" /> Needs a date
+          </span>
+        )}
+        <span className="inline-flex items-center gap-1 text-muted-foreground">
+          <Clock className="h-3 w-3" /> {timeLabel}
+        </span>
+        {prio && (
+          <span className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={prioStyle}>
+            <BarChart3 className="h-3 w-3" /> {prio[0].toUpperCase() + prio.slice(1)}
+          </span>
+        )}
+      </div>
+
       {showMore && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-3">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2">
           {(source || ageLabel) && (
             <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground/80">
               {source && (
