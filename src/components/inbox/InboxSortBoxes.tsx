@@ -16,8 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 export type SortBox = "today" | "week" | "someday" | "notes";
 
 export const SORT_BOXES: { id: SortBox; label: string; icon: typeof Sun; phase: "plan" | "grow" | "care" | "letgo" }[] = [
-  { id: "today", label: "Today", icon: Sun, phase: "grow" },
-  { id: "week", label: "This week", icon: CalendarRange, phase: "plan" },
+  { id: "today", label: "Today", icon: Sun, phase: "plan" },
+  { id: "week", label: "This week", icon: CalendarRange, phase: "grow" },
   { id: "someday", label: "Someday", icon: Cloud, phase: "care" },
   { id: "notes", label: "Notes", icon: NotebookPen, phase: "letgo" },
 ];
