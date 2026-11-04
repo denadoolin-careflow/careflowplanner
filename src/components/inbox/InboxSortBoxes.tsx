@@ -137,7 +137,17 @@ export function InboxSortBoxes({ items }: { items: any[] }) {
 
   const addToBox = async () => {
     const raw = draft.trim();
-    if (!raw || !openBox || openBox === "notes") return;
+    if (!raw || !openBox) return;
+    if (openBox === "notes") {
+      try {
+        const n = await createNote({ title: raw });
+        const list = [{ id: n.id, title: raw, date: today }, ...readSortedNotes()].slice(0, 50);
+        localStorage.setItem(NOTES_KEY, JSON.stringify(list));
+        window.dispatchEvent(new Event("careflow:inbox-sorted-notes"));
+        setDraft(""); haptics.snap?.();
+      } catch { toast.error("Couldn't add that note"); }
+      return;
+    }
     const p = parseTaskInput(raw);
     const base: any = { title: p.title || raw, inbox: false, priority: p.priority, area: p.area, tags: p.tags, estMinutes: p.estMinutes, time: p.time };
     if (openBox === "today") Object.assign(base, { dueDate: p.dueDate ?? today, status: "active" });
@@ -180,13 +190,11 @@ export function InboxSortBoxes({ items }: { items: any[] }) {
             <p className="text-sm font-medium">{SORT_BOXES.find((b) => b.id === openBox)!.label}</p>
             <button type="button" aria-label="Close" onClick={() => setOpenBox(null)} className="grid h-9 w-9 place-items-center rounded-full hover:bg-muted/60"><X className="h-4 w-4" /></button>
           </div>
-          {openBox !== "notes" && (
-            <form onSubmit={(e) => { e.preventDefault(); void addToBox(); }} className="mb-2 flex items-center gap-2 rounded-xl bg-muted/50 px-3">
-              <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <label htmlFor="box-add" className="sr-only">Add to {SORT_BOXES.find((b) => b.id === openBox)!.label}</label>
-              <input id="box-add" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder='Add… e.g. "call mom 3pm"' className="h-11 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground" />
-            </form>
-          )}
+          <form onSubmit={(e) => { e.preventDefault(); void addToBox(); }} className="mb-2 flex items-center gap-2 rounded-xl bg-muted/50 px-3">
+            <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <label htmlFor="box-add" className="sr-only">Add to {SORT_BOXES.find((b) => b.id === openBox)!.label}</label>
+            <input id="box-add" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={openBox === "notes" ? "Add a note…" : 'Add… e.g. "call mom 3pm"'} className="h-11 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+          </form>
           {boxes[openBox].shown.length === 0 ? (
             <p className="text-xs text-muted-foreground">Nothing here yet.</p>
           ) : openBox === "notes" ? (
