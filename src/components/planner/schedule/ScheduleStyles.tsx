@@ -116,6 +116,11 @@ export function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
     return () => { live = false; };
   }, [wsIso, weIso, rev]);
   useEffect(() => {
+    const sync = () => setPins(readPhasePins());
+    window.addEventListener("careflow:phase-pins-change", sync);
+    return () => window.removeEventListener("careflow:phase-pins-change", sync);
+  }, []);
+  useEffect(() => {
     const bump = () => setRev(r => r + 1);
     window.addEventListener("careflow:medication-logs-changed", bump);
     window.addEventListener("careflow:meals-done-change", bump);

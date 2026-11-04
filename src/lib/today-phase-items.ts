@@ -29,6 +29,7 @@ export function readPhasePins(): Record<string, RhythmPhase> {
 export function pinPhase(id: string, phase: RhythmPhase) {
   const p = readPhasePins(); p[id] = phase;
   try { localStorage.setItem(PHASE_KEY, JSON.stringify(p)); } catch { /* */ }
+  try { window.dispatchEvent(new Event("careflow:phase-pins-change")); } catch { /* */ }
 }
 
 export function phaseOfTodayTask(t: Task, pins: Record<string, RhythmPhase> = {}): RhythmPhase {
@@ -102,4 +103,5 @@ export function phaseSummary(
 export function unpinPhase(id: string) {
   const p = readPhasePins(); delete p[id];
   try { localStorage.setItem(PHASE_KEY, JSON.stringify(p)); } catch { /* */ }
+  try { window.dispatchEvent(new Event("careflow:phase-pins-change")); } catch { /* */ }
 }
