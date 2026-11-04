@@ -40,7 +40,7 @@ export function ProjectRow({ p, draggable, moveMenu }: { p: Project; draggable?:
       className="flex min-h-[56px] items-center gap-3 rounded-2xl bg-card px-3 py-2 ring-1 ring-border/60">
       <Link to={`/projects/${p.id}`} className="flex min-w-0 flex-1 items-center gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: tint(ph), color: deep(ph) }}>
-          {p.icon ? <ProjectIconGlyph icon={p.icon} className="h-4 w-4" /> : (() => { const I = PHASE_ICONS[ph]; return <I className="h-4 w-4" />; })()}
+          <ProjectIconGlyph project={p} className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block break-words font-semibold leading-snug">{p.name}</span>
