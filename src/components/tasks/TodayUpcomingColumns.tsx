@@ -5,8 +5,16 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { PHASE_ORDER, phaseOfTodayTask } from "@/lib/today-phase-items";
 import { PHASE_ICONS } from "@/lib/phase-icons";
-import { PlannerTaskRow } from "@/components/planner/PlannerTaskRow";
+import { TaskCard } from "@/components/tasks/TaskCard";
+import type { DayPart } from "@/components/inbox/WhenPopover";
 import type { Task } from "@/lib/types";
+
+/** Same look and behavior as the inbox task cards. */
+function TaskCardFor({ task }: { task: Task }) {
+  const autoDayPart: DayPart = (task.dayPart as DayPart) ??
+    (phaseOfTodayTask(task) === "plan" ? "Morning" : phaseOfTodayTask(task) === "grow" ? "Afternoon" : "Evening");
+  return <TaskCard task={task} autoDayPart={autoDayPart} />;
+}
 
 const PN = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" } as const;
 
@@ -39,7 +47,7 @@ export function TodayUpcomingColumns() {
               style={{ background: `hsl(var(--rhythm-${p}-tint))`, color: `hsl(var(--rhythm-${p}-deep))` }}>
               <Icon className="h-3.5 w-3.5" /> {PN[p]}
             </span>
-            {list.map(t => <PlannerTaskRow key={t.id} task={t} />)}
+            {list.map(t => <TaskCardFor key={t.id} task={t} />)}
           </section>
         );
       })}
@@ -52,7 +60,7 @@ export function TodayUpcomingColumns() {
       {upcoming.map(([d, list]) => (
         <section key={d} className="space-y-2">
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{format(parseISO(d), "EEE, MMM d")}</div>
-          {list.map(t => <PlannerTaskRow key={t.id} task={t} />)}
+          {list.map(t => <TaskCardFor key={t.id} task={t} />)}
         </section>
       ))}
     </div>
