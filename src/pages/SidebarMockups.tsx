@@ -141,14 +141,83 @@ function TodayFirst({ size, showCounts }: { size: number; showCounts: boolean })
   );
 }
 
+function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) {
+  const [sel, setSel] = useState<string>("today");
+  const g = GROUPS.find((x) => x.id === sel);
+  const today = new Date();
+  const railBtn = (active: boolean) => cn("grid h-11 w-11 place-items-center rounded-xl", active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted");
+  return (
+    <div className="flex h-full">
+      <div className="flex w-16 flex-col items-center gap-2 border-r border-border py-3">
+        <Leaf className="mb-1 h-6 w-6 text-primary" />
+        <button title="Today" onMouseEnter={() => setSel("today")} onClick={() => setSel("today")} className={railBtn(sel === "today")}>
+          <Sun className="h-5 w-5" />
+        </button>
+        <button title="Inbox" className="relative grid h-11 w-11 place-items-center rounded-xl text-muted-foreground hover:bg-muted">
+          <Inbox className="h-5 w-5" />
+          {showCounts && <span className="absolute right-1 top-1 rounded-full bg-primary px-1 text-[10px] text-primary-foreground">6</span>}
+        </button>
+        <div className="my-1 h-px w-8 bg-border" />
+        {GROUPS.map((x) => {
+          const Icon = x.icon as any;
+          return (
+            <button key={x.id} title={x.label} onMouseEnter={() => setSel(x.id)} onClick={() => setSel(x.id)} className={railBtn(sel === x.id)}>
+              <Icon className="h-5 w-5" />
+            </button>
+          );
+        })}
+        <div className="flex-1" />
+        <Settings className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div className="w-64 overflow-y-auto bg-card p-3 shadow-lg">
+        {sel === "today" ? (
+          <div className="space-y-3">
+            <div className="planner-card rounded-2xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-accent">Plan · Care · Grow</div>
+                  <div className="font-display text-xl">{today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
+                </div>
+                <ScheduleDayMoon date={today} />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <button className="min-h-[44px] rounded-xl bg-primary text-sm text-primary-foreground"><Sun className="mx-auto h-4 w-4" />Today</button>
+                <button className="min-h-[44px] rounded-xl bg-muted text-sm"><Inbox className="mx-auto h-4 w-4" />Inbox{showCounts && " 6"}</button>
+                <button className="min-h-[44px] rounded-xl bg-muted text-sm"><Plus className="mx-auto h-4 w-4" />Add</button>
+              </div>
+            </div>
+            <div className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground">Pinned</div>
+            {["Planner", "Notes", "Meals", "Mom's care"].map((p) => <Row key={p} icon={Pin} label={p} size={size} />)}
+            <p className="px-3 text-xs text-muted-foreground">Hover or tap an icon for the rest of your pages.</p>
+          </div>
+        ) : g && (
+          <>
+            <div className="font-display text-lg">{g.label}</div>
+            <div className="mb-2 text-xs text-muted-foreground">{(g as any).subtitle}</div>
+            {g.items.map((it: any) => (
+              <div key={it.to}>
+                <Row icon={it.icon} label={it.label} active={it.to === ACTIVE} count={COUNTS[it.to]} showCounts={showCounts} size={size} />
+                {NAV_SUBPAGES[it.to]?.map((s) => (
+                  <div key={s.to} className="ml-9 py-1 text-muted-foreground" style={{ fontSize: size - 1 }}>{s.label}</div>
+                ))}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const DESIGNS = [
+  { id: "mix", label: "4 · Rail + Today first", C: RailToday },
   { id: "calm", label: "1 · Calm list", C: CalmList },
   { id: "rail", label: "2 · Icon rail + flyout", C: IconRail },
   { id: "today", label: "3 · Today-first", C: TodayFirst },
 ];
 
 export default function SidebarMockups() {
-  const [tab, setTab] = useState("calm");
+  const [tab, setTab] = useState("mix");
   const [dark, setDark] = useState(false);
   const [phone, setPhone] = useState(false);
   const [size, setSize] = useState(14);
