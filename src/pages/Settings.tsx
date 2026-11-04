@@ -165,6 +165,11 @@ export default function Settings() {
         </div>
       </SectionCard>
 
+      <SectionCard title="Sidebar style" subtitle="Rail + Today shows an icon strip with your day up top. Classic shows the full list." accent="calm">
+        <SidebarStyleSwitch />
+      </SectionCard>
+
+
       <SectionCard
         title="Sidebar notification dots"
         subtitle="Show small count dots on the collapsed sidebar when a Flow has items for today."
