@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NAV_GROUPS, NAV_SUBPAGES } from "@/lib/nav";
 import { ScheduleDayMoon } from "@/components/planner/schedule/ScheduleDayMoon";
-import { ChevronDown, ChevronRight, Plus, Settings, Inbox, Sun, Pin, Moon, SunMedium, Smartphone, Monitor, Leaf, Menu } from "lucide-react";
+import { useWeekForecast } from "@/lib/use-week-forecast";
+import { useTempUnit, cToF } from "@/lib/weather-store";
+import { useCycle } from "@/lib/cycle-store";
+import { getPhaseInfo } from "@/lib/cycle";
+import { ChevronDown, ChevronRight, Plus, Settings, Inbox, Sun, Pin, Moon, SunMedium, Smartphone, Monitor, Leaf, Menu, CloudSun, BookOpen, CalendarDays, CalendarRange, CalendarCheck } from "lucide-react";
+
+function useSafeCycle() {
+  try { return useCycle(); } catch { return null; }
+}
 import { cn } from "@/lib/utils";
 
 type Group = (typeof NAV_GROUPS)[number];
@@ -144,7 +152,14 @@ function TodayFirst({ size, showCounts }: { size: number; showCounts: boolean })
 function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) {
   const [sel, setSel] = useState<string>("today");
   const g = GROUPS.find((x) => x.id === sel);
-  const today = new Date();
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t); }, []);
+  const today = now;
+  const { days } = useWeekForecast();
+  const [unit] = useTempUnit();
+  const wx = days?.find((x) => x.date === today.toISOString().slice(0, 10));
+  const cyc = useSafeCycle();
+  const cycleInfo = cyc?.settings?.enabled ? getPhaseInfo(today, cyc.periods, cyc.settings) : null;
   const railBtn = (active: boolean) => cn("grid h-11 w-11 place-items-center rounded-xl", active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted");
   return (
     <div className="flex h-full">
@@ -173,12 +188,20 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
         {sel === "today" ? (
           <div className="space-y-3">
             <div className="planner-card rounded-2xl p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-xs uppercase tracking-widest text-accent">Plan · Care · Grow</div>
-                  <div className="font-display text-xl">{today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
+                  <div className="font-display text-xl leading-tight">{today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
+                  <div className="font-display text-2xl tabular-nums text-primary">{now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</div>
                 </div>
                 <ScheduleDayMoon date={today} />
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-1">
+                  <CloudSun className="h-3.5 w-3.5" />{wx ? `${unit === "F" ? cToF(wx.highC) : wx.highC}° / ${unit === "F" ? cToF(wx.lowC) : wx.lowC}°` : "62° · Partly sunny"}
+                </span>
+                {cycleInfo && (
+                  <span className="rounded-full bg-muted px-2 py-1">Cycle day {cycleInfo.cycleDay} · {cycleInfo.label}</span>
+                )}
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <button className="min-h-[44px] rounded-xl bg-primary text-sm text-primary-foreground"><Sun className="mx-auto h-4 w-4" />Today</button>
@@ -186,6 +209,15 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
                 <button className="min-h-[44px] rounded-xl bg-muted text-sm"><Plus className="mx-auto h-4 w-4" />Add</button>
               </div>
             </div>
+            <div className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground">Notebook</div>
+            {[
+              { icon: CalendarRange, k: "Month", v: today.toLocaleDateString(undefined, { month: "short", year: "numeric" }) },
+              { icon: CalendarDays, k: "Week", v: `Week ${isoWeek(today)}` },
+              { icon: CalendarCheck, k: "Day", v: today.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) },
+            ].map(({ icon, k, v }) => (
+              <Row key={k} icon={icon} label={<span><span className="mr-2 text-xs text-muted-foreground">{k}</span>{v}</span>} size={size}
+                chevron={<ChevronRight className="h-4 w-4 opacity-50" />} />
+            ))}
             <div className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground">Pinned</div>
             {["Planner", "Notes", "Meals", "Mom's care"].map((p) => <Row key={p} icon={Pin} label={p} size={size} />)}
             <p className="px-3 text-xs text-muted-foreground">Hover or tap an icon for the rest of your pages.</p>
@@ -260,4 +292,12 @@ export default function SidebarMockups() {
       </div>
     </div>
   );
+}
+
+function isoWeek(d: Date) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t.getTime() - y.getTime()) / 86400000 + 1) / 7);
 }
