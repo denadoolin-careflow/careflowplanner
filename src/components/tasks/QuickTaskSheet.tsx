@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, addDays } from "date-fns";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
@@ -14,7 +14,7 @@ import { LifeAreaGoalPicker } from "@/components/goals/LifeAreaGoalPicker";
 import { lifeAreaLabel } from "@/lib/goals/life-areas";
 import {
   Flag, Folder, Target, MapPin, Tag, CloudSun, Repeat, CalendarDays,
-  ChevronLeft, Trash2, Settings2, X, Check,
+  ChevronLeft, ChevronRight, Trash2, ExternalLink, X, Check,
 } from "lucide-react";
 
 type Props = {
@@ -69,34 +69,41 @@ export function QuickTaskSheet({ task, open, onOpenChange, anchor }: Props) {
     ? format(new Date(task.dueDate + "T00:00:00"), "EEE, MMM d")
     : "No date";
 
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const todayIso = format(new Date(), "yyyy-MM-dd");
+  const isoIn = (n: number) => format(addDays(new Date(), n), "yyyy-MM-dd");
+  const areaTone = task.area === "Caregiving" ? "care" : task.area ? "letgo" : null;
+  const prioTone = task.priority === "high" ? "letgo" : task.priority === "medium" ? "grow" : null;
+  const partTone = task.dayPart === "Morning" ? "plan" : task.dayPart === "Afternoon" ? "grow" : task.dayPart ? "care" : null;
+
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>{anchor ?? <span className="sr-only" />}</PopoverTrigger>
-      <PopoverContent
-        align="start"
-        sideOffset={6}
-        className="w-[360px] max-w-[92vw] overflow-hidden rounded-2xl border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur animate-scale-in"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <>
+    {anchor}
+    <DialogPrimitive.Root open={open} onOpenChange={(o) => { if (!o) { setPicker(null); setConfirmDelete(false); } onOpenChange(o); }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[100] bg-foreground/45 backdrop-blur-[8px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 duration-200 motion-reduce:animate-none" />
+        <DialogPrimitive.Content
+          onClick={(e) => e.stopPropagation()}
+          aria-describedby={undefined}
+          className="fixed left-1/2 top-1/2 z-[101] flex max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-[calc(100vw-1.5rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-border/50 bg-card shadow-[0_24px_60px_-20px_hsl(var(--foreground)/0.45)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95 motion-reduce:animate-none"
+        >
         {/* Header */}
-        <div className="flex items-start justify-between gap-2 border-b border-border/50 bg-muted/30 p-3">
+        <div className="flex shrink-0 items-start gap-3 border-b border-border/40 bg-primary/[0.06] px-5 pb-4 pt-5">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Quick edit</p>
-            <p className="mt-0.5 truncate text-sm font-semibold leading-snug text-foreground">{task.title}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">Quick edit</p>
+            <DialogPrimitive.Title className="mt-1 whitespace-normal font-serif text-xl leading-snug text-foreground [overflow-wrap:break-word]">{task.title}</DialogPrimitive.Title>
           </div>
-          <button
-            type="button"
-            onClick={close}
-            className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          <DialogPrimitive.Close
+            className="-mr-1 -mt-1 grid h-11 w-11 shrink-0 place-items-center rounded-full"
             aria-label="Close"
           >
-            <X className="h-3.5 w-3.5" />
-          </button>
+            <span className="grid h-9 w-9 place-items-center rounded-full border border-border/60 bg-card text-muted-foreground shadow-sm hover:text-foreground"><X className="h-4 w-4" /></span>
+          </DialogPrimitive.Close>
         </div>
-
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {/* Picker mode */}
         {picker ? (
-          <div className="p-3">
+          <div className="p-4">
             <button
               type="button"
               onClick={() => setPicker(null)}
@@ -203,95 +210,120 @@ export function QuickTaskSheet({ task, open, onOpenChange, anchor }: Props) {
             )}
           </div>
         ) : (
-          <div className="p-3">
+          <div className="p-4">
             {/* Quick due row */}
             <div className="mb-3">
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <CalendarDays className="mr-1 inline h-3 w-3" /> Due · {dueLabel}
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" /> Due date
+                  <span className="text-xs font-normal text-muted-foreground">· {dueLabel}</span>
                 </span>
                 {task.dueDate && (
-                  <button onClick={() => setDue(null)} className="text-[10px] text-muted-foreground hover:text-foreground">
+                  <button onClick={() => setDue(null)} className="min-h-[44px] px-2 text-xs text-muted-foreground hover:text-foreground">
                     Clear
                   </button>
                 )}
               </div>
               <div className="grid grid-cols-4 gap-1.5">
-                <DueChip label="Today"    onClick={() => setDue(new Date())} />
-                <DueChip label="Tomorrow" onClick={() => setDue(addDays(new Date(), 1))} />
-                <DueChip label="+3 days"  onClick={() => setDue(addDays(new Date(), 3))} />
-                <DueChip label="Next wk"  onClick={() => setDue(addDays(new Date(), 7))} />
+                <DueChip label="Today" active={task.dueDate === todayIso} onClick={() => setDue(new Date())} />
+                <DueChip label="Tomorrow" active={task.dueDate === isoIn(1)} onClick={() => setDue(addDays(new Date(), 1))} />
+                <DueChip label="+3 days" active={task.dueDate === isoIn(3)} onClick={() => setDue(addDays(new Date(), 3))} />
+                <DueChip label="Next week" active={task.dueDate === isoIn(7)} onClick={() => setDue(addDays(new Date(), 7))} />
               </div>
             </div>
 
             {/* Rows */}
-            <div className="space-y-1">
-              <TileRow icon={<Folder className="h-3.5 w-3.5" />} label="Project"
+            <div className="space-y-1.5">
+              <TileRow icon={<Folder className="h-[18px] w-[18px]" />} label="Project"
                 value={project?.name ?? "None"} onClick={() => setPicker("project")} />
-              <TileRow icon={<Target className="h-3.5 w-3.5" />} label="Goal"
+              <TileRow icon={<Target className="h-[18px] w-[18px]" />} label="Goal"
                 value={goal ? `${goal.title}${lifeAreaLabel(goal.lifeHouse) ? ` · ${lifeAreaLabel(goal.lifeHouse)}` : ""}` : "None"} onClick={() => setPicker("goal")} />
-              <TileRow icon={<MapPin className="h-3.5 w-3.5" />} label="Area"
-                value={task.area ?? "None"} onClick={() => setPicker("area")} />
-              <TileRow icon={<Flag className="h-3.5 w-3.5" />} label="Priority"
-                value={PRIORITY_LABEL[task.priority]} onClick={() => setPicker("priority")} />
-              <TileRow icon={<CloudSun className="h-3.5 w-3.5" />} label="Day part"
-                value={task.dayPart ?? "Anytime"} onClick={() => setPicker("daypart")} />
-              <TileRow icon={<Repeat className="h-3.5 w-3.5" />} label="Repeat"
+              <TileRow icon={<MapPin className="h-[18px] w-[18px]" />} label="Area"
+                value={task.area ?? "None"} tone={areaTone} onClick={() => setPicker("area")} />
+              <TileRow icon={<Flag className="h-[18px] w-[18px]" />} label="Priority"
+                value={PRIORITY_LABEL[task.priority]} tone={prioTone} onClick={() => setPicker("priority")} />
+              <TileRow icon={<CloudSun className="h-[18px] w-[18px]" />} label="Day Part"
+                value={task.dayPart ?? "Anytime"} tone={partTone} onClick={() => setPicker("daypart")} />
+              <TileRow icon={<Repeat className="h-[18px] w-[18px]" />} label="Repeat"
                 value={task.recurrenceType && task.recurrenceType !== "none" ? task.recurrenceType : "Never"}
                 onClick={() => setPicker("repeat")} />
-              <TileRow icon={<Tag className="h-3.5 w-3.5" />} label="Tags"
+              <TileRow icon={<Tag className="h-[18px] w-[18px]" />} label="Tags"
                 value={(task.tags ?? []).length ? (task.tags ?? []).map(t => `#${t}`).join(" ") : "None"}
                 onClick={() => setPicker("tags")} />
             </div>
 
             {/* Footer */}
-            <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-3">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pb-[env(safe-area-inset-bottom)]">
               <Button
-                size="sm"
                 variant="outline"
-                className="h-7 gap-1.5 text-xs"
+                className="h-11 gap-2 rounded-full px-4 text-sm"
                 onClick={() => { onOpenChange(false); openTaskEditor(task.id); }}
               >
-                <Settings2 className="h-3 w-3" /> Open full editor
+                <ExternalLink className="h-4 w-4" /> Open full editor
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 gap-1.5 text-xs text-destructive hover:text-destructive"
-                onClick={async () => { await deleteTask(task.id); onOpenChange(false); }}
-              >
-                <Trash2 className="h-3 w-3" /> Delete
-              </Button>
+              {confirmDelete ? (
+                <div className="flex items-center gap-1.5">
+                  <Button variant="ghost" className="h-11 rounded-full px-3 text-sm" onClick={() => setConfirmDelete(false)}>Keep</Button>
+                  <Button variant="destructive" className="h-11 gap-1.5 rounded-full px-4 text-sm"
+                    onClick={async () => { await deleteTask(task.id); onOpenChange(false); }}>
+                    <Trash2 className="h-4 w-4" /> Delete task
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="h-11 gap-1.5 rounded-full bg-destructive/10 px-4 text-sm text-destructive hover:bg-destructive/15 hover:text-destructive"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </Button>
+              )}
             </div>
           </div>
         )}
-      </PopoverContent>
-    </Popover>
+        </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
+    </>
   );
 }
 
-function TileRow({ icon, label, value, onClick }: { icon: React.ReactNode; label: string; value: string; onClick: () => void }) {
+function TileRow({ icon, label, value, onClick, tone }: { icon: React.ReactNode; label: string; value: string; onClick: () => void; tone?: string | null }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-xl border border-border/40 bg-background/40 px-2.5 py-2 text-left transition-colors hover:border-primary/40 hover:bg-muted/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+      className="flex min-h-[48px] w-full items-center gap-3 rounded-2xl border border-border/40 bg-background/50 px-3 py-2 text-left transition-colors hover:border-primary/30 hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
     >
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted/60 text-muted-foreground">{icon}</span>
-      <span className="w-16 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="min-w-0 flex-1 truncate text-right text-[12px] font-medium text-foreground">{value}</span>
+      <span className="shrink-0 text-muted-foreground">{icon}</span>
+      <span className="shrink-0 text-sm font-medium text-foreground">{label}</span>
+      <span className="ml-auto min-w-0 text-right">
+        {tone ? (
+          <span className="inline-block max-w-full rounded-full px-2.5 py-1 text-xs font-semibold [overflow-wrap:break-word]"
+            style={{ background: `hsl(var(--rhythm-${tone}-tint))`, color: `hsl(var(--rhythm-${tone}-deep))` }}>{value}</span>
+        ) : (
+          <span className="text-[13px] capitalize text-muted-foreground [overflow-wrap:break-word]">{value}</span>
+        )}
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
     </button>
   );
 }
 
-function DueChip({ label, onClick }: { label: string; onClick: () => void }) {
+function DueChip({ label, onClick, active }: { label: string; onClick: () => void; active?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-lg border border-border/50 bg-background/40 px-1.5 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+      aria-pressed={active}
+      className={cn(
+        "inline-flex min-h-[44px] items-center justify-center gap-1 rounded-full border px-1 text-[12px] font-medium leading-tight transition-colors",
+        active ? "border-transparent text-primary-foreground" : "border-border/60 bg-background/50 text-foreground hover:border-primary/40",
+      )}
+      style={active ? { background: "hsl(var(--rhythm-plan-deep))" } : undefined}
     >
-      {label}
+      {active && <Check className="h-3.5 w-3.5" />}{label}
     </button>
   );
 }
