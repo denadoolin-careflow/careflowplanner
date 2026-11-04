@@ -97,3 +97,9 @@ export function phaseSummary(
   if (done) parts.push(`${done} done`);
   return parts.length ? parts.join(" · ") : "Nothing planned yet";
 }
+
+/** Drop a manual phase pin so the item follows its start time again. */
+export function unpinPhase(id: string) {
+  const p = readPhasePins(); delete p[id];
+  try { localStorage.setItem(PHASE_KEY, JSON.stringify(p)); } catch { /* */ }
+}
