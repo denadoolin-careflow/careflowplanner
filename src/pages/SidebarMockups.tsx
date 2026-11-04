@@ -157,9 +157,15 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
   const today = now;
   const { days } = useWeekForecast();
   const [unit] = useTempUnit();
-  const wx = days?.find((x) => x.date === today.toISOString().slice(0, 10));
   const cyc = useSafeCycle();
   const cycleInfo = cyc?.settings?.enabled ? getPhaseInfo(today, cyc.periods, cyc.settings) : null;
+  const cycleView = cycleInfo
+    ? { day: cycleInfo.cycleDay, label: cycleInfo.label, invitation: cycleInfo.invitation, hint: cycleInfo.planningHints?.[0], sample: false }
+    : { day: 9, label: "Follicular", invitation: "Rising energy and curiosity — a good window to start things and say yes.", hint: "Put new or creative tasks early in the day.", sample: true };
+  const moon = MOON_INFO[getMoonPhase(today)];
+  const sign = getMoonSign(today);
+  const signGuide = (MOON_IN_SIGN_GUIDE as any)[sign.name];
+  const rhythm = lunarRhythmAt(today);
   const railBtn = (active: boolean) => cn("grid h-11 w-11 place-items-center rounded-xl", active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted");
   return (
     <div className="flex h-full">
@@ -193,15 +199,22 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
                   <div className="font-display text-xl leading-tight">{today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
                   <div className="font-display text-2xl tabular-nums text-primary">{now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</div>
                 </div>
-                <ScheduleDayMoon date={today} />
+                <WeatherButton now={now} />
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-1">
-                  <CloudSun className="h-3.5 w-3.5" />{wx ? `${unit === "F" ? cToF(wx.highC) : wx.highC}° / ${unit === "F" ? cToF(wx.lowC) : wx.lowC}°` : "62° · Partly sunny"}
-                </span>
-                {cycleInfo && (
-                  <span className="rounded-full bg-muted px-2 py-1">Cycle day {cycleInfo.cycleDay} · {cycleInfo.label}</span>
-                )}
+              <div className="mt-2 space-y-1.5">
+                <InfoRow icon={<span className="text-base leading-none">{moon.glyph}</span>} label={`${moon.label} · Moon in ${sign.name} ${sign.symbol}`}>
+                  <div className="font-display text-base">{moon.label} in {sign.name}</div>
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground">{LUNAR_RHYTHM[rhythm]?.label ?? rhythm} phase</div>
+                  <p className="mt-2 text-sm">{signGuide?.vibe ?? moon.invitation}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{PHASE_GUIDE[rhythm]?.focus ?? moon.invitation}</p>
+                  {signGuide?.actions?.[0] && <p className="mt-2 text-sm">Try: {signGuide.actions[0]}</p>}
+                </InfoRow>
+                <InfoRow icon={<Droplet className="h-4 w-4 text-primary" />} label={`Cycle day ${cycleView.day} · ${cycleView.label}${cycleView.sample ? " (sample)" : ""}`}>
+                  <div className="font-display text-base">Cycle day {cycleView.day} · {cycleView.label}</div>
+                  <p className="mt-2 text-sm">{cycleView.invitation}</p>
+                  {cycleView.hint && <p className="mt-1 text-sm text-muted-foreground">Plan tip: {cycleView.hint}</p>}
+                  {cycleView.sample && <p className="mt-2 text-xs text-muted-foreground">Sample — turn on cycle tracking to see yours.</p>}
+                </InfoRow>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <button className="min-h-[44px] rounded-xl bg-primary text-sm text-primary-foreground"><Sun className="mx-auto h-4 w-4" />Today</button>
