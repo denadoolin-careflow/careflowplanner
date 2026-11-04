@@ -152,7 +152,14 @@ function TodayFirst({ size, showCounts }: { size: number; showCounts: boolean })
 function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) {
   const [sel, setSel] = useState<string>("today");
   const g = GROUPS.find((x) => x.id === sel);
-  const today = new Date();
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(t); }, []);
+  const today = now;
+  const { days } = useWeekForecast();
+  const [unit] = useTempUnit();
+  const wx = days?.find((x) => x.date === today.toISOString().slice(0, 10));
+  const cyc = useSafeCycle();
+  const cycleInfo = cyc?.settings?.enabled ? getPhaseInfo(today, cyc.periods, cyc.settings) : null;
   const railBtn = (active: boolean) => cn("grid h-11 w-11 place-items-center rounded-xl", active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted");
   return (
     <div className="flex h-full">
@@ -202,6 +209,15 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
                 <button className="min-h-[44px] rounded-xl bg-muted text-sm"><Plus className="mx-auto h-4 w-4" />Add</button>
               </div>
             </div>
+            <div className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground">Notebook</div>
+            {[
+              { icon: CalendarRange, k: "Month", v: today.toLocaleDateString(undefined, { month: "long", year: "numeric" }) },
+              { icon: CalendarDays, k: "Week", v: `Week ${isoWeek(today)}` },
+              { icon: CalendarCheck, k: "Day", v: today.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) },
+            ].map(({ icon, k, v }) => (
+              <Row key={k} icon={icon} label={<span><span className="mr-2 text-xs text-muted-foreground">{k}</span>{v}</span>} size={size}
+                chevron={<ChevronRight className="h-4 w-4 opacity-50" />} />
+            ))}
             <div className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground">Pinned</div>
             {["Planner", "Notes", "Meals", "Mom's care"].map((p) => <Row key={p} icon={Pin} label={p} size={size} />)}
             <p className="px-3 text-xs text-muted-foreground">Hover or tap an icon for the rest of your pages.</p>
