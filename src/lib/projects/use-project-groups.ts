@@ -13,7 +13,7 @@ export function useProjectGroups() {
     if (!user) return;
     let { data } = await supabase.from("project_groups").select("id,name,sort_order").order("sort_order");
     if (data && data.length === 0 && !localStorage.getItem(`careflow:project-groups-seeded:${user.id}`)) {
-      seeding ??= supabase.from("project_groups").insert(DEFAULTS.map((name, i) => ({ name, sort_order: i, user_id: user.id })));
+      seeding ??= Promise.resolve(supabase.from("project_groups").insert(DEFAULTS.map((name, i) => ({ name, sort_order: i, user_id: user.id }))));
       await seeding; seeding = null;
       try { localStorage.setItem(`careflow:project-groups-seeded:${user.id}`, "1"); } catch { /* */ }
       ({ data } = await supabase.from("project_groups").select("id,name,sort_order").order("sort_order"));
