@@ -211,7 +211,7 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
             </div>
             <div className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground">Notebook</div>
             {[
-              { icon: CalendarRange, k: "Month", v: today.toLocaleDateString(undefined, { month: "long", year: "numeric" }) },
+              { icon: CalendarRange, k: "Month", v: today.toLocaleDateString(undefined, { month: "short", year: "numeric" }) },
               { icon: CalendarDays, k: "Week", v: `Week ${isoWeek(today)}` },
               { icon: CalendarCheck, k: "Day", v: today.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) },
             ].map(({ icon, k, v }) => (
