@@ -5,7 +5,14 @@ import { useWeekForecast } from "@/lib/use-week-forecast";
 import { useTempUnit, cToF } from "@/lib/weather-store";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo } from "@/lib/cycle";
-import { ChevronDown, ChevronRight, Plus, Settings, Inbox, Sun, Pin, Moon, SunMedium, Smartphone, Monitor, Leaf, Menu, CloudSun, BookOpen, CalendarDays, CalendarRange, CalendarCheck } from "lucide-react";
+import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { getMoonSign, MOON_IN_SIGN_GUIDE } from "@/lib/zodiac";
+import { lunarRhythmAt, LUNAR_RHYTHM, PHASE_GUIDE } from "@/lib/cosmic/lunar-rhythm";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { WeatherCondition } from "@/lib/weather";
+import type { ReactNode } from "react";
+import { ChevronDown, ChevronRight, Plus, Settings, Inbox, Sun, Pin, Moon, SunMedium, Smartphone, Monitor, Leaf, Menu, CloudSun, CalendarDays, CalendarRange, CalendarCheck, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, Zap, Droplet, MoonStar } from "lucide-react";
 
 function useSafeCycle() {
   try { return useCycle(); } catch { return null; }
@@ -313,4 +320,82 @@ function isoWeek(d: Date) {
   t.setUTCDate(t.getUTCDate() + 4 - day);
   const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
   return Math.ceil(((t.getTime() - y.getTime()) / 86400000 + 1) / 7);
+}
+
+function InfoRow({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="flex min-h-[40px] w-full items-center gap-2 rounded-xl bg-muted/60 px-3 text-left text-xs hover:bg-muted">
+          {icon}<span className="flex-1">{label}</span><ChevronRight className="h-3.5 w-3.5 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="right" align="start" className="w-72">{children}</PopoverContent>
+    </Popover>
+  );
+}
+
+function WxIcon({ c, night, className = "h-5 w-5" }: { c: WeatherCondition; night?: boolean; className?: string }) {
+  if (c === "clear") return night ? <MoonStar className={className} /> : <Sun className={className} />;
+  if (c === "partly-cloudy") return <CloudSun className={className} />;
+  if (c === "fog") return <CloudFog className={className} />;
+  if (c === "drizzle") return <CloudDrizzle className={className} />;
+  if (c === "rain") return <CloudRain className={className} />;
+  if (c === "snow") return <CloudSnow className={className} />;
+  if (c === "thunderstorm") return <Zap className={className} />;
+  return <Cloud className={className} />;
+}
+
+const SAMPLE_WX = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date(); d.setDate(d.getDate() + i);
+  const conds: WeatherCondition[] = ["partly-cloudy", "clear", "rain", "cloudy", "clear", "drizzle", "partly-cloudy"];
+  return { date: d.toISOString().slice(0, 10), condition: conds[i], highC: 17 - (i % 3), lowC: 7 + (i % 2), precip: [10, 0, 70, 30, 5, 45, 15][i] };
+});
+
+const COND_LABEL: Record<string, string> = { clear: "Clear", "partly-cloudy": "Partly cloudy", cloudy: "Cloudy", fog: "Foggy", drizzle: "Drizzle", rain: "Rain", snow: "Snow", thunderstorm: "Storms" };
+
+function WeatherButton({ now }: { now: Date }) {
+  const { days } = useWeekForecast();
+  const [unit] = useTempUnit();
+  const list = ((days?.length ? days : SAMPLE_WX) as typeof SAMPLE_WX).slice(0, 7);
+  const iso = now.toISOString().slice(0, 10);
+  const t = list.find((d) => d.date === iso) ?? list[0];
+  const night = now.getHours() >= 18 || now.getHours() < 6;
+  const f = (c: number) => `${unit === "F" ? cToF(c) : c}°`;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button aria-label="Weather forecast" className="flex min-h-[44px] flex-col items-center rounded-xl bg-muted px-2 py-1 text-xs hover:bg-muted/70">
+          <WxIcon c={t.condition} night={night} />
+          <span className="tabular-nums">{f(t.highC)}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="right" align="start" className="w-72">
+        <Tabs defaultValue="today">
+          <TabsList className="w-full"><TabsTrigger value="today" className="flex-1">Today</TabsTrigger><TabsTrigger value="week" className="flex-1">Week</TabsTrigger></TabsList>
+          <TabsContent value="today" className="pt-2">
+            <div className="flex items-center gap-3">
+              <WxIcon c={t.condition} night={night} className="h-10 w-10 text-primary" />
+              <div>
+                <div className="font-display text-lg">{COND_LABEL[t.condition] ?? t.condition}</div>
+                <div className="text-sm tabular-nums">High {f(t.highC)} · Low {f(t.lowC)}</div>
+                <div className="text-sm text-muted-foreground">{t.precip}% chance of rain</div>
+              </div>
+            </div>
+            {!days?.length && <p className="mt-2 text-xs text-muted-foreground">Sample forecast</p>}
+          </TabsContent>
+          <TabsContent value="week" className="space-y-1 pt-2">
+            {list.map((d) => (
+              <div key={d.date} className="flex items-center gap-2 text-sm">
+                <span className="w-10">{new Date(d.date + "T12:00").toLocaleDateString(undefined, { weekday: "short" })}</span>
+                <WxIcon c={d.condition} className="h-4 w-4" />
+                <span className="flex-1 tabular-nums">{f(d.highC)} / {f(d.lowC)}</span>
+                <span className="text-xs text-muted-foreground">{d.precip}%</span>
+              </div>
+            ))}
+          </TabsContent>
+        </Tabs>
+      </PopoverContent>
+    </Popover>
+  );
 }
