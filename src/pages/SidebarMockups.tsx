@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NAV_GROUPS, NAV_SUBPAGES } from "@/lib/nav";
 import { ScheduleDayMoon } from "@/components/planner/schedule/ScheduleDayMoon";
-import { ChevronDown, ChevronRight, Plus, Settings, Inbox, Sun, Pin, Moon, SunMedium, Smartphone, Monitor, Leaf, Menu } from "lucide-react";
+import { useWeekForecast } from "@/lib/use-week-forecast";
+import { useTempUnit, cToF } from "@/lib/weather-store";
+import { useCycle } from "@/lib/cycle-store";
+import { getPhaseInfo } from "@/lib/cycle";
+import { ChevronDown, ChevronRight, Plus, Settings, Inbox, Sun, Pin, Moon, SunMedium, Smartphone, Monitor, Leaf, Menu, CloudSun, BookOpen, CalendarDays, CalendarRange, CalendarCheck } from "lucide-react";
+
+function useSafeCycle() {
+  try { return useCycle(); } catch { return null; }
+}
 import { cn } from "@/lib/utils";
 
 type Group = (typeof NAV_GROUPS)[number];
@@ -173,12 +181,20 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
         {sel === "today" ? (
           <div className="space-y-3">
             <div className="planner-card rounded-2xl p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-xs uppercase tracking-widest text-accent">Plan · Care · Grow</div>
-                  <div className="font-display text-xl">{today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
+                  <div className="font-display text-xl leading-tight">{today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
+                  <div className="font-display text-2xl tabular-nums text-primary">{now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</div>
                 </div>
                 <ScheduleDayMoon date={today} />
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-1">
+                  <CloudSun className="h-3.5 w-3.5" />{wx ? `${unit === "F" ? cToF(wx.highC) : wx.highC}° / ${unit === "F" ? cToF(wx.lowC) : wx.lowC}°` : "62° · Partly sunny"}
+                </span>
+                {cycleInfo && (
+                  <span className="rounded-full bg-muted px-2 py-1">Cycle day {cycleInfo.cycleDay} · {cycleInfo.label}</span>
+                )}
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <button className="min-h-[44px] rounded-xl bg-primary text-sm text-primary-foreground"><Sun className="mx-auto h-4 w-4" />Today</button>
