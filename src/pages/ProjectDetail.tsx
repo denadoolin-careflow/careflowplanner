@@ -1,3 +1,4 @@
+import { ProjectPage } from "@/components/projects/detail/ProjectPage";
 import { ProjectGardenPage } from "@/components/projects/detail/garden/ProjectGardenPage";
 import { ConnectionsPanel } from "@/components/connections/ConnectionsPanel";
 /**
@@ -75,7 +76,8 @@ export default function ProjectDetail() {
     );
   }
 
-  return <ProjectGardenPage project={project} />;
+  if (tab === "garden") return <ProjectGardenPage project={project} />;
+  return <ProjectPage project={project} onClassic={() => setTab("garden")} />;
 }
 
 /* ----------------------------- Soft Card ----------------------------- */
