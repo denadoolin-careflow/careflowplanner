@@ -63,20 +63,33 @@ export function RailTodaySidebar({ onNavigate }: { onNavigate?: () => void }) {
   const g = GROUPS.find((x) => x.id === sel);
 
   const go = (to: string) => { navigate(to); onNavigate?.(); };
+  const openNote = async (kind: "daily" | "weekly" | "monthly", date: string) => {
+    try { const n = await getOrCreatePeriodNote(kind, date); go(`/notes/${n.id}`); } catch { toast.error("Couldn't open that note"); }
+  };
   const isActive = (to: string) => pathname === to || (to !== "/" && pathname.startsWith(to + "/"));
   const railBtn = (active: boolean) => cn("relative grid h-11 w-11 place-items-center rounded-xl transition-colors",
     active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted");
+  // Panel open/closed is device-local; in the phone menu it always stays open.
+  const [panelOpen, setPanelOpenRaw] = useState(() => { try { return localStorage.getItem(PANEL_KEY) !== "closed"; } catch { return true; } });
+  const showPanel = !!onNavigate || panelOpen;
+  const setPanelOpen = (v: boolean) => { setPanelOpenRaw(v); try { localStorage.setItem(PANEL_KEY, v ? "open" : "closed"); } catch {} };
+  const pick = (id: string) => {
+    if (showPanel && sel === id && !onNavigate) setPanelOpen(false);
+    else { setSel(id); setPanelOpen(true); }
+  };
+  const hover = (id: string) => { if (showPanel) setSel(id); };
 
   const dateStr = now.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
   const timeStr = now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   const weekIso = format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd");
   const monthIso = format(startOfMonth(now), "yyyy-MM-dd");
+  const todayIso = format(now, "yyyy-MM-dd");
 
   return (
     <div className="flex h-full min-h-0 bg-sidebar text-sidebar-foreground">
       <nav aria-label="Main" className="flex w-16 shrink-0 flex-col items-center gap-2 overflow-y-auto border-r border-sidebar-border py-3">
         <button aria-label="Home" onClick={() => go("/")} className="mb-1 grid h-11 w-11 place-items-center"><CareFlowMark size={32} /></button>
-        <button aria-label="Today" title="Today" onMouseEnter={() => setSel("today")} onClick={() => setSel("today")} className={railBtn(sel === "today")}>
+        <button aria-label="Today" title="Today" aria-pressed={showPanel && sel === "today"} onMouseEnter={() => hover("today")} onClick={() => pick("today")} className={railBtn(showPanel && sel === "today")}>
           <Sun className="h-5 w-5" />
         </button>
         <button aria-label="Inbox" title="Inbox" onClick={() => go("/inbox")} className={railBtn(isActive("/inbox"))}>
@@ -87,18 +100,23 @@ export function RailTodaySidebar({ onNavigate }: { onNavigate?: () => void }) {
         {GROUPS.map((x) => {
           const Icon = x.icon as any;
           return (
-            <button key={x.id} aria-label={x.label} title={x.label} onMouseEnter={() => setSel(x.id)} onClick={() => setSel(x.id)} className={railBtn(sel === x.id)}>
+            <button key={x.id} aria-label={x.label} title={x.label} aria-pressed={showPanel && sel === x.id} onMouseEnter={() => hover(x.id)} onClick={() => pick(x.id)} className={railBtn(showPanel && sel === x.id)}>
               <Icon className="h-5 w-5" />
             </button>
           );
         })}
         <div className="flex-1" />
+        {!onNavigate && (
+          <button aria-label={showPanel ? "Hide sidebar panel" : "Show sidebar panel"} title={showPanel ? "Hide panel" : "Show panel"} onClick={() => setPanelOpen(!showPanel)} className={railBtn(false)}>
+            <PanelLeft className="h-5 w-5" />
+          </button>
+        )}
         <button aria-label="Settings" title="Settings" onClick={() => go("/settings")} className={railBtn(isActive("/settings"))}>
           <Settings className="h-5 w-5" />
         </button>
       </nav>
 
-      <div className="w-72 min-h-0 overflow-y-auto p-4">
+      {showPanel && <div className="w-72 min-h-0 overflow-y-auto p-4">
         {sel === "today" ? (
           <div className="space-y-4">
             <div className="planner-card space-y-4 rounded-3xl p-5">
@@ -119,7 +137,7 @@ export function RailTodaySidebar({ onNavigate }: { onNavigate?: () => void }) {
                   {signGuide?.actions?.[0] && <p className="mt-2 text-sm">Try: {signGuide.actions[0]}</p>}
                 </InfoRow>
                 {cycleInfo && (
-                  <InfoRow icon={<Droplet className="h-4 w-4 text-primary" />} label={`Day ${cycleInfo.cycleDay} · ${cycleInfo.label}`}>
+                  <InfoRow phase={CYCLE_TO_RHYTHM[cycleInfo.phase]} icon={<Droplet className="h-4 w-4" />} label={`Day ${cycleInfo.cycleDay} · ${cycleInfo.label} · ${RHYTHM_LABEL[CYCLE_TO_RHYTHM[cycleInfo.phase]]}`}>
                     <div className="font-display text-base">Cycle day {cycleInfo.cycleDay} · {cycleInfo.label}</div>
                     <p className="mt-2 text-sm">{cycleInfo.invitation}</p>
                     {cycleInfo.planningHints?.[0] && <p className="mt-1 text-sm text-muted-foreground">Plan tip: {cycleInfo.planningHints[0]}</p>}
@@ -134,9 +152,9 @@ export function RailTodaySidebar({ onNavigate }: { onNavigate?: () => void }) {
             </div>
 
             <Section label="Notebook">
-              <Row icon={CalendarRange} onClick={() => go(`/month?date=${monthIso}`)} label={<><span className="mr-2 text-xs text-muted-foreground">Month</span>{format(now, "MMM yyyy")}</>} />
-              <Row icon={CalendarDays} onClick={() => go(`/week?date=${weekIso}`)} label={<><span className="mr-2 text-xs text-muted-foreground">Week</span>Week of {format(startOfWeek(now, { weekStartsOn: 1 }), "MMM d")}</>} />
-              <Row icon={CalendarCheck} onClick={() => go("/today")} label={<><span className="mr-2 text-xs text-muted-foreground">Day</span>{format(now, "EEE, MMM d")}</>} />
+              <NoteRow icon={CalendarRange} tag="Month" label={format(now, "MMM yyyy")} onNote={() => openNote("monthly", monthIso)} onPlanner={() => go(`/month?date=${monthIso}`)} />
+              <NoteRow icon={CalendarDays} tag="Week" label={`Week of ${format(startOfWeek(now, { weekStartsOn: 1 }), "MMM d")}`} onNote={() => openNote("weekly", weekIso)} onPlanner={() => go(`/week?date=${weekIso}`)} />
+              <NoteRow icon={CalendarCheck} tag="Day" label={format(now, "EEE, MMM d")} onNote={() => openNote("daily", todayIso)} onPlanner={() => go("/today")} />
             </Section>
 
             {pins.length > 0 && (
@@ -146,10 +164,6 @@ export function RailTodaySidebar({ onNavigate }: { onNavigate?: () => void }) {
                 ))}
               </Section>
             )}
-
-            <button onClick={() => setSidebarStyle("classic")} className="flex min-h-[44px] w-full items-center gap-2 rounded-xl px-3 text-xs text-muted-foreground hover:bg-muted">
-              <PanelLeft className="h-4 w-4" />Switch to classic sidebar
-            </button>
           </div>
         ) : g && (
           <div className="space-y-1">
@@ -193,11 +207,13 @@ function Row({ icon: Icon, label, active, onClick }: { icon?: any; label: ReactN
   );
 }
 
-function InfoRow({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
+function InfoRow({ icon, label, children, phase }: { icon: ReactNode; label: string; children: ReactNode; phase?: string }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="flex min-h-[44px] w-full items-center gap-2 rounded-xl bg-muted/60 px-3 text-left text-xs hover:bg-muted">
+        <button
+          style={phase ? { background: `hsl(var(--rhythm-${phase}-tint))`, color: `hsl(var(--rhythm-${phase}-deep))` } : undefined}
+          className={cn("flex min-h-[44px] w-full items-center gap-2 rounded-xl px-3 text-left text-xs", phase ? "font-medium hover:opacity-90" : "bg-muted/60 hover:bg-muted")}>
           {icon}<span className="flex-1">{label}</span><ChevronRight className="h-3.5 w-3.5 opacity-50" />
         </button>
       </PopoverTrigger>
