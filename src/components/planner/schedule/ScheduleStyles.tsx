@@ -17,8 +17,8 @@ import { createContext, useContext } from "react";
 
 /** Planner schedule styles (Day + Week) over real tasks and appointments, in the soft-tint phase language. */
 
-type Kind = "task" | "appt" | "meal" | "care";
-interface Item { id: string; title: string; time?: string; end?: string; kind: Kind; done?: boolean; phase: RhythmPhase }
+export type Kind = "task" | "appt" | "meal" | "care";
+export interface Item { id: string; title: string; time?: string; end?: string; kind: Kind; done?: boolean; phase: RhythmPhase }
 interface WeekDay { day: string; date: string; iso: string; d: Date; items: Item[] }
 
 const PHASE_LABEL: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
@@ -95,7 +95,7 @@ const PHASE_DAYPART = { plan: "Morning", grow: "Afternoon", care: "Afternoon", l
 const MEAL_TIME: Record<string, string> = { Breakfast: "07:30", Lunch: "12:00", Dinner: "18:00", Snack: "15:00", Drink: "10:00" };
 const PHASE_DEFAULT_TIME: Record<RhythmPhase, string> = { plan: "09:00", grow: "13:00", care: "16:00", letgo: "19:00" };
 
-function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
+export function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
   const { state, toggleTask, addTask, addAppointment } = useStore();
   const [pins, setPins] = useState(readPhasePins);
   const [apptDone, setApptDone] = useState(readApptDone);
@@ -115,6 +115,11 @@ function useSchedData(date: Date, openDay: (d: Date) => void): Sched {
       .then(({ data }) => { if (live) setDoseTaken(new Set((data ?? []).filter((r: any) => r.status === "taken").map((r: any) => `${r.medication_id}|${String(r.scheduled_time).slice(0, 5)}@${r.scheduled_date}`))); });
     return () => { live = false; };
   }, [wsIso, weIso, rev]);
+  useEffect(() => {
+    const sync = () => setPins(readPhasePins());
+    window.addEventListener("careflow:phase-pins-change", sync);
+    return () => window.removeEventListener("careflow:phase-pins-change", sync);
+  }, []);
   useEffect(() => {
     const bump = () => setRev(r => r + 1);
     window.addEventListener("careflow:medication-logs-changed", bump);

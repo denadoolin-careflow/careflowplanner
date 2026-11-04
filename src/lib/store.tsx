@@ -279,6 +279,7 @@ const projectFrom = (r: any): Project => ({
   focusThisWeek: r.focus_this_week ?? undefined,
   targetDate: r.target_date ?? undefined,
   folderId: r.folder_id ?? undefined,
+  groupId: r.group_id ?? undefined,
   details: r.details ?? {},
 });
 const sectionFrom = (r: any): ProjectSection => ({
@@ -769,6 +770,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         health: (p as any).health ?? null,
         waiting_on: (p as any).waitingOn ?? null,
         folder_id: p.folderId ?? null,
+        group_id: p.groupId ?? null,
       };
       const { data } = await supabase.from("projects").insert(dbRow).select().single();
       if (!data) return null;
@@ -808,6 +810,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if ((patch as any).focusThisWeek !== undefined) dbPatch.focus_this_week = (patch as any).focusThisWeek ?? null;
       if ((patch as any).targetDate !== undefined) dbPatch.target_date = (patch as any).targetDate ?? null;
       if (patch.folderId !== undefined) dbPatch.folder_id = patch.folderId ?? null;
+      if (patch.groupId !== undefined) dbPatch.group_id = patch.groupId ?? null;
       if (patch.details !== undefined) dbPatch.details = patch.details ?? {};
       if (patch.archivedAt !== undefined) dbPatch.archived_at = patch.archivedAt ?? null;
       await supabase.from("projects").update(dbPatch).eq("id", id);

@@ -27,6 +27,16 @@ import { formatRelativeDate } from "@/lib/date-format";
 import { DashboardTabs } from "@/components/shared/DashboardTabs";
 import { ProjectFolderRail, PROJECT_DND_TYPE } from "./ProjectFolderRail";
 import { ProjectGoalPicker, LinkedGoalLabels } from "@/components/goals/LifeAreaGoalPicker";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
+import { format } from "date-fns";
+import { ProgressRing, SlimHeader } from "@/components/projects/ProgressRing";
+import { RHYTHM_LABEL } from "@/lib/planner/rhythm-phase";
+import { projectDue, projectPhase, projectProgress } from "@/lib/projects/phase";
+import { ByPhaseView, ProjectBoard, ProjectCalendar, ProjectListGrouped, type GroupBy } from "./ProjectPhaseViews";
+type NewView = "phase" | "board" | "calendar" | "list";
+const NEW_VIEW_KEY = "projects.hub.view.v2";
+const GROUP_KEY = "projects.hub.groupBy";
 
 /** Map an area name to one of the three brand tones for banners/progress fills. */
 type BrandTone = "lavender" | "sage" | "marigold";
@@ -637,6 +647,137 @@ function WaitingOnShelf({ projects }: { projects: Project[] }) {
 }
 
 export default function ProjectsHub() {
+  const { state, updateProject } = useStore();
+  const navigate = useNavigate();
+  const projects = (state.projects ?? []).filter((p) => p.status !== "done" && !p.archivedAt);
+  const metrics = useProjectMetrics();
+  const [view, setView] = useState<NewView>(() => {
+    const v = typeof window !== "undefined" ? localStorage.getItem(NEW_VIEW_KEY) : null;
+    return (["phase", "board", "calendar", "list"].includes(v ?? "") ? v : "phase") as NewView;
+  });
+  const [groupBy, setGroupBy] = useState<GroupBy>(() => ((typeof window !== "undefined" && localStorage.getItem(GROUP_KEY)) as GroupBy) || "phase");
+  const setViewP = (v: NewView) => { setView(v); try { localStorage.setItem(NEW_VIEW_KEY, v); } catch {} };
+  const setGroupP = (g: GroupBy) => { setGroupBy(g); try { localStorage.setItem(GROUP_KEY, g); } catch {} };
+  const [chip, setChip] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<ProjectStage | "all">("all");
+  const [healthFilter, setHealthFilter] = useState<ProjectHealth | "all">("all");
+  const [folderFilter, setFolderFilter] = useState<string>("all");
+  const [monthlyOnly, setMonthlyOnly] = useState(false);
+  const [foldersOpen, setFoldersOpen] = useState(false);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const areas = useMemo(() => Array.from(new Set(projects.map(p => p.areaName).filter(Boolean))) as string[], [projects]);
+
+  const filtered = useMemo(() => projects.filter((p) =>
+    (chip === "all" || (chip === "waiting" ? projectPhase(p) === "letgo" : p.areaName === chip))
+    && (!monthlyOnly || isMonthlyProject(p))
+    && (stageFilter === "all" || stageOf(p.stage) === stageFilter)
+    && (healthFilter === "all" || healthOf(p.health) === healthFilter)
+    && (folderFilter === "all" || (folderFilter === "none" ? !p.folderId : p.folderId === folderFilter))
+  ), [projects, chip, monthlyOnly, stageFilter, healthFilter, folderFilter]);
+
+  const focus = useMemo(() => {
+    const fav = projects.find((p) => p.isFavorite);
+    if (fav) return fav;
+    return [...projects].map((p) => ({ p, t: metrics(p).lastTouched })).sort((a, b) => (b.t ?? "").localeCompare(a.t ?? ""))[0]?.p;
+  }, [projects, metrics]);
+  const growing = projects.filter(p => projectPhase(p) === "grow").length;
+  const waiting = projects.filter(p => projectPhase(p) === "letgo").length;
+  const extraFilters = [stageFilter, healthFilter, folderFilter].filter(f => f !== "all").length + (monthlyOnly ? 1 : 0);
+  const chipCls = (on: boolean) => cn("inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-sm font-semibold ring-1 ring-border transition", on ? "bg-foreground text-background ring-foreground" : "bg-card hover:bg-muted");
+  const segCls = (on: boolean) => cn("min-h-[44px] shrink-0 rounded-full px-4 text-sm font-semibold transition", on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground");
+
+  return (
+    <div className="mx-auto w-full max-w-6xl space-y-5 p-4 pb-16 md:p-8">
+      <SlimHeader
+        title="Projects"
+        subtitle={<span>{projects.length} {projects.length === 1 ? "project" : "projects"} · {growing} growing · {waiting} waiting</span>}
+        actions={<>
+          <Button onClick={() => setNewProjectOpen(true)} className="min-h-[44px] rounded-full px-5"><Plus className="mr-1 h-4 w-4" />New</Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger aria-label="More tools" className="relative grid h-11 w-11 place-items-center rounded-full hover:bg-muted">
+              <MoreHorizontal className="h-5 w-5" />
+              {extraFilters > 0 && <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] text-primary-foreground">{extraFilters}</span>}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-[70vh] w-60 overflow-y-auto">
+              <DropdownMenuItem onSelect={() => setFoldersOpen(o => !o)}><Folder className="mr-2 h-4 w-4" />{foldersOpen ? "Hide folders" : "Folders"}</DropdownMenuItem>
+              <DropdownMenuCheckboxItem checked={monthlyOnly} onCheckedChange={v => setMonthlyOnly(!!v)}>Monthly Planning only</DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator /><DropdownMenuLabel>Stage</DropdownMenuLabel>
+              {ALL_STAGES.map(s => <DropdownMenuCheckboxItem key={s} checked={stageFilter === s} onCheckedChange={() => setStageFilter(s)}>{s === "all" ? "All stages" : STAGE_META[s].label}</DropdownMenuCheckboxItem>)}
+              <DropdownMenuSeparator /><DropdownMenuLabel>Health</DropdownMenuLabel>
+              {ALL_HEALTH.map(h => <DropdownMenuCheckboxItem key={h} checked={healthFilter === h} onCheckedChange={() => setHealthFilter(h)}>{h === "all" ? "All health" : HEALTH_META[h].label}</DropdownMenuCheckboxItem>)}
+              <DropdownMenuSeparator />
+              {extraFilters > 0 && <DropdownMenuItem onSelect={() => { setStageFilter("all"); setHealthFilter("all"); setFolderFilter("all"); setMonthlyOnly(false); }}>Clear filters</DropdownMenuItem>}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>}
+      />
+      <DashboardTabs />
+
+      {focus && (() => {
+        const ph = projectPhase(focus); const pr = projectProgress(focus.id, state.tasks); const due = projectDue(focus);
+        return (
+          <section className="planner-card border-l-4 p-4 sm:p-5" style={{ borderLeftColor: `hsl(var(--rhythm-${ph}))`, background: `linear-gradient(135deg, hsl(var(--rhythm-${ph}-tint)), hsl(var(--card)) 70%)` }}>
+            <div className="flex items-start gap-4">
+              <ProgressRing pct={pr.pct} phase={ph} size={64} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: `hsl(var(--rhythm-${ph}-deep))` }}>This week's focus · {RHYTHM_LABEL[ph]}</p>
+                <h2 className="break-words font-display text-2xl leading-tight">{focus.name}</h2>
+                <p className="break-words text-sm text-muted-foreground">{pr.next ? `Next: ${pr.next.title}` : "No open tasks"}{due ? ` · due ${format(new Date(`${due}T00:00`), "MMM d")}` : ""}</p>
+              </div>
+            </div>
+            <Button onClick={() => navigate(`/projects/${focus.id}`)} className="mt-4 min-h-[44px] w-full rounded-full">Continue</Button>
+          </section>
+        );
+      })()}
+
+      {foldersOpen && (
+        <ProjectFolderRail projects={projects} value={folderFilter} onChange={setFolderFilter}
+          onFileProject={async (projectId, folderId) => { await updateProject(projectId, { folderId: folderId ?? undefined } as any); toast.success(folderId ? "Project filed" : "Moved to Unfiled"); }} />
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div role="tablist" aria-label="Project view" className="inline-flex max-w-full overflow-x-auto rounded-full bg-muted p-1">
+          {([["phase", "By phase"], ["board", "Board"], ["calendar", "Calendar"], ["list", "List"]] as const).map(([v, l]) => (
+            <button key={v} role="tab" aria-selected={view === v} onClick={() => setViewP(v)} className={segCls(view === v)}>{l}</button>
+          ))}
+        </div>
+        <div className="-mx-4 flex max-w-full gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0" aria-label="Filter projects">
+          <button onClick={() => setChip("all")} aria-pressed={chip === "all"} className={chipCls(chip === "all")}>All</button>
+          {areas.map(a => <button key={a} onClick={() => setChip(a)} aria-pressed={chip === a} className={chipCls(chip === a)}>{a}</button>)}
+          <button onClick={() => setChip("waiting")} aria-pressed={chip === "waiting"} className={chipCls(chip === "waiting")}>Waiting</button>
+        </div>
+      </div>
+
+      {(view === "board" || view === "list") && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold text-muted-foreground">Group by</span>
+          <div className="inline-flex rounded-full bg-muted p-1">
+            {([["phase", "Phase"], ["sections", "My sections"], ["area", "Area"]] as const).map(([g, l]) => (
+              <button key={g} aria-pressed={groupBy === g} onClick={() => setGroupP(g)} className={segCls(groupBy === g)}>{l}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {projects.length === 0 ? (
+        <div className="planner-card p-8 text-center">
+          <h3 className="font-display text-2xl">Nothing here yet</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Start a project, or add an idea to Plan.</p>
+          <Button className="mt-4 min-h-[44px] rounded-full" onClick={() => setNewProjectOpen(true)}><Plus className="mr-1 h-4 w-4" />Start a new project</Button>
+          <div className="mt-6 text-left"><ByPhaseView projects={[]} /></div>
+        </div>
+      ) : view === "board" ? <ProjectBoard projects={filtered} by={groupBy} onNew={() => setNewProjectOpen(true)} />
+        : view === "calendar" ? <ProjectCalendar projects={filtered} />
+        : view === "list" ? <ProjectListGrouped projects={filtered} by={groupBy} />
+        : <ByPhaseView projects={filtered} />}
+
+      <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} defaultArea="Personal" />
+    </div>
+  );
+}
+
+/** Previous hub layout (Garden/Journal/Life areas/Cards/List/Gallery). Kept for reference; hidden from the switch. */
+export function LegacyProjectsHub() {
   const { state, addProject, updateProject } = useStore();
   const { atmosphere } = useAtmosphere();
   const projects = (state.projects ?? []).filter((p) => p.status !== "done");

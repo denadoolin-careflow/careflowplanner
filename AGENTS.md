@@ -64,10 +64,12 @@
 - Atmosphere auto-switch can follow the Moon: AutoRules.byMoonPhase maps Plan/Grow/Care/Let go (lunarRhythmAt) to atmospheres, defaulting to the four seasonal phase atmospheres.
 - Filing Cabinet (Notes) stores files in the private filing-cabinet bucket with metadata in cabinet_documents/cabinet_drawers; links reuse entity_links (source_type 'document') and AI reading runs server-side in cabinet-analyze.
 - Mail inbox items are cabinet_documents rows with kind 'mail' (status/type/sender/amount/due columns); filing flips kind to 'document', review dates create ordinary tasks whose done-state marks the mail Done, and expired trash is purged when the Mail page loads.
-- Today's mail reminder reads the same mail records through listMailReminders (review task due, nearby bill/coupon date, trash about to be deleted) and links each item to /notes/mail?open=<id>, so no separate reminder store exists.
+- Today's mail reminder reads mail records via listMailReminders and links to /notes/mail?open=<id>; no separate reminder store.
 - Five-horizon rhythm (day/week/month/season/year) phase rules live in src/lib/rhythm/horizons.ts; answers save as "## Phase · Name" sections in period-style notes (season/year use notes.kind 'quarterly'/'yearly' without widening PeriodKind), so no new table is needed.
 - Today layouts (Day Flow/Phase Tabs/Quadrants plus Plan/Board grids) share one phase content map; inline phase adds create ordinary tasks/appointments, with device-local phase pins and appointment check-offs, so the Planner shows the same items.
-- Planner range/layout switching goes through PlannerScopeBar (Day·Week·Month·Season·Year + Schedule/Cards); legacy layouts live under More layouts so device-local prefs stay valid.
-- Today dashboard card groups use PhaseCardGrid (container-query columns) so cards size to the space they actually have; window breakpoints squeeze them past overlap in the narrow desktop "Your day" column.
+- Planner range/layout switching goes through PlannerScopeBar; legacy layouts sit under More layouts so saved prefs stay valid.
+- Today card groups use PhaseCardGrid (container-query columns) so cards fit the narrow desktop column.
 - Planner schedule styles reuse existing items/pins (style device-local); all day moons use ScheduleDayMoon so phases match.
 - Task rail schedules via drag or clock popover (dueDate+startTime); its view prefs are device-local.
+- Hub phase = display mapping in lib/projects/phase.ts; hub sections are project_groups + projects.group_id (not per-project project_sections).
+- Project Notepad = one note (notes.project_id, id in details.notepadNoteId); Files = cabinet_documents via entity_links.

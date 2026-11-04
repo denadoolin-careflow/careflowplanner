@@ -162,6 +162,8 @@ export interface Project {
   targetDate?: string;
   /** Folder this project is filed under (ClickUp-style grouping). */
   folderId?: string;
+  /** User's own hub section (project_groups) — null means No section. */
+  groupId?: string;
   /** Intention, energy and next small step, persisted in projects.details. */
   details?: import("./projects/garden-phases").ProjectDetailsData;
 }

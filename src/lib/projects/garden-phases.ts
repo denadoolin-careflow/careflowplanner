@@ -20,6 +20,8 @@ export interface ProjectDetailsData {
   nextStepTaskId?: string | null;
   /** YYYY-MM tag marking this project as that month's Monthly Planning project. */
   monthKey?: string;
+  /** Id of the project's Notepad note ("<name> notes"). */
+  notepadNoteId?: string;
 }
 
 /** Matches a project section to a rhythm phase by its name (case-insensitive). */
