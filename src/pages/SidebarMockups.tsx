@@ -200,35 +200,96 @@ function RailToday({ size, showCounts }: { size: number; showCounts: boolean }) 
       <div className="w-64 overflow-y-auto bg-card p-3 shadow-lg">
         {sel === "today" ? (
           <div className="space-y-3">
-            <div className="planner-card rounded-2xl p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="font-display text-xl leading-tight">{today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
-                  <div className="font-display text-2xl tabular-nums text-primary">{now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</div>
-                </div>
-                <WeatherButton now={now} />
-              </div>
-              <div className="mt-2 space-y-1.5">
-                <InfoRow icon={<span className="text-base leading-none">{moon.glyph}</span>} label={`${moon.label} · Moon in ${sign.name} ${sign.symbol}`}>
+            <div className="flex gap-1 rounded-full bg-muted p-1 text-xs">
+              {(["A · Airy", "B · Tiles", "C · Hero"] as const).map((l, i) => (
+                <button key={l} onClick={() => setLook(i)} className={`min-h-[32px] flex-1 rounded-full ${look === i ? "bg-card shadow-sm" : "text-muted-foreground"}`}>{l}</button>
+              ))}
+            </div>
+            {(() => {
+              const dateStr = today.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+              const timeStr = now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+              const moonPop = (
+                <>
                   <div className="font-display text-base">{moon.label} in {sign.name}</div>
                   <div className="text-xs uppercase tracking-widest text-muted-foreground">{LUNAR_RHYTHM[rhythm]?.label ?? rhythm} phase</div>
                   <p className="mt-2 text-sm">{signGuide?.vibe ?? moon.invitation}</p>
                   <p className="mt-1 text-sm text-muted-foreground">{PHASE_GUIDE[rhythm]?.focus ?? moon.invitation}</p>
                   {signGuide?.actions?.[0] && <p className="mt-2 text-sm">Try: {signGuide.actions[0]}</p>}
-                </InfoRow>
-                <InfoRow icon={<Droplet className="h-4 w-4 text-primary" />} label={`Cycle day ${cycleView.day} · ${cycleView.label}${cycleView.sample ? " (sample)" : ""}`}>
+                </>
+              );
+              const cyclePop = (
+                <>
                   <div className="font-display text-base">Cycle day {cycleView.day} · {cycleView.label}</div>
                   <p className="mt-2 text-sm">{cycleView.invitation}</p>
                   {cycleView.hint && <p className="mt-1 text-sm text-muted-foreground">Plan tip: {cycleView.hint}</p>}
                   {cycleView.sample && <p className="mt-2 text-xs text-muted-foreground">Sample — turn on cycle tracking to see yours.</p>}
-                </InfoRow>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <button className="min-h-[44px] rounded-xl bg-primary text-sm text-primary-foreground"><Sun className="mx-auto h-4 w-4" />Today</button>
-                <button className="min-h-[44px] rounded-xl bg-muted text-sm"><Inbox className="mx-auto h-4 w-4" />Inbox{showCounts && " 6"}</button>
-                <button className="min-h-[44px] rounded-xl bg-muted text-sm"><Plus className="mx-auto h-4 w-4" />Add</button>
-              </div>
-            </div>
+                </>
+              );
+              const moonIcon = <span className="text-base leading-none">{moon.glyph}</span>;
+              const cycleIcon = <Droplet className="h-4 w-4 text-primary" />;
+              const actions = (
+                <div className="grid grid-cols-3 gap-2">
+                  <button className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl bg-primary text-xs text-primary-foreground"><Sun className="h-4 w-4" />Today</button>
+                  <button className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl bg-muted text-xs"><Inbox className="h-4 w-4" />Inbox{showCounts && " 6"}</button>
+                  <button className="flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl bg-muted text-xs"><Plus className="h-4 w-4" />Add</button>
+                </div>
+              );
+              if (look === 0) return (
+                <div className="planner-card space-y-4 rounded-3xl p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="text-xs uppercase tracking-widest text-muted-foreground">{dateStr}</div>
+                      <div className="font-display text-4xl leading-none tabular-nums text-primary">{timeStr}</div>
+                    </div>
+                    <WeatherButton now={now} />
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div className="space-y-2">
+                    <InfoRow icon={moonIcon} label={`${moon.label} · ${sign.name} ${sign.symbol}`}>{moonPop}</InfoRow>
+                    <InfoRow icon={cycleIcon} label={`Day ${cycleView.day} · ${cycleView.label}${cycleView.sample ? " (sample)" : ""}`}>{cyclePop}</InfoRow>
+                  </div>
+                  {actions}
+                </div>
+              );
+              if (look === 1) return (
+                <div className="space-y-3">
+                  <div className="planner-card flex items-center justify-between rounded-3xl p-5">
+                    <div>
+                      <div className="font-display text-3xl leading-none tabular-nums">{timeStr}</div>
+                      <div className="mt-1 text-sm text-muted-foreground">{dateStr}</div>
+                    </div>
+                    <WeatherButton now={now} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="planner-card rounded-2xl p-2">
+                      <div className="px-2 pt-1 text-[10px] uppercase tracking-widest text-muted-foreground">Moon</div>
+                      <InfoRow icon={moonIcon} label={`${moon.label.split(" ").pop()} · ${sign.symbol}`}>{moonPop}</InfoRow>
+                    </div>
+                    <div className="planner-card rounded-2xl p-2">
+                      <div className="px-2 pt-1 text-[10px] uppercase tracking-widest text-muted-foreground">Cycle</div>
+                      <InfoRow icon={cycleIcon} label={`Day ${cycleView.day}`}>{cyclePop}</InfoRow>
+                    </div>
+                  </div>
+                  {actions}
+                </div>
+              );
+              return (
+                <div className="planner-card overflow-hidden rounded-3xl">
+                  <div className="space-y-3 bg-accent/15 p-5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-display text-lg">{dateStr}</span>
+                      <WeatherButton now={now} />
+                    </div>
+                    <div className="font-display text-5xl leading-none tabular-nums text-primary">{timeStr}</div>
+                  </div>
+                  <div className="space-y-2 p-4">
+                    <InfoRow icon={moonIcon} label={`${moon.label} · Moon in ${sign.name}`}>{moonPop}</InfoRow>
+                    <InfoRow icon={cycleIcon} label={`Cycle day ${cycleView.day} · ${cycleView.label}`}>{cyclePop}</InfoRow>
+                    <div className="pt-2">{actions}</div>
+                  </div>
+                </div>
+              );
+            })()}
             <div className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground">Notebook</div>
             {[
               { icon: CalendarRange, k: "Month", v: today.toLocaleDateString(undefined, { month: "short", year: "numeric" }) },
