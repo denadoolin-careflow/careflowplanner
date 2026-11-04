@@ -122,7 +122,7 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
                 type="button"
                 onClick={() => setQuickOpen(true)}
                 className={cn(
-                  "block w-full min-w-0 whitespace-normal text-left text-[15px] font-semibold leading-snug text-foreground [overflow-wrap:break-word] [hyphens:auto]",
+                  "block w-full min-w-0 whitespace-normal text-left text-[15px] font-semibold leading-snug text-foreground [overflow-wrap:break-word]",
                   done && "line-through decoration-muted-foreground/60",
                 )}
               >
