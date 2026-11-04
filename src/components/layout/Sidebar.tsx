@@ -39,6 +39,7 @@ import { useFlowSignals } from "@/lib/sidebar-signals";
 import { useSidebarDotsEnabled } from "@/lib/ui-prefs";
 import { SidebarNotebooks } from "./SidebarNotebooks";
 import { FlowNavigationHover } from "./FlowNavigationHover";
+import { RailTodaySidebar, readSidebarStyle } from "./RailTodaySidebar";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon, paletteIndex: 0 },
@@ -1697,6 +1698,19 @@ export function Sidebar() {
   useEffect(() => {
     try { window.localStorage.setItem(WIDTH_KEY, String(width)); } catch {}
   }, [width]);
+  if (style === "rail") {
+    return (
+      <aside className={cn(
+        "hidden lg:flex sticky top-0 self-start h-screen max-h-screen shrink-0",
+        side === "right" ? "order-last border-l border-sidebar-border" : "border-r border-sidebar-border",
+        themePref === "dark" && "sidebar-force-dark",
+        themePref === "light" && "sidebar-force-light",
+        themePref === "atmosphere" && "sidebar-force-dark",
+      )} style={themePref === "atmosphere" ? buildAtmosphereSidebarStyle(atmosphere.palette) : undefined}>
+        <RailTodaySidebar />
+      </aside>
+    );
+  }
   return (
     <aside
       className={cn(
@@ -1731,6 +1745,7 @@ export function Sidebar() {
 
 export function MobileSidebarTrigger() {
   const [open, setOpen] = useState(false);
+  const rail = open && readSidebarStyle() === "rail";
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -1742,8 +1757,8 @@ export function MobileSidebarTrigger() {
           <Menu className="h-4 w-4" />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 p-0 bg-sidebar">
-        <SidebarBody forceExpanded onNavigate={() => setOpen(false)} />
+      <SheetContent side="left" className={cn("p-0 bg-sidebar", rail ? "w-[22rem] max-w-[92vw]" : "w-72")}>
+        {rail ? <RailTodaySidebar onNavigate={() => setOpen(false)} /> : <SidebarBody forceExpanded onNavigate={() => setOpen(false)} />}
       </SheetContent>
     </Sheet>
   );
