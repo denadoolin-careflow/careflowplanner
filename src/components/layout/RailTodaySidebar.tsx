@@ -195,7 +195,7 @@ function NoteRow({ icon: Icon, tag, label, onNote, onPlanner }: { icon: any; tag
     <div className="flex items-center gap-1">
       <button onClick={onNote} title={`Open ${tag.toLowerCase()} note`} className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-muted">
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="min-w-0 flex-1 truncate"><span className="mr-2 text-xs text-muted-foreground">{tag}</span>{label}</span>
+        <span className="min-w-0 flex-1 break-words py-2"><span className="mr-2 text-xs text-muted-foreground">{tag}</span>{label}</span>
       </button>
       <button onClick={onPlanner} aria-label={`Open ${tag.toLowerCase()} in planner`} title="Open in planner" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted">
         <LayoutGrid className="h-4 w-4" />
@@ -218,7 +218,7 @@ function Row({ icon: Icon, label, active, onClick }: { icon?: any; label: ReactN
     <button onClick={onClick} className={cn("flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 text-left text-sm transition-colors",
       active ? "bg-primary/10 font-semibold text-primary" : "hover:bg-muted")}>
       {Icon && <Icon className="h-4 w-4 shrink-0" />}
-      <span className="flex-1 truncate">{label}</span>
+      <span className="min-w-0 flex-1 break-words py-2">{label}</span>
       <ChevronRight className="h-4 w-4 opacity-40" />
     </button>
   );
@@ -231,10 +231,10 @@ function InfoRow({ icon, label, children, phase }: { icon: ReactNode; label: str
         <button
           style={phase ? { background: `hsl(var(--rhythm-${phase}-tint))`, color: `hsl(var(--rhythm-${phase}-deep))` } : undefined}
           className={cn("flex min-h-[44px] w-full items-center gap-2 rounded-xl px-3 text-left text-xs", phase ? "font-medium hover:opacity-90" : "bg-muted/60 hover:bg-muted")}>
-          {icon}<span className="flex-1">{label}</span><ChevronRight className="h-3.5 w-3.5 opacity-50" />
+          {icon}<span className="min-w-0 flex-1 break-words py-2">{label}</span><ChevronRight className="h-3.5 w-3.5 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent side="right" align="start" className="w-72">{children}</PopoverContent>
+      <PopoverContent side="bottom" align="center" collisionPadding={16} avoidCollisions className="w-[min(18rem,calc(100vw-2rem))] max-h-[70vh] overflow-y-auto break-words">{children}</PopoverContent>
     </Popover>
   );
 }
@@ -269,7 +269,7 @@ function WeatherButton({ now }: { now: Date }) {
           <span className="tabular-nums">{f(t.highC)}</span>
         </button>
       </PopoverTrigger>
-      <PopoverContent side="right" align="start" className="w-72">
+      <PopoverContent side="bottom" align="center" collisionPadding={16} avoidCollisions className="w-[min(18rem,calc(100vw-2rem))] max-h-[70vh] overflow-y-auto break-words">
         <Tabs defaultValue="today">
           <TabsList className="w-full"><TabsTrigger value="today" className="flex-1">Today</TabsTrigger><TabsTrigger value="week" className="flex-1">Week</TabsTrigger></TabsList>
           <TabsContent value="today" className="pt-2">
