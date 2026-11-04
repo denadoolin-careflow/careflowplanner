@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Circle, CheckSquare, Sparkles, Mic, Tag as TagIcon, Clock, CalendarPlus } from "lucide-react";
+import { useState } from "react";
+import { CheckSquare, Sparkles, Mic, Tag as TagIcon, Clock, CalendarPlus, MoreHorizontal } from "lucide-react";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { useStore } from "@/lib/store";
@@ -52,25 +53,17 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
     catch { return null; }
   })();
 
+  const dp = (task.dayPart as DayPart) ?? autoDayPart;
+  const phase = dp === "Morning" ? "plan" : dp === "Afternoon" ? "grow" : "care";
+  const timeLabel = task.startTime
+    ? (() => { const [h, m] = task.startTime!.split(":").map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")}${h < 12 ? "a" : "p"}`; })()
+    : task.dayPart ?? "Anytime";
+
   const containerClass = cn(
-    "group/inbox flex flex-col gap-3 transition-all duration-200",
-    rowStyle === "soft" && cn(
-      "rounded-[22px] border bg-card p-3 shadow-sm hover:shadow-md hover:border-border sm:p-4",
-      selected
-        ? "border-2 border-primary shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.45)]"
-        : "border-border/60",
-    ),
-    rowStyle === "minimal" && cn(
-      "rounded-md border-b border-border/40 bg-transparent px-1 py-2 hover:bg-muted/30",
-      selected && "bg-primary/5 border-b-primary/40",
-    ),
-    rowStyle === "cozy" && cn(
-      "rounded-2xl border bg-gradient-to-br from-primary/[0.06] via-card to-card p-3 shadow-[0_4px_20px_-12px_hsl(var(--primary)/0.35)] hover:from-primary/[0.1] sm:p-4",
-      selected
-        ? "border-primary/60 ring-2 ring-primary/30"
-        : "border-primary/20",
-    ),
+    "group/inbox flex flex-col gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all duration-200 hover:shadow-md",
+    selected ? "border-primary ring-2 ring-primary/30" : "border-border/60",
   );
+  void rowStyle;
   return (
     <div ref={setNodeRef} style={style} className={containerClass}>
       <div className="flex items-start gap-2 sm:gap-3">
@@ -89,12 +82,16 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
         )}
 
 
+        {/* Time pill tinted by phase (Planner style) */}
+        <span
+          className="mt-2 w-[58px] shrink-0 rounded-full py-1 text-center font-serif text-[11px] leading-tight"
+          style={{ background: `hsl(var(--rhythm-${phase}-tint))`, color: `hsl(var(--rhythm-${phase}-deep))` }}
+        >
+          {timeLabel}
+        </span>
         <div className="min-w-0 flex-1">
-          <TaskRow task={task} variant={compact ? "ticktick" : "card"} showHoverActions={!compact} tapAction="quickEdit" />
+          <TaskRow task={task} variant="ticktick" showHoverActions={false} tapAction="quickEdit" />
         </div>
-        {/* Tiny native HTML5 drag handle to drop the task on schedule targets
-            (e.g. Needs Scheduling card). Uses HTML5 drag so it doesn't fight
-            with dnd-kit's pointer-based row sort. */}
         <span
           draggable
           onDragStart={(e) => {
@@ -105,56 +102,53 @@ export function InboxSortableRow({ task, autoDayPart, compact = false }: Props) 
           }}
           title="Drag to schedule"
           aria-label="Drag to schedule"
-          className="mt-1 hidden h-6 w-6 shrink-0 cursor-grab items-center justify-center rounded-full text-muted-foreground/40 transition-colors hover:bg-muted/50 hover:text-muted-foreground/80 active:cursor-grabbing sm:inline-flex"
+          className="mt-1 hidden h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-full text-muted-foreground/40 hover:bg-muted/50 active:cursor-grabbing sm:inline-flex"
         >
           <CalendarPlus className="h-3.5 w-3.5" />
         </span>
+        <button
+          aria-label={showMore ? "Hide options" : "More options"}
+          aria-expanded={showMore}
+          onClick={() => setShowMore((v) => !v)}
+          className="flex h-11 w-11 -mr-2 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
       </div>
 
-      {/* Meta row below the task: source + age (left), When picker (right) */}
-      <div
-        className={cn(
-          "flex flex-wrap items-center justify-between gap-2",
-          rowStyle === "minimal"
-            ? "pt-1"
-            : "border-t border-border/40 pt-3",
-        )}
-      >
-        {(source || ageLabel) && (
-          <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground/80">
-            {source && (
-              <span className="inline-flex items-center gap-1">
-                <source.icon className="h-3 w-3" />
-                <span className="capitalize">{source.label}</span>
-              </span>
-            )}
-            {ageLabel && (
-              <span className="inline-flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {ageLabel}
-              </span>
-            )}
+      {showMore && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-3">
+          {(source || ageLabel) && (
+            <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground/80">
+              {source && (
+                <span className="inline-flex items-center gap-1">
+                  <source.icon className="h-3 w-3" />
+                  <span className="capitalize">{source.label}</span>
+                </span>
+              )}
+              {ageLabel && (
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {ageLabel}
+                </span>
+              )}
+            </div>
+          )}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+            <WhenPopover
+              value={{ date: task.dueDate, dayPart: (task.dayPart as DayPart) ?? autoDayPart }}
+              autoDayPart={autoDayPart}
+              onChange={async (v) => {
+                await updateTask(task.id, { dueDate: v.date ?? undefined, dayPart: v.dayPart });
+                haptics.snap?.();
+                toast(v.date ? `Scheduled · ${v.dayPart}` : `Set time of day · ${v.dayPart}`, { description: task.title });
+              }}
+            />
+            <TaskQuickActions task={task} />
           </div>
-        )}
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
-          <WhenPopover
-            value={{ date: task.dueDate, dayPart: (task.dayPart as DayPart) ?? autoDayPart }}
-            autoDayPart={autoDayPart}
-            onChange={async (v) => {
-              await updateTask(task.id, {
-                dueDate: v.date ?? undefined,
-                dayPart: v.dayPart,
-                // Keep the item in the inbox after scheduling so the user can
-                // see it move into the "Scheduled for today" / dated sections
-                // until they intentionally process it out.
-              });
-              haptics.snap?.();
-              toast(v.date ? `Scheduled · ${v.dayPart}` : `Set time of day · ${v.dayPart}`, { description: task.title });
-            }}
-          />
-          <TaskQuickActions task={task} />
         </div>
-      </div>
+      )}
     </div>
+
   );
 }
