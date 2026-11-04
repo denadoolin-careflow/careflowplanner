@@ -81,7 +81,7 @@ export function QuickTaskSheet({ task, open, onOpenChange, anchor }: Props) {
     {anchor}
     <DialogPrimitive.Root open={open} onOpenChange={(o) => { if (!o) { setPicker(null); setConfirmDelete(false); } onOpenChange(o); }}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[100] bg-foreground/45 backdrop-blur-[8px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 duration-200 motion-reduce:animate-none" />
+        <DialogPrimitive.Overlay onClick={(e) => e.stopPropagation()} className="fixed inset-0 z-[100] bg-foreground/45 backdrop-blur-[8px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 duration-200 motion-reduce:animate-none" />
         <DialogPrimitive.Content
           onClick={(e) => e.stopPropagation()}
           aria-describedby={undefined}
