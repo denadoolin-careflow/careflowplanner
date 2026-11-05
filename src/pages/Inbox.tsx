@@ -7,7 +7,7 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
-  MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
+  MessageCircle, Flag, Folder, MapPin, Clock, Plus, Wand2,
   Mail, ChefHat, Sparkles as SparklesIcon, HandHelping, Package,
   BookHeart, AlignLeft,
 } from "lucide-react";
@@ -42,10 +42,9 @@ import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
 import { HeldByAge } from "@/components/inbox/HeldByAge";
 import { TodayUpcomingColumns } from "@/components/tasks/TodayUpcomingColumns";
 import { InboxSortBoxes, InboxSortButton } from "@/components/inbox/InboxSortBoxes";
+import { ViewPills } from "@/components/layout/ViewPills";
 import { BlockEditor } from "@/components/notes/BlockEditor";
-import { INBOX_ROW_STYLES, useInboxRowStyle, type InboxRowStyle } from "@/lib/inbox-row-style";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { LayoutGrid, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { InboxSchedulePane } from "@/components/inbox/InboxSchedulePane";
@@ -1411,7 +1410,7 @@ function InboxInner() {
         <div className="min-w-0 space-y-6">
         {items.length > 0 ? (
           <section id="inbox-held" className="scroll-mt-24 rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
-            <InboxHeldHeader heldView={heldView} setHeldView={setHeldView} />
+            <InboxHeldHeader heldView={heldView} setHeldView={setHeldView} count={filteredItems.length} />
             {inlineAdd !== null && (
               <div className="mb-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-background/80 px-3 py-2 shadow-[0_0_0_4px_hsl(var(--primary)/0.08)]">
                 <Plus className="h-4 w-4 text-primary/70" />
