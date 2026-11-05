@@ -19,6 +19,8 @@ import { parseTaskInput } from "@/lib/nlp-task";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { Project, Task } from "@/lib/types";
+import { useDraggable, useDropZone, toastWithUndo, type DragPayload } from "@/lib/dnd/pointer-dnd";
+import { useSetWeeklyFocus } from "@/components/projects/FocusProjectPicker";
 
 const G2R: Record<GardenPhase, RhythmPhase> = { Plan: "plan", Grow: "grow", Care: "care", "Let go": "letgo" };
 const R2G: Record<RhythmPhase, GardenPhase> = { plan: "Plan", grow: "Grow", care: "Care", letgo: "Let go" };
@@ -29,11 +31,31 @@ const main = (p: RhythmPhase) => `hsl(var(--rhythm-${p}))`;
 const md = (iso?: string) => (iso ? format(new Date(`${iso}T00:00`), "MMM d") : "");
 const db = supabase as any;
 
-function TaskLine({ t, phase }: { t: Task; phase: RhythmPhase }) {
+/** Move a task into a phase and (optionally) before another task, renumbering that phase's order. */
+function useMoveTask(project: Project, sections: any[]) {
+  const { state, updateTask } = useStore();
+  return async (taskId: string, phase: RhythmPhase, beforeId?: string) => {
+    const t = state.tasks.find(x => x.id === taskId); if (!t || taskId === beforeId) return;
+    const prev = { garden: t.garden, sortOrder: t.sortOrder };
+    const from = G2R[phaseOfTask(t, sections)];
+    const peers = state.tasks.filter(x => x.projectId === project.id && !x.parentTaskId && !x.done && x.id !== taskId && G2R[phaseOfTask(x, sections)] === phase)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    if (from === phase && !beforeId) return;
+    const idx = beforeId ? Math.max(0, peers.findIndex(x => x.id === beforeId)) : peers.length;
+    const order = [...peers.slice(0, idx), t, ...peers.slice(idx)];
+    await updateTask(t.id, { garden: { ...(t.garden ?? {}), phase: R2G[phase] }, sortOrder: idx } as any);
+    for (let i = 0; i < order.length; i++) if (order[i].id !== t.id && (order[i].sortOrder ?? 0) !== i) await updateTask(order[i].id, { sortOrder: i } as any);
+    toastWithUndo(from === phase ? "Reordered" : `Moved to ${RHYTHM_LABEL[phase]}`, () => updateTask(t.id, prev as any));
+  };
+}
+
+function TaskLine({ t, phase, onDropBefore }: { t: Task; phase: RhythmPhase; onDropBefore?: (d: DragPayload) => void }) {
   const { toggleTask } = useStore();
   const [open, setOpen] = useState(false);
+  const drag = useDraggable({ type: "task", id: t.id }, !!onDropBefore && !t.done);
+  const z = useDropZone(["task"], d => onDropBefore?.(d));
   return (
-    <li className="flex min-h-[48px] items-center gap-3 rounded-2xl bg-card px-3 py-1.5 ring-1 ring-border/60">
+    <li {...drag.props} {...(onDropBefore ? z.props : {})} className={cn("flex min-h-[48px] items-center gap-3 rounded-2xl bg-card px-3 py-1.5 ring-1 ring-border/60 transition", onDropBefore && !t.done && "cursor-grab", z.isOver && "shadow-[0_-3px_0_0_hsl(var(--foreground)/0.5)]")}>
       <button type="button" onClick={() => void toggleTask(t.id)} aria-label={t.done ? `Mark ${t.title} not done` : `Complete ${t.title}`} aria-pressed={t.done} className="grid h-11 w-11 shrink-0 place-items-center -m-2">
         <span className="grid h-6 w-6 place-items-center rounded-full border-2" style={{ borderColor: main(phase), background: t.done ? main(phase) : "transparent", color: "hsl(var(--card))" }}>
           {t.done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
@@ -46,11 +68,12 @@ function TaskLine({ t, phase }: { t: Task; phase: RhythmPhase }) {
   );
 }
 
-function PhaseTaskGroup({ phase, tasks, project, here }: { phase: RhythmPhase; tasks: Task[]; project: Project; here: boolean }) {
+function PhaseTaskGroup({ phase, tasks, project, here, move }: { phase: RhythmPhase; tasks: Task[]; project: Project; here: boolean; move: (id: string, ph: RhythmPhase, before?: string) => Promise<void> }) {
   const { addTask } = useStore();
   const [showDone, setShowDone] = useState(false);
   const [v, setV] = useState("");
-  const open = tasks.filter(t => !t.done); const done = tasks.filter(t => t.done);
+  const open = tasks.filter(t => !t.done).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)); const done = tasks.filter(t => t.done);
+  const z = useDropZone(["task"], d => void move(d.id, phase));
   const Icon = PHASE_ICONS[phase];
   const add = async (e: React.FormEvent) => {
     e.preventDefault(); const raw = v.trim(); if (!raw) return; setV("");
@@ -58,14 +81,15 @@ function PhaseTaskGroup({ phase, tasks, project, here }: { phase: RhythmPhase; t
     await addTask({ title: p.title || raw, dueDate: p.dueDate, priority: p.priority, energy: p.energy, tags: p.tags, estMinutes: p.estMinutes, projectId: project.id, area: (project.areaName as any) ?? undefined, garden: { phase: R2G[phase] } } as any);
   };
   return (
-    <section className="planner-card border-l-4 p-4" style={{ borderLeftColor: main(phase) }}>
+    <section {...z.props} className={cn("planner-card border-l-4 p-4 transition", z.isOver && "ring-2")} style={{ borderLeftColor: main(phase), ...(z.isOver ? { "--tw-ring-color": main(phase), background: tint(phase) } as React.CSSProperties : {}) }}>
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <span className="grid h-8 w-8 place-items-center rounded-full" style={{ background: here ? main(phase) : tint(phase), color: here ? "hsl(var(--card))" : deep(phase) }}><Icon className="h-4 w-4" /></span>
         <h3 className="font-display text-lg" style={{ color: deep(phase) }}>{RHYTHM_LABEL[phase]}</h3>
         <span className="text-sm text-muted-foreground">{ROLE[phase]}</span>
         {here && <span className="ml-auto rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">Here now</span>}
       </div>
-      <ul className="space-y-2">{open.map(t => <TaskLine key={t.id} t={t} phase={phase} />)}</ul>
+      <ul className="space-y-2">{open.map(t => <TaskLine key={t.id} t={t} phase={phase} onDropBefore={d => void move(d.id, phase, t.id)} />)}</ul>
+      {z.isOver && <p className="mt-2 rounded-full bg-card/80 px-3 py-1 text-center text-xs font-semibold" style={{ color: deep(phase) }}>Move to {RHYTHM_LABEL[phase]}</p>}
       {done.length > 0 && (
         <button type="button" onClick={() => setShowDone(s => !s)} aria-expanded={showDone} className="mt-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-muted-foreground">
           <Check className="h-4 w-4" />{done.length} done<ChevronDown className={cn("h-4 w-4 transition", showDone && "rotate-180")} />
@@ -240,6 +264,8 @@ export function ProjectPage({ project, onClassic }: { project: Project; onClassi
     for (const t of tasks) g[G2R[phaseOfTask(t, sections)]].push(t);
     return g;
   }, [tasks, sections]);
+  const moveTask = useMoveTask(project, sections);
+  const setFocus = useSetWeeklyFocus();
   const next = pr.next; const nextPhase = next ? G2R[phaseOfTask(next, sections)] : ph;
   const why = project.details?.whyItMatters || project.notes?.split("\n")[0];
   const ms = project.milestones ?? [];
@@ -250,6 +276,7 @@ export function ProjectPage({ project, onClassic }: { project: Project; onClassi
         <DropdownMenu>
           <DropdownMenuTrigger aria-label="More project tools" className="grid h-11 w-11 place-items-center rounded-full hover:bg-muted"><MoreHorizontal className="h-5 w-5" /></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => void setFocus(project.id)}>Set as this week's focus</DropdownMenuItem>
             <DropdownMenuItem onSelect={onClassic}>Edit project &amp; sections</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate("/notes/cabinet")}>Open Files</DropdownMenuItem>
           </DropdownMenuContent>
@@ -291,7 +318,7 @@ export function ProjectPage({ project, onClassic }: { project: Project; onClassi
       </section>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-4">{PHASE_ORDER.map(p => <PhaseTaskGroup key={p} phase={p} tasks={grouped[p]} project={project} here={p === ph} />)}</div>
+        <div className="space-y-4">{PHASE_ORDER.map(p => <PhaseTaskGroup key={p} phase={p} tasks={grouped[p]} project={project} here={p === ph} move={moveTask} />)}</div>
         <aside className="space-y-4">
           <Milestones project={project} phase={ph} />
           <Notepad project={project} />

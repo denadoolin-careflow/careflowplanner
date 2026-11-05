@@ -17,6 +17,7 @@ import { PHASE_ORDER } from "@/lib/today-phase-items";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { projectDue, projectPhase, projectProgress } from "@/lib/projects/phase";
 import type { Area } from "@/lib/types";
+import { useDraggable } from "@/lib/dnd/pointer-dnd";
 
 function MotionRow({ id, children }: { id: string; children: React.ReactNode }) {
   const drag = useDraggable({ type: "project", id });
