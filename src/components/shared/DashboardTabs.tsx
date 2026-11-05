@@ -12,7 +12,7 @@ export function DashboardTabs({ className }: { className?: string }) {
       role="tablist"
       aria-label="Dashboard sections"
       className={cn(
-        "inline-flex items-center gap-1 rounded-full p-1 ring-1 ring-black/5",
+        "inline-flex items-center gap-0.5 rounded-full p-0.5 ring-1 ring-black/5",
         className,
       )}
       style={{ background: "var(--brand-cream-2)" }}
@@ -28,7 +28,7 @@ export function DashboardTabs({ className }: { className?: string }) {
           role="tab"
           className={({ isActive }) =>
             cn(
-              "rounded-full px-4 py-1.5 text-sm font-medium transition",
+              "relative rounded-full px-3.5 py-1 text-[13px] font-medium transition after:absolute after:-inset-y-2 after:inset-x-0 after:content-['']",
               "font-display",
               isActive
                 ? "text-white shadow-[0_4px_14px_-6px_rgba(43,31,56,0.5)]"
