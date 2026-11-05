@@ -18,6 +18,11 @@ import { parseTaskInput } from "@/lib/nlp-task";
 import { projectDue, projectPhase, projectProgress } from "@/lib/projects/phase";
 import type { Area } from "@/lib/types";
 
+function MotionRow({ id, children }: { id: string; children: React.ReactNode }) {
+  const drag = useDraggable({ type: "project", id });
+  return <li {...drag.props}>{children}</li>;
+}
+
 function greeting(d: Date) { const h = d.getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; }
 
 export default function Dashboard() {
@@ -112,8 +117,8 @@ export default function Dashboard() {
             {inMotion.map((p: any) => {
               const ph = projectPhase(p); const pr = projectProgress(p.id, tasks); const due = projectDue(p);
               return (
-                <li key={p.id}>
-                  <Link to={`/projects/${p.id}`} className="flex min-h-[56px] items-center gap-3 rounded-2xl bg-card px-3 py-2 ring-1 ring-border/60">
+                <MotionRow key={p.id} id={p.id}>
+                  <Link to={`/projects/${p.id}`} className="flex min-h-[56px] cursor-grab items-center gap-3 rounded-2xl bg-card px-3 py-2 ring-1 ring-border/60">
                     <ProgressRing pct={pr.pct} phase={ph} />
                     <span className="min-w-0 flex-1">
                       <span className="block break-words font-semibold">{p.name}</span>
@@ -121,11 +126,12 @@ export default function Dashboard() {
                     </span>
                     {due && <PhasePill phase={ph}>{format(new Date(`${due}T00:00`), "MMM d")}</PhasePill>}
                   </Link>
-                </li>
+                </MotionRow>
               );
             })}
           </ul>
         )}
+        {inMotion.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Drag a project onto a phase above to change its stage. Drag tasks between phases to move their time.</p>}
       </section>
 
       <section className="planner-card p-4">

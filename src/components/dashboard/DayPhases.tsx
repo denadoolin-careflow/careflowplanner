@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { PHASE_ICONS } from "@/lib/phase-icons";
 import { RHYTHM_LABEL, type RhythmPhase } from "@/lib/planner/rhythm-phase";
 import { PHASE_WINDOW, phaseForTime, unpinPhase } from "@/lib/today-phase-items";
+import { useDraggable, useDropZone, toastWithUndo, type DragPayload } from "@/lib/dnd/pointer-dnd";
+import { useMoveProjectToPhase } from "@/components/projects/hub/ProjectPhaseViews";
 import type { Item, Kind } from "@/components/planner/schedule/ScheduleStyles";
 
 const PHASE_TITLE: Record<RhythmPhase, string> = {
@@ -118,12 +120,50 @@ function InlineItemEditor({ item, onClose }: { item: Item; onClose: () => void }
   );
 }
 
+const PHASE_START: Record<RhythmPhase, number> = { plan: 9, grow: 12, care: 15, letgo: 18 };
+const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); };
+const toHm = (n: number) => `${String(Math.floor(n / 60) % 24).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
+
+/** Shift a task/event's start (and end, keeping duration) into a phase window. */
+export function newTimesForPhase(phase: RhythmPhase, start?: string, end?: string) {
+  const s = PHASE_START[phase] * 60 + (start ? toMin(start) % 60 : 0);
+  const dur = start && end ? Math.max(0, toMin(end) - toMin(start)) : 0;
+  return { start: toHm(s), end: end ? toHm(s + dur) : undefined };
+}
+
+/** Drop handler shared by the Dashboard phase cards: schedule items and projects. */
+function usePhaseDrop(phase: RhythmPhase) {
+  const { state, updateTask, updateAppointment } = useStore();
+  const moveProject = useMoveProjectToPhase();
+  return async (d: DragPayload) => {
+    if (d.type === "project") return moveProject(d.id, phase);
+    const kind0 = d.id.slice(0, 1); const raw = d.id.slice(2);
+    if (kind0 === "t") {
+      const t = state.tasks.find(x => x.id === raw); if (!t) return;
+      if (phaseForTime(t.startTime) === phase) return;
+      const n = newTimesForPhase(phase, t.startTime, t.endTime);
+      const prev = { startTime: t.startTime, endTime: t.endTime };
+      await updateTask(t.id, { startTime: n.start, endTime: n.end }); unpinPhase(t.id);
+      toastWithUndo(`Moved to ${RHYTHM_LABEL[phase]} · ${fmtTime(n.start)}`, () => updateTask(t.id, prev as any));
+    } else if (kind0 === "a") {
+      const a = state.appointments.find(x => x.id === raw); if (!a) return;
+      if (phaseForTime(a.time) === phase) return;
+      const n = newTimesForPhase(phase, a.time, a.endTime);
+      const prev = { time: a.time, endTime: a.endTime };
+      await updateAppointment(a.id, { time: n.start, endTime: n.end }); unpinPhase(a.id);
+      toastWithUndo(`Moved to ${RHYTHM_LABEL[phase]} · ${fmtTime(n.start)}`, () => updateAppointment(a.id, prev as any));
+    }
+  };
+}
+
 function ItemRow({ item, toggle, compact }: { item: Item; toggle: (id: string) => void; compact?: boolean }) {
   const [editing, setEditing] = useState(false);
+  const movable = item.id.startsWith("t:") || item.id.startsWith("a:");
+  const drag = useDraggable({ type: "item", id: item.id }, movable && !editing);
   const sub = [item.time && (item.end ? `${fmtTime(item.time)} – ${fmtTime(item.end)}` : fmtTime(item.time)), item.kind !== "task" && KIND_LABEL[item.kind]].filter(Boolean).join(" · ");
   return (
-    <li>
-      <div className={cn("flex min-h-[44px] items-start gap-3", !compact && "rounded-2xl bg-card px-3 py-2 ring-1 ring-border/60")}>
+    <li {...drag.props}>
+      <div className={cn("flex min-h-[44px] items-start gap-3", movable && "cursor-grab", !compact && "rounded-2xl bg-card px-3 py-2 ring-1 ring-border/60")}>
         <span className="pt-2.5"><Check0 item={item} onToggle={() => toggle(item.id)} /></span>
         <button type="button" onClick={() => setEditing(e => !e)} className="min-w-0 flex-1 py-2 text-left">
           <span className={cn("block break-words text-[15px] font-medium leading-snug", item.done && "text-muted-foreground line-through")}>{item.title}</span>
@@ -155,8 +195,9 @@ function AddLine({ phase, onAdd }: { phase: RhythmPhase; onAdd: (t: string) => P
 
 export function NowPhaseCard({ phase, items, toggle }: { phase: RhythmPhase; items: Item[]; toggle: (id: string) => void }) {
   const Icon = PHASE_ICONS[phase];
+  const z = useDropZone(["item", "project"], usePhaseDrop(phase));
   return (
-    <section className="planner-card overflow-hidden border-l-4 p-4 sm:p-5" style={{ borderLeftColor: main(phase), background: `linear-gradient(135deg, ${tint(phase)}, hsl(var(--card)) 70%)` }}>
+    <section {...z.props} className={cn("planner-card overflow-hidden border-l-4 p-4 sm:p-5", z.isOver && "ring-2")} style={{ borderLeftColor: main(phase), ...(z.isOver ? { "--tw-ring-color": main(phase) } as React.CSSProperties : {}), background: `linear-gradient(135deg, ${tint(phase)}, hsl(var(--card)) 70%)` }}>
       <div className="flex items-start gap-3">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full" style={{ background: main(phase), color: "hsl(var(--card))" }}><Icon className="h-5 w-5" /></span>
         <div className="min-w-0 flex-1">
@@ -182,9 +223,10 @@ export function PhaseDayCard({ phase, items, now, past, toggle, onAdd }: {
 }) {
   const Icon = PHASE_ICONS[phase];
   const left = items.filter(i => !i.done).length;
+  const z = useDropZone(["item", "project"], usePhaseDrop(phase));
   return (
-    <section aria-label={RHYTHM_LABEL[phase]} className={cn("flex flex-col rounded-[20px] border-t-4 p-3 transition", now && "ring-2", past && "opacity-75")}
-      style={{ background: tint(phase), borderTopColor: main(phase), ...(now ? { "--tw-ring-color": main(phase) } as React.CSSProperties : {}) }}>
+    <section {...z.props} aria-label={RHYTHM_LABEL[phase]} className={cn("flex flex-col rounded-[20px] border-t-4 p-3 transition", (now || z.isOver) && "ring-2", past && !z.isActive && "opacity-75", z.isOver && "scale-[1.01]")}
+      style={{ background: tint(phase), borderTopColor: main(phase), ...(now || z.isOver ? { "--tw-ring-color": main(phase) } as React.CSSProperties : {}) }}>
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4" style={{ color: deep(phase) }} aria-hidden />
         <h3 className="font-semibold" style={{ color: deep(phase) }}>{RHYTHM_LABEL[phase]}</h3>
@@ -194,6 +236,7 @@ export function PhaseDayCard({ phase, items, now, past, toggle, onAdd }: {
       </div>
       <p className="mb-1 text-xs text-muted-foreground">{PHASE_WINDOW[phase]}</p>
       <ul className="space-y-0.5">{items.map(i => <ItemRow key={i.id} item={i} toggle={toggle} compact />)}</ul>
+      {z.isOver && <p className="mt-1 rounded-full bg-card/80 px-2 py-0.5 text-center text-xs font-semibold" style={{ color: deep(phase) }}>Move to {RHYTHM_LABEL[phase]}</p>}
       <AddLine phase={phase} onAdd={onAdd} />
     </section>
   );
