@@ -1,3 +1,5 @@
+import { FocusProjectPicker } from "@/components/projects/FocusProjectPicker";
+import { pickWeeklyFocus } from "@/lib/projects/weekly-focus";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
@@ -675,16 +677,15 @@ export default function ProjectsHub() {
     && (folderFilter === "all" || (folderFilter === "none" ? !p.folderId : p.folderId === folderFilter))
   ), [projects, chip, monthlyOnly, stageFilter, healthFilter, folderFilter]);
 
-  const focus = useMemo(() => {
-    const fav = projects.find((p) => p.isFavorite);
-    if (fav) return fav;
-    return [...projects].map((p) => ({ p, t: metrics(p).lastTouched })).sort((a, b) => (b.t ?? "").localeCompare(a.t ?? ""))[0]?.p;
-  }, [projects, metrics]);
+  const focus = useMemo(() => pickWeeklyFocus(projects, p => metrics(p).lastTouched), [projects, metrics]);
+  const [focusPickerOpen, setFocusPickerOpen] = useState(false);
   const growing = projects.filter(p => projectPhase(p) === "grow").length;
   const waiting = projects.filter(p => projectPhase(p) === "letgo").length;
   const extraFilters = [stageFilter, healthFilter, folderFilter].filter(f => f !== "all").length + (monthlyOnly ? 1 : 0);
-  const chipCls = (on: boolean) => cn("inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-sm font-semibold ring-1 ring-border transition", on ? "bg-foreground text-background ring-foreground" : "bg-card hover:bg-muted");
-  const segCls = (on: boolean) => cn("min-h-[44px] shrink-0 rounded-full px-4 text-sm font-semibold transition", on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground");
+  // Compact pills; the ::after layer keeps a 44px-tall tap area.
+  const hit = "relative after:absolute after:-inset-y-1.5 after:inset-x-0 after:content-['']";
+  const chipCls = (on: boolean) => cn(hit, "inline-flex h-8 shrink-0 items-center rounded-full px-3 text-[13px] font-semibold ring-1 ring-border transition", on ? "bg-foreground text-background ring-foreground" : "bg-card hover:bg-muted");
+  const segCls = (on: boolean) => cn(hit, "h-7 shrink-0 rounded-full px-3 text-[13px] font-semibold transition", on ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground");
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 p-4 pb-16 md:p-8">
@@ -720,7 +721,10 @@ export default function ProjectsHub() {
             <div className="flex items-start gap-4">
               <ProgressRing pct={pr.pct} phase={ph} size={64} />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: `hsl(var(--rhythm-${ph}-deep))` }}>This week's focus · {RHYTHM_LABEL[ph]}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: `hsl(var(--rhythm-${ph}-deep))` }}>This week's focus · {RHYTHM_LABEL[ph]}</p>
+                  <button type="button" onClick={() => setFocusPickerOpen(true)} className="inline-flex min-h-[36px] shrink-0 items-center rounded-full bg-card px-3 text-xs font-semibold ring-1 ring-border hover:bg-muted">Change</button>
+                </div>
                 <h2 className="break-words font-display text-2xl leading-tight">{focus.name}</h2>
                 <p className="break-words text-sm text-muted-foreground">{pr.next ? `Next: ${pr.next.title}` : "No open tasks"}{due ? ` · due ${format(new Date(`${due}T00:00`), "MMM d")}` : ""}</p>
               </div>
@@ -736,7 +740,7 @@ export default function ProjectsHub() {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label="Project view" className="inline-flex max-w-full overflow-x-auto rounded-full bg-muted p-1">
+        <div role="tablist" aria-label="Project view" className="inline-flex max-w-full overflow-x-auto rounded-full bg-muted p-0.5">
           {([["phase", "By phase"], ["board", "Board"], ["calendar", "Calendar"], ["list", "List"]] as const).map(([v, l]) => (
             <button key={v} role="tab" aria-selected={view === v} onClick={() => setViewP(v)} className={segCls(view === v)}>{l}</button>
           ))}
@@ -751,7 +755,7 @@ export default function ProjectsHub() {
       {(view === "board" || view === "list") && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-semibold text-muted-foreground">Group by</span>
-          <div className="inline-flex rounded-full bg-muted p-1">
+          <div className="inline-flex rounded-full bg-muted p-0.5">
             {([["phase", "Phase"], ["sections", "My sections"], ["area", "Area"]] as const).map(([g, l]) => (
               <button key={g} aria-pressed={groupBy === g} onClick={() => setGroupP(g)} className={segCls(groupBy === g)}>{l}</button>
             ))}
@@ -772,6 +776,7 @@ export default function ProjectsHub() {
         : <ByPhaseView projects={filtered} />}
 
       <NewProjectDialog open={newProjectOpen} onOpenChange={setNewProjectOpen} defaultArea="Personal" />
+      <FocusProjectPicker open={focusPickerOpen} onOpenChange={setFocusPickerOpen} projects={projects} currentId={focus?.id} />
     </div>
   );
 }

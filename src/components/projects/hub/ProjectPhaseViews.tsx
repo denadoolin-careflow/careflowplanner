@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday, startOfMonth, startOfWeek } from "date-fns";
-import { ChevronLeft, ChevronRight, Lightbulb, MoreHorizontal, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lightbulb, MoreHorizontal, Plus, Star, X } from "lucide-react";
+import { useDraggable, useDropZone, toastWithUndo, type DragPayload } from "@/lib/dnd/pointer-dnd";
+import { isWeeklyFocus, useSetWeeklyFocus } from "@/components/projects/FocusProjectPicker";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -20,7 +22,6 @@ const tint = (p: RhythmPhase) => `hsl(var(--rhythm-${p}-tint))`;
 const deep = (p: RhythmPhase) => `hsl(var(--rhythm-${p}-deep))`;
 const main = (p: RhythmPhase) => `hsl(var(--rhythm-${p}))`;
 const dueLabel = (iso?: string) => iso ? format(new Date(`${iso}T00:00`), "MMM d") : "";
-const DND = "application/x-careflow-project";
 
 export type GroupBy = "phase" | "sections" | "area";
 interface Group { key: string; label: string; phase: RhythmPhase; projects: Project[]; sub?: string; editable?: boolean }
@@ -35,9 +36,10 @@ function subline(p: Project, next?: Task) {
 export function ProjectRow({ p, draggable, moveMenu }: { p: Project; draggable?: boolean; moveMenu?: React.ReactNode }) {
   const { state } = useStore();
   const ph = projectPhase(p); const pr = projectProgress(p.id, state.tasks); const due = projectDue(p);
+  const drag = useDraggable({ type: "project", id: p.id }, draggable !== false);
   return (
-    <div draggable={draggable} onDragStart={e => e.dataTransfer.setData(DND, p.id)}
-      className="flex min-h-[56px] items-center gap-3 rounded-2xl bg-card px-3 py-2 ring-1 ring-border/60">
+    <div {...drag.props}
+      className={cn("flex min-h-[56px] items-center gap-3 rounded-2xl bg-card px-3 py-2 ring-1 ring-border/60", draggable !== false && "cursor-grab active:cursor-grabbing")}>
       <Link to={`/projects/${p.id}`} className="flex min-w-0 flex-1 items-center gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: tint(ph), color: deep(ph) }}>
           <ProjectIconGlyph project={p} className="h-4 w-4" />
@@ -68,13 +70,28 @@ function IdeasLine() {
   );
 }
 
-export function ByPhaseView({ projects }: { projects: Project[] }) {
+/** Moves a project into a phase (changes its stage) with an Undo toast. */
+export function useMoveProjectToPhase() {
+  const { state, updateProject } = useStore();
+  return async (projectId: string, ph: RhythmPhase) => {
+    const p = (state.projects ?? []).find(x => x.id === projectId); if (!p || projectPhase(p) === ph) return;
+    const prev = { stage: p.stage, health: p.health, status: p.status };
+    await updateProject(projectId, patchForPhase(ph, p.stage));
+    toastWithUndo(`Moved to ${RHYTHM_LABEL[ph]}`, () => updateProject(projectId, prev as any));
+  };
+}
+
+function DropHint({ show, label }: { show: boolean; label: string }) {
+  if (!show) return null;
+  return <p className="rounded-full bg-card/80 px-3 py-1 text-center text-xs font-semibold" aria-live="polite">{label}</p>;
+}
+
+function PhaseSection({ ph, ps }: { ph: RhythmPhase; ps: Project[] }) {
+  const moveTo = useMoveProjectToPhase();
+  const z = useDropZone(["project"], d => void moveTo(d.id, ph));
+  const I = PHASE_ICONS[ph];
   return (
-    <div className="space-y-4">
-      {PHASE_ORDER.map(ph => {
-        const ps = projects.filter(p => projectPhase(p) === ph); const I = PHASE_ICONS[ph];
-        return (
-          <section key={ph} className="planner-card border-l-4 p-4" style={{ borderLeftColor: main(ph), background: `linear-gradient(180deg, ${tint(ph)}, hsl(var(--card)) 90px)` }}>
+          <section {...z.props} className={cn("planner-card border-l-4 p-4 transition", z.isOver && "ring-2")} style={{ borderLeftColor: main(ph), background: `linear-gradient(180deg, ${tint(ph)}, hsl(var(--card)) 90px)`, ...(z.isOver ? { "--tw-ring-color": main(ph) } as React.CSSProperties : {}) }}>
             <div className="mb-3 flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-full" style={{ background: tint(ph), color: deep(ph) }}><I className="h-4 w-4" /></span>
               <div className="min-w-0 flex-1"><h3 className="font-display text-xl leading-tight" style={{ color: deep(ph) }}>{RHYTHM_LABEL[ph]}</h3><p className="text-sm text-muted-foreground">{PHASE_ROLE[ph]}</p></div>
@@ -83,9 +100,16 @@ export function ByPhaseView({ projects }: { projects: Project[] }) {
             <div className="grid gap-2 md:grid-cols-2">{ps.map(p => <ProjectRow key={p.id} p={p} />)}</div>
             {ps.length === 0 && ph !== "plan" && <p className="text-sm text-muted-foreground">Nothing here right now.</p>}
             {ph === "plan" && <IdeasLine />}
+            <div className="mt-2"><DropHint show={z.isOver} label={`Move to ${RHYTHM_LABEL[ph]}`} /></div>
           </section>
-        );
-      })}
+  );
+}
+
+export function ByPhaseView({ projects }: { projects: Project[] }) {
+  return (
+    <div className="space-y-4">
+      {PHASE_ORDER.map(ph => <PhaseSection key={ph} ph={ph} ps={projects.filter(p => projectPhase(p) === ph)} />)}
+      {projects.length > 0 && <p className="text-sm text-muted-foreground">Drag a project to another phase (press and hold on phones).</p>}
     </div>
   );
 }
@@ -106,21 +130,28 @@ export function useGrouping(projects: Project[], by: GroupBy) {
   }, [by, projects, areas, sec.groups]);
   const move = async (projectId: string, key: string) => {
     const p = projects.find(x => x.id === projectId); if (!p) return;
+    const prev = { stage: p.stage, health: p.health, status: p.status, areaName: p.areaName, areaId: p.areaId, groupId: p.groupId };
+    const g = groups.find(x => x.key === key);
+    const cur = groups.find(x => x.projects.some(q => q.id === projectId));
+    if (cur?.key === key) return;
     if (by === "phase") await updateProject(projectId, patchForPhase(key as RhythmPhase, p.stage));
     else if (by === "area") await updateProject(projectId, { areaName: key === "No area" ? undefined : key, areaId: undefined });
     else await updateProject(projectId, { groupId: key === "none" ? undefined : key });
-    const g = groups.find(x => x.key === key); if (g) toast.success(`Moved to ${g.label}`);
+    if (g) toastWithUndo(`Moved to ${g.label}`, () => updateProject(projectId, prev as any));
   };
   return { groups, move, sec };
 }
 
-function MoveMenu({ groups, current, onMove }: { groups: Group[]; current: string; onMove: (k: string) => void }) {
+function MoveMenu({ groups, current, onMove, projectId }: { groups: Group[]; current: string; onMove: (k: string) => void; projectId: string }) {
+  const setFocus = useSetWeeklyFocus();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger aria-label="Move to" className="grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-muted"><MoreHorizontal className="h-4 w-4" /></DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Move to</DropdownMenuLabel><DropdownMenuSeparator />
         {groups.filter(g => g.key !== current).map(g => <DropdownMenuItem key={g.key} onSelect={() => onMove(g.key)}>{g.label}</DropdownMenuItem>)}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => void setFocus(projectId)}><Star className="mr-2 h-4 w-4" />Set as this week's focus</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -154,42 +185,51 @@ function NewSectionBox({ onAdd }: { onAdd: (n: string) => void }) {
   );
 }
 
-function useDrop(onDrop: (id: string) => void) {
-  const [over, setOver] = useState(false);
-  return { over, props: {
-    onDragOver: (e: React.DragEvent) => { if (e.dataTransfer.types.includes(DND)) { e.preventDefault(); setOver(true); } },
-    onDragLeave: () => setOver(false),
-    onDrop: (e: React.DragEvent) => { e.preventDefault(); setOver(false); const id = e.dataTransfer.getData(DND); if (id) onDrop(id); },
-  } };
+function BoardCard({ p, g, groups, move }: { p: Project; g: Group; groups: Group[]; move: (id: string, k: string) => void }) {
+  const { state } = useStore();
+  const setFocus = useSetWeeklyFocus();
+  const ph = projectPhase(p); const pr = projectProgress(p.id, state.tasks); const due = projectDue(p);
+  const drag = useDraggable({ type: "project", id: p.id });
+  const focused = isWeeklyFocus(p);
+  return (
+    <article {...drag.props} className="cursor-grab overflow-hidden rounded-[20px] bg-card shadow-sm ring-1 ring-border/60 transition hover:shadow-md active:cursor-grabbing">
+      <div className="h-1.5" style={{ background: main(ph) }} />
+      <div className="space-y-2.5 p-3.5">
+        <div className="flex items-start gap-2">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={{ background: tint(ph), color: deep(ph) }}><ProjectIconGlyph project={p} className="h-4 w-4" /></span>
+          <Link to={`/projects/${p.id}`} className="min-w-0 flex-1 break-words pt-1 font-display text-[17px] leading-snug">{p.name}</Link>
+          <button type="button" data-no-drag onClick={() => void setFocus(p.id)} aria-pressed={focused} aria-label={focused ? "This week's focus" : "Set as this week's focus"}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-muted">
+            <Star className="h-4 w-4" style={{ color: focused ? deep(ph) : "hsl(var(--muted-foreground))", fill: focused ? "currentColor" : "none" }} />
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1 text-[11px] font-bold uppercase tracking-wide">
+          {p.areaName && <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">{p.areaName}</span>}
+          <span className="rounded-full px-2 py-0.5" style={{ background: tint(ph), color: deep(ph) }}>{RHYTHM_LABEL[ph]}</span>
+        </div>
+        {subline(p, pr.next) && <p className="break-words text-sm text-muted-foreground">{subline(p, pr.next)}</p>}
+        <div className="h-1.5 overflow-hidden rounded-full" style={{ background: tint(ph) }}><div className="h-full rounded-full" style={{ width: `${pr.pct}%`, background: main(ph) }} /></div>
+        <div className="flex items-center justify-between gap-2 text-xs font-semibold text-muted-foreground">
+          <span>{pr.pct}% · {pr.total - pr.done} open</span>
+          <span className="flex items-center gap-1">
+            {due && <PhasePill phase={ph}>{dueLabel(due)}</PhasePill>}
+            <span data-no-drag><MoveMenu groups={groups} current={g.key} onMove={k => move(p.id, k)} projectId={p.id} /></span>
+          </span>
+        </div>
+      </div>
+    </article>
+  );
 }
 
 function BoardColumn({ g, groups, move, sec, onNew }: { g: Group; groups: Group[]; move: (id: string, k: string) => void; sec: ReturnType<typeof useProjectGroups>; onNew: () => void }) {
-  const { state } = useStore();
-  const d = useDrop(id => move(id, g.key));
+  const z = useDropZone(["project"], d => void move(d.id, g.key));
   return (
-    <section {...d.props} aria-label={g.label} className={cn("flex w-[280px] shrink-0 flex-col gap-2 rounded-[20px] border-t-4 p-3 md:w-auto", d.over && "ring-2")}
-      style={{ background: tint(g.phase), borderTopColor: main(g.phase) }}>
+    <section {...z.props} aria-label={g.label} className={cn("flex w-[280px] shrink-0 flex-col gap-2.5 rounded-[22px] border-t-4 p-3 transition md:w-auto", z.isOver && "ring-2")}
+      style={{ background: tint(g.phase), borderTopColor: main(g.phase), ...(z.isOver ? { "--tw-ring-color": main(g.phase) } as React.CSSProperties : {}) }}>
       <GroupTitle g={g} onRename={n => sec.rename(g.key, n)} onDelete={() => sec.remove(g.key)} />
       {g.sub && <p className="-mt-1 text-xs text-muted-foreground">{g.sub}</p>}
-      {g.projects.map(p => {
-        const ph = projectPhase(p); const pr = projectProgress(p.id, state.tasks); const due = projectDue(p);
-        return (
-          <article key={p.id} draggable onDragStart={e => e.dataTransfer.setData(DND, p.id)} className="planner-card space-y-2 p-3">
-            <div className="flex items-start gap-2">
-              <Link to={`/projects/${p.id}`} className="min-w-0 flex-1 break-words font-semibold leading-snug">{p.name}</Link>
-              <MoveMenu groups={groups} current={g.key} onMove={k => move(p.id, k)} />
-            </div>
-            <div className="flex flex-wrap gap-1 text-[11px] font-bold uppercase tracking-wide">
-              {p.areaName && <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">{p.areaName}</span>}
-              <span className="rounded-full px-2 py-0.5" style={{ background: tint(ph), color: deep(ph) }}>{RHYTHM_LABEL[ph]}</span>
-              {due && <PhasePill phase={ph} className="normal-case tracking-normal">{dueLabel(due)}</PhasePill>}
-            </div>
-            <p className="break-words text-sm text-muted-foreground">{subline(p, pr.next)}</p>
-            <div className="h-1.5 overflow-hidden rounded-full" style={{ background: tint(ph) }}><div className="h-full rounded-full" style={{ width: `${pr.pct}%`, background: main(ph) }} /></div>
-            <div className="flex justify-between text-xs font-semibold text-muted-foreground"><span>{pr.pct}% done</span><span>{pr.total - pr.done} open</span></div>
-          </article>
-        );
-      })}
+      {g.projects.map(p => <BoardCard key={p.id} p={p} g={g} groups={groups} move={move} />)}
+      <DropHint show={z.isOver} label={`Move to ${g.label}`} />
       <button type="button" onClick={onNew} className="flex min-h-[44px] items-center gap-2 rounded-2xl border border-dashed px-3 text-sm font-semibold" style={{ borderColor: main(g.phase), color: deep(g.phase) }}><Plus className="h-4 w-4" />Add project</button>
     </section>
   );
@@ -203,18 +243,18 @@ export function ProjectBoard({ projects, by, onNew }: { projects: Project[]; by:
         {groups.map(g => <BoardColumn key={g.key} g={g} groups={groups} move={move} sec={sec} onNew={onNew} />)}
         {by === "sections" && <div className="w-[240px] shrink-0 md:w-auto"><NewSectionBox onAdd={sec.add} /></div>}
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">Drag a card to another column{by === "sections" ? " to file it in that section. Tap a section name to rename it." : ", or use ⋯ to move it."}</p>
+      <p className="mt-2 text-sm text-muted-foreground">Drag a card to another column (press and hold on phones){by === "sections" ? " to file it in that section. Tap a section name to rename it." : ", or use ⋯ to move it."}</p>
     </div>
   );
 }
 
 function ListGroup({ g, groups, move, sec }: { g: Group; groups: Group[]; move: (id: string, k: string) => void; sec: ReturnType<typeof useProjectGroups> }) {
-  const d = useDrop(id => move(id, g.key));
+  const z = useDropZone(["project"], d => void move(d.id, g.key));
   return (
-    <section {...d.props} className={cn("planner-card border-l-4 p-4", d.over && "ring-2")} style={{ borderLeftColor: main(g.phase) }}>
+    <section {...z.props} className={cn("planner-card border-l-4 p-4 transition", z.isOver && "ring-2")} style={{ borderLeftColor: main(g.phase), ...(z.isOver ? { "--tw-ring-color": main(g.phase), background: tint(g.phase) } as React.CSSProperties : {}) }}>
       <GroupTitle g={g} onRename={n => sec.rename(g.key, n)} onDelete={() => sec.remove(g.key)} />
       <ul className="mt-2 space-y-2">
-        {g.projects.map(p => <li key={p.id}><ProjectRow p={p} draggable moveMenu={<MoveMenu groups={groups} current={g.key} onMove={k => move(p.id, k)} />} /></li>)}
+        {g.projects.map(p => <li key={p.id}><ProjectRow p={p} moveMenu={<span data-no-drag><MoveMenu groups={groups} current={g.key} onMove={k => move(p.id, k)} projectId={p.id} /></span>} /></li>)}
         {g.projects.length === 0 && <li className="text-sm text-muted-foreground">Drop a project here.</li>}
       </ul>
     </section>
@@ -231,12 +271,45 @@ export function ProjectListGrouped({ projects, by }: { projects: Project[]; by: 
   );
 }
 
+interface CalEvent { date: string; label: string; phase: RhythmPhase; id: string; kind: string; milestoneId?: string }
+
+function CalChip({ e }: { e: CalEvent }) {
+  const drag = useDraggable(e.milestoneId ? { type: "milestone", id: e.milestoneId, projectId: e.id } : { type: "project", id: e.id, field: "due" });
+  return <Link {...drag.props} to={`/projects/${e.id}`} className="block cursor-grab whitespace-normal break-words rounded-md px-1 py-0.5 text-[10px] font-semibold leading-tight" style={{ ...drag.props.style, background: tint(e.phase), color: deep(e.phase) }}>{e.label}</Link>;
+}
+
+function CalDay({ d, month, es, onDrop }: { d: Date; month: Date; es: CalEvent[]; onDrop: (p: DragPayload, iso: string) => void }) {
+  const iso = format(d, "yyyy-MM-dd");
+  const z = useDropZone(["project", "milestone"], p => onDrop(p, iso));
+  return (
+    <div {...z.props} className={cn("min-h-[72px] rounded-xl p-1 ring-1 ring-border/50 transition", !isSameMonth(d, month) && "opacity-40", isToday(d) && "ring-2 ring-primary", z.isOver && "bg-muted ring-2 ring-foreground/40")}>
+      <span className="block text-xs font-semibold">{format(d, "d")}</span>
+      <div className="mt-0.5 space-y-0.5">{es.map((e, i) => <CalChip key={i} e={e} />)}</div>
+    </div>
+  );
+}
+
 export function ProjectCalendar({ projects }: { projects: Project[] }) {
+  const { updateProject } = useStore();
+  const onDrop = async (d: DragPayload, iso: string) => {
+    if (d.type === "milestone") {
+      const p = projects.find(x => x.id === d.projectId); if (!p) return;
+      const prev = p.milestones ?? []; const m = prev.find(x => x.id === d.id); if (!m || m.date === iso) return;
+      await updateProject(p.id, { milestones: prev.map(x => x.id === d.id ? { ...x, date: iso } : x) });
+      toastWithUndo(`${m.title} moved to ${dueLabel(iso)}`, () => updateProject(p.id, { milestones: prev }));
+      return;
+    }
+    const p = projects.find(x => x.id === d.id); if (!p) return;
+    const field: "endDate" | "targetDate" | "deadline" = p.endDate ? "endDate" : p.targetDate ? "targetDate" : "deadline";
+    const before = (p as any)[field] as string | undefined; if (before === iso) return;
+    await updateProject(p.id, { [field]: iso } as any);
+    toastWithUndo(`${p.name} due ${dueLabel(iso)}`, () => updateProject(p.id, { [field]: before ?? null } as any));
+  };
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const events = useMemo(() => projects.flatMap(p => {
-    const ph = projectPhase(p); const out: { date: string; label: string; phase: RhythmPhase; id: string; kind: string }[] = [];
+    const ph = projectPhase(p); const out: CalEvent[] = [];
     const due = projectDue(p); if (due) out.push({ date: due, label: `${p.name} due`, phase: ph, id: p.id, kind: "Due" });
-    for (const m of p.milestones ?? []) if (m.date) out.push({ date: m.date, label: `${p.name}: ${m.title}`, phase: ph, id: p.id, kind: "Milestone" });
+    for (const m of p.milestones ?? []) if (m.date) out.push({ date: m.date, label: `${p.name}: ${m.title}`, phase: ph, id: p.id, kind: "Milestone", milestoneId: m.id });
     return out;
   }).sort((a, b) => a.date.localeCompare(b.date)), [projects]);
   const days = eachDayOfInterval({ start: startOfWeek(month, { weekStartsOn: 1 }), end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }) });
@@ -252,23 +325,12 @@ export function ProjectCalendar({ projects }: { projects: Project[] }) {
         </div>
         <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-muted-foreground">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => <span key={d}>{d}</span>)}</div>
         <div className="mt-1 grid grid-cols-7 gap-1">
-          {days.map(d => {
-            const iso = format(d, "yyyy-MM-dd"); const es = events.filter(e => e.date === iso);
-            return (
-              <div key={iso} className={cn("min-h-[72px] rounded-xl p-1 ring-1 ring-border/50", !isSameMonth(d, month) && "opacity-40", isToday(d) && "ring-2 ring-primary")}>
-                <span className="block text-xs font-semibold">{format(d, "d")}</span>
-                <div className="mt-0.5 space-y-0.5">
-                  {es.map((e, i) => (
-                    <Link key={i} to={`/projects/${e.id}`} className="block whitespace-normal break-words rounded-md px-1 py-0.5 text-[10px] font-semibold leading-tight" style={{ background: tint(e.phase), color: deep(e.phase) }}>{e.label}</Link>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          {days.map(d => { const iso = format(d, "yyyy-MM-dd"); return <CalDay key={iso} d={d} month={month} es={events.filter(e => e.date === iso)} onDrop={onDrop} />; })}
         </div>
       </section>
       <section className="planner-card p-4">
         <h3 className="mb-2 font-display text-lg">Coming up</h3>
+        <p className="mb-2 text-xs text-muted-foreground">Drag a due date or milestone to another day to move it.</p>
         {coming.length === 0 ? <p className="text-sm text-muted-foreground">No dates ahead.</p> : (
           <ul className="space-y-2">{coming.map((e, i) => (
             <li key={i}><Link to={`/projects/${e.id}`} className="flex min-h-[44px] items-start gap-2 rounded-xl px-2 py-1 hover:bg-muted">

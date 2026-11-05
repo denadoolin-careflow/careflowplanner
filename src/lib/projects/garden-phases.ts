@@ -20,6 +20,8 @@ export interface ProjectDetailsData {
   nextStepTaskId?: string | null;
   /** YYYY-MM tag marking this project as that month's Monthly Planning project. */
   monthKey?: string;
+  /** ISO week ("YYYY-Www") this project was chosen as the week's focus. */
+  weeklyFocus?: string;
   /** Id of the project's Notepad note ("<name> notes"). */
   notepadNoteId?: string;
 }
