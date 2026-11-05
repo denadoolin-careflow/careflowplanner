@@ -71,6 +71,6 @@
 - Today card groups use PhaseCardGrid (container-query columns) so cards fit the narrow desktop column.
 - Planner schedule styles reuse existing items/pins (style device-local); all day moons use ScheduleDayMoon so phases match.
 - Task rail schedules via drag or clock popover (dueDate+startTime); its view prefs are device-local.
-- Hub phase = display mapping in lib/projects/phase.ts; hub sections are project_groups + projects.group_id (not per-project project_sections).
+- Hub phase: lib/projects/phase.ts; hub sections: project_groups + projects.group_id.
 - Project Notepad = one note (notes.project_id, id in details.notepadNoteId); Files = cabinet_documents via entity_links.
 - DnD: shared lib/dnd/pointer-dnd; weekly focus = projects.details.weeklyFocus.
