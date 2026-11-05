@@ -73,4 +73,4 @@
 - Task rail schedules via drag or clock popover (dueDate+startTime); its view prefs are device-local.
 - Hub phase = display mapping in lib/projects/phase.ts; hub sections are project_groups + projects.group_id (not per-project project_sections).
 - Project Notepad = one note (notes.project_id, id in details.notepadNoteId); Files = cabinet_documents via entity_links.
-- Project/task drag-and-drop uses the shared pointer-dnd layer (mouse drag + touch long-press, data-dropzone lookup) so every view drops the same way; weekly focus lives in projects.details.weeklyFocus (ISO week).
+- DnD: shared lib/dnd/pointer-dnd; weekly focus = projects.details.weeklyFocus.
