@@ -1,16 +1,19 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { Moon, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMonthlyProject } from "@/lib/projects/monthly-planning";
+import { ProjectPage } from "@/components/projects/detail/ProjectPage";
 import { ProjectGardenPage } from "@/components/projects/detail/garden/ProjectGardenPage";
 
 /**
- * The month's Monthly Planning project rendered as a Garden board inside the
- * Planner month view. Creates the project on first tap; everything syncs
- * through the same project record used by the Projects hub.
+ * The month's Monthly Planning project rendered with the new project page
+ * inside the Planner month view. Creates the project on first tap; everything
+ * syncs through the same project record used by the Projects hub.
  */
 export function MonthlyPlanningGarden({ month }: { month: Date }) {
   const { project, creating, ensure } = useMonthlyProject(month);
+  const [classic, setClassic] = useState(false);
 
   if (!project) {
     return (
