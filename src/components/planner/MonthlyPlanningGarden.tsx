@@ -30,5 +30,6 @@ export function MonthlyPlanningGarden({ month }: { month: Date }) {
     );
   }
 
-  return <ProjectGardenPage project={project} />;
+  if (classic) return <ProjectGardenPage project={project} />;
+  return <ProjectPage project={project} onClassic={() => setClassic(true)} />;
 }
