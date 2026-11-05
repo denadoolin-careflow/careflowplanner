@@ -1670,82 +1670,28 @@ function bucketFor(t: any): Bucket {
   return "ready";
 }
 
-function InboxHeldHeader({ heldView, setHeldView }: { heldView: "age" | "status"; setHeldView: (v: "age" | "status") => void }) {
-  const { selectionMode, toggleSelectionMode, count, clear, selectAll } = useTaskSelection();
-  const [rowStyle, setRowStyle] = useInboxRowStyle();
+function InboxHeldHeader({ heldView, setHeldView, count }: {
+  heldView: "age" | "status";
+  setHeldView: (v: "age" | "status") => void;
+  count: number;
+}) {
   return (
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-      <h3 className="font-display text-lg tracking-tight">Held in your inbox</h3>
-      <div className="flex items-center gap-1.5">
-        <div role="radiogroup" aria-label="Group held items" className="flex rounded-full bg-muted/60 p-0.5">
-          {(["age", "status"] as const).map(v => (
-            <button key={v} type="button" role="radio" aria-checked={heldView === v} onClick={() => setHeldView(v)}
-              className={cn("h-8 rounded-full px-3 text-xs", heldView === v ? "bg-card font-medium shadow-sm" : "text-muted-foreground")}>
-              {v === "age" ? "By age" : "By status"}
-            </button>
-          ))}
-        </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5 rounded-full text-[12px]"
-              title="Task row style"
-              aria-label="Task row style"
-            >
-              <LayoutGrid className="h-3 w-3" /> Style
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-60 p-2">
-            <div className="px-2 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Task row style
-            </div>
-            <div className="flex flex-col gap-1">
-              {INBOX_ROW_STYLES.map((s) => {
-                const active = rowStyle === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setRowStyle(s.id as InboxRowStyle)}
-                    className={cn(
-                      "flex items-start gap-2 rounded-lg px-2 py-1.5 text-left transition",
-                      active ? "bg-primary/10 text-foreground" : "hover:bg-muted/60",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "mt-1 h-2 w-2 shrink-0 rounded-full",
-                        active ? "bg-primary" : "bg-muted-foreground/40",
-                      )}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-[13px] font-medium">{s.label}</span>
-                      <span className="block text-[11px] text-muted-foreground">{s.description}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </PopoverContent>
-        </Popover>
-        {selectionMode ? (
-          <>
-            <span className="text-[12px] tabular-nums text-muted-foreground">{count} selected</span>
-            <Button size="sm" variant="ghost" onClick={selectAll} className="h-8 gap-1 rounded-full text-[12px]">
-              Select all
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => { clear(); }} className="h-8 gap-1 rounded-full text-[12px]">
-              Done
-            </Button>
-          </>
-        ) : (
-          <Button size="sm" variant="outline" onClick={toggleSelectionMode} className="h-8 gap-1.5 rounded-full text-[12px]">
-            <CheckSquare className="h-3 w-3" /> Select
-          </Button>
-        )}
-      </div>
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      <h3 className="font-display text-lg tracking-tight">
+        Held in your inbox
+        <span className="ml-2 align-middle text-[12px] font-normal tabular-nums text-muted-foreground">
+          {count}
+        </span>
+      </h3>
+      <ViewPills
+        ariaLabel="Group held items"
+        value={heldView}
+        onChange={setHeldView}
+        items={[
+          { value: "age", label: "By age", icon: Clock },
+          { value: "status", label: "By status", icon: ListChecks },
+        ]}
+      />
     </div>
   );
 }
