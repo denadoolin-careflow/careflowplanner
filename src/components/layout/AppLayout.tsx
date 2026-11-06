@@ -18,8 +18,8 @@ import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { FocusPanel } from "@/components/focus/FocusPanel";
-import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { WhatsNewPopover } from "@/components/updates/WhatsNewPopover";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 import { GlobalTaskQuickEdit } from "@/components/tasks/GlobalTaskQuickEdit";
 import { AppendToDialog } from "@/components/quick-add/AppendToDialog";
@@ -30,7 +30,6 @@ import { useEffect } from "react";
 import { applyAnimIntensity, readAnimIntensity } from "@/components/settings/AtmosphereFeelSection";
 import { applyFontPrefs } from "@/lib/font-prefs";
 import { installGlobalHaptics } from "@/lib/haptics";
-import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 import { Link } from "react-router-dom";
 import { HeaderNowStrip } from "./HeaderNowStrip";
 import { CapacityChip } from "@/components/header/CapacityChip";
@@ -67,7 +66,7 @@ export function AppLayout() {
                 <h1 className="font-display text-base font-semibold leading-tight sm:text-2xl">{current.label}</h1>
               </div>
             </div>
-            <div className="flex flex-nowrap items-center gap-1 sm:gap-3">
+            <div className="flex min-w-0 flex-nowrap items-center gap-1 sm:gap-2">
               <div className="hidden lg:inline-flex">
                 <CapacityChip />
               </div>
@@ -76,13 +75,10 @@ export function AppLayout() {
               <div className="hidden sm:block">
                 <NotificationCenter />
               </div>
-              <div className="hidden md:block">
+              <div className="hidden xl:block">
                 <WhatsNewPopover />
               </div>
               <HeaderQuickSettings />
-              <Link to="/" aria-label="CareFlow home" className="ml-1 hidden sm:inline-flex">
-                <CareFlowLogo size={32} />
-              </Link>
             </div>
           </header>}
           <main className="flex-1 px-4 pb-40 pt-6 lg:px-8 lg:pb-12">
