@@ -18,6 +18,7 @@ import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { FocusPanel } from "@/components/focus/FocusPanel";
+import { WhatsNewPopover } from "@/components/updates/WhatsNewPopover";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 import { GlobalTaskQuickEdit } from "@/components/tasks/GlobalTaskQuickEdit";
@@ -73,6 +74,9 @@ export function AppLayout() {
               <UniversalSearchBar />
               <div className="hidden sm:block">
                 <NotificationCenter />
+              </div>
+              <div className="hidden xl:block">
+                <WhatsNewPopover />
               </div>
               <HeaderQuickSettings />
             </div>
