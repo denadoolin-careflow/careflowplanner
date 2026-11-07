@@ -321,7 +321,7 @@ function TodayInner({ embedded }: { embedded?: { date: Date; onDate: (d: Date) =
           onTemplates={() => setGalleryOpen(true)}
         />}
         {/* Embedded in Planner Day, the month photo + week strip already date the page. */}
-        {!embedded && <TodayMoonHeader date={day} />}
+        <TodayMoonHeader date={day} onDate={setDayAndUrl} />
         <DemoTasksBanner />
         {prefs.showQuickAdd && !isMobile && <div className="today-mobile-quick-add"><QuickAddBar date={day} /></div>}
         {view !== "board" && <RhythmTodayCard date={day} />}

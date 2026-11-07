@@ -1,6 +1,7 @@
 import { addDays, format, startOfDay } from "date-fns";
 import { lunarRhythmAt } from "./lunar-rhythm";
 import type { RhythmPhase } from "@/lib/planner/rhythm-phase";
+import { PHASE_SIGN_GUIDE } from "./phase-sign-guide";
 
 /** One word per Moon sign for how to work with that day's energy. */
 export const MOON_SIGN_ENERGY: Record<string, string> = {
@@ -45,6 +46,8 @@ const PHASE_NAME: Record<RhythmPhase, string> = { plan: "Plan", grow: "Grow", ca
 
 /** One sentence blending the rhythm phase with the Moon's sign. */
 export function phaseSignAdvice(phase: RhythmPhase, sign: string): string {
+  const guided = PHASE_SIGN_GUIDE[phase]?.[sign];
+  if (guided) return guided.line;
   const word = moonEnergyWord(sign);
   const how = SIGN_PHRASE[sign] ?? "move gently";
   return `${PHASE_NAME[phase]} in ${sign}${word ? ` (${word})` : ""}: ${PHASE_LEAD[phase]}, and ${how}.`;

@@ -199,7 +199,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, tas
   useEffect(() => {
     const t = window.setTimeout(() => scrollToNow("auto"), 80);
     return () => window.clearTimeout(t);
-  }, [iso, scrollToNow]);
+  }, [scrollToNow]);
 
   const applyHistory = useCallback(async (
     tasks: { id: string; patch: Record<string, unknown> }[],
