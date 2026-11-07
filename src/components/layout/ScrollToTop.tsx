@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 /**
@@ -8,7 +8,11 @@ import { useLocation } from "react-router-dom";
  */
 export function ScrollToTop() {
   const { pathname } = useLocation();
+  const prev = useRef(pathname);
   useEffect(() => {
+    const last = prev.current; prev.current = pathname;
+    // Picking another day inside the Planner keeps your place on the page.
+    if (last !== pathname && last.startsWith("/planner") && pathname.startsWith("/planner")) return;
     // Instant scroll avoids the visual "blink" of a smooth animation
     // racing with the route transition fade.
     try { window.scrollTo(0, 0); } catch {}

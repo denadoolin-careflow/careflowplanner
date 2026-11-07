@@ -7,20 +7,18 @@ import { Link } from "react-router-dom";
 import { format, isSameDay } from "date-fns";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PHASE_ICONS } from "@/lib/phase-icons";
-import { ArrowRight, ChevronRight, CheckCircle2, ListChecks, Sparkles } from "lucide-react";
+import { ChevronRight, CheckCircle2, ListChecks, Sparkles } from "lucide-react";
 import { getMoonAgeDays } from "@/lib/moon";
 import skyPlan from "@/assets/sky-plan.jpg";
 import skyGrow from "@/assets/sky-grow.jpg";
 import skyCare from "@/assets/sky-care.jpg";
 import skyLetgo from "@/assets/sky-letgo.jpg";
 const SKY = { plan: skyPlan, grow: skyGrow, care: skyCare, letgo: skyLetgo } as const;
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { phaseSignAdvice } from "@/lib/cosmic/moon-energy";
-import { LUNAR_RHYTHM, PHASE_GUIDE } from "@/lib/cosmic/lunar-rhythm";
+import { LUNAR_RHYTHM } from "@/lib/cosmic/lunar-rhythm";
 import { RHYTHM_ORDER, phaseStyle, useDayContext, useNow } from "./day-context";
 
 const ICONS = PHASE_ICONS;
@@ -101,7 +99,6 @@ export function TodayMoonHeader({ date, onDate }: { date?: Date; onDate?: (d: Da
               const Icon = ICONS[p];
               const c = phaseStyle(p);
               const active = ctx.rhythm === p;
-              const g = PHASE_GUIDE[p];
               return (
                 <li key={p} aria-current={active ? "step" : undefined}>
                       <Button variant="ghost" type="button" onClick={() => setPreview(active || preview === p ? null : p)} aria-pressed={shown === p} className="flex h-auto min-h-11 w-full flex-col items-center gap-1 rounded-xl px-0 py-1 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Preview the ${LUNAR_RHYTHM[p].label} phase`}>
