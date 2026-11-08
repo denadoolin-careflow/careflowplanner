@@ -324,8 +324,8 @@ export default function Planner() {
       ref={shellRef}
       className={
         isMobile
-           ? "planner-surface planner-surface--mobile flex flex-col gap-2 pb-[calc(7rem+env(safe-area-inset-bottom))]"
-          : "planner-surface flex flex-col gap-3 pb-10"
+           ? "planner-surface planner-surface--mobile flex flex-col gap-2 pb-[calc(7rem+env(safe-area-inset-bottom))] [overflow-anchor:none]"
+          : "planner-surface flex flex-col gap-3 pb-10 [overflow-anchor:none]"
       }
     >
       <div ref={shellTopRef} aria-hidden className="h-0" />
