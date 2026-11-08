@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { phaseSignAdvice } from "./moon-energy";
+import { PHASE_SIGN_GUIDE } from "./phase-sign-guide";
 describe("phaseSignAdvice", () => {
-  it("combines phase and sign", () => {
-    expect(phaseSignAdvice("care", "Pisces")).toBe("Care in Pisces (Rest): tend to people, home and yourself, and rest, dream and leave room for gentleness.");
-    expect(phaseSignAdvice("plan", "Aries")).toContain("Plan in Aries (Start): set one clear intention");
+  it("selects the guidance for every phase and sign without mixing pairs", () => {
+    for (const phase of ["plan", "grow", "care", "letgo"] as const) {
+      for (const [sign, guidance] of Object.entries(PHASE_SIGN_GUIDE[phase])) {
+        expect(phaseSignAdvice(phase, sign)).toBe(guidance.line);
+      }
+    }
   });
 });

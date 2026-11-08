@@ -65,7 +65,16 @@ export function TwinRingsWidget({ date }: { date: Date }) {
   const cyc = d.cycle ? CYCLE_TO_RHYTHM[d.cycle] : null;
   const stripRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    stripRef.current?.querySelector<HTMLElement>("[aria-pressed='true']")?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    const strip = stripRef.current;
+    const selected = strip?.querySelector<HTMLElement>("[aria-pressed='true']");
+    if (!strip || !selected) return;
+    const stripBox = strip.getBoundingClientRect();
+    const selectedBox = selected.getBoundingClientRect();
+    // Center only this horizontal rail; scrollIntoView also moves the page.
+    strip.scrollTo({
+      left: strip.scrollLeft + selectedBox.left - stripBox.left - (strip.clientWidth - selectedBox.width) / 2,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
   }, [sel]);
   const MoonIcon = PHASE_ICONS[d.moon];
   const CycIcon = cyc ? PHASE_ICONS[cyc] : null;

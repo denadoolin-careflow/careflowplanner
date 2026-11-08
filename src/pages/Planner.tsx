@@ -1,4 +1,5 @@
-import { useTodayView } from "@/lib/today-view";
+import { useTodayView, TODAY_VIEW_LABELS, type TodayView } from "@/lib/today-view";
+import { ViewPills } from "@/components/layout/ViewPills";
 import { TodayDayEmbed } from "@/pages/Today";
 import { RhythmHub } from "@/components/planner/rhythm/RhythmHub";
 import { FocusGoalCard } from "@/components/goals/FocusGoalCard";
@@ -266,7 +267,7 @@ export default function Planner() {
   }, [day, view, setView, setPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the main grid readable: drop side columns when the shell gets narrow.
-  const [todayLayout] = useTodayView();
+  const [todayLayout, setTodayLayout] = useTodayView();
   // Day Flow brings its own three columns, so the Planner side panels step aside.
   const dayFlow = view === "day" && todayLayout === "flow";
   const roomForContext = shellWidth >= 1180 && !dayFlow;
@@ -323,8 +324,8 @@ export default function Planner() {
       ref={shellRef}
       className={
         isMobile
-           ? "planner-surface planner-surface--mobile flex flex-col gap-2 pb-[calc(7rem+env(safe-area-inset-bottom))]"
-          : "planner-surface flex flex-col gap-3 pb-10"
+           ? "planner-surface planner-surface--mobile flex flex-col gap-2 pb-[calc(7rem+env(safe-area-inset-bottom))] [overflow-anchor:none]"
+          : "planner-surface flex flex-col gap-3 pb-10 [overflow-anchor:none]"
       }
     >
       <div ref={shellTopRef} aria-hidden className="h-0" />
@@ -584,6 +585,16 @@ export default function Planner() {
             </Button>
           </div>
         </>
+      )}
+
+      {showDayCards && (
+        <ViewPills<TodayView>
+          items={(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map(value => ({ value, label: TODAY_VIEW_LABELS[value] }))}
+          value={todayLayout}
+          onChange={setTodayLayout}
+          ariaLabel="Day layout"
+          className="self-start [&_[role=tab]]:min-h-11"
+        />
       )}
 
       {nativeRange && view === "day" && period === "timeofday" && (

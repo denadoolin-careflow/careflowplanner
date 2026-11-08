@@ -97,3 +97,5 @@
 - [x] Today page: grouped gentle reminders, Plan/Grow/Care/Let go tabs and desktop phase sections, accessible tabs
 - [ ] Weekly & Quarterly Rhythm Hub (Sunday weekly reset, seasonal quarterly review)
 - [ ] 5-horizon Plan/Grow/Care/Let go framework (day, week, month, quarter, year) across CareFlow
+- [x] Restore visible Planner Day layout choices using the saved Today layout
+- [x] Verify dated moon previews, steady date selection and updated phase/sign guidance checks (desktop/phone; eight tests pass)
