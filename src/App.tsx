@@ -104,6 +104,7 @@ import LandingMockups from "./pages/landing-mockups";
 import InboxMockups from "./pages/InboxMockups";
 import SidebarMockups from "./pages/SidebarMockups";
 import InboxRowMockups from "./pages/InboxRowMockups";
+import TagHubMockups from "./pages/TagHubMockups";
 import Roadmap from "./pages/Roadmap";
 import GmailCallback from "./pages/GmailCallback";
 import AdminRoadmap from "./pages/AdminRoadmap";
@@ -189,6 +190,7 @@ const App = () => (
               <Route path="/inbox-mockups" element={<InboxMockups />} />
               <Route path="/sidebar-mockups" element={<SidebarMockups />} />
               <Route path="/inbox-row-mockups" element={<InboxRowMockups />} />
+              <Route path="/tag-hub-mockups" element={<TagHubMockups />} />
               <Route path="/corner" element={<Corner />} />
               <Route path="/corner/:slug" element={<CornerPost />} />
               <Route path="/shop" element={<Shop />} />
